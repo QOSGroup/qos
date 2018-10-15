@@ -1,20 +1,22 @@
 package account
 
 import (
-	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/store"
 	"testing"
 
 	"github.com/QOSGroup/qbase/account"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/store"
+	"github.com/QOSGroup/qbase/mapper"
 	"github.com/stretchr/testify/require"
-	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 )
+
 func keyPubAddr() (crypto.PrivKey, crypto.PubKey, btypes.Address) {
 	key := ed25519.GenPrivKey()
 	pub := key.PubKey()
@@ -83,52 +85,57 @@ func TestAccountMarshal(t *testing.T) {
 
 }
 
-func defaultContext(key store.StoreKey) context.Context {
+func defaultContext(key store.StoreKey, mapperMap map[string]mapper.IMapper) context.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(key, store.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
-	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger())
+	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger(), mapperMap)
 	return ctx
 }
-
 func TestAccountMapperGetSet(t *testing.T) {
-	mapper := account.NewAccountMapper(cdc, ProtoQOSAccount)
-	ctx := defaultContext(mapper.GetStoreKey())
+	seedMapper := account.NewAccountMapper(ProtoQOSAccount)
+	seedMapper.SetCodec(cdc)
 
-	for i:=0; i < 1; i++ {
+	mapperMap := make(map[string]mapper.IMapper)
+	mapperMap[seedMapper.Name()] = seedMapper
+
+	ctx := defaultContext(seedMapper.GetStoreKey(), mapperMap)
+
+	mapper, _ := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+	for i:=0; i < 100; i++ {
 		_, pubkey, addr := keyPubAddr()
 
 		// 没有存过该addr，取出来应为nil
-		acc := mapper.GetAccount(ctx, addr)
+		acc := mapper.GetAccount(addr)
 		require.Nil(t, acc)
 
-		acc = mapper.NewAccountWithAddress(ctx, addr).(*QOSAccount)
-		require.NotNil(t, acc)
-		require.Equal(t, addr, acc.GetAddress())
-		require.EqualValues(t, nil, acc.GetPubicKey())
-		require.EqualValues(t, 0, acc.GetNonce())
+		qosacc := mapper.NewAccountWithAddress(addr).(*QOSAccount)
+		require.NotNil(t, qosacc)
+		require.Equal(t, addr, qosacc.GetAddress())
+		require.EqualValues(t, nil, qosacc.GetPubicKey())
+		require.EqualValues(t, 0, qosacc.GetNonce())
 
 		// 新的account尚未存储，依然取出nil
-		require.Nil(t, mapper.GetAccount(ctx, addr))
+		require.Nil(t, mapper.GetAccount(addr))
 
 		nonce := uint64(20)
-		acc.SetNonce(nonce)
-		acc.SetPublicKey(pubkey)
-		acc.(*QOSAccount).SetQOS(btypes.NewInt(100))
-		acc.(*QOSAccount).SetQSC(types.NewQSC("QSC1", btypes.NewInt(1234)))
-		acc.(*QOSAccount).SetQSC(types.NewQSC("QSC2", btypes.NewInt(5678)))
+		qosacc.SetNonce(nonce)
+		qosacc.SetPublicKey(pubkey)
+		qosacc.SetQOS(btypes.NewInt(100))
+		qosacc.SetQSC(types.NewQSC("QSC1", btypes.NewInt(1234)))
+		qosacc.SetQSC(types.NewQSC("QSC2", btypes.NewInt(5678)))
 		// 存储account
-		mapper.SetAccount(ctx, acc)
+		mapper.SetAccount(qosacc)
 
 		// 将account以地址取出并验证
-		acc = mapper.GetAccount(ctx, addr).(*QOSAccount)
-		require.NotNil(t, acc)
-		require.Equal(t, nonce, acc.GetNonce())
+		qosacc = mapper.GetAccount(addr).(*QOSAccount)
+		require.NotNil(t, qosacc)
+		require.Equal(t, nonce, qosacc.GetNonce())
 
 	}
 	//批量处理特定前缀存储的账户
-	mapper.IterateAccounts(ctx, func(acc account.Account) bool{
+	mapper.IterateAccounts(func(acc account.Account) bool{
 		bz := mapper.EncodeAccount(acc)
 		acc1 := mapper.DecodeAccount(bz)
 		require.Equal(t, acc, acc1)
