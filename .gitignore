@@ -56,6 +56,6 @@ vagrant
 # Graphviz
 dependency-graph.png
 
-#go
+# go
 go.sum
 
