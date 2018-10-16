@@ -89,8 +89,6 @@ func MakeCodec() *amino.Codec {
 }
 
 func registerCdc(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&qosacc.QOSAccount{}, "qos/account/QOSAccount", nil)
-	cdc.RegisterConcrete(&txs.TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
-	cdc.RegisterConcrete(&txs.TxIssueQsc{}, "qos/txs/TxIssueQsc", nil)
-	cdc.RegisterConcrete(&txs.TxTransform{}, "qos/txs/TxTransform", nil)
+	txs.RegisterCodec(cdc)
+	qosacc.RegisterCodec(cdc)
 }

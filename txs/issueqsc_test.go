@@ -10,12 +10,13 @@ import (
 func TestNewTxIssueQsc(t *testing.T) {
 	txIssue := NewTxIssueQsc("qsc10", types.NewInt(10000))
 	require.NotNil(t, txIssue)
-	isvalid := txIssue.ValidateData()
-	require.Equal(t, isvalid, true)
 
 	key := store.NewKVStoreKey(t.Name())
 	ctx := defaultContext(key)
-	result := txIssue.Exec(ctx)
+	isvalid := txIssue.ValidateData(ctx)
+	require.Equal(t, isvalid, true)
+
+	result,_ := txIssue.Exec(ctx)
 	require.Equal(t, result.Code, types.ABCICodeOK)
 
 	return
