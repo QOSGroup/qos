@@ -17,7 +17,7 @@ type TxIssueQsc struct {
 func (tx *TxIssueQsc) ValidateData() bool {
 	ret := !types.BigInt.LT(tx.Amount, types.ZeroInt())
 
-	return ret && types.CheckQsc(tx.QscName)
+	return ret && types.CheckQscName(tx.QscName)
 }
 
 // 功能：tx执行
@@ -79,7 +79,7 @@ func (tx *TxIssueQsc) GetSignData() (ret []byte) {
 
 // 构建 TxIsssueQsc 结构体
 func NewTxIssueQsc(qsc string, amount types.BigInt) (rTx *TxIssueQsc) {
-	if types.CheckQsc(qsc) || types.BigInt.LT(amount, types.ZeroInt()) {
+	if !types.CheckQscName(qsc) || types.BigInt.LT(amount, types.ZeroInt()) {
 		return nil
 	}
 
