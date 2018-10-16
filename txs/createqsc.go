@@ -34,7 +34,7 @@ type AddrCoin struct {
 //		1,成员字段的合法性
 //		2,creator的账户余额是否够gas抵扣
 func (tx *TxCreateQSC) ValidateData() bool {
-	if !btypes.CheckQsc(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
+	if !btypes.CheckQscName(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
 		return false
 	}
 

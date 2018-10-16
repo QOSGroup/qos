@@ -34,7 +34,7 @@ func (tx *TxTransform) ValidateData() bool {
 	var sdCoin int64 = 0
 	var rvCoin int64 = 0
 	for _, sd := range tx.Senders {
-		if !(CheckAddr(sd.Address) && btypes.BigInt.GT(sd.Amount, btypes.ZeroInt()) && btypes.CheckQsc(sd.QscName)) {
+		if !(CheckAddr(sd.Address) && btypes.BigInt.GT(sd.Amount, btypes.ZeroInt()) && btypes.CheckQscName(sd.QscName)) {
 			return false
 		}
 		sender := GetAccount(sd.Address)
@@ -54,7 +54,7 @@ func (tx *TxTransform) ValidateData() bool {
 	}
 
 	for _, rv := range tx.Receivers {
-		if !(CheckAddr(rv.Address) && btypes.BigInt.GT(rv.Amount, btypes.ZeroInt()) && !btypes.CheckQsc(rv.QscName)) {
+		if !(CheckAddr(rv.Address) && btypes.BigInt.GT(rv.Amount, btypes.ZeroInt()) && btypes.CheckQscName(rv.QscName)) {
 			return false
 		}
 		receiver := GetAccount(rv.Address)
