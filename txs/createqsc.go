@@ -1,10 +1,8 @@
 package txs
 
 import (
-	"fmt"
-	"log"
-
 	"github.com/QOSGroup/qbase/context"
+	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
@@ -33,7 +31,7 @@ type AddrCoin struct {
 //备注：
 //		1,成员字段的合法性
 //		2,creator的账户余额是否够gas抵扣
-func (tx *TxCreateQSC) ValidateData() bool {
+func (tx TxCreateQSC) ValidateData(ctx context.Context) bool {
 	if !btypes.CheckQscName(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
 		return false
 	}
@@ -46,40 +44,33 @@ func (tx *TxCreateQSC) ValidateData() bool {
 //      查询banker是否存在，若不存在，
 //		向账户 AccInit 分发qsc
 //		扣除creater的qos(以gas形式扣除)
-func (tx *TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result) {
-	if !tx.ValidateData() {
-		ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: which code should be here
-		ret.Log = "error: ValidateData error!"
-		return
-	}
-
-	ctAcc := GetAccount(tx.CreateAddr)
+func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps *btxs.TxQcp) {
+	ctAcc := GetAccount(ctx, tx.CreateAddr)
 	if ctAcc.GetQOS().LT(tx.CalcGas()) {
 		ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: which code should be here
 		ret.Log = "error: Create should have more qos!"
 		return
 	}
 
-	//ctx.KVStore("account")
-	acc := GetAccount(tx.Banker)
+	acc := GetAccount(ctx, tx.Banker)
 	if &acc == nil {
-		acc = CreateAccount(tx.Banker)
-		ret.Log += "banker: create banker"
+		acc, _ = CreateAccount(ctx, tx.Banker)
+		ret.Log += "Account: create banker"
 	}
 	for _, va := range tx.AccInit {
-		vaAcc := GetAccount(va.Address)
+		vaAcc := GetAccount(ctx, va.Address)
 		if &vaAcc == nil {
-			vaAcc = CreateAccount(va.Address)
-			ret.Log += fmt.Sprintf("Account: create account(%s),amount(%d)", va.Address, va.Amount)
+			vaAcc, _ = CreateAccount(ctx, va.Address)
+			ret.Log = "Account: create account :" + va.Address.String()
 		}
 		vaAcc.SetQOS(va.Amount)
 	}
 
 	gas := tx.CalcGas()
-	accreator := GetAccount(tx.CreateAddr)
+	accreator := GetAccount(ctx, tx.CreateAddr)
 	accreator.SetQOS(accreator.GetQOS().Sub(gas))
 
-	// todo: 将联盟链的publickey加入kvstore,(qos/doc/store.md)(chainid/in/pubkey)
+	// 将联盟链的publickey加入kvstore(chainid/in/pubkey)
 	//kvstore := store.KVStoreKey{tx.QscName + "/in/pubkey"}
 	//mkvstrore := ctx.KVStore(&kvstore)
 	//mkvstrore.Set([]byte(kvstore.String()), tx.QscPubkey.Bytes())
@@ -90,29 +81,27 @@ func (tx *TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result) {
 }
 
 //功能：获取签名者
-func (tx *TxCreateQSC) GetSigner() (ret []btypes.Address) {
+func (tx TxCreateQSC) GetSigner() (ret []btypes.Address) {
 	if tx.CreateAddr == nil {
-		log.Panic("No signer for create QSC")
 		return nil
 	}
 
-	ret[0] = tx.CreateAddr
+	ret = []btypes.Address{tx.CreateAddr}
 	return
 }
 
 //功能：计算gas
 //规则：基准值 + 每个初始化用户收10qos
 //todo：规则暂定为此，可能调整
-func (tx *TxCreateQSC) CalcGas() btypes.BigInt {
+func (tx TxCreateQSC) CalcGas() btypes.BigInt {
 	baseGas := btypes.NewInt(BASEGAS_CREATEQSC)
 	var accNum int = len(tx.AccInit)
 	return baseGas.Add(btypes.NewInt(int64(accNum * 10)))
 }
 
 //gas付费人
-func (tx *TxCreateQSC) GetGasPayer() (ret btypes.Address) {
+func (tx TxCreateQSC) GetGasPayer() (ret btypes.Address) {
 	if tx.CreateAddr == nil {
-		log.Panic("Can't find creater in tx(createQSC)")
 		return nil
 	}
 
@@ -121,7 +110,7 @@ func (tx *TxCreateQSC) GetGasPayer() (ret btypes.Address) {
 }
 
 //获取签名字段
-func (tx *TxCreateQSC) GetSignData() (ret []byte) {
+func (tx TxCreateQSC) GetSignData() (ret []byte) {
 	ret = append(ret, []byte(tx.QscName)...)
 	ret = append(ret, tx.QscPubkey.Bytes()...)
 	ret = append(ret, []byte(tx.Banker)...)
@@ -157,7 +146,6 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 	cdc.UnmarshalBinaryBare(*caqsc, &dataqsc)
 	if dataqsc.Banker {
 		//qsc的ca证书中banker == false
-		log.Panic("CA(qcs) error")
 		return nil
 	}
 
@@ -165,12 +153,14 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 	cdc.UnmarshalBinaryBare(*cabank, &databank)
 	if !databank.Banker {
 		//qsc的ca证书中banker == false
-		log.Panic("CA(bank) error")
 		return nil
 	}
 	if databank.Qcpname != dataqsc.Qcpname {
-		log.Panic("The two input CA(caqsc, cabank) should have the same qcpname")
 		return nil
+	}
+
+	if accs == nil {
+		accs = &[]AddrCoin{}
 	}
 
 	rTx = &TxCreateQSC{

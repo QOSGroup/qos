@@ -3,6 +3,7 @@ package txs
 import (
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	btxs "github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/types"
 )
 
@@ -26,67 +27,64 @@ type AddrTrans struct {
 //		3,sender必须存在，否则无人支付
 //		4,receiver若不存在，创建一个账户
 //		5,send总数 == receive总数
-func (tx *TxTransform) ValidateData() bool {
+func (tx TxTransform) ValidateData(ctx context.Context) bool {
 	if len(tx.Senders) == 0 || len(tx.Receivers) == 0 {
 		return false
 	}
 
-	var sdCoin int64 = 0
-	var rvCoin int64 = 0
 	for _, sd := range tx.Senders {
 		if !(CheckAddr(sd.Address) && btypes.BigInt.GT(sd.Amount, btypes.ZeroInt()) && btypes.CheckQscName(sd.QscName)) {
 			return false
 		}
-		sender := GetAccount(sd.Address)
-		if sender == nil {
-			return false
-		}
-
-		qsc := sender.GetQSC(sd.QscName)
-		if qsc == nil {
-			return false
-		}
-
-		if sd.Amount.GT(qsc.GetAmount()) {
-			return false
-		}
-		sdCoin += sd.Amount.Int64()
 	}
 
 	for _, rv := range tx.Receivers {
 		if !(CheckAddr(rv.Address) && btypes.BigInt.GT(rv.Amount, btypes.ZeroInt()) && btypes.CheckQscName(rv.QscName)) {
 			return false
 		}
-		receiver := GetAccount(rv.Address)
-		if receiver == nil {
-			CreateAccount(rv.Address)
-		}
-		rvCoin += rv.Amount.Int64()
 	}
 
-	// senders 和 receivers 的Amount总量需平衡
-	return sdCoin == rvCoin
+	return true
 }
 
 // 功能：执行transaction
 // 备注：Gas的逻辑判断及扣除应该在外层操作，不放到Tx执行体内
 // todo: 某一个用户转账出错，如何处理（跳过？全部还原？）
-// todo: 涉及账户存储及返回值，暂模拟
-func (tx *TxTransform) Exec(ctx context.Context) (ret btypes.Result) {
-	if !tx.ValidateData() {
+func (tx TxTransform) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps *btxs.TxQcp) {
+	var sdCoin int64 = 0
+	var rvCoin int64 = 0
+	for _, sd := range tx.Senders {
+		sender := GetAccount(ctx, sd.Address)
+		qsc := sender.GetQSC(sd.QscName)
+		if sd.Amount.GT(qsc.GetAmount()) {
+			ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: code?
+			ret.Log = "error: " + sd.Address.String() +  " havn't enought money"
+			return
+		}
+		sdCoin += sd.Amount.Int64()
+	}
+
+	for _, rv := range tx.Receivers {
+		receiver := GetAccount(ctx, rv.Address)
+		if receiver == nil {
+			CreateAccount(ctx, rv.Address)
+		}
+		rvCoin += rv.Amount.Int64()
+	}
+
+	if sdCoin != rvCoin {
 		ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: code?
-		ret.Log = "result: validateData error"
-		//ret.Tags.AppendTag("error", []byte("validateData error"))
+		ret.Log = "error: coins from senders not equal receivers"
 		return
 	}
 
 	for _, sd := range tx.Senders {
-		sender := GetAccount(sd.Address)
+		sender := GetAccount(ctx, sd.Address)
 		qsc := sender.GetQSC(sd.QscName).GetAmount().Sub(sd.Amount)
 		sender.SetQSC(types.NewQSC(sd.QscName, qsc))
 	}
 	for _, rv := range tx.Receivers {
-		receiver := GetAccount(rv.Address)
+		receiver := GetAccount(ctx, rv.Address)
 		qsc := receiver.GetQSC(rv.QscName).GetAmount().Add(rv.Amount)
 		receiver.SetQSC(types.NewQSC(rv.QscName, qsc))
 	}
@@ -99,25 +97,19 @@ func (tx *TxTransform) Exec(ctx context.Context) (ret btypes.Result) {
 }
 
 // 功能：返回签名者
-func (tx *TxTransform) GetSigner() (ret []btypes.Address) {
-	if !tx.ValidateData() {
-		return nil
+func (tx TxTransform) GetSigner() (ret []btypes.Address) {
+	ret = []btypes.Address{}
+	for _, val := range tx.Senders {
+		ret = append(ret, val.Address)
 	}
 
-	for idx, val := range tx.Senders {
-		ret[idx] = val.Address
-	}
 	return
 }
 
 // 计算gas
 // 基础价为10，每多一个sender/receiver，gas增1
-func (tx *TxTransform) CalcGas() btypes.BigInt {
+func (tx TxTransform) CalcGas() btypes.BigInt {
 	baseNum := 10
-
-	if !tx.ValidateData() {
-		return btypes.NewInt(0)
-	}
 	gas := (int64)(baseNum + len(tx.Senders) + len(tx.Receivers) - 2)
 
 	return btypes.NewInt(gas)
@@ -126,18 +118,14 @@ func (tx *TxTransform) CalcGas() btypes.BigInt {
 // 功能：返回gas付费人
 // 算法：第一个sender付费
 // 注：  返回[]commmand.Address,为方便以后扩展
-func (tx *TxTransform) GetGasPayer() (payer []btypes.Address) {
-	if tx.ValidateData() {
-		panic("")
-		return nil
-	}
-	payer[0] = tx.Senders[0].Address
+func (tx TxTransform) GetGasPayer() (payer btypes.Address) {
+	payer = tx.Senders[0].Address
 
 	return
 }
 
 // 获取签名字段
-func (tx *TxTransform) GetSignData() (ret []byte) {
+func (tx TxTransform) GetSignData() (ret []byte) {
 	for _, sd := range tx.Senders {
 		ret = append(ret, sd.Address.Bytes()...)
 		ret = append(ret, btypes.Int2Byte(sd.Amount.Int64())...)
@@ -154,16 +142,10 @@ func (tx *TxTransform) GetSignData() (ret []byte) {
 }
 
 // 功能：构建Transform结构体
-// 备注：需将数组拷贝到TxTransform成员
-// todo: 数组拷贝，若有好的方法更新此处
 func NewTransform(senders *[]AddrTrans, receiver *[]AddrTrans) (rTx *TxTransform) {
 	rTx = &TxTransform{
 		*senders,
 		*receiver,
-	}
-
-	if !rTx.ValidateData() {
-		return nil
 	}
 
 	return

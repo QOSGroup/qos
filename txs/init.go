@@ -8,6 +8,8 @@ import (
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
+	bcontext "github.com/QOSGroup/qbase/context"
+	btxs "github.com/QOSGroup/qbase/txs"
 )
 
 var cdc = go_amino.NewCodec()
@@ -25,56 +27,43 @@ func RegisterCodec(cdc *go_amino.Codec) {
 	cdc.RegisterConcrete(&TxTransform{}, "qos/txs/transform", nil)
 }
 
-// todo: 依赖ctx中store操作，稍后更新(暂模拟)
-func GetAccount(addr btypes.Address) (acc *account.QOSAccount) {
-	//accmapper := baccount.NewAccountMapper(account.ProtoQOSAccount)
-	//addrKey := baccount.AddressStoreKey(addr)
-	//if !accmapper.Get(addrKey, &acc) {
-	//	return nil
-	//}
-	//
-	//return
-
-	baseacc := baccount.BaseAccount{
-		addr,
-		ed25519.GenPrivKey().PubKey(),
-		uint64(2),
+// 通过地址获取QOSAccount
+func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount) {
+	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
+	if mapper == nil {
+		return nil
 	}
 
-	qscList := []*types.QSC{
-		{"qsc1", btypes.NewInt(100)},
-		{"qsc2", btypes.NewInt(200)},
-		{"qsc3", btypes.NewInt(100)},
-		{"qsc4", btypes.NewInt(200)},
-		{"qsc5", btypes.NewInt(100)},
-	}
-
-	acc = &account.QOSAccount{
-		baseacc,
-		btypes.NewInt(80000),
-		qscList,
+	acc = mapper.GetAccount(addr).(*account.QOSAccount)
+	if acc == nil {
+		return nil
 	}
 
 	return
 }
 
-// todo: 暂模拟，稍后实现
-func CreateAccount(addr btypes.Address) (acc *account.QOSAccount) {
-	acc = GetAccount(addr)
-	//if acc != nil {
-	//	err = errors.New("Error; address()  account existed. ")
-	//	return acc, err
-	//}
+// 通过地址创建QOSAccount
+// 若账户存在，返回账户 & false
+func CreateAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount, success bool) {
+	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
+	if mapper == nil {
+		return nil, false
+	}
 
-	//accmapper := baccount.NewAccountMapper(account.ProtoQOSAccount)
-	//addrKey := baccount.AddressStoreKey(addr)
+	accfind := mapper.GetAccount(addr).(*account.QOSAccount)
+	if accfind != nil {
+		return accfind, false
+	}
 
-	return acc
+	acc = mapper.NewAccountWithAddress(addr).(*account.QOSAccount)
+
+	return acc,true
 }
 
 // todo: 暂模拟
 func GetBanker(qscname string) (ret *account.QOSAccount) {
-	baseacc := baccount.BaseAccount{[]byte("baseaccount1"),
+	baseacc := baccount.BaseAccount{
+		[]byte("baseaccount1"),
 		ed25519.GenPrivKey().PubKey(),
 		uint64(3),
 	}
@@ -106,11 +95,11 @@ func FetchQscCA() (caQsc *[]byte) {
 
 	return
 }
-
 func FetchBankerCA() (caBanker *[]byte) {
 	pubkey := ed25519.GenPrivKey().PubKey()
 
 	ca := &CA{
+
 		"qsc1",
 		true,
 		pubkey,
@@ -119,6 +108,44 @@ func FetchBankerCA() (caBanker *[]byte) {
 
 	va, _ := cdc.MarshalBinaryBare(ca)
 	caBanker = &va
+
+	return
+}
+
+func MakeTxStd(tx btxs.ITx, chainid string, maxgas int64) (txstd *btxs.TxStd) {
+	txstd = btxs.NewTxStd(tx, chainid, btypes.NewInt(maxgas))
+	signer := txstd.ITx.GetSigner()
+
+	// no signer, no signature
+	if signer == nil {
+		txstd.Signature = []btxs.Signature{}
+		return
+	}
+
+	// accmapper := baccount.NewAccountMapper(baccount.ProtoBaseAccount)
+	accmapper := baccount.NewAccountMapper(account.ProtoQOSAccount)
+
+	// 填充 txstd.Signature[]
+	for _, sg := range signer {
+		prvKey := ed25519.GenPrivKey()
+		nonce, err := accmapper.GetNonce(baccount.AddressStoreKey(sg))
+		if err != nil {
+			return nil
+		}
+
+		signbyte, errsign := txstd.SignTx(prvKey, int64(nonce))
+		if signbyte == nil || errsign != nil {
+			return nil
+		}
+
+		signdata := btxs.Signature{
+			prvKey.PubKey(),
+			signbyte,
+			int64(nonce),
+		}
+
+		txstd.Signature = append(txstd.Signature, signdata)
+	}
 
 	return
 }

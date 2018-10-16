@@ -123,6 +123,19 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
         		"amount":"100000000"
       		}
     	]
+  	},
+	{
+    	"pub_key": {
+			"type":"tendermint/PubKeyEd25519",
+          "value":"rBCuHCKy4Y/O+gc38kb7vMbsX4wW2/92h7/aF/ljZQY="
+		},
+		"qos":"200000000",
+    	"qsc": [
+      		{
+        		"coin_name":"qcs1",
+        		"amount":"200000000"
+      		}
+    	]
   	}]
 	}`, pubKeyJson))
 	return
