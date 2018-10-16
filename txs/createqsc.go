@@ -35,15 +35,9 @@ type AddrCoin struct {
 //		2,creator的账户余额是否够gas抵扣
 func (tx *TxCreateQSC) ValidateData() bool {
 	if !btypes.CheckQsc(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
-		log.Panic("Invalidate data found in transaction QSCCreate")
 		return false
 	}
 
-	ctAcc := GetAccount(tx.CreateAddr)
-	if ctAcc.GetQOS().LT(tx.CalcGas()) {
-		log.Panic("Creator should have more qos")
-		return false
-	}
 	return true
 }
 
@@ -52,13 +46,17 @@ func (tx *TxCreateQSC) ValidateData() bool {
 //      查询banker是否存在，若不存在，
 //		向账户 AccInit 分发qsc
 //		扣除creater的qos(以gas形式扣除)
-//todo: 执行后，需将联盟链的publickey加入kvstore(qos/doc/store.md)
-//       chainid/in/pubkey
-
 func (tx *TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result) {
 	if !tx.ValidateData() {
 		ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: which code should be here
 		ret.Log = "error: ValidateData error!"
+		return
+	}
+
+	ctAcc := GetAccount(tx.CreateAddr)
+	if ctAcc.GetQOS().LT(tx.CalcGas()) {
+		ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: which code should be here
+		ret.Log = "error: Create should have more qos!"
 		return
 	}
 
@@ -80,6 +78,11 @@ func (tx *TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result) {
 	gas := tx.CalcGas()
 	accreator := GetAccount(tx.CreateAddr)
 	accreator.SetQOS(accreator.GetQOS().Sub(gas))
+
+	// todo: 将联盟链的publickey加入kvstore,(qos/doc/store.md)(chainid/in/pubkey)
+	//kvstore := store.KVStoreKey{tx.QscName + "/in/pubkey"}
+	//mkvstrore := ctx.KVStore(&kvstore)
+	//mkvstrore.Set([]byte(kvstore.String()), tx.QscPubkey.Bytes())
 
 	ret.GasUsed = gas.Int64()
 	ret.Code = btypes.ABCICodeOK
@@ -137,53 +140,49 @@ func (tx *TxCreateQSC) GetSignData() (ret []byte) {
 //CA结构体
 //todo: CA具体格式确定后会更改
 type CA struct {
-	qcpname string
-	banker  bool
-	pubkey  []byte
-	info    string
+	Qcpname string
+	Banker  bool
+	Pubkey  crypto.PubKey
+	Info    string
 }
 
 //创建 TxCreateQSC结构体
 //备注：CA提供两个证书，联盟链证书 & Banker证书(banker字段)
 //		两种证书通过 qscName 字段关联起来
-func NewCreateQsc(cdc *go_amino.Codec,caqsc []byte, cabank []byte,
+func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 	createAddr btypes.Address, accs *[]AddrCoin,
 	extrate string, dsp string) (rTx *TxCreateQSC) {
 
 	var dataqsc CA
-	cdc.UnmarshalBinaryBare(caqsc, dataqsc)
-	if dataqsc.banker {
+	cdc.UnmarshalBinaryBare(*caqsc, &dataqsc)
+	if dataqsc.Banker {
 		//qsc的ca证书中banker == false
 		log.Panic("CA(qcs) error")
 		return nil
 	}
 
 	var databank CA
-	cdc.UnmarshalBinaryBare(cabank, databank)
-	if !databank.banker {
+	cdc.UnmarshalBinaryBare(*cabank, &databank)
+	if !databank.Banker {
 		//qsc的ca证书中banker == false
 		log.Panic("CA(bank) error")
 		return nil
 	}
-	if databank.qcpname != dataqsc.qcpname {
+	if databank.Qcpname != dataqsc.Qcpname {
 		log.Panic("The two input CA(caqsc, cabank) should have the same qcpname")
 		return nil
 	}
 
-	rTx = new(TxCreateQSC)
-	rTx.CA = caqsc
-	rTx.QscName = dataqsc.qcpname
-	rTx.Extrate = extrate
-	rTx.Description = dsp
-
-	if accs != nil {
-		for idx, acc := range (*accs) {
-			rTx.AccInit[idx].Address = acc.Address
-			rTx.AccInit[idx].Amount = acc.Amount
-		}
+	rTx = &TxCreateQSC{
+		dataqsc.Qcpname,
+		createAddr,
+		dataqsc.Pubkey,
+		[]byte("banker"), //todo: for test, extract from databank.Pubkey
+		extrate,
+		*caqsc,
+		dsp,
+		*accs,
 	}
-	//rTx.QscPubkey = dataqsc.pubkey		//todo: how to get crypto.PubKey from []byte
-	rTx.CreateAddr = createAddr
 
 	return
 }
