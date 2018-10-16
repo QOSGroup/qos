@@ -1,24 +1,27 @@
 package txs
 
 import (
-	"fmt"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qbase/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
+	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	dbm "github.com/tendermint/tendermint/libs/db"
 
 	"strconv"
 	"testing"
 )
 
-func newAddrTrans(n int) (ret []AddrTrans){
-	for i := 0 ; i < n ; i++ {
+func newAddrTrans(n int) (ret *[]AddrTrans) {
+	var buf []AddrTrans
+
+	for i := 1; i < 1+n; i++ {
 		addrtrans := AddrTrans{[]byte("address" + strconv.Itoa(i)),
-		types.NewInt(int64(i)),
-		"qsc" + strconv.Itoa(i)}
-		ret = append(ret, addrtrans)
+			types.NewInt(int64(i)),
+			"qsc" + strconv.Itoa(i)}
+		buf = append(buf, addrtrans)
 	}
+	ret = &buf
 
 	return
 }
@@ -37,26 +40,16 @@ func TestNewTransform(t *testing.T) {
 	receiver := newAddrTrans(5)
 
 	//Total Amount of sender & receiver is equal
-	sender[2].Amount.Add(types.NewInt(9))
-	txTran := NewTransform(&sender, &receiver)
-	if txTran == nil  {
-		t.Error("NewTranform error!")
-		return
-	}
-
-	if !txTran.ValidateData(){
-		t.Error("Invalidate Transform")
-		return
-	}
+	(*sender)[2].Amount = (*sender)[2].Amount.Add(types.NewInt(9))
+	txTran := NewTransform(sender, receiver)
+	require.NotNil(t, txTran)
+	isvalid := txTran.ValidateData()
+	require.Equal(t, isvalid, true)
 
 	key := store.NewKVStoreKey(t.Name())
 	ctx := defaultContext(key)
 	result := txTran.Exec(ctx)
-	if result.Code != types.ABCICodeOK {
-		fmt.Printf("Execute Error: %d", result.Code)
-		return
-	}
+	require.Equal(t, result.Code, types.ABCICodeOK)
 
-	fmt.Print("Excute successful!")
 	return
 }
