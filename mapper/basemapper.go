@@ -33,7 +33,7 @@ func (mapper *BaseMapper) Name() string {
 
 // 保存CA
 func (mapper *BaseMapper) SetCA(pubKey crypto.PubKey) error {
-	mapper.BaseMapper.Set([]byte("rootca"), pubKey.Bytes())
+	mapper.BaseMapper.Set([]byte("rootca"), pubKey)
 	return nil
 }
 
