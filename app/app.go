@@ -44,6 +44,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// QCP mapper
 	// qbase 默认已注入
 
+	// 预授权mapper
+	app.RegisterMapper(mapper.NewApproveMapper())
+
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
 	if err != nil {
@@ -93,4 +96,9 @@ func registerCdc(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&txs.TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
 	cdc.RegisterConcrete(&txs.TxIssueQsc{}, "qos/txs/TxIssueQsc", nil)
 	cdc.RegisterConcrete(&txs.TxTransform{}, "qos/txs/TxTransform", nil)
+	cdc.RegisterConcrete(&txs.TxApproveCreate{}, "qos/txs/TxApproveCreate", nil)
+	cdc.RegisterConcrete(&txs.TxApproveIncrease{}, "qos/txs/TxApproveIncrease", nil)
+	cdc.RegisterConcrete(&txs.TxApproveDecrease{}, "qos/txs/TxApproveDecrease", nil)
+	cdc.RegisterConcrete(&txs.TxApproveUse{}, "qos/txs/TxApproveUse", nil)
+	cdc.RegisterConcrete(&txs.TxApproveCancel{}, "qos/txs/TxApproveCancel", nil)
 }
