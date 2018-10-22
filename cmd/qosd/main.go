@@ -15,6 +15,7 @@ import (
 
 func main() {
 	cdc := app.MakeCodec()
+
 	ctx := server.NewDefaultContext()
 
 	rootCmd := &cobra.Command{

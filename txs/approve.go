@@ -11,11 +11,11 @@ import (
 )
 
 // 创建授权
-type TxApproveCreate struct {
-	*types.Approve
+type ApproveCreateTx struct {
+	types.Approve
 }
 
-func (tx *TxApproveCreate) ValidateData(ctx context.Context) bool {
+func (tx ApproveCreateTx) ValidateData(ctx context.Context) bool {
 	if !tx.Approve.ValidateData(ctx) {
 		return false
 	}
@@ -30,13 +30,13 @@ func (tx *TxApproveCreate) ValidateData(ctx context.Context) bool {
 	return true
 }
 
-func (tx *TxApproveCreate) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx ApproveCreateTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	fromAcc := accountMapper.GetAccount(tx.To)
+	fromAcc := accountMapper.GetAccount(tx.From)
 	if fromAcc == nil {
 		fromAcc = accountMapper.NewAccountWithAddress(tx.From).(*account.QOSAccount)
 		accountMapper.SetAccount(fromAcc)
@@ -55,11 +55,11 @@ func (tx *TxApproveCreate) Exec(ctx context.Context) (result btypes.Result, cros
 }
 
 // 增加授权
-type TxApproveIncrease struct {
-	*types.Approve
+type ApproveIncreaseTx struct {
+	types.Approve
 }
 
-func (tx *TxApproveIncrease) ValidateData(ctx context.Context) bool {
+func (tx ApproveIncreaseTx) ValidateData(ctx context.Context) bool {
 	if !tx.Approve.ValidateData(ctx) {
 		return false
 	}
@@ -74,7 +74,7 @@ func (tx *TxApproveIncrease) ValidateData(ctx context.Context) bool {
 	return true
 }
 
-func (tx *TxApproveIncrease) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx ApproveIncreaseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -88,18 +88,18 @@ func (tx *TxApproveIncrease) Exec(ctx context.Context) (result btypes.Result, cr
 	}
 
 	// 保存更新
-	approve.Coins = approve.Coins.Plus(tx.Coins)
-	mapper.SaveApprove(&approve)
+	approve = approve.Plus(tx.Approve)
+	mapper.SaveApprove(approve)
 
 	return
 }
 
 // 减少授权
-type TxApproveDecrease struct {
-	*types.Approve
+type ApproveDecreaseTx struct {
+	types.Approve
 }
 
-func (tx *TxApproveDecrease) ValidateData(ctx context.Context) bool {
+func (tx ApproveDecreaseTx) ValidateData(ctx context.Context) bool {
 	if !tx.Approve.ValidateData(ctx) {
 		return false
 	}
@@ -111,14 +111,14 @@ func (tx *TxApproveDecrease) ValidateData(ctx context.Context) bool {
 		return false
 	}
 
-	if !approve.Coins.IsGTE(tx.Coins) {
+	if !approve.IsGTE(tx.Approve) {
 		return false
 	}
 
 	return true
 }
 
-func (tx *TxApproveDecrease) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx ApproveDecreaseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -130,24 +130,24 @@ func (tx *TxApproveDecrease) Exec(ctx context.Context) (result btypes.Result, cr
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
-	if !approve.Coins.IsGTE(tx.Coins) {
+	if !approve.IsGTE(tx.Approve) {
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
 
 	// 保存更新
-	approve.Coins = approve.Coins.Minus(tx.Coins)
-	mapper.SaveApprove(&approve)
+	approve = approve.Minus(tx.Approve)
+	mapper.SaveApprove(approve)
 
 	return
 }
 
 // 使用授权
-type TxApproveUse struct {
-	*types.Approve
+type ApproveUseTx struct {
+	types.Approve
 }
 
-func (tx *TxApproveUse) ValidateData(ctx context.Context) bool {
+func (tx ApproveUseTx) ValidateData(ctx context.Context) bool {
 	if !tx.Approve.ValidateData(ctx) {
 		return false
 	}
@@ -158,7 +158,7 @@ func (tx *TxApproveUse) ValidateData(ctx context.Context) bool {
 	if !exisit {
 		return false
 	}
-	if !approve.Coins.IsGTE(tx.Coins) {
+	if !approve.IsGTE(tx.Approve) {
 		return false
 	}
 
@@ -169,14 +169,14 @@ func (tx *TxApproveUse) ValidateData(ctx context.Context) bool {
 		return false
 	}
 	from := iAcc.(*account.QOSAccount)
-	if !from.Coins().IsGTE(tx.Coins) {
+	if tx.IsGTAccount(from.Qos, from.QscList) {
 		return false
 	}
 
 	return true
 }
 
-func (tx *TxApproveUse) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx ApproveUseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -192,49 +192,49 @@ func (tx *TxApproveUse) Exec(ctx context.Context) (result btypes.Result, crossTx
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
-	if !approve.Coins.IsGTE(tx.Coins) {
+	if !approve.IsGTE(tx.Approve) {
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
 
 	// 校验授权用户状态
-	if !from.Coins().IsGTE(tx.Coins) {
+	if tx.IsGTAccount(from.Qos, from.QscList) {
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
 
 	// 更新授权用户状态
-	fromQscs := from.Coins().Minus(tx.Coins)
-	from.Qos = fromQscs.Qos()
-	from.QscList = fromQscs.QscList()
+
+	fromQscs := tx.Negative().PlusAccount(from.Qos, from.QscList)
+	from.Qos = fromQscs.Qos
+	from.QscList = fromQscs.QscList
 	accountMapper.SetAccount(from)
 
 	// 更新被授权账户
-	toList := to.Coins().Plus(tx.Coins)
-	to.QscList = toList.QscList()
-	to.Qos = toList.Qos()
+	toList := tx.PlusAccount(to.Qos, to.QscList)
+	to.Qos = toList.Qos
+	to.QscList = toList.QscList
 	accountMapper.SetAccount(to)
 	// 保存更新
-	approve.Coins = approve.Coins.Minus(tx.Coins)
-	approveMapper.SaveApprove(&approve)
+	approveMapper.SaveApprove(approve.Minus(tx.Approve))
 
 	return
 }
 
-func (tx *TxApproveUse) GetSigner() []btypes.Address {
+func (tx ApproveUseTx) GetSigner() []btypes.Address {
 	return []btypes.Address{tx.To}
 }
 
-func (tx *TxApproveUse) GetGasPayer() btypes.Address {
+func (tx ApproveUseTx) GetGasPayer() btypes.Address {
 	return tx.To
 }
 
 // 取消授权 Tx
-type TxApproveCancel struct {
-	*types.ApproveCancel
+type ApproveCancelTx struct {
+	types.ApproveCancel
 }
 
-func (tx *TxApproveCancel) ValidateData(ctx context.Context) bool {
+func (tx ApproveCancelTx) ValidateData(ctx context.Context) bool {
 	if !tx.ApproveCancel.ValidateData(ctx) {
 		return false
 	}
@@ -249,7 +249,7 @@ func (tx *TxApproveCancel) ValidateData(ctx context.Context) bool {
 	return true
 }
 
-func (tx *TxApproveCancel) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx ApproveCancelTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}

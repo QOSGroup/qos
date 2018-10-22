@@ -2,7 +2,6 @@ package txs
 
 import (
 	bacc "github.com/QOSGroup/qbase/account"
-	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
@@ -11,20 +10,18 @@ import (
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
-	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/encoding/amino"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	"testing"
 )
 
-var txApproveCreate TxApproveCreate
-var txApproveIncrease TxApproveIncrease
-var txApproveDecrease TxApproveDecrease
-var txApproveUse TxApproveUse
-var txApproveCancel TxApproveCancel
+var txApproveCreate ApproveCreateTx
+var txApproveIncrease ApproveIncreaseTx
+var txApproveDecrease ApproveDecreaseTx
+var txApproveUse ApproveUseTx
+var txApproveCancel ApproveCancelTx
 var fromAccount = &account.QOSAccount{}
 var toAccount = &account.QOSAccount{}
 
@@ -34,6 +31,12 @@ func approveTestInit() {
 	toPub := ed25519.GenPrivKey().PubKey()
 	toAddr := btypes.Address(toPub.Address())
 	fromAccount.Qos = btypes.NewInt(100)
+	fromAccount.QscList = []*types.QSC{
+		{
+			Name:   "qstar",
+			Amount: btypes.NewInt(100),
+		},
+	}
 	fromAccount.BaseAccount = bacc.BaseAccount{
 		AccountAddress: fromAddr,
 		Publickey:      fromPub,
@@ -48,9 +51,10 @@ func approveTestInit() {
 	approve1 := types.Approve{
 		From: fromAddr,
 		To:   toAddr,
-		Coins: types.QSCS{
+		Qos:  btypes.NewInt(100),
+		QscList: []*types.QSC{
 			{
-				Name:   "qos",
+				Name:   "qstar",
 				Amount: btypes.NewInt(100),
 			},
 		},
@@ -58,10 +62,11 @@ func approveTestInit() {
 	approve2 := types.Approve{
 		From: fromAddr,
 		To:   toAddr,
-		Coins: types.QSCS{
+		Qos:  btypes.NewInt(100),
+		QscList: []*types.QSC{
 			{
-				Name:   "qos",
-				Amount: btypes.NewInt(10),
+				Name:   "qstar",
+				Amount: btypes.NewInt(100),
 			},
 		},
 	}
@@ -69,54 +74,36 @@ func approveTestInit() {
 		From: fromAddr,
 		To:   toAddr,
 	}
-	txApproveCreate = TxApproveCreate{
-		&approve1,
+	txApproveCreate = ApproveCreateTx{
+		approve1,
 	}
-	txApproveIncrease = TxApproveIncrease{
-		&approve2,
+	txApproveIncrease = ApproveIncreaseTx{
+		approve2,
 	}
-	txApproveDecrease = TxApproveDecrease{
-		&approve2,
+	txApproveDecrease = ApproveDecreaseTx{
+		approve2,
 	}
-	txApproveUse = TxApproveUse{
-		&approve2,
+	txApproveUse = ApproveUseTx{
+		approve2,
 	}
-	txApproveCancel = TxApproveCancel{
-		&approveCancel,
+	txApproveCancel = ApproveCancelTx{
+		approveCancel,
 	}
-}
-
-func defaultCodec() *amino.Codec {
-	approveTestInit()
-	cdc := amino.NewCodec()
-	baseabci.RegisterCodec(cdc)
-	cryptoAmino.RegisterAmino(cdc)
-
-	cdc.RegisterConcrete(&account.QOSAccount{}, "qos/account/QOSAccount", nil)
-	cdc.RegisterConcrete(&TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
-	cdc.RegisterConcrete(&TxIssueQsc{}, "qos/txs/TxIssueQsc", nil)
-	cdc.RegisterConcrete(&TxTransform{}, "qos/txs/TxTransform", nil)
-	cdc.RegisterConcrete(&TxApproveCreate{}, "qos/txs/TxApproveCreate", nil)
-	cdc.RegisterConcrete(&TxApproveIncrease{}, "qos/txs/TxApproveIncrease", nil)
-	cdc.RegisterConcrete(&TxApproveDecrease{}, "qos/txs/TxApproveDecrease", nil)
-	cdc.RegisterConcrete(&TxApproveUse{}, "qos/txs/TxApproveUse", nil)
-	cdc.RegisterConcrete(&TxApproveCancel{}, "qos/txs/TxApproveCancel", nil)
-
-	return cdc
 }
 
 func txApproveTestContext() context.Context {
 	approveTestInit()
+	cdc := makeCodec()
 
 	mapperMap := make(map[string]bmapper.IMapper)
 
 	approveMapper := mapper.NewApproveMapper()
-	approveMapper.SetCodec(defaultCodec())
+	approveMapper.SetCodec(cdc)
 	approveKey := approveMapper.GetStoreKey()
 	mapperMap[approveMapper.Name()] = approveMapper
 
 	accountMapper := bacc.NewAccountMapper(account.ProtoQOSAccount)
-	accountMapper.SetCodec(defaultCodec())
+	accountMapper.SetCodec(cdc)
 	acountKey := accountMapper.GetStoreKey()
 	mapperMap[accountMapper.Name()] = accountMapper
 
@@ -153,7 +140,7 @@ func TestTxApproveCreate_Exec(t *testing.T) {
 	approveMapper := ctx.Mapper(mapper.ApproveMapperName).(*mapper.ApproveMapper)
 	approve, exists := approveMapper.GetApprove(txApproveCreate.From, txApproveCreate.To)
 	require.True(t, exists)
-	require.Equal(t, *txApproveCreate.Approve, approve)
+	require.True(t, txApproveCreate.Approve.Equals(approve))
 }
 
 func TestTxApproveIncrease_ValidateData(t *testing.T) {
@@ -184,7 +171,7 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 
 	approve, exists := approveMapper.GetApprove(txApproveCreate.From, txApproveCreate.To)
 	require.True(t, exists)
-	require.Equal(t, txApproveCreate.Approve.Coins.Plus(txApproveIncrease.Coins), approve.Coins)
+	require.True(t, txApproveCreate.Approve.Plus(txApproveIncrease.Approve).Equals(approve))
 }
 
 func TestTxApproveDecrease_ValidateData(t *testing.T) {
@@ -199,10 +186,10 @@ func TestTxApproveDecrease_ValidateData(t *testing.T) {
 
 	require.True(t, txApproveDecrease.ValidateData(ctx))
 
-	txApproveDecrease.Coins[0].Amount = btypes.NewInt(100)
+	txApproveDecrease.Qos = btypes.NewInt(100)
 	require.True(t, txApproveDecrease.ValidateData(ctx))
 
-	txApproveDecrease.Coins[0].Amount = btypes.NewInt(110)
+	txApproveDecrease.Qos = btypes.NewInt(110)
 	require.False(t, txApproveDecrease.ValidateData(ctx))
 }
 
@@ -221,7 +208,7 @@ func TestTxApproveDecrease_Exec(t *testing.T) {
 
 	approve, exists := approveMapper.GetApprove(txApproveCreate.From, txApproveCreate.To)
 	require.True(t, exists)
-	require.Equal(t, txApproveCreate.Approve.Coins.Minus(txApproveDecrease.Coins), approve.Coins)
+	require.True(t, txApproveCreate.Approve.Minus(txApproveDecrease.Approve).Equals(approve))
 }
 
 func TestTxApproveUse_ValidateData(t *testing.T) {
@@ -241,7 +228,7 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 
 	require.True(t, txApproveUse.ValidateData(ctx))
 
-	txApproveUse.Coins[0].Amount = btypes.NewInt(110)
+	txApproveUse.Qos = btypes.NewInt(110)
 	require.False(t, txApproveUse.ValidateData(ctx))
 
 }
@@ -268,7 +255,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	require.Nil(t, cross)
 	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
 
-	txApproveCreate.Coins[0].Amount = btypes.NewInt(1)
+	txApproveCreate.Qos = btypes.NewInt(1)
 	approveMapper := ctx.Mapper(mapper.ApproveMapperName).(*mapper.ApproveMapper)
 	err := approveMapper.SaveApprove(txApproveCreate.Approve)
 	require.Nil(t, err)
@@ -277,7 +264,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	require.Nil(t, cross)
 	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
 
-	txApproveCreate.Coins[0].Amount = btypes.NewInt(100)
+	txApproveCreate.Qos = btypes.NewInt(100)
 	err = approveMapper.SaveApprove(txApproveCreate.Approve)
 	require.Nil(t, err)
 
@@ -287,7 +274,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 
 	approve, exists := approveMapper.GetApprove(txApproveUse.From, txApproveUse.To)
 	require.True(t, exists)
-	require.Equal(t, txApproveCreate.Coins.Minus(txApproveUse.Coins), approve.Coins)
+	require.True(t, txApproveCreate.Minus(txApproveUse.Approve).Equals(approve))
 
 }
 

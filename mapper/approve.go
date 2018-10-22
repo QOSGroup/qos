@@ -35,21 +35,22 @@ func (mapper *ApproveMapper) Name() string {
 }
 
 // 获取授权
-func (mapper *ApproveMapper) GetApprove(from btypes.Address, to btypes.Address) (approve types.Approve, exists bool) {
+func (mapper *ApproveMapper) GetApprove(from btypes.Address, to btypes.Address) (types.Approve, bool) {
+	approve := types.NewApprove(from, to)
 	key := fmt.Sprintf(approveKey, from.String(), to.String())
-	exists = mapper.BaseMapper.Get([]byte(key), &approve)
+	exists := mapper.BaseMapper.Get([]byte(key), &approve)
 	return approve, exists
 }
 
 // 保存授权
-func (mapper *ApproveMapper) SaveApprove(approve *types.Approve) error {
+func (mapper *ApproveMapper) SaveApprove(approve types.Approve) error {
 	key := fmt.Sprintf(approveKey, approve.From.String(), approve.To.String())
 	mapper.BaseMapper.Set([]byte(key), approve)
 	return nil
 }
 
 // 删除授权
-func (mapper *ApproveMapper) DeleteApprove(approve *types.ApproveCancel) error {
+func (mapper *ApproveMapper) DeleteApprove(approve types.ApproveCancel) error {
 	key := fmt.Sprintf(approveKey, approve.From.String(), approve.To.String())
 	mapper.BaseMapper.GetStore().Delete([]byte(key))
 	return nil

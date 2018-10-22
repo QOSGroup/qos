@@ -26,9 +26,10 @@ func init() {
 	approve = types.Approve{
 		From: fromAddr,
 		To:   toAddr,
-		Coins: types.QSCS{
+		Qos:  btypes.NewInt(100),
+		QscList: []*types.QSC{
 			{
-				Name:   "qos",
+				Name:   "qstar",
 				Amount: btypes.NewInt(100),
 			},
 		},
@@ -48,11 +49,11 @@ func TestSaveApprove(t *testing.T) {
 	ctx := defaultContext(storeKey, mapper)
 	approveMapper, _ = ctx.Mapper(approveMapper.Name()).(*ApproveMapper)
 
-	err := approveMapper.SaveApprove(&approve)
+	err := approveMapper.SaveApprove(approve)
 	require.Nil(t, err)
 	recover, exists := approveMapper.GetApprove(approve.From, approve.To)
 	require.True(t, exists)
-	require.Equal(t, approve, recover)
+	require.True(t, approve.Equals(recover))
 }
 
 func TestDeleteApprove(t *testing.T) {
@@ -64,13 +65,13 @@ func TestDeleteApprove(t *testing.T) {
 	ctx := defaultContext(storeKey, mapper)
 	approveMapper, _ = ctx.Mapper(approveMapper.Name()).(*ApproveMapper)
 
-	err := approveMapper.SaveApprove(&approve)
+	err := approveMapper.SaveApprove(approve)
 	require.Nil(t, err)
 	recover, exists := approveMapper.GetApprove(approve.From, approve.To)
 	require.True(t, exists)
-	require.Equal(t, approve, recover)
+	require.True(t, approve.Equals(recover))
 
-	err = approveMapper.DeleteApprove(&approveCancel)
+	err = approveMapper.DeleteApprove(approveCancel)
 	require.Nil(t, err)
 
 	_, exists = approveMapper.GetApprove(approve.From, approve.To)

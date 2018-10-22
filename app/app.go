@@ -6,8 +6,6 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/txs"
-	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -25,7 +23,7 @@ type QOSApp struct {
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
-	baseApp := baseabci.NewBaseApp(appName, logger, db, registerCdc)
+	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec)
 	baseApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &QOSApp{
@@ -82,23 +80,4 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 	}
 
 	return abci.ResponseInitChain{}
-}
-
-// 序列化反序列化相关注册
-func MakeCodec() *amino.Codec {
-	cdc := baseabci.MakeQBaseCodec()
-	registerCdc(cdc)
-	return cdc
-}
-
-func registerCdc(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&qosacc.QOSAccount{}, "qos/account/QOSAccount", nil)
-	cdc.RegisterConcrete(&txs.TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
-	cdc.RegisterConcrete(&txs.TxIssueQsc{}, "qos/txs/TxIssueQsc", nil)
-	cdc.RegisterConcrete(&txs.TxTransform{}, "qos/txs/TxTransform", nil)
-	cdc.RegisterConcrete(&txs.TxApproveCreate{}, "qos/txs/TxApproveCreate", nil)
-	cdc.RegisterConcrete(&txs.TxApproveIncrease{}, "qos/txs/TxApproveIncrease", nil)
-	cdc.RegisterConcrete(&txs.TxApproveDecrease{}, "qos/txs/TxApproveDecrease", nil)
-	cdc.RegisterConcrete(&txs.TxApproveUse{}, "qos/txs/TxApproveUse", nil)
-	cdc.RegisterConcrete(&txs.TxApproveCancel{}, "qos/txs/TxApproveCancel", nil)
 }

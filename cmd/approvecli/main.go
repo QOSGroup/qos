@@ -46,6 +46,16 @@ func main() {
 	}
 }
 
+// 创建
+//-m=tx -c=create -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=0
+// 增加
+//-m=tx -c=increase -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=1
+// 减少
+//-m=tx -c=decrease -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qstar,100 -nonce=2
+// 使用
+//-m=tx -c=use -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -coins=qstar,100 -nonce=0
+// 取消
+//-m=tx -c=cancel -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -nonce=3
 func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from string, to string, prihex string, nonce int64, coinStr string) {
 	if from == "" || to == "" || prihex == "" || nonce < 0 || (command != "cancel" && coinStr == "") {
 		panic("usage: -m=approve -c=create/increase/decrease/use/cancel -from=xxx -to=xxx -coin=xxx,xxx;xxx,xxx -prikey=xxx -nonce=xxx(>=0)")
@@ -59,38 +69,38 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 	var err error
 	if command != "cancel" { // 创建、增加、减少、使用授权
 		coinAndAmounts := strings.Split(coinStr, ";")
-		qscs := types.QSCS{}
+		qscs := []*types.QSC{}
+		qos := btypes.BigInt{}
 		for _, val := range coinAndAmounts {
 			coinAndAmount := strings.Split(val, ",")
 			amount, _ := strconv.ParseInt(coinAndAmount[1], 10, 64)
-			qsc := types.QSC{
-				Name:   coinAndAmount[0],
-				Amount: btypes.NewInt(amount),
+			if coinAndAmount[0] == "qos" {
+				qos = btypes.NewInt(amount)
+			} else {
+				qsc := types.QSC{
+					Name:   coinAndAmount[0],
+					Amount: btypes.NewInt(amount),
+				}
+				qscs = append(qscs, &qsc)
 			}
-			qscs = append(qscs, qsc)
 		}
-		approve := &types.Approve{
-			From:  fromAddr,
-			To:    toAddr,
-			Coins: qscs,
+		approve := types.Approve{
+			From:    fromAddr,
+			To:      toAddr,
+			Qos:     qos,
+			QscList: qscs,
 		}
-		var stdTx btxs.TxStd
+		var stdTx *btxs.TxStd
 		switch command {
 		case "create":
-			tx := txs.TxApproveCreate{approve,}
-			stdTx.ITx = &tx
+			stdTx = btxs.NewTxStd(txs.ApproveCreateTx{approve,}, "qos-chain", btypes.NewInt(0))
 		case "increase":
-			tx := txs.TxApproveIncrease{approve,}
-			stdTx.ITx = &tx
+			stdTx = btxs.NewTxStd(txs.ApproveIncreaseTx{approve,}, "qos-chain", btypes.NewInt(0))
 		case "decrease":
-			tx := txs.TxApproveDecrease{approve,}
-			stdTx.ITx = &tx
+			stdTx = btxs.NewTxStd(txs.ApproveDecreaseTx{approve,}, "qos-chain", btypes.NewInt(0))
 		case "use":
-			tx := txs.TxApproveUse{approve,}
-			stdTx.ITx = &tx
+			stdTx = btxs.NewTxStd(txs.ApproveUseTx{approve,}, "qos-chain", btypes.NewInt(0))
 		}
-		stdTx.ChainID = "qos-chain"
-		stdTx.MaxGas = btypes.NewInt(int64(0))
 		signature, _ := stdTx.SignTx(priKey, nonce)
 		stdTx.Signature = []btxs.Signature{btxs.Signature{
 			Pubkey:    priKey.PubKey(),
@@ -102,11 +112,11 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 			panic("use cdc encode object fail")
 		}
 	} else { // 取消授权
-		approve := &types.ApproveCancel{
+		approve := types.ApproveCancel{
 			From: fromAddr,
 			To:   toAddr,
 		}
-		tx := txs.TxApproveCancel{approve,}
+		tx := txs.ApproveCancelTx{approve,}
 		stdTx := btxs.NewTxStd(&tx, "qos-chain", btypes.NewInt(int64(0)))
 		signature, _ := stdTx.SignTx(priKey, nonce)
 		stdTx.Signature = []btxs.Signature{btxs.Signature{
@@ -127,6 +137,9 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 	fmt.Println("send tx success")
 }
 
+// 查询账户
+//-m=account -addr=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay
+//-m=account -addr=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4
 func queryAccount(http *client.HTTP, cdc *amino.Codec, addr string) {
 	if addr == "" {
 		panic("usage: -m=acc -addr=xxx")
@@ -142,9 +155,12 @@ func queryAccount(http *client.HTTP, cdc *amino.Codec, addr string) {
 	var acc *account.QOSAccount
 	cdc.UnmarshalBinaryBare(queryValueBz, &acc)
 
-	fmt.Println(fmt.Sprintf("query addr is %s = %v", addr, acc))
+	json, _ := cdc.MarshalJSON(acc)
+	fmt.Println(fmt.Sprintf("query addr is %s = %s", addr, string(json)))
 }
 
+// 查询预授权
+//-m=approve -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4
 func queryApprove(http *client.HTTP, cdc *amino.Codec, from string, to string) {
 	if from == "" || to == "" {
 		panic("usage: -m=approve -from=xxx -to=xxx")
@@ -159,5 +175,6 @@ func queryApprove(http *client.HTTP, cdc *amino.Codec, from string, to string) {
 	var approve types.Approve
 	cdc.UnmarshalBinaryBare(queryValueBz, &approve)
 
-	fmt.Println(fmt.Sprintf("query addr is from:[%s]/to:[%s] = %v", from, to, approve))
+	json, _ := cdc.MarshalJSON(approve)
+	fmt.Println(fmt.Sprintf("query addr is from:[%s]/to:[%s] = %s", from, to, string(json)))
 }
