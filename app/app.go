@@ -9,7 +9,6 @@ import (
 	"github.com/QOSGroup/qos/txs"
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/encoding/amino"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
@@ -84,10 +83,8 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 
 // 序列化反序列化相关注册
 func MakeCodec() *amino.Codec {
-	var cdc = amino.NewCodec()
-	cryptoAmino.RegisterAmino(cdc)
+	cdc := baseabci.MakeQBaseCodec()
 	registerCdc(cdc)
-	baseabci.RegisterCodec(cdc)
 	return cdc
 }
 
