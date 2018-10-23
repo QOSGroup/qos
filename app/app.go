@@ -37,7 +37,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterAccountProto(qosacc.ProtoQOSAccount)
 
 	// 基础信息操作mapper
-	app.RegisterMapper(mapper.NewBaseMapper())
+	app.RegisterMapper(mapper.NewMainMapper())
 
 	// QCP mapper
 	// qbase 默认已注入
@@ -56,7 +56,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 // 初始配置
 func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	// 上下文中获取mapper
-	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.BaseMapper)
+	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 
 	// 反序列化app_state
