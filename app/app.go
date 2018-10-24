@@ -67,14 +67,10 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 	}
 
 	// 保存CA
-	mainMapper.SetCA(genesisState.CAPubKey)
+	mainMapper.SetRootCA(genesisState.CAPubKey)
 
 	// 保存初始账户
-	for _, gacc := range genesisState.Accounts {
-		acc, err := gacc.ToAppAccount()
-		if err != nil {
-			panic(err)
-		}
+	for _, acc := range genesisState.Accounts {
 		accountMapper.SetAccount(acc)
 	}
 

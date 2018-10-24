@@ -36,13 +36,13 @@ func (mapper *MainMapper) Name() string {
 }
 
 // 保存CA
-func (mapper *MainMapper) SetCA(pubKey crypto.PubKey) error {
+func (mapper *MainMapper) SetRootCA(pubKey crypto.PubKey) error {
 	mapper.BaseMapper.Set([]byte("rootca"), pubKey)
 	return nil
 }
 
 // 获取CA
-func (mapper *MainMapper) GetCA() crypto.PubKey {
+func (mapper *MainMapper) GetRoot() crypto.PubKey {
 	var pubKey crypto.PubKey
 	mapper.BaseMapper.Get([]byte("rootca"), &pubKey)
 	return pubKey

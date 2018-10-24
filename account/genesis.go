@@ -5,11 +5,9 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/server/config"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -18,36 +16,8 @@ import (
 
 // QOS初始状态
 type GenesisState struct {
-	CAPubKey crypto.PubKey     `json:"ca_pub_key"`
-	Accounts []*GenesisAccount `json:"accounts"`
-}
-
-// 初始账户
-type GenesisAccount struct {
-	PubKey crypto.PubKey `json:"pub_key"`
-	QOS    btypes.BigInt `json:"qos"`
-	QSC    []*types.QSC  `json:"qsc"`
-}
-
-// 给定 AppAccpunt 创建 GenesisAccount
-func NewGenesisAccount(aa *QOSAccount) *GenesisAccount {
-	return &GenesisAccount{
-		PubKey: aa.BaseAccount.Publickey,
-		QOS:    aa.Qos,
-		QSC:    aa.QscList,
-	}
-}
-
-// 给定 GenesisAccount 创建 AppAccpunt
-func (ga *GenesisAccount) ToAppAccount() (acc *QOSAccount, err error) {
-	return &QOSAccount{
-		BaseAccount: account.BaseAccount{
-			Publickey:      ga.PubKey,
-			AccountAddress: ga.PubKey.Address().Bytes(),
-		},
-		Qos:     ga.QOS,
-		QscList: ga.QSC,
-	}, nil
+	CAPubKey crypto.PubKey `json:"ca_pub_key"`
+	Accounts []*QOSAccount `json:"accounts"`
 }
 
 func QOSAppInit() server.AppInit {
@@ -58,22 +28,22 @@ func QOSAppInit() server.AppInit {
 }
 
 type QOSGenTx struct {
-	PubKey crypto.PubKey `json:"pub_key"`
+	Addr btypes.Address `json:"addr"`
 }
 
 // Generate a genesis transaction
 func QOSAppGenTx(cdc *amino.Codec, pk crypto.PubKey, genTxConfig config.GenTx) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 
-	var pubKey crypto.PubKey
+	var addr btypes.Address
 	var secret string
-	_, pubKey, secret, err = GenerateCoinKey()
+	addr, _, secret, err = GenerateCoinKey()
 	if err != nil {
 		return
 	}
 
 	var bz []byte
-	simpleGenTx := QOSGenTx{pubKey}
+	simpleGenTx := QOSGenTx{addr}
 	bz, err = cdc.MarshalJSON(simpleGenTx)
 	if err != nil {
 		return
@@ -108,36 +78,23 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 		return
 	}
 
-	pubKeyJson, _ := cdc.MarshalJSON(genTx.PubKey)
+	addr, _ := cdc.MarshalJSON(genTx.Addr)
 	appState = json.RawMessage(fmt.Sprintf(`{
-	"ca_pub_key": {
-		"type": "tendermint/PubKeyEd25519",
-        "value": "0SDDvhiMsqX9XLuscqovU8l24txbV7Mg4ecs+R6Swzk="
-	},
-  	"accounts": [{
-    	"pub_key": %s,
-		"qos":"100000000",
-    	"qsc": [
-      		{
-        		"coin_name":"qstar",
-        		"amount":"100000000"
-      		}
-    	]
-  	},
-	{
-    	"pub_key": {
-			"type":"tendermint/PubKeyEd25519",
-          "value":"rBCuHCKy4Y/O+gc38kb7vMbsX4wW2/92h7/aF/ljZQY="
+		"ca_pub_key": {
+			"type": "tendermint/PubKeyEd25519",
+			"value": "0SDDvhiMsqX9XLuscqovU8l24txbV7Mg4ecs+R6Swzk="
 		},
-		"qos":"200000000",
-    	"qsc": [
-      		{
-        		"coin_name":"qcs1",
-        		"amount":"200000000"
-      		}
-    	]
-  	}]
-	}`, pubKeyJson))
+		"accounts": [{
+			"base_account": {
+				"account_address": %s
+			},
+			"qos": "100000000",
+			"qsc": [{
+				"coin_name": "qstar",
+				"amount": "100000000"
+			}]
+		}]
+	}`, addr))
 	return
 }
 
