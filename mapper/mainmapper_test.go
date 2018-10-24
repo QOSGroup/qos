@@ -39,7 +39,7 @@ func TestSaveCAPubKey(t *testing.T) {
 	baseMapper, _ = ctx.Mapper(baseMapper.Name()).(*MainMapper)
 
 	origin := ed25519.GenPrivKey().PubKey()
-	baseMapper.SetCA(origin)
-	recover := baseMapper.GetCA()
+	baseMapper.SetRootCA(origin)
+	recover := baseMapper.GetRoot()
 	require.Equal(t, origin, recover)
 }
