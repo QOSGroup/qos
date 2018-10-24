@@ -17,7 +17,5 @@ func init() {
 
 // 为包内定义结构注册codec
 func RegisterCodec(cdc *go_amino.Codec) {
-	//cdc.RegisterInterface((*btypes.Coin)(nil), nil)
 	cdc.RegisterConcrete(&QOSAccount{}, "qbase/account/QOSAccount", nil)
-	//cdc.RegisterConcrete(&types.QSC{}, "qbase/coin/QSC", nil)
 }

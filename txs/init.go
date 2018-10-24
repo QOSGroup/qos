@@ -5,27 +5,10 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/types"
-	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto/encoding/amino"
 	bcontext "github.com/QOSGroup/qbase/context"
 	btxs "github.com/QOSGroup/qbase/txs"
 )
-
-var cdc = go_amino.NewCodec()
-
-func init() {
-	cryptoAmino.RegisterAmino(cdc)
-	RegisterCodec(cdc)
-}
-
-// 功能：序列化设置
-func RegisterCodec(cdc *go_amino.Codec) {
-	cdc.RegisterConcrete(&CA{}, "qos/txs/ca", nil)
-	cdc.RegisterConcrete(&TxCreateQSC{}, "qos/txs/createqsc", nil)
-	cdc.RegisterConcrete(&TxIssueQsc{}, "qos/txs/issueqsc", nil)
-	cdc.RegisterConcrete(&TxTransform{}, "qos/txs/transform", nil)
-}
 
 // 通过地址获取QOSAccount
 func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount) {
