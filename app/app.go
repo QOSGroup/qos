@@ -6,8 +6,6 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/txs"
-	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -25,7 +23,7 @@ type QOSApp struct {
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
-	baseApp := baseabci.NewBaseApp(appName, logger, db, registerCdc)
+	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec)
 	baseApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &QOSApp{
@@ -43,6 +41,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	// QCP mapper
 	// qbase 默认已注入
+
+	// 预授权mapper
+	app.RegisterMapper(mapper.NewApproveMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -75,16 +76,4 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 	}
 
 	return abci.ResponseInitChain{}
-}
-
-// 序列化反序列化相关注册
-func MakeCodec() *amino.Codec {
-	cdc := baseabci.MakeQBaseCodec()
-	registerCdc(cdc)
-	return cdc
-}
-
-func registerCdc(cdc *amino.Codec) {
-	txs.RegisterCodec(cdc)
-	qosacc.RegisterCodec(cdc)
 }

@@ -21,7 +21,7 @@ func NewMainMapper() *MainMapper {
 	return &baseMapper
 }
 
-func GetStoreKey() string {
+func GetBaseMapperStoreKey() string {
 	return storeKey
 }
 
