@@ -21,7 +21,7 @@ func TestApprove_ValidateData(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -42,14 +42,14 @@ func TestApprove_ValidateData(t *testing.T) {
 	require.False(t, approve.ValidateData(ctx))
 
 	approve.To = to
-	approve.Qos = btypes.NewInt(0)
+	approve.QOS = btypes.NewInt(0)
 	require.True(t, approve.ValidateData(ctx))
 
 	approve = NewApprove(
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -66,7 +66,7 @@ func TestApprove_ValidateData(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qos",
 				Amount: btypes.NewInt(100),
@@ -78,30 +78,30 @@ func TestApprove_ValidateData(t *testing.T) {
 
 func TestApprove_GetSigner(t *testing.T) {
 	qos := btypes.NewInt(100)
-	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, []*QSC{})
+	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, QSCs{})
 	require.Equal(t, approve.GetSigner(), []btypes.Address{approve.From})
 }
 
 func TestApprove_GetGasPayer(t *testing.T) {
 	qos := btypes.NewInt(100)
-	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, []*QSC{})
+	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, QSCs{})
 	require.Equal(t, approve.GetGasPayer(), approve.From)
 }
 
 func TestApprove_CalcGas(t *testing.T) {
 	qos := btypes.NewInt(100)
-	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, []*QSC{})
+	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, QSCs{})
 	require.Equal(t, approve.CalcGas(), btypes.NewInt(0))
 }
 
 func TestApprove_GetSignData(t *testing.T) {
 	qos := btypes.NewInt(100)
-	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, []*QSC{})
+	approve := NewApprove(btypes.Address(ed25519.GenPrivKey().PubKey().Address()), btypes.Address(ed25519.GenPrivKey().PubKey().Address()), &qos, QSCs{})
 	ret := []byte{}
 	ret = append(ret, approve.From...)
 	ret = append(ret, approve.To...)
-	ret = append(ret, approve.Qos.String()...)
-	for _, coin := range approve.QscList {
+	ret = append(ret, approve.QOS.String()...)
+	for _, coin := range approve.QSCs {
 		ret = append(ret, []byte(coin.Name)...)
 		ret = append(ret, []byte(coin.Amount.String())...)
 	}
@@ -114,7 +114,7 @@ func TestApprove_IsPositive(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -123,10 +123,10 @@ func TestApprove_IsPositive(t *testing.T) {
 	)
 	require.True(t, approve.IsPositive())
 
-	approve.Qos = btypes.NewInt(0)
+	approve.QOS = btypes.NewInt(0)
 	require.True(t, approve.IsPositive())
 
-	approve.QscList[0].Amount = btypes.NewInt(-1)
+	approve.QSCs[0].Amount = btypes.NewInt(-1)
 	require.False(t, approve.IsPositive())
 }
 
@@ -136,7 +136,7 @@ func TestApprove_IsNotNegative(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -145,11 +145,11 @@ func TestApprove_IsNotNegative(t *testing.T) {
 	)
 	require.True(t, approve.IsNotNegative())
 
-	approve.Qos = btypes.NewInt(-1)
+	approve.QOS = btypes.NewInt(-1)
 	require.False(t, approve.IsNotNegative())
 
-	approve.Qos = btypes.NewInt(0)
-	approve.QscList[0].Amount = btypes.NewInt(0)
+	approve.QOS = btypes.NewInt(0)
+	approve.QSCs[0].Amount = btypes.NewInt(0)
 	require.True(t, approve.IsNotNegative())
 }
 
@@ -159,7 +159,7 @@ func TestApprove_Negative(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -167,7 +167,7 @@ func TestApprove_Negative(t *testing.T) {
 		},
 	)
 	negative := approve.Negative()
-	require.True(t, negative.Qos.String() == "-100")
+	require.True(t, negative.QOS.String() == "-100")
 
 	require.Equal(t, approve, negative.Negative())
 }
@@ -178,7 +178,7 @@ func TestApprove_Plus(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos1,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -186,9 +186,9 @@ func TestApprove_Plus(t *testing.T) {
 		},
 	)
 	qos2 := btypes.NewInt(100)
-	a := approve1.Plus(qos2, []*QSC{})
-	require.Equal(t, a.Qos.String(), btypes.NewInt(200).String())
-	require.Equal(t, a.QscList[0].Amount, btypes.NewInt(100))
+	a := approve1.Plus(qos2, QSCs{})
+	require.Equal(t, a.QOS.String(), btypes.NewInt(200).String())
+	require.Equal(t, a.QSCs[0].Amount, btypes.NewInt(100))
 }
 
 func TestApprove_Minus(t *testing.T) {
@@ -197,7 +197,7 @@ func TestApprove_Minus(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos1,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -205,9 +205,9 @@ func TestApprove_Minus(t *testing.T) {
 		},
 	)
 	qos2 := btypes.NewInt(100)
-	a := approve1.Minus(qos2, []*QSC{})
-	require.Equal(t, a.Qos.String(), btypes.NewInt(-90).String())
-	require.Equal(t, a.QscList[0].Amount, btypes.NewInt(100))
+	a := approve1.Minus(qos2, QSCs{})
+	require.Equal(t, a.QOS.String(), btypes.NewInt(-90).String())
+	require.Equal(t, a.QSCs[0].Amount, btypes.NewInt(100))
 }
 
 func TestApprove_IsGTE(t *testing.T) {
@@ -216,7 +216,7 @@ func TestApprove_IsGTE(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos1,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -224,9 +224,9 @@ func TestApprove_IsGTE(t *testing.T) {
 		},
 	)
 	qos2 := btypes.NewInt(100)
-	require.True(t, approve1.IsGTE(qos2, []*QSC{}))
+	require.True(t, approve1.IsGTE(qos2, QSCs{}))
 
-	qsc2 := []*QSC{
+	qsc2 := QSCs{
 		{
 			Name:   "qstar",
 			Amount: btypes.NewInt(100),
@@ -244,7 +244,7 @@ func TestApprove_IsGT(t *testing.T) {
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		&qos1,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -252,7 +252,7 @@ func TestApprove_IsGT(t *testing.T) {
 		},
 	)
 	qos2 := btypes.NewInt(100)
-	qsc2 := []*QSC{}
+	qsc2 := QSCs{}
 	require.True(t, approve1.IsGT(qos2, qsc2))
 
 	qos2 = btypes.NewInt(200)
@@ -272,7 +272,7 @@ func TestApprove_Equals(t *testing.T) {
 	qos1 := btypes.NewInt(100)
 	approve1 := NewApprove(
 		from, to, &qos1,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -282,7 +282,7 @@ func TestApprove_Equals(t *testing.T) {
 	qos2 := btypes.NewInt(100)
 	approve2 := NewApprove(
 		from, to, &qos2,
-		[]*QSC{
+		QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),

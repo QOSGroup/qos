@@ -26,7 +26,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, btypes.Address) {
 
 func genNewAccount() (qosAccount QOSAccount){
 	_, pub, addr := keyPubAddr()
-	coinList := []*types.QSC{
+	coinList := types.QSCs{
 		types.NewQSC("QSC1", btypes.NewInt(1234)),
 		types.NewQSC("QSC2", btypes.NewInt(5678)),
 	}

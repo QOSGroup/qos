@@ -26,8 +26,8 @@ func init() {
 	approve = types.Approve{
 		From: fromAddr,
 		To:   toAddr,
-		Qos:  btypes.NewInt(100),
-		QscList: []*types.QSC{
+		QOS:  btypes.NewInt(100),
+		QSCs: types.QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),

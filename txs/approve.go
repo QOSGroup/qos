@@ -88,7 +88,7 @@ func (tx ApproveIncreaseTx) Exec(ctx context.Context) (result btypes.Result, cro
 	}
 
 	// 保存更新
-	approve = approve.Plus(tx.Qos, tx.QscList)
+	approve = approve.Plus(tx.QOS, tx.QSCs)
 	mapper.SaveApprove(approve)
 
 	return
@@ -111,7 +111,7 @@ func (tx ApproveDecreaseTx) ValidateData(ctx context.Context) bool {
 		return false
 	}
 
-	if !approve.IsGTE(tx.Qos, tx.QscList) {
+	if !approve.IsGTE(tx.QOS, tx.QSCs) {
 		return false
 	}
 
@@ -130,13 +130,13 @@ func (tx ApproveDecreaseTx) Exec(ctx context.Context) (result btypes.Result, cro
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
-	if !approve.IsGTE(tx.Qos, tx.QscList) {
+	if !approve.IsGTE(tx.QOS, tx.QSCs) {
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
 
 	// 保存更新
-	approve = approve.Minus(tx.Qos, tx.QscList)
+	approve = approve.Minus(tx.QOS, tx.QSCs)
 	mapper.SaveApprove(approve)
 
 	return
@@ -158,7 +158,7 @@ func (tx ApproveUseTx) ValidateData(ctx context.Context) bool {
 	if !exisit {
 		return false
 	}
-	if !approve.IsGTE(tx.Qos, tx.QscList) {
+	if !approve.IsGTE(tx.QOS, tx.QSCs) {
 		return false
 	}
 
@@ -169,7 +169,7 @@ func (tx ApproveUseTx) ValidateData(ctx context.Context) bool {
 		return false
 	}
 	from := iAcc.(*account.QOSAccount)
-	if tx.IsGT(from.Qos, from.QscList) {
+	if tx.IsGT(from.QOS, from.QSCs) {
 		return false
 	}
 
@@ -192,31 +192,31 @@ func (tx ApproveUseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
-	if !approve.IsGTE(tx.Qos, tx.QscList) {
+	if !approve.IsGTE(tx.QOS, tx.QSCs) {
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
 
 	// 校验授权用户状态
-	if tx.IsGT(from.Qos, from.QscList) {
+	if tx.IsGT(from.QOS, from.QSCs) {
 		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
 		return
 	}
 
 	// 更新授权用户状态
 
-	fromQscs := tx.Negative().Plus(from.Qos, from.QscList)
-	from.Qos = fromQscs.Qos
-	from.QscList = fromQscs.QscList
+	fromQscs := tx.Negative().Plus(from.QOS, from.QSCs)
+	from.QOS = fromQscs.QOS
+	from.QSCs = fromQscs.QSCs
 	accountMapper.SetAccount(from)
 
 	// 更新被授权账户
-	toList := tx.Plus(to.Qos, to.QscList)
-	to.Qos = toList.Qos
-	to.QscList = toList.QscList
+	toList := tx.Plus(to.QOS, to.QSCs)
+	to.QOS = toList.QOS
+	to.QSCs = toList.QSCs
 	accountMapper.SetAccount(to)
 	// 保存更新
-	approveMapper.SaveApprove(approve.Minus(tx.Qos, tx.QscList))
+	approveMapper.SaveApprove(approve.Minus(tx.QOS, tx.QSCs))
 
 	return
 }
