@@ -89,7 +89,7 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 				"account_address": %s
 			},
 			"qos": "100000000",
-			"qsc": [{
+			"qscs": [{
 				"coin_name": "qstar",
 				"amount": "100000000"
 			}]

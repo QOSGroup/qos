@@ -21,8 +21,8 @@ func genGenesisState() *GenesisState {
 					AccountAddress: accPub.Address().Bytes(),
 					Publickey:      accPub,
 				},
-				Qos: btypes.NewInt(100000000),
-				QscList: []*types.QSC{
+				QOS: btypes.NewInt(100000000),
+				QSCs: types.QSCs{
 					{
 						Name:   "QSC1",
 						Amount: btypes.NewInt(100000000),

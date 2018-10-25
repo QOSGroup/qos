@@ -86,10 +86,10 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 			}
 		}
 		approve := types.Approve{
-			From:    fromAddr,
-			To:      toAddr,
-			Qos:     qos,
-			QscList: qscs,
+			From: fromAddr,
+			To:   toAddr,
+			QOS:  qos,
+			QSCs: qscs,
 		}
 		var stdTx *btxs.TxStd
 		switch command {

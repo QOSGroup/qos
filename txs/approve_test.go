@@ -30,8 +30,8 @@ func approveTestInit() {
 	fromAddr := btypes.Address(fromPub.Address())
 	toPub := ed25519.GenPrivKey().PubKey()
 	toAddr := btypes.Address(toPub.Address())
-	fromAccount.Qos = btypes.NewInt(100)
-	fromAccount.QscList = []*types.QSC{
+	fromAccount.QOS = btypes.NewInt(100)
+	fromAccount.QSCs = types.QSCs{
 		{
 			Name:   "qstar",
 			Amount: btypes.NewInt(100),
@@ -42,7 +42,7 @@ func approveTestInit() {
 		Publickey:      fromPub,
 		Nonce:          0,
 	}
-	toAccount.Qos = btypes.NewInt(0)
+	toAccount.QOS = btypes.NewInt(0)
 	toAccount.BaseAccount = bacc.BaseAccount{
 		AccountAddress: toAddr,
 		Publickey:      toPub,
@@ -50,7 +50,7 @@ func approveTestInit() {
 	}
 	qos1 := btypes.NewInt(100)
 	approve1 := types.NewApprove(fromAddr, toAddr, &qos1,
-		[]*types.QSC{
+		types.QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -59,7 +59,7 @@ func approveTestInit() {
 	)
 	qos2 := btypes.NewInt(100)
 	approve2 := types.NewApprove(fromAddr, toAddr, &qos2,
-		[]*types.QSC{
+		types.QSCs{
 			{
 				Name:   "qstar",
 				Amount: btypes.NewInt(100),
@@ -164,7 +164,7 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 
 	approve, exists := approveMapper.GetApprove(approveCreateTx.From, approveCreateTx.To)
 	require.True(t, exists)
-	require.True(t, approveCreateTx.Approve.Plus(approveIncreaseTx.Qos, approveIncreaseTx.QscList).Equals(approve))
+	require.True(t, approveCreateTx.Approve.Plus(approveIncreaseTx.QOS, approveIncreaseTx.QSCs).Equals(approve))
 }
 
 func TestTxApproveDecrease_ValidateData(t *testing.T) {
@@ -179,10 +179,10 @@ func TestTxApproveDecrease_ValidateData(t *testing.T) {
 
 	require.True(t, approveDecreaseTx.ValidateData(ctx))
 
-	approveDecreaseTx.Qos = btypes.NewInt(100)
+	approveDecreaseTx.QOS = btypes.NewInt(100)
 	require.True(t, approveDecreaseTx.ValidateData(ctx))
 
-	approveDecreaseTx.Qos = btypes.NewInt(110)
+	approveDecreaseTx.QOS = btypes.NewInt(110)
 	require.False(t, approveDecreaseTx.ValidateData(ctx))
 }
 
@@ -201,7 +201,7 @@ func TestTxApproveDecrease_Exec(t *testing.T) {
 
 	approve, exists := approveMapper.GetApprove(approveCreateTx.From, approveCreateTx.To)
 	require.True(t, exists)
-	require.True(t, approveCreateTx.Approve.Minus(approveDecreaseTx.Qos, approveDecreaseTx.QscList).Equals(approve))
+	require.True(t, approveCreateTx.Approve.Minus(approveDecreaseTx.QOS, approveDecreaseTx.QSCs).Equals(approve))
 }
 
 func TestTxApproveUse_ValidateData(t *testing.T) {
@@ -221,7 +221,7 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 
 	require.True(t, approveUseTx.ValidateData(ctx))
 
-	approveUseTx.Qos = btypes.NewInt(110)
+	approveUseTx.QOS = btypes.NewInt(110)
 	require.False(t, approveUseTx.ValidateData(ctx))
 
 }
@@ -248,7 +248,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	require.Nil(t, cross)
 	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
 
-	approveCreateTx.Qos = btypes.NewInt(1)
+	approveCreateTx.QOS = btypes.NewInt(1)
 	approveMapper := ctx.Mapper(mapper.ApproveMapperName).(*mapper.ApproveMapper)
 	err := approveMapper.SaveApprove(approveCreateTx.Approve)
 	require.Nil(t, err)
@@ -257,7 +257,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	require.Nil(t, cross)
 	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
 
-	approveCreateTx.Qos = btypes.NewInt(100)
+	approveCreateTx.QOS = btypes.NewInt(100)
 	err = approveMapper.SaveApprove(approveCreateTx.Approve)
 	require.Nil(t, err)
 
@@ -267,7 +267,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 
 	approve, exists := approveMapper.GetApprove(approveUseTx.From, approveUseTx.To)
 	require.True(t, exists)
-	require.True(t, approveCreateTx.Minus(approveUseTx.Qos, approveUseTx.QscList).Equals(approve))
+	require.True(t, approveCreateTx.Minus(approveUseTx.QOS, approveUseTx.QSCs).Equals(approve))
 
 }
 

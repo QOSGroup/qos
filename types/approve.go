@@ -10,31 +10,31 @@ import (
 
 // 授权 Common 结构
 type Approve struct {
-	From    btypes.Address `json:"from"` // 授权账号
-	To      btypes.Address `json:"to"`   // 被授权账号
-	Qos     btypes.BigInt  `json:"qos"`  // qos
-	QscList []*QSC         `json:"qsc"`  // qscs
+	From btypes.Address `json:"from"` // 授权账号
+	To   btypes.Address `json:"to"`   // 被授权账号
+	QOS  btypes.BigInt  `json:"qos"`  // QOS
+	QSCs QSCs           `json:"qscs"` // QSCs
 }
 
-func NewApprove(from btypes.Address, to btypes.Address, qos *btypes.BigInt, qosList []*QSC) Approve {
+func NewApprove(from btypes.Address, to btypes.Address, qos *btypes.BigInt, qscs QSCs) Approve {
 	if qos == nil {
 		val := btypes.NewInt(0)
 		qos = &val
 	}
-	if qosList == nil {
-		qosList = []*QSC{}
+	if qscs == nil {
+		qscs = QSCs{}
 	}
 	return Approve{
-		From:    from,
-		To:      to,
-		Qos:     *qos,
-		QscList: qosList,
+		From: from,
+		To:   to,
+		QOS:  *qos,
+		QSCs: qscs,
 	}
 }
 
 // 基础数据校验
 // 1.From，To不为空
-// 2.Qos、QscList内币值大于0
+// 2.QOS、QscList内币值大于0
 // 3.QscList内币种不能重复，不能为qos(大小写不敏感)
 func (tx Approve) ValidateData(ctx context.Context) bool {
 	if tx.From == nil || tx.To == nil || !tx.IsPositive() {
@@ -42,7 +42,7 @@ func (tx Approve) ValidateData(ctx context.Context) bool {
 	}
 
 	m := make(map[string]bool)
-	for _, val := range tx.QscList {
+	for _, val := range tx.QSCs {
 		if strings.ToLower(val.Name) == "qos" {
 			return false
 		}
@@ -73,10 +73,12 @@ func (tx Approve) GetGasPayer() btypes.Address {
 
 // 签名字节
 func (tx Approve) GetSignData() (ret []byte) {
+	tx.QOS = zeroNil(tx.QOS)
+	
 	ret = append(ret, tx.From...)
 	ret = append(ret, tx.To...)
-	ret = append(ret, tx.Qos.String()...)
-	for _, coin := range tx.QscList {
+	ret = append(ret, tx.QOS.String()...)
+	for _, coin := range tx.QSCs {
 		ret = append(ret, []byte(coin.Name)...)
 		ret = append(ret, []byte(coin.Amount.String())...)
 	}
@@ -89,27 +91,10 @@ func (tx Approve) GetSignData() (ret []byte) {
 
 // 是否为正值
 func (tx Approve) IsPositive() bool {
-	if tx.Qos.IsZero() {
-		sum := 0
-		for _, qsc := range tx.QscList {
-			if qsc.Amount.LT(btypes.NewInt(0)) {
-				return false
-			}
-			if qsc.Amount.IsZero() {
-				sum ++
-			}
-		}
-		if sum == len(tx.QscList) {
-			return false
-		}
-		return true
-	} else if tx.Qos.GT(btypes.NewInt(0)) {
-		for _, qsc := range tx.QscList {
-			if qsc.Amount.LT(btypes.NewInt(0)) {
-				return false
-			}
-		}
-		return true
+	if tx.QOS.IsNil() || tx.QOS.IsZero() {
+		return tx.QSCs.IsPositive()
+	} else if tx.QOS.GT(btypes.NewInt(0)) {
+		return tx.IsNotNegative()
 	} else {
 		return false
 	}
@@ -117,94 +102,69 @@ func (tx Approve) IsPositive() bool {
 
 // 是否为非负值
 func (tx Approve) IsNotNegative() bool {
-	// Qos > 0
-	if tx.Qos.LT(btypes.NewInt(0)) {
+	tx.QOS = zeroNil(tx.QOS)
+
+	if tx.QOS.LT(btypes.NewInt(0)) {
 		return false
 	}
-	// Qsc > 0
-	for _, qsc := range tx.QscList {
-		if qsc.Amount.LT(btypes.NewInt(0)) {
-			return false
-		}
-	}
 
-	return true
+	return tx.QSCs.IsNotNegative()
 }
 
 // 返回相反值
 func (tx Approve) Negative() (a Approve) {
 	a = NewApprove(tx.From, tx.To, nil, nil)
-	a.Qos = tx.Qos.Neg()
-	for _, val := range tx.QscList {
-		qsc := QSC{
-			Name:   val.Name,
-			Amount: val.Amount.Neg(),
-		}
-		a.QscList = append(a.QscList, &qsc)
-	}
+	a.QOS = tx.QOS.Neg()
+	a.QSCs = tx.QSCs.Negative()
 
 	return a
 }
 
 // Plus
-func (tx Approve) Plus(Qos btypes.BigInt, QscList []*QSC) (a Approve) {
+func (tx Approve) Plus(qos btypes.BigInt, qscs QSCs) (a Approve) {
+	qos = zeroNil(qos)
 	a = NewApprove(tx.From, tx.To, nil, nil)
-	a.Qos = tx.Qos.Add(Qos)
-
-	m1 := make(map[string]btypes.BigInt)
-	for _, val := range tx.QscList {
-		m1[val.Name] = val.Amount
-	}
-	m2 := make(map[string]btypes.BigInt)
-	for _, val := range QscList {
-		m2[val.Name] = val.Amount
-	}
-	for key, val := range m1 {
-		if val2, ok := m2[key]; ok {
-			m1[key] = val.Add(val2)
-			delete(m2, key)
-		}
-	}
-	for key, val := range m2 {
-		m1[key] = val
-	}
-
-	for key, val := range m1 {
-		a.QscList = append(a.QscList, &QSC{
-			Name:   key,
-			Amount: val,
-		})
-	}
+	a.QOS = tx.QOS.Add(qos)
+	a.QSCs = tx.QSCs.Plus(qscs)
 
 	return a
 }
 
 // Minus
-func (tx Approve) Minus(Qos btypes.BigInt, QscList []*QSC) (a Approve) {
-	a = tx.Negative().Plus(Qos, QscList).Negative()
+func (tx Approve) Minus(qos btypes.BigInt, qscs QSCs) (a Approve) {
+	tx.QOS = zeroNil(tx.QOS)
+	qos = zeroNil(qos)
+	a = NewApprove(tx.From, tx.To, nil, nil)
+	a.QOS = tx.QOS.Add(qos.Neg())
+	a.QSCs = tx.QSCs.Minus(qscs)
 
 	return a
 }
 
 // 是否大于等于
-func (tx Approve) IsGTE(Qos btypes.BigInt, QscList []*QSC) bool {
-	if tx.Qos.LT(Qos) {
+func (tx Approve) IsGTE(qos btypes.BigInt, qscs QSCs) bool {
+	tx.QOS = zeroNil(tx.QOS)
+	qos = zeroNil(qos)
+
+	if tx.QOS.LT(qos) {
 		return false
 	}
-	diff := tx.Minus(Qos, QscList)
-	if diff.Qos.IsZero() && len(diff.QscList) == 0 {
-		return true
-	}
-	return diff.IsNotNegative()
+
+	return tx.QSCs.IsGTE(qscs)
 }
 
 // 是否大于
-func (tx Approve) IsGT(Qos btypes.BigInt, QscList []*QSC) bool {
-	if tx.Qos.LT(Qos) {
+func (tx Approve) IsGT(qos btypes.BigInt, qscs QSCs) bool {
+	tx.QOS = zeroNil(tx.QOS)
+	qos = zeroNil(qos)
+
+	if tx.QOS.LT(qos) {
 		return false
+	} else if tx.QOS.Equal(qos) {
+		return !tx.QSCs.IsLT(qscs) && !tx.QSCs.IsEqual(qscs)
+	} else {
+		return qscs.IsNotNegative()
 	}
-	diff := tx.Minus(Qos, QscList)
-	return diff.IsPositive()
 }
 
 // 重写Equals
@@ -214,13 +174,15 @@ func (tx Approve) Equals(approve Approve) bool {
 
 // 输出字符串
 func (tx Approve) String() string {
+	tx.QOS = zeroNil(tx.QOS)
+
 	var buf bytes.Buffer
 	buf.WriteString("from:" + tx.From.String() + " ")
 	buf.WriteString("to:" + tx.To.String() + " ")
-	buf.WriteString("qos:" + tx.Qos.String() + " ")
-	names := make([]string, 0, len(tx.QscList))
+	buf.WriteString("qos:" + tx.QOS.String() + " ")
+	names := make([]string, 0, len(tx.QSCs))
 	m1 := make(map[string]btypes.BigInt)
-	for _, val := range tx.QscList {
+	for _, val := range tx.QSCs {
 		names = append(names, val.Name)
 		m1[val.Name] = val.Amount
 	}
@@ -230,6 +192,14 @@ func (tx Approve) String() string {
 		buf.WriteString(m1[name].String() + " ")
 	}
 	return buf.String()
+}
+
+// BigInt nil值转换成0值
+func zeroNil(val btypes.BigInt) btypes.BigInt {
+	if !val.IsNil() {
+		return val
+	}
+	return btypes.NewInt(0)
 }
 
 //-----------------------------------------------------------------
