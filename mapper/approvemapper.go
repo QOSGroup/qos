@@ -28,9 +28,9 @@ func GetApproveMapperStoreKey() string {
 	return approveStoreKey
 }
 
-func BuildApproveKey(from string, to string) string {
+func BuildApproveKey(from string, to string) []byte {
 	key := fmt.Sprintf(approveKey, from, to)
-	return key
+	return []byte(key)
 }
 
 func (mapper *ApproveMapper) Copy() mapper.IMapper {
@@ -47,20 +47,20 @@ func (mapper *ApproveMapper) Name() string {
 func (mapper *ApproveMapper) GetApprove(from btypes.Address, to btypes.Address) (types.Approve, bool) {
 	approve := types.NewApprove(from, to, nil, nil)
 	key := BuildApproveKey(from.String(), to.String())
-	exists := mapper.BaseMapper.Get([]byte(key), &approve)
+	exists := mapper.BaseMapper.Get(key, &approve)
 	return approve, exists
 }
 
 // 保存授权
 func (mapper *ApproveMapper) SaveApprove(approve types.Approve) error {
 	key := BuildApproveKey(approve.From.String(), approve.To.String())
-	mapper.BaseMapper.Set([]byte(key), approve)
+	mapper.BaseMapper.Set(key, approve)
 	return nil
 }
 
 // 删除授权
 func (mapper *ApproveMapper) DeleteApprove(approve types.ApproveCancel) error {
 	key := BuildApproveKey(approve.From.String(), approve.To.String())
-	mapper.BaseMapper.Del([]byte(key))
+	mapper.BaseMapper.Del(key)
 	return nil
 }
