@@ -167,7 +167,7 @@ func queryApprove(http *client.HTTP, cdc *amino.Codec, from string, to string) {
 		panic("usage: -m=approve -from=xxx -to=xxx")
 	}
 	key := mapper.BuildApproveKey(from, to)
-	result, err := http.ABCIQuery("/store/approve/key", []byte(key))
+	result, err := http.ABCIQuery("/store/approve/key", key)
 	if err != nil {
 		panic(err)
 	}
