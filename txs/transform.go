@@ -2,8 +2,8 @@ package txs
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	btypes "github.com/QOSGroup/qbase/types"
 	btxs "github.com/QOSGroup/qbase/txs"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 )
 
@@ -58,7 +58,7 @@ func (tx TxTransform) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 		qsc := sender.GetQSC(sd.QscName)
 		if sd.Amount.GT(qsc.GetAmount()) {
 			ret.Code = btypes.ToABCICode(btypes.CodespaceRoot, btypes.CodeInternal) //todo: code?
-			ret.Log = "error: " + sd.Address.String() +  " havn't enought money"
+			ret.Log = "error: " + sd.Address.String() + " havn't enought money"
 			return
 		}
 		sdCoin += sd.Amount.Int64()
@@ -67,7 +67,7 @@ func (tx TxTransform) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 	for _, rv := range tx.Receivers {
 		receiver := GetAccount(ctx, rv.Address)
 		if receiver == nil {
-			CreateAccount(ctx, rv.Address)
+			CreateAndSaveAccount(ctx, rv.Address)
 		}
 		rvCoin += rv.Amount.Int64()
 	}

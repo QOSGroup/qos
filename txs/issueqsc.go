@@ -3,9 +3,10 @@ package txs
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/context"
-	types "github.com/QOSGroup/qbase/types"
 	btxs "github.com/QOSGroup/qbase/txs"
-	"log"
+	"github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/account"
+	qosmapper "github.com/QOSGroup/qos/mapper"
 )
 
 // 功能：发币 对应的Tx结构
@@ -24,17 +25,17 @@ func (tx *TxIssueQsc) ValidateData(ctx context.Context) bool {
 // 功能：tx执行
 // 发币过程：banker向自己的账户发币
 func (tx *TxIssueQsc) Exec(ctx context.Context) (ret types.Result, crossTxQcps *btxs.TxQcp) {
-	banker := GetBanker(tx.QscName)
+	banker := GetBanker(ctx, tx.QscName)
 	if &banker == nil {
-		ret.Code = types.ToABCICode(types.CodespaceRoot, types.CodeInternal) //todo: code?
 		ret.Log = "result: Can't find Bulanker"
+		ret = types.ErrInternal(ret.Log).Result()
 		return
 	}
 
 	err := banker.SetQOS(banker.GetQOS().Add(tx.Amount))
 	if err != nil {
-		ret.Code = types.ToABCICode(types.CodespaceRoot, types.CodeInternal) //todo: code?
 		ret.Log = "result: set qos to banker error!"
+		ret = types.ErrInternal(ret.Log).Result()
 		return
 	}
 
@@ -46,10 +47,9 @@ func (tx *TxIssueQsc) Exec(ctx context.Context) (ret types.Result, crossTxQcps *
 }
 
 // 功能：签名者
-// todo: 从store查询
-func (tx *TxIssueQsc) GetSigner() (singer []types.Address) {
-	banker := GetBanker(tx.QscName)
-	return append(singer,banker.BaseAccount.GetAddress())
+func (tx *TxIssueQsc) GetSigner(ctx context.Context) (singer []types.Address) {
+	banker := GetBanker(ctx, tx.QscName)
+	return append(singer, banker.BaseAccount.GetAddress())
 }
 
 // 计算gas
@@ -72,17 +72,18 @@ func (tx *TxIssueQsc) GetSignData() (ret []byte) {
 	return
 }
 
+func GetBanker(ctx context.Context, qscname string) (ret *account.QOSAccount) {
+	mapper := ctx.Mapper(qosmapper.BaseMapperName).(*qosmapper.BaseMapper)
+	if mapper == nil {
+		return
+	}
+
+	qosinfo := mapper.GetQsc(qscname)
+	return GetAccount(ctx, []byte(qosinfo.PubkeyBank.Address()))
+}
+
 // 构建 TxIsssueQsc 结构体
 func NewTxIssueQsc(qsc string, amount types.BigInt) (rTx *TxIssueQsc) {
-	if !types.CheckQscName(qsc) || types.BigInt.LT(amount, types.ZeroInt()) {
-		return nil
-	}
-
-	if GetBanker(qsc) == nil {
-		log.Panic("No banker exist, pleese create qsc with banker's CA first")
-		return nil
-	}
-
 	rTx = &TxIssueQsc{
 		qsc,
 		amount,

@@ -1,16 +1,24 @@
 package mapper
 
 import (
+	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
-	storeKey = "base"
+	//BaseMapperName = "basemapper"
+	storeKey       = "base"
+	QSCName       = "qsc/[%s]"
 )
 
 type MainMapper struct {
 	*mapper.BaseMapper
+}
+
+type QscInfo struct {
+	Qscname     string        `json:"qscname"`
+	PubkeyBank  crypto.PubKey `json:"pubkeybank"`
 }
 
 func NewMainMapper() *MainMapper {
@@ -40,4 +48,22 @@ func (mapper *MainMapper) GetRoot() crypto.PubKey {
 	var pubKey crypto.PubKey
 	mapper.BaseMapper.Get([]byte("rootca"), &pubKey)
 	return pubKey
+}
+
+func (mapper *MainMapper) GetQsc(qscname string) (qscinfo *QscInfo) {
+	key := fmt.Sprintf(QSCName, qscname)
+	var qinfo QscInfo
+	exist := mapper.Get([]byte(key), &qinfo)
+	if !exist {
+		return nil
+	}
+
+	return &qinfo
+}
+
+func (mapper *MainMapper) SetQsc(qscname string, qscinfo *QscInfo) bool {
+	key := fmt.Sprintf(QSCName, qscname)
+	mapper.Set([]byte(key), qscinfo)
+
+	return true
 }

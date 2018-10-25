@@ -198,19 +198,6 @@ var initkeys = [10]ed25519.PrivKeyEd25519 {
 	[64]byte{237,59,33,88,47,210,114,111,5,249,200,49,243,254,156,123,118,70,92,30,204,162,25,152,110,51,85,77,75,106,39,199,79,13,165,131,70,76,32,229,202,108,255,131,203,30,185,176,181,156,117,102,112,209,70,3,133,182,67,197,214,35,40,18},
 }
 
-//var initaddr = [10]btypes.Address{
-//	[]byte("createrqsc"),
-//	[]byte("account1"),
-//	[]byte("account2"),
-//	[]byte("account3"),
-//	[]byte("account4"),
-//	[]byte("account5"),
-//	[]byte("account6"),
-//	[]byte("account7"),
-//	[]byte("account8"),
-//	[]byte("account9"),
-//}
-
 type accsign struct {
 	privkey ed25519.PrivKeyEd25519	`json:"privkey"`
 	nonce int64						`json:"nonce"`

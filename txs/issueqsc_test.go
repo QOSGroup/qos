@@ -16,7 +16,7 @@ func TestNewTxIssueQsc(t *testing.T) {
 	isvalid := txIssue.ValidateData(ctx)
 	require.Equal(t, isvalid, true)
 
-	result,_ := txIssue.Exec(ctx)
+	result, _ := txIssue.Exec(ctx)
 	require.Equal(t, result.Code, types.ABCICodeOK)
 
 	return
