@@ -33,7 +33,7 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 		return false
 	}
 
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
 	smap := map[string]bool{}
 	sumsqos := btypes.ZeroInt()
 	sumsqscs := types.QSCs{}
@@ -99,7 +99,7 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 
 // 转账
 func (tx TransferTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
 
 	for _, sender := range tx.Senders {
 		acc := accountMapper.GetAccount(sender.Address).(*account.QOSAccount)
