@@ -8,18 +8,20 @@ import (
 
 // QOSAccount定义基本账户之上的QOS和QSC
 type QOSAccount struct {
-	account.BaseAccount `json:"base_account"`       // inherits BaseAccount
-	QOS                 btypes.BigInt `json:"qos"`  // coins in public chain
-	QSCs                types.QSCs    `json:"qscs"` // varied QSCs
+	account.BaseAccount `json:"base_account"` // inherits BaseAccount
+	QOS                 btypes.BigInt         `json:"qos"`  // coins in public chain
+	QSCs                types.QSCs            `json:"qscs"` // varied QSCs
 }
+
+var _ account.Account = (*QOSAccount)(nil)
 
 func ProtoQOSAccount() account.Account {
 	return &QOSAccount{}
 }
 
-//func (acc *QOSAccount) GetProto() account.Account {
-//	return ProtoQOSAccount()
-//}
+func (acc *QOSAccount) GetProto() account.Account {
+	return ProtoQOSAccount()
+}
 
 // 获得账户QOS的数量
 func (accnt *QOSAccount) GetQOS() btypes.BigInt {
