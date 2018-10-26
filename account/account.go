@@ -4,47 +4,22 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
-	"github.com/tendermint/tendermint/crypto"
 )
 
 // QOSAccount定义基本账户之上的QOS和QSC
 type QOSAccount struct {
-	BaseAccount account.BaseAccount `json:"base_account"` // inherits BaseAccount
-	QOS         btypes.BigInt       `json:"qos"`          // coins in public chain
-	QSCs        types.QSCs          `json:"qscs"`         // varied QSCs
+	account.BaseAccount `json:"base_account"`       // inherits BaseAccount
+	QOS                 btypes.BigInt `json:"qos"`  // coins in public chain
+	QSCs                types.QSCs    `json:"qscs"` // varied QSCs
 }
 
 func ProtoQOSAccount() account.Account {
 	return &QOSAccount{}
 }
 
-func (acc *QOSAccount) GetProto() account.Account {
-	return ProtoQOSAccount()
-}
-
-func (account *QOSAccount) GetAddress() btypes.Address {
-	return account.BaseAccount.GetAddress()
-}
-
-func (account *QOSAccount) SetAddress(addr btypes.Address) error {
-	return account.BaseAccount.SetAddress(addr)
-}
-
-func (account *QOSAccount) GetPubicKey() crypto.PubKey {
-	return account.BaseAccount.GetPubicKey()
-}
-
-func (account *QOSAccount) SetPublicKey(pubKey crypto.PubKey) error {
-	return account.BaseAccount.SetPublicKey(pubKey)
-}
-
-func (account *QOSAccount) GetNonce() uint64 {
-	return account.BaseAccount.GetNonce()
-}
-
-func (account *QOSAccount) SetNonce(nonce uint64) error {
-	return account.BaseAccount.SetNonce(nonce)
-}
+//func (acc *QOSAccount) GetProto() account.Account {
+//	return ProtoQOSAccount()
+//}
 
 // 获得账户QOS的数量
 func (accnt *QOSAccount) GetQOS() btypes.BigInt {
