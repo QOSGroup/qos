@@ -73,8 +73,8 @@ func (tx Approve) GetGasPayer() btypes.Address {
 
 // 签名字节
 func (tx Approve) GetSignData() (ret []byte) {
-	tx.QOS = zeroNil(tx.QOS)
-	
+	tx.QOS = ZeroNilBigInt(tx.QOS)
+
 	ret = append(ret, tx.From...)
 	ret = append(ret, tx.To...)
 	ret = append(ret, tx.QOS.String()...)
@@ -102,7 +102,7 @@ func (tx Approve) IsPositive() bool {
 
 // 是否为非负值
 func (tx Approve) IsNotNegative() bool {
-	tx.QOS = zeroNil(tx.QOS)
+	tx.QOS = ZeroNilBigInt(tx.QOS)
 
 	if tx.QOS.LT(btypes.NewInt(0)) {
 		return false
@@ -122,7 +122,7 @@ func (tx Approve) Negative() (a Approve) {
 
 // Plus
 func (tx Approve) Plus(qos btypes.BigInt, qscs QSCs) (a Approve) {
-	qos = zeroNil(qos)
+	qos = ZeroNilBigInt(qos)
 	a = NewApprove(tx.From, tx.To, nil, nil)
 	a.QOS = tx.QOS.Add(qos)
 	a.QSCs = tx.QSCs.Plus(qscs)
@@ -132,8 +132,8 @@ func (tx Approve) Plus(qos btypes.BigInt, qscs QSCs) (a Approve) {
 
 // Minus
 func (tx Approve) Minus(qos btypes.BigInt, qscs QSCs) (a Approve) {
-	tx.QOS = zeroNil(tx.QOS)
-	qos = zeroNil(qos)
+	tx.QOS = ZeroNilBigInt(tx.QOS)
+	qos = ZeroNilBigInt(qos)
 	a = NewApprove(tx.From, tx.To, nil, nil)
 	a.QOS = tx.QOS.Add(qos.Neg())
 	a.QSCs = tx.QSCs.Minus(qscs)
@@ -143,8 +143,8 @@ func (tx Approve) Minus(qos btypes.BigInt, qscs QSCs) (a Approve) {
 
 // 是否大于等于
 func (tx Approve) IsGTE(qos btypes.BigInt, qscs QSCs) bool {
-	tx.QOS = zeroNil(tx.QOS)
-	qos = zeroNil(qos)
+	tx.QOS = ZeroNilBigInt(tx.QOS)
+	qos = ZeroNilBigInt(qos)
 
 	if tx.QOS.LT(qos) {
 		return false
@@ -155,8 +155,8 @@ func (tx Approve) IsGTE(qos btypes.BigInt, qscs QSCs) bool {
 
 // 是否大于
 func (tx Approve) IsGT(qos btypes.BigInt, qscs QSCs) bool {
-	tx.QOS = zeroNil(tx.QOS)
-	qos = zeroNil(qos)
+	tx.QOS = ZeroNilBigInt(tx.QOS)
+	qos = ZeroNilBigInt(qos)
 
 	if tx.QOS.LT(qos) {
 		return false
@@ -174,7 +174,7 @@ func (tx Approve) Equals(approve Approve) bool {
 
 // 输出字符串
 func (tx Approve) String() string {
-	tx.QOS = zeroNil(tx.QOS)
+	tx.QOS = ZeroNilBigInt(tx.QOS)
 
 	var buf bytes.Buffer
 	buf.WriteString("from:" + tx.From.String() + " ")
@@ -192,14 +192,6 @@ func (tx Approve) String() string {
 		buf.WriteString(m1[name].String() + " ")
 	}
 	return buf.String()
-}
-
-// BigInt nil值转换成0值
-func zeroNil(val btypes.BigInt) btypes.BigInt {
-	if !val.IsNil() {
-		return val
-	}
-	return btypes.NewInt(0)
 }
 
 //-----------------------------------------------------------------

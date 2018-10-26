@@ -4,10 +4,8 @@ import (
 	"encoding/hex"
 	"flag"
 	"fmt"
-	bacc "github.com/QOSGroup/qbase/account"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/txs"
@@ -29,7 +27,6 @@ func main() {
 	nonce := flag.Int64("nonce", 0, "input sender nonce")
 	to := flag.String("to", "", "input to addr")
 	coins := flag.String("coins", "", "input coinname,coinamount;coinname,coinamount")
-	addr := flag.String("addr", "", "input account addr(bech32)")
 
 	flag.Parse()
 
@@ -38,8 +35,6 @@ func main() {
 	switch *mode {
 	case "tx": // 预授权
 		approveHandle(http, cdc, *command, *from, *to, *prikey, *nonce, *coins)
-	case "account": // 查询账户
-		queryAccount(http, cdc, *addr)
 	case "approve": // 查询授权
 		queryApprove(http, cdc, *from, *to)
 	default:
@@ -136,28 +131,6 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 		panic("BroadcastTxSync err")
 	}
 	fmt.Println("send tx success")
-}
-
-// 查询账户
-//-m=account -addr=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay
-//-m=account -addr=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4
-func queryAccount(http *client.HTTP, cdc *amino.Codec, addr string) {
-	if addr == "" {
-		panic("usage: -m=acc -addr=xxx")
-	}
-	address, _ := btypes.GetAddrFromBech32(addr)
-	key := bacc.AddressStoreKey(address)
-	result, err := http.ABCIQuery("/store/acc/key", key)
-	if err != nil {
-		panic(err)
-	}
-
-	queryValueBz := result.Response.GetValue()
-	var acc *account.QOSAccount
-	cdc.UnmarshalBinaryBare(queryValueBz, &acc)
-
-	json, _ := cdc.MarshalJSON(acc)
-	fmt.Println(fmt.Sprintf("query addr is %s = %s", addr, string(json)))
 }
 
 // 查询预授权
