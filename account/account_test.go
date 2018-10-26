@@ -119,7 +119,7 @@ func TestAccountMapperGetSet(t *testing.T) {
 		// 新的account尚未存储，依然取出nil
 		require.Nil(t, mapper.GetAccount(addr))
 
-		nonce := uint64(20)
+		nonce := int64(20)
 		qosacc.SetNonce(nonce)
 		qosacc.SetPublicKey(pubkey)
 		qosacc.SetQOS(btypes.NewInt(100))

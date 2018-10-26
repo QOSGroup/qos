@@ -2,12 +2,12 @@ package txs
 
 import (
 	baccount "github.com/QOSGroup/qbase/account"
+	bcontext "github.com/QOSGroup/qbase/context"
+	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	bcontext "github.com/QOSGroup/qbase/context"
-	btxs "github.com/QOSGroup/qbase/txs"
 )
 
 // 通过地址获取QOSAccount
@@ -40,7 +40,7 @@ func CreateAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSA
 
 	acc = mapper.NewAccountWithAddress(addr).(*account.QOSAccount)
 
-	return acc,true
+	return acc, true
 }
 
 // todo: 暂模拟
@@ -48,12 +48,12 @@ func GetBanker(qscname string) (ret *account.QOSAccount) {
 	baseacc := baccount.BaseAccount{
 		[]byte("baseaccount1"),
 		ed25519.GenPrivKey().PubKey(),
-		uint64(3),
+		3,
 	}
 
 	qscList := []*types.QSC{
-		&types.QSC{"qsc1", btypes.NewInt(100),},
-		&types.QSC{"qsc2", btypes.NewInt(200),},
+		&types.QSC{"qsc1", btypes.NewInt(100)},
+		&types.QSC{"qsc2", btypes.NewInt(200)},
 	}
 	ret = &account.QOSAccount{baseacc,
 		btypes.NewInt(10000),
@@ -104,7 +104,6 @@ func MakeTxStd(tx btxs.ITx, chainid string, maxgas int64) (txstd *btxs.TxStd) {
 		txstd.Signature = []btxs.Signature{}
 		return
 	}
-
 	// accmapper := baccount.NewAccountMapper(baccount.ProtoBaseAccount)
 	accmapper := baccount.NewAccountMapper(account.ProtoQOSAccount)
 
