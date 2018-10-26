@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
+	"github.com/QOSGroup/qos/txs/approve"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -43,7 +44,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// qbase 默认已注入
 
 	// 预授权mapper
-	app.RegisterMapper(mapper.NewApproveMapper())
+	app.RegisterMapper(approve.NewApproveMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -56,8 +57,8 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 // 初始配置
 func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	// 上下文中获取mapper
-	mainMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
-	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+	mainMapper := ctx.Mapper(mapper.GetMainStoreKey()).(*mapper.MainMapper)
+	accountMapper := ctx.Mapper(account.GetAccountKVStoreName()).(*account.AccountMapper)
 
 	// 反序列化app_state
 	stateJSON := req.AppStateBytes

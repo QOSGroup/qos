@@ -7,8 +7,7 @@ import (
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/txs"
+	"github.com/QOSGroup/qos/txs/approve"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -80,7 +79,7 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 				qscs = append(qscs, &qsc)
 			}
 		}
-		approve := types.Approve{
+		ap := approve.Approve{
 			From: fromAddr,
 			To:   toAddr,
 			QOS:  qos,
@@ -89,13 +88,13 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 		var stdTx *btxs.TxStd
 		switch command {
 		case "create":
-			stdTx = btxs.NewTxStd(txs.ApproveCreateTx{approve,}, "qos-chain", btypes.NewInt(0))
+			stdTx = btxs.NewTxStd(approve.ApproveCreateTx{ap,}, "qos-chain", btypes.NewInt(0))
 		case "increase":
-			stdTx = btxs.NewTxStd(txs.ApproveIncreaseTx{approve,}, "qos-chain", btypes.NewInt(0))
+			stdTx = btxs.NewTxStd(approve.ApproveIncreaseTx{ap,}, "qos-chain", btypes.NewInt(0))
 		case "decrease":
-			stdTx = btxs.NewTxStd(txs.ApproveDecreaseTx{approve,}, "qos-chain", btypes.NewInt(0))
+			stdTx = btxs.NewTxStd(approve.ApproveDecreaseTx{ap,}, "qos-chain", btypes.NewInt(0))
 		case "use":
-			stdTx = btxs.NewTxStd(txs.ApproveUseTx{approve,}, "qos-chain", btypes.NewInt(0))
+			stdTx = btxs.NewTxStd(approve.ApproveUseTx{ap,}, "qos-chain", btypes.NewInt(0))
 		}
 		signature, _ := stdTx.SignTx(priKey, nonce)
 		stdTx.Signature = []btxs.Signature{btxs.Signature{
@@ -108,11 +107,10 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 			panic("use cdc encode object fail")
 		}
 	} else { // 取消授权
-		approve := types.ApproveCancel{
+		tx := approve.ApproveCancelTx{
 			From: fromAddr,
 			To:   toAddr,
 		}
-		tx := txs.ApproveCancelTx{approve,}
 		stdTx := btxs.NewTxStd(&tx, "qos-chain", btypes.NewInt(int64(0)))
 		signature, _ := stdTx.SignTx(priKey, nonce)
 		stdTx.Signature = []btxs.Signature{btxs.Signature{
@@ -139,14 +137,14 @@ func queryApprove(http *client.HTTP, cdc *amino.Codec, from string, to string) {
 	if from == "" || to == "" {
 		panic("usage: -m=approve -from=xxx -to=xxx")
 	}
-	key := mapper.BuildApproveKey(from, to)
+	key := approve.BuildApproveKey(from, to)
 	result, err := http.ABCIQuery("/store/approve/key", key)
 	if err != nil {
 		panic(err)
 	}
 
 	queryValueBz := result.Response.GetValue()
-	var approve types.Approve
+	var approve approve.Approve
 	cdc.UnmarshalBinaryBare(queryValueBz, &approve)
 
 	json, _ := cdc.MarshalJSON(approve)

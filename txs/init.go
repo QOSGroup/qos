@@ -12,7 +12,7 @@ import (
 
 // 通过地址获取QOSAccount
 func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount) {
-	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
+	mapper := ctx.Mapper(baccount.GetAccountKVStoreName()).(*baccount.AccountMapper)
 	if mapper == nil {
 		return nil
 	}
@@ -28,7 +28,7 @@ func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAcco
 // 通过地址创建QOSAccount
 // 若账户存在，返回账户 & false
 func CreateAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount, success bool) {
-	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
+	mapper := ctx.Mapper(baccount.GetAccountKVStoreName()).(*baccount.AccountMapper)
 	if mapper == nil {
 		return nil, false
 	}
@@ -105,7 +105,7 @@ func MakeTxStd(tx btxs.ITx, chainid string, maxgas int64) (txstd *btxs.TxStd) {
 		return
 	}
 	// accmapper := baccount.NewAccountMapper(baccount.ProtoBaseAccount)
-	accmapper := baccount.NewAccountMapper(account.ProtoQOSAccount)
+	accmapper := baccount.NewAccountMapper(nil, account.ProtoQOSAccount)
 
 	// 填充 txstd.Signature[]
 	for _, sg := range signer {
