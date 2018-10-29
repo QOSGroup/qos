@@ -1,10 +1,11 @@
 package app
 
 import (
-	"github.com/QOSGroup/qbase/account"
+	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
-	qosacc "github.com/QOSGroup/qos/account"
+	"github.com/QOSGroup/qbase/qcp"
+	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/test"
 	"github.com/QOSGroup/qos/txs/approve"
@@ -36,7 +37,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.SetInitChainer(app.initChainer)
 
 	// 账户mapper
-	app.RegisterAccountProto(qosacc.ProtoQOSAccount)
+	app.RegisterAccountProto(account.ProtoQOSAccount)
 
 	// 基础信息操作mapper
 	app.RegisterMapper(mapper.NewMainMapper())
@@ -59,11 +60,12 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	// 上下文中获取mapper
 	mainMapper := ctx.Mapper(mapper.GetMainStoreKey()).(*mapper.MainMapper)
-	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
 
 	// 反序列化app_state
 	stateJSON := req.AppStateBytes
-	genesisState := &qosacc.GenesisState{}
+	genesisState := &GenesisState{}
 	err := accountMapper.GetCodec().UnmarshalJSON(stateJSON, genesisState)
 	if err != nil {
 		panic(err)
@@ -71,6 +73,11 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 
 	// 保存CA
 	mainMapper.SetRootCA(genesisState.CAPubKey)
+
+	// 保存初始QCP配置
+	for _, qcp := range genesisState.QCP {
+		qcpMapper.SetChainInTrustPubKey(qcp.ChainId, qcp.PubKey)
+	}
 
 	// 保存初始账户
 	for _, acc := range genesisState.Accounts {

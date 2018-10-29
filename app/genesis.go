@@ -1,4 +1,4 @@
-package account
+package app
 
 import (
 	"encoding/hex"
@@ -8,6 +8,7 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/server/config"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/account"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -16,8 +17,9 @@ import (
 
 // QOS初始状态
 type GenesisState struct {
-	CAPubKey crypto.PubKey `json:"ca_pub_key"`
-	Accounts []*QOSAccount `json:"accounts"`
+	CAPubKey crypto.PubKey         `json:"ca_pub_key"`
+	Accounts []*account.QOSAccount `json:"accounts"`
+	QCP      []*GenesisQCP         `json:"qcp"`
 }
 
 func QOSAppInit() server.AppInit {
@@ -25,6 +27,13 @@ func QOSAppInit() server.AppInit {
 		AppGenTx:    QOSAppGenTx,
 		AppGenState: QOSAppGenState,
 	}
+}
+
+// 初始QCP配置
+type GenesisQCP struct {
+	Name    string        `json:"name"`
+	ChainId string        `json:"chain_id"`
+	PubKey  crypto.PubKey `json:"pub_key"`
 }
 
 type QOSGenTx struct {
@@ -84,6 +93,14 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 			"type": "tendermint/PubKeyEd25519",
 			"value": "0SDDvhiMsqX9XLuscqovU8l24txbV7Mg4ecs+R6Swzk="
 		},
+		"qcp":[{
+			"name": "qstar",
+			"chain_id": "qstar",
+			"pub_key":{
+        		"type": "tendermint/PubKeyEd25519",
+        		"value": "ish2+qpPsoHxf7m+uwi8FOAWw6iMaDZgLKl1la4yMAs="
+			}
+		}],
 		"accounts": [{
 			"base_account": {
 				"account_address": %s

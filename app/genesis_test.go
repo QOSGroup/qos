@@ -1,8 +1,9 @@
-package account
+package app
 
 import (
 	"encoding/hex"
-	"github.com/QOSGroup/qbase/account"
+	bacc "github.com/QOSGroup/qbase/account"
+	"github.com/QOSGroup/qos/account"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
@@ -15,9 +16,9 @@ func genGenesisState() *GenesisState {
 	accPub := ed25519.GenPrivKey().PubKey()
 	genesisState := GenesisState{
 		CAPubKey: caPub,
-		Accounts: []*QOSAccount{
+		Accounts: []*account.QOSAccount{
 			{
-				BaseAccount: account.BaseAccount{
+				BaseAccount: bacc.BaseAccount{
 					AccountAddress: accPub.Address().Bytes(),
 					Publickey:      accPub,
 				},
