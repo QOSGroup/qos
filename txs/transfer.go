@@ -42,7 +42,7 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 			return false
 		}
 		smap[sender.Address.String()] = true
-		sender.QOS = types.ZeroNilBigInt(sender.QOS)
+		sender.QOS = sender.QOS.NilToZero()
 		if sender.QOS.IsZero() && sender.QSCs.IsZero() {
 			return false
 		}
@@ -73,7 +73,7 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 			return false
 		}
 		rmap[receiver.Address.String()] = true
-		receiver.QOS = types.ZeroNilBigInt(receiver.QOS)
+		receiver.QOS = receiver.QOS.NilToZero()
 		if receiver.QOS.IsZero() && receiver.QSCs.IsZero() {
 			return false
 		}
@@ -103,8 +103,8 @@ func (tx TransferTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 
 	for _, sender := range tx.Senders {
 		acc := accountMapper.GetAccount(sender.Address).(*account.QOSAccount)
-		acc.QOS = types.ZeroNilBigInt(acc.QOS)
-		sender.QOS = types.ZeroNilBigInt(sender.QOS)
+		acc.QOS = acc.QOS.NilToZero()
+		sender.QOS = sender.QOS.NilToZero()
 		acc.QOS = acc.QOS.Add(sender.QOS.Neg())
 		acc.QSCs = acc.QSCs.Minus(sender.QSCs)
 		accountMapper.SetAccount(acc)
@@ -118,8 +118,8 @@ func (tx TransferTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 			acc = accountMapper.NewAccountWithAddress(receiver.Address).(*account.QOSAccount)
 			accountMapper.SetAccount(acc)
 		}
-		acc.QOS = types.ZeroNilBigInt(acc.QOS)
-		receiver.QOS = types.ZeroNilBigInt(receiver.QOS)
+		acc.QOS = acc.QOS.NilToZero()
+		receiver.QOS = receiver.QOS.NilToZero()
 		acc.QOS = acc.QOS.Add(receiver.QOS)
 		acc.QSCs = acc.QSCs.Plus(receiver.QSCs)
 		accountMapper.SetAccount(acc)
