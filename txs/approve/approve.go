@@ -20,18 +20,14 @@ type Approve struct {
 	QSCs types.QSCs     `json:"qscs"` // QSCs
 }
 
-func NewApprove(from btypes.Address, to btypes.Address, qos *btypes.BigInt, qscs types.QSCs) Approve {
-	if qos == nil {
-		val := btypes.NewInt(0)
-		qos = &val
-	}
+func NewApprove(from btypes.Address, to btypes.Address, qos btypes.BigInt, qscs types.QSCs) Approve {
 	if qscs == nil {
 		qscs = types.QSCs{}
 	}
 	return Approve{
 		From: from,
 		To:   to,
-		QOS:  *qos,
+		QOS:  qos.NilToZero(),
 		QSCs: qscs,
 	}
 }
@@ -77,7 +73,7 @@ func (tx Approve) GetGasPayer() btypes.Address {
 
 // 签名字节
 func (tx Approve) GetSignData() (ret []byte) {
-	tx.QOS = types.ZeroNilBigInt(tx.QOS)
+	tx.QOS = tx.QOS.NilToZero()
 
 	ret = append(ret, tx.From...)
 	ret = append(ret, tx.To...)
@@ -106,7 +102,7 @@ func (tx Approve) IsPositive() bool {
 
 // 是否为非负值
 func (tx Approve) IsNotNegative() bool {
-	tx.QOS = types.ZeroNilBigInt(tx.QOS)
+	tx.QOS = tx.QOS.NilToZero()
 
 	if tx.QOS.LT(btypes.NewInt(0)) {
 		return false
@@ -117,38 +113,31 @@ func (tx Approve) IsNotNegative() bool {
 
 // 返回相反值
 func (tx Approve) Negative() (a Approve) {
-	a = NewApprove(tx.From, tx.To, nil, nil)
-	a.QOS = tx.QOS.Neg()
-	a.QSCs = tx.QSCs.Negative()
+	a = NewApprove(tx.From, tx.To, tx.QOS.Neg(), tx.QSCs.Negative())
 
 	return a
 }
 
 // Plus
 func (tx Approve) Plus(qos btypes.BigInt, qscs types.QSCs) (a Approve) {
-	qos = types.ZeroNilBigInt(qos)
-	a = NewApprove(tx.From, tx.To, nil, nil)
-	a.QOS = tx.QOS.Add(qos)
-	a.QSCs = tx.QSCs.Plus(qscs)
+	a = NewApprove(tx.From, tx.To, tx.QOS.Add(qos.NilToZero()), tx.QSCs.Plus(qscs))
 
 	return a
 }
 
 // Minus
 func (tx Approve) Minus(qos btypes.BigInt, qscs types.QSCs) (a Approve) {
-	tx.QOS = types.ZeroNilBigInt(tx.QOS)
-	qos = types.ZeroNilBigInt(qos)
-	a = NewApprove(tx.From, tx.To, nil, nil)
-	a.QOS = tx.QOS.Add(qos.Neg())
-	a.QSCs = tx.QSCs.Minus(qscs)
+	tx.QOS = tx.QOS.NilToZero()
+	qos = qos.NilToZero()
+	a = NewApprove(tx.From, tx.To, tx.QOS.Add(qos.Neg()), tx.QSCs.Minus(qscs))
 
 	return a
 }
 
 // 是否大于等于
 func (tx Approve) IsGTE(qos btypes.BigInt, qscs types.QSCs) bool {
-	tx.QOS = types.ZeroNilBigInt(tx.QOS)
-	qos = types.ZeroNilBigInt(qos)
+	tx.QOS = tx.QOS.NilToZero()
+	qos = qos.NilToZero()
 
 	if tx.QOS.LT(qos) {
 		return false
@@ -159,8 +148,8 @@ func (tx Approve) IsGTE(qos btypes.BigInt, qscs types.QSCs) bool {
 
 // 是否大于
 func (tx Approve) IsGT(qos btypes.BigInt, qscs types.QSCs) bool {
-	tx.QOS = types.ZeroNilBigInt(tx.QOS)
-	qos = types.ZeroNilBigInt(qos)
+	tx.QOS = tx.QOS.NilToZero()
+	qos = qos.NilToZero()
 
 	if tx.QOS.LT(qos) {
 		return false
@@ -178,7 +167,7 @@ func (tx Approve) Equals(approve Approve) bool {
 
 // 输出字符串
 func (tx Approve) String() string {
-	tx.QOS = types.ZeroNilBigInt(tx.QOS)
+	tx.QOS = tx.QOS.NilToZero()
 
 	var buf bytes.Buffer
 	buf.WriteString("from:" + tx.From.String() + " ")

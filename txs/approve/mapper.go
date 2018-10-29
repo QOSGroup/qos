@@ -38,7 +38,7 @@ func (mapper *ApproveMapper) Copy() mapper.IMapper {
 
 // 获取授权
 func (mapper *ApproveMapper) GetApprove(from btypes.Address, to btypes.Address) (Approve, bool) {
-	approve := NewApprove(from, to, nil, nil)
+	approve := NewApprove(from, to, btypes.ZeroInt(), nil)
 	key := BuildApproveKey(from.String(), to.String())
 	exists := mapper.BaseMapper.Get(key, &approve)
 	return approve, exists
