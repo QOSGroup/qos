@@ -17,10 +17,10 @@ import (
 
 func txTransferTestContext() context.Context {
 	mapperMap := make(map[string]bmapper.IMapper)
-	accountMapper := bacc.NewAccountMapper(account.ProtoQOSAccount)
+	accountMapper := bacc.NewAccountMapper(nil, account.ProtoQOSAccount)
 	accountMapper.SetCodec(cdc)
 	acountKey := accountMapper.GetStoreKey()
-	mapperMap[accountMapper.Name()] = accountMapper
+	mapperMap[bacc.GetAccountKVStoreName()] = accountMapper
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
@@ -50,7 +50,7 @@ func TestTransferTx_ValidateData(t *testing.T) {
 	tx.Senders[0].QOS = btypes.NewInt(10)
 	tx.Receivers[0].QOS = btypes.NewInt(10)
 	require.False(t, tx.ValidateData(ctx))
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
 	accountMapper.SetAccount(accountMapper.NewAccountWithAddress(addr1))
 	require.False(t, tx.ValidateData(ctx))
 	aac1 := accountMapper.GetAccount(addr1).(*account.QOSAccount)
