@@ -4,15 +4,15 @@ import (
 	"testing"
 
 	"github.com/QOSGroup/qbase/account"
+	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/mapper"
+	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
-	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/store"
-	"github.com/QOSGroup/qbase/mapper"
 	"github.com/stretchr/testify/require"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -24,7 +24,7 @@ func keyPubAddr() (crypto.PrivKey, crypto.PubKey, btypes.Address) {
 	return key, pub, addr
 }
 
-func genNewAccount() (qosAccount QOSAccount){
+func genNewAccount() (qosAccount QOSAccount) {
 	_, pub, addr := keyPubAddr()
 	coinList := types.QSCs{
 		types.NewQSC("QSC1", btypes.NewInt(1234)),
@@ -94,16 +94,16 @@ func defaultContext(key store.StoreKey, mapperMap map[string]mapper.IMapper) con
 	return ctx
 }
 func TestAccountMapperGetSet(t *testing.T) {
-	seedMapper := account.NewAccountMapper(ProtoQOSAccount)
+	seedMapper := account.NewAccountMapper(nil, ProtoQOSAccount)
 	seedMapper.SetCodec(cdc)
 
 	mapperMap := make(map[string]mapper.IMapper)
-	mapperMap[seedMapper.Name()] = seedMapper
+	mapperMap[seedMapper.GetKVStoreName()] = seedMapper
 
 	ctx := defaultContext(seedMapper.GetStoreKey(), mapperMap)
 
-	mapper, _ := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
-	for i:=0; i < 100; i++ {
+	mapper, _ := ctx.Mapper(account.GetAccountKVStoreName()).(*account.AccountMapper)
+	for i := 0; i < 100; i++ {
 		_, pubkey, addr := keyPubAddr()
 
 		// 没有存过该addr，取出来应为nil
@@ -135,9 +135,10 @@ func TestAccountMapperGetSet(t *testing.T) {
 
 	}
 	//批量处理特定前缀存储的账户
-	mapper.IterateAccounts(func(acc account.Account) bool{
-		bz := mapper.EncodeAccount(acc)
-		acc1 := mapper.DecodeAccount(bz)
+	mapper.IterateAccounts(func(acc account.Account) bool {
+		bz := mapper.GetCodec().MustMarshalBinaryBare(acc)
+		var acc1 account.Account
+		mapper.GetCodec().MustUnmarshalBinaryBare(bz, &acc1)
 		require.Equal(t, acc, acc1)
 		return false
 	})
