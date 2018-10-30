@@ -22,15 +22,16 @@ type CA struct {
 
 // 通过地址获取QOSAccount
 func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount) {
-	mapper := ctx.Mapper(baccount.GetAccountKVStoreName()).(*baccount.AccountMapper)
+	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
 	if mapper == nil {
 		return nil
 	}
 
-	acc = mapper.GetAccount(addr).(*account.QOSAccount)
-	if acc == nil {
+	accbase := mapper.GetAccount(addr)
+	if accbase == nil{
 		return nil
 	}
+	acc = accbase.(*account.QOSAccount)
 
 	return
 }
@@ -38,7 +39,7 @@ func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAcco
 // 通过地址创建QOSAccount
 // 若账户存在，返回账户 & false
 func CreateAndSaveAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount, success bool) {
-	mapper := ctx.Mapper(baccount.GetAccountKVStoreName()).(*baccount.AccountMapper)
+	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
 	if mapper == nil {
 		return nil, false
 	}
@@ -55,7 +56,7 @@ func CreateAndSaveAccount(ctx bcontext.Context, addr btypes.Address) (acc *accou
 }
 
 func SaveAccount(ctx bcontext.Context, acc *account.QOSAccount) bool {
-	mapper := ctx.Mapper(baccount.GetAccountKVStoreName()).(*baccount.AccountMapper)
+	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
 	if mapper == nil {
 		return false
 	}
@@ -68,12 +69,13 @@ func SaveAccount(ctx bcontext.Context, acc *account.QOSAccount) bool {
 var rootprivkey = ed25519.GenPrivKey()
 
 func FetchQscCA() (caQsc *[]byte) {
-	pubkey := ed25519.GenPrivKey().PubKey()
+	//pubkey := ed25519.GenPrivKey().PubKey()
+	accandkey := qostest.InitKeys(cdc)
 
 	ca := &CA{
 		"qsc1",
 		false,
-		pubkey,
+		accandkey[0].PrivKey.PubKey(),
 		[]byte{},
 		"qsc ca data",
 	}

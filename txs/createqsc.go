@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/qcp"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/account"
 	qosmapper "github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/types"
 	go_amino "github.com/tendermint/go-amino"
@@ -50,7 +51,7 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) bool {
 //      查询banker是否存在，若不存在，
 //		向账户 AccInit 分发qsc
 func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps *btxs.TxQcp) {
-	mapper := ctx.Mapper(qosmapper.BaseMapperName).(*qosmapper.BaseMapper)
+	mapper := ctx.Mapper(qosmapper.BaseMapperName).(*qosmapper.MainMapper)
 	if mapper == nil {
 		ret.Log = "Get qsc mapper error!"
 		ret = btypes.ErrInternal(ret.Log).Result()
@@ -74,7 +75,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 
 	// 检查banker: 不存在则创建; 存在,验证pubkey
 	acc := GetAccount(ctx, tx.Banker)
-	if &acc == nil {
+	if acc == nil {
 		acc, _ = CreateAndSaveAccount(ctx, tx.Banker)
 		ret.Log += "Account: create banker"
 	} else {
@@ -100,12 +101,14 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 	for _, va := range tx.AccInit {
 		vaAcc := GetAccount(ctx, va.Address)
 		if &vaAcc == nil {
-			vaAcc, _ = CreateAndSaveAccount(ctx, va.Address)
+			// vaAcc, _ = CreateAndSaveAccount(ctx, va.Address)
+			vaAcc = account.ProtoQOSAccount().(*account.QOSAccount)
+			vaAcc.SetAddress(va.Address)
 			ret.Log = "Account: create account :" + va.Address.String()
 		}
 
 		vaAcc.SetQSC(&types.QSC{tx.QscName, va.Amount})
-		SaveAccount(ctx, acc)
+		SaveAccount(ctx, vaAcc)
 	}
 
 	// 将联盟链的publickey加入(chainid/in/pubkey)
@@ -115,14 +118,14 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 		ret = btypes.ErrInternal(ret.Log).Result()
 		return
 	}
-	qcpmapper.SetChainInTruestPubKey(tx.QscName, tx.QscPubkey)
+	qcpmapper.SetChainInTrustPubKey(tx.QscName, tx.QscPubkey)
 	ret.Code = btypes.ABCICodeOK
 
 	return
 }
 
 //功能：获取签名者
-func (tx TxCreateQSC) GetSigner(ctx context.Context) (ret []btypes.Address) {
+func (tx TxCreateQSC) GetSigner() (ret []btypes.Address) {
 	if tx.CreateAddr == nil {
 		return nil
 	}
@@ -133,14 +136,14 @@ func (tx TxCreateQSC) GetSigner(ctx context.Context) (ret []btypes.Address) {
 
 // 功能：计算gas
 // 规则：基准值 + 每个初始化用户收10qos
-func (tx TxCreateQSC) CalcGas(ctx context.Context) btypes.BigInt {
+func (tx TxCreateQSC) CalcGas() btypes.BigInt {
 	baseGas := btypes.NewInt(BASEGAS_CREATEQSC)
 	var accNum int = len(tx.AccInit)
 	return baseGas.Add(btypes.NewInt(int64(accNum * 10)))
 }
 
 //gas付费人
-func (tx TxCreateQSC) GetGasPayer(ctx context.Context) (ret btypes.Address) {
+func (tx TxCreateQSC) GetGasPayer() (ret btypes.Address) {
 	if tx.CreateAddr == nil {
 		return nil
 	}
@@ -150,7 +153,7 @@ func (tx TxCreateQSC) GetGasPayer(ctx context.Context) (ret btypes.Address) {
 }
 
 // 获取签名字段
-func (tx TxCreateQSC) GetSignData(ctx context.Context) (ret []byte) {
+func (tx TxCreateQSC) GetSignData() (ret []byte) {
 	ret = append(ret, []byte(tx.QscName)...)
 	ret = append(ret, tx.QscPubkey.Bytes()...)
 	ret = append(ret, []byte(tx.Banker)...)
@@ -176,14 +179,14 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 
 	var dataqsc CA
 	cdc.UnmarshalBinaryBare(*caqsc, &dataqsc)
-	if dataqsc.Banker || VerifyCA(rootprivkey.PubKey(), &dataqsc) {
+	if dataqsc.Banker {
 		//qsc的ca证书中banker == false
 		return nil
 	}
 
 	var databank CA
 	cdc.UnmarshalBinaryBare(*cabank, &databank)
-	if !databank.Banker  || VerifyCA(rootprivkey.PubKey(), &dataqsc) {
+	if !databank.Banker {
 		//qsc的ca证书中banker == false
 		return nil
 	}
@@ -199,7 +202,7 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 		dataqsc.Qcpname,
 		createAddr,
 		dataqsc.Pubkey,
-		[]byte("banker"), //todo: for test, extract from databank.Pubkey
+		[]byte(databank.Pubkey.Address()),
 		extrate,
 		*caqsc,
 		*cabank,

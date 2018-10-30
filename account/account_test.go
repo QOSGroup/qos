@@ -98,11 +98,11 @@ func TestAccountMapperGetSet(t *testing.T) {
 	seedMapper.SetCodec(cdc)
 
 	mapperMap := make(map[string]mapper.IMapper)
-	mapperMap[seedMapper.GetKVStoreName()] = seedMapper
+	mapperMap[account.AccountMapperName] = seedMapper
 
 	ctx := defaultContext(seedMapper.GetStoreKey(), mapperMap)
 
-	mapper, _ := ctx.Mapper(account.GetAccountKVStoreName()).(*account.AccountMapper)
+	mapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	for i := 0; i < 100; i++ {
 		_, pubkey, addr := keyPubAddr()
 

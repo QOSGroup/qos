@@ -34,9 +34,9 @@ func TestSaveCAPubKey(t *testing.T) {
 	baseMapper.SetCodec(defaultCodec())
 	storeKey := baseMapper.GetStoreKey()
 	mapper := make(map[string]bmapper.IMapper)
-	mapper[baseMapper.GetKVStoreName()] = baseMapper
+	mapper[BaseMapperName] = baseMapper
 	ctx := defaultContext(storeKey, mapper)
-	baseMapper, _ = ctx.Mapper(baseMapper.GetKVStoreName()).(*MainMapper)
+	baseMapper, _ = ctx.Mapper(BaseMapperName).(*MainMapper)
 
 	origin := ed25519.GenPrivKey().PubKey()
 	baseMapper.SetRootCA(origin)

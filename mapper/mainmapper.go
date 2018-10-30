@@ -7,9 +7,8 @@ import (
 )
 
 const (
-	//BaseMapperName = "basemapper"
-	storeKey       = "base"
-	QSCName       = "qsc/[%s]"
+	BaseMapperName = "base"
+	QSCName        = "qsc/[%s]"
 )
 
 type MainMapper struct {
@@ -17,18 +16,22 @@ type MainMapper struct {
 }
 
 type QscInfo struct {
-	Qscname     string        `json:"qscname"`
-	PubkeyBank  crypto.PubKey `json:"pubkeybank"`
+	Qscname    string        `json:"qscname"`
+	PubkeyBank crypto.PubKey `json:"pubkeybank"`
 }
 
 func NewMainMapper() *MainMapper {
 	var baseMapper = MainMapper{}
-	baseMapper.BaseMapper = mapper.NewBaseMapper(nil, storeKey)
+	baseMapper.BaseMapper = mapper.NewBaseMapper(nil, BaseMapperName)
 	return &baseMapper
 }
 
 func GetMainStoreKey() string {
-	return storeKey
+	return BaseMapperName
+}
+
+func (mapper *MainMapper) MapperName() string {
+	return BaseMapperName
 }
 
 func (mapper *MainMapper) Copy() mapper.IMapper {
@@ -52,6 +55,7 @@ func (mapper *MainMapper) GetRoot() crypto.PubKey {
 
 func (mapper *MainMapper) GetQsc(qscname string) (qscinfo *QscInfo) {
 	key := fmt.Sprintf(QSCName, qscname)
+
 	var qinfo QscInfo
 	exist := mapper.Get([]byte(key), &qinfo)
 	if !exist {

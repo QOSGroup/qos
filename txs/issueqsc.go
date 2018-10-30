@@ -5,27 +5,37 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	btxs "github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
-	qosmapper "github.com/QOSGroup/qos/mapper"
+	"github.com/QOSGroup/qos/mapper"
+	baccount "github.com/QOSGroup/qbase/account"
 )
 
 // 功能：发币 对应的Tx结构
 type TxIssueQsc struct {
-	QscName string       `json:"qscName"` //发币账户名
-	Amount  types.BigInt `json:"amount"`  //金额
+	QscName string        `json:"qscName"` //发币账户名
+	Amount  types.BigInt  `json:"amount"`  //金额
+	Banker  types.Address `json:"banker"`  //banker地址
 }
 
 // 功能：检测TxIssuQsc结构体字段是否合法
 func (tx *TxIssueQsc) ValidateData(ctx context.Context) bool {
-	ret := !types.BigInt.LT(tx.Amount, types.ZeroInt())
+	if tx.Amount.LT(types.NewInt(0)) || !types.CheckQscName(tx.QscName) {
+		return false
+	}
 
-	return ret && types.CheckQscName(tx.QscName)
+	acc := GetAccount(ctx, tx.Banker)
+	mainmapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
+	qscinfo := mainmapper.GetQsc(tx.QscName)
+	if qscinfo == nil {
+		return false
+	}
+
+	return acc.GetPubicKey().Equals(qscinfo.PubkeyBank)
 }
 
 // 功能：tx执行
 // 发币过程：banker向自己的账户发币
 func (tx *TxIssueQsc) Exec(ctx context.Context) (ret types.Result, crossTxQcps *btxs.TxQcp) {
-	banker := GetBanker(ctx, tx.QscName)
+	banker := GetAccount(ctx, tx.Banker)
 	if &banker == nil {
 		ret.Log = "result: Can't find Bulanker"
 		ret = types.ErrInternal(ret.Log).Result()
@@ -38,6 +48,13 @@ func (tx *TxIssueQsc) Exec(ctx context.Context) (ret types.Result, crossTxQcps *
 		ret = types.ErrInternal(ret.Log).Result()
 		return
 	}
+	mapper := ctx.Mapper(baccount.AccountMapperName).(*baccount.AccountMapper)
+	if mapper == nil {
+		ret.Log = "result: Get mapper error"
+		ret = types.ErrInternal(ret.Log).Result()
+		return
+	}
+	mapper.SetAccount(banker)
 
 	ret.Code = types.ABCICodeOK
 	ret.Log += fmt.Sprintf("result: Done! Send to banker qos(%d)", tx.Amount.Int64())
@@ -47,9 +64,9 @@ func (tx *TxIssueQsc) Exec(ctx context.Context) (ret types.Result, crossTxQcps *
 }
 
 // 功能：签名者
-func (tx *TxIssueQsc) GetSigner(ctx context.Context) (singer []types.Address) {
-	banker := GetBanker(ctx, tx.QscName)
-	return append(singer, banker.BaseAccount.GetAddress())
+func (tx *TxIssueQsc) GetSigner() (singer []types.Address) {
+	singer = append(singer, tx.Banker)
+	return
 }
 
 // 计算gas
@@ -68,25 +85,17 @@ func (tx *TxIssueQsc) GetGasPayer() types.Address {
 func (tx *TxIssueQsc) GetSignData() (ret []byte) {
 	ret = append(ret, []byte(tx.QscName)...)
 	ret = append(ret, types.Int2Byte(tx.Amount.Int64())...)
+	ret = append(ret, []byte(tx.Banker)...)
 
 	return
 }
 
-func GetBanker(ctx context.Context, qscname string) (ret *account.QOSAccount) {
-	mapper := ctx.Mapper(qosmapper.BaseMapperName).(*qosmapper.BaseMapper)
-	if mapper == nil {
-		return
-	}
-
-	qosinfo := mapper.GetQsc(qscname)
-	return GetAccount(ctx, []byte(qosinfo.PubkeyBank.Address()))
-}
-
 // 构建 TxIsssueQsc 结构体
-func NewTxIssueQsc(qsc string, amount types.BigInt) (rTx *TxIssueQsc) {
+func NewTxIssueQsc(qsc string, amount types.BigInt, banker types.Address) (rTx *TxIssueQsc) {
 	rTx = &TxIssueQsc{
 		qsc,
 		amount,
+		banker,
 	}
 
 	return
