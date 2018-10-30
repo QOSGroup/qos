@@ -12,7 +12,6 @@ import (
 	"github.com/QOSGroup/qos/txs"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/rpc/client"
 )
 
@@ -57,8 +56,6 @@ func main() {
 	switch *mode {
 	case "accquery": // 账户查询
 		queryAccount(http, cdc, addr)
-		//case "txtransfer":
-		//stdTransfer(http, cdc, nil, nil, *amount)
 	case "txissue":
 		accary := test.InitKeys(cdc)
 		privkey := accary[1].PrivKey
@@ -103,15 +100,6 @@ func stdTxCreateQSC(http *client.HTTP, cdc *amino.Codec, caqsc *[]byte, cabank *
 	broadcastTxStd(http, cdc, txstd)
 }
 
-func stdTransfer(http *client.HTTP, cdc *amino.Codec, senders *[]txs.AddrTrans, receivers *[]txs.AddrTrans, amount int64) {
-	if receivers == nil || senders == nil || len(*senders) == 0 || len(*senders) == 0 {
-		panic("usage: -m=txtransfer -from=(xxx,coins),(xxx,coins) -to=(xxx,coins),(xxx,coins) -nonce=xxx(>=0)")
-	}
-
-	txStd := genStdSendTx(cdc, senders, receivers, btypes.NewInt(amount), "qos")
-	broadcastTxStd(http, cdc, txStd)
-}
-
 func stdTxIssue(http *client.HTTP, cdc *amino.Codec, qscname string, amount btypes.BigInt, bankaddr btypes.Address,
 	privkey crypto.PrivKey, nonce int64, chainid string, maxgas int64) {
 	tx := txs.NewTxIssueQsc(qscname, amount, bankaddr)
@@ -124,28 +112,6 @@ func stdTxIssue(http *client.HTTP, cdc *amino.Codec, qscname string, amount btyp
 	txstd := genTxStd(cdc, tx, chainid, maxgas, accsigner)
 
 	broadcastTxStd(http, cdc, txstd)
-}
-
-// 生成链内交易SendTx
-func genStdSendTx(cdc *amino.Codec, senders *[]txs.AddrTrans, receivers *[]txs.AddrTrans, amount btypes.BigInt,
-	coinName string) *btxs.TxStd {
-	txtran := txs.TxTransform{
-		Senders:   *senders,
-		Receivers: *receivers,
-	}
-
-	tx := btxs.NewTxStd(txtran, "qos", btypes.NewInt(int64(100)))
-
-	privKey := ed25519.GenPrivKey()
-	signdata, _ := tx.SignTx(privKey, 1)
-
-	tx.Signature = append(tx.Signature, btxs.Signature{
-		Pubkey:    privKey.PubKey(),
-		Signature: signdata,
-		Nonce:     2,
-	})
-
-	return tx
 }
 
 // 查询账户状态
