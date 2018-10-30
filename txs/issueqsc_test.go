@@ -37,7 +37,7 @@ func defaultContext(key store.StoreKey) context.Context {
 	mainmapper := mapper.NewMainMapper()
 	mainmapper.SetCodec(cdc)
 	mainKey := mainmapper.GetStoreKey()
-	mapperMap[mapper.GetMainStoreKey()] = mainmapper
+	mapperMap[mapper.BaseMapperName] = mainmapper
 
 	accountMapper := bacc.NewAccountMapper(nil, account.ProtoQOSAccount)
 	accountMapper.SetCodec(cdc)

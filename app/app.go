@@ -59,7 +59,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 // 初始配置
 func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	// 上下文中获取mapper
-	mainMapper := ctx.Mapper(mapper.GetMainStoreKey()).(*mapper.MainMapper)
+	mainMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
 

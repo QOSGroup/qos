@@ -103,6 +103,7 @@ func TestAccountMapperGetSet(t *testing.T) {
 	ctx := defaultContext(seedMapper.GetStoreKey(), mapperMap)
 
 	mapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+
 	for i := 0; i < 100; i++ {
 		_, pubkey, addr := keyPubAddr()
 

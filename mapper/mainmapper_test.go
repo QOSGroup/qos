@@ -34,6 +34,7 @@ func TestSaveCAPubKey(t *testing.T) {
 	baseMapper.SetCodec(defaultCodec())
 	storeKey := baseMapper.GetStoreKey()
 	mapper := make(map[string]bmapper.IMapper)
+
 	mapper[BaseMapperName] = baseMapper
 	ctx := defaultContext(storeKey, mapper)
 	baseMapper, _ = ctx.Mapper(BaseMapperName).(*MainMapper)

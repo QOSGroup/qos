@@ -26,10 +26,6 @@ func NewMainMapper() *MainMapper {
 	return &baseMapper
 }
 
-func GetMainStoreKey() string {
-	return BaseMapperName
-}
-
 func (mapper *MainMapper) MapperName() string {
 	return BaseMapperName
 }
