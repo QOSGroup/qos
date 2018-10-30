@@ -30,7 +30,7 @@ func (tx *TxIssueQsc) ValidateData(ctx context.Context) bool {
 		return false
 	}
 
-	return bytes.Equal(acc.GetAddress(),qscinfo.PubkeyBank.Address())
+	return bytes.Equal(acc.GetAddress(),qscinfo.BankAddr)
 }
 
 // 功能：tx执行
