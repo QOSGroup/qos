@@ -2,7 +2,6 @@ package main
 
 import (
 	"github.com/QOSGroup/qbase/server"
-	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/app"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -23,7 +22,7 @@ func main() {
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 
-	server.AddCommands(ctx, cdc, rootCmd, account.QOSAppInit(),
+	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
 
 	rootDir := os.ExpandEnv("$HOME/.qosd")

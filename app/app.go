@@ -63,7 +63,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 
 	// 反序列化app_state
 	stateJSON := req.AppStateBytes
-	genesisState := &qosacc.GenesisState{}
+	genesisState := &GenesisState{}
 	err := accountMapper.GetCodec().UnmarshalJSON(stateJSON, genesisState)
 	if err != nil {
 		panic(err)

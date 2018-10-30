@@ -1,4 +1,4 @@
-package account
+package app
 
 import (
 	"encoding/hex"
@@ -8,6 +8,7 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/server/config"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/account"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -17,7 +18,7 @@ import (
 // QOS初始状态
 type GenesisState struct {
 	CAPubKey crypto.PubKey `json:"ca_pub_key"`
-	Accounts []*QOSAccount `json:"accounts"`
+	Accounts []*account.QOSAccount `json:"accounts"`
 }
 
 func QOSAppInit() server.AppInit {
