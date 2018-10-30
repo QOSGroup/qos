@@ -3,6 +3,7 @@ package mapper
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -16,8 +17,14 @@ type MainMapper struct {
 }
 
 type QscInfo struct {
-	Qscname    string        `json:"qscname"`
-	PubkeyBank crypto.PubKey `json:"pubkeybank"`
+	Qscname     string         `json:"qscname"`
+	BankAddr    btypes.Address `json:"pubkeybank"`
+	CreateAddr  btypes.Address `json:"createaddr"`
+	QscPubkey   crypto.PubKey  `json:"qscpubkey"`
+	Extrate     string         `json:"extrate"`
+	CAqsc       []byte         `json:"caqsc"`
+	CAbanker    []byte         `json:"cabanker"`
+	Description string         `json:"description"`
 }
 
 func NewMainMapper() *MainMapper {

@@ -1,6 +1,7 @@
 package txs
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/qcp"
@@ -42,6 +43,23 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) bool {
 		return false
 	}
 
+	var cabank,caqsc CA
+	errbank := cdc.UnmarshalBinaryBare(tx.CAbanker, &cabank)
+	errqsc := cdc.UnmarshalBinaryBare(tx.CAqsc, &caqsc)
+	if errbank != nil || errqsc != nil {
+		return false
+	}
+
+	//todo: CA签名校验
+
+	if !tx.QscPubkey.Equals(caqsc.Pubkey) {
+		return false
+	}
+
+	if !bytes.Equal(tx.Banker, cabank.Pubkey.Address()) {
+		return false
+	}
+
 	return true
 }
 
@@ -65,31 +83,23 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 		return
 	}
 
-	var cabank CA
-	err := cdc.UnmarshalBinaryBare(tx.CAbanker, &cabank)
-	if err != nil {
-		ret.Log = err.Error()
-		ret = btypes.ErrInternal(ret.Log).Result()
-		return
-	}
-
-	// 检查banker: 不存在则创建; 存在,验证pubkey
+	// 检查banker: 不存在则创建;
 	acc := GetAccount(ctx, tx.Banker)
 	if acc == nil {
 		acc, _ = CreateAndSaveAccount(ctx, tx.Banker)
 		ret.Log += "Account: create banker"
-	} else {
-		if !acc.GetPubicKey().Equals(cabank.Pubkey) {
-			ret.Log = "Error: Exist banker's pubkey is different from cabank's"
-			ret = btypes.ErrInternal(ret.Log).Result()
-			return
-		}
 	}
 
 	// 保存qsc 信息
 	qscinfo := qosmapper.QscInfo{
 		tx.QscName,
-		cabank.Pubkey,
+		tx.Banker,
+		tx.CreateAddr,
+		tx.QscPubkey,
+		tx.Extrate,
+		tx.CAqsc,
+		tx.CAbanker,
+		tx.Description,
 	}
 	if !mapper.SetQsc(tx.QscName, &qscinfo) {
 		ret.Log = "Error: Save qsc info error"
