@@ -68,7 +68,7 @@ func defaultContext() context.Context {
 	accountMapper := bacc.NewAccountMapper(nil, account.ProtoQOSAccount)
 	accountMapper.SetCodec(cdc)
 	acountKey := accountMapper.GetStoreKey()
-	mapperMap[bacc.GetAccountKVStoreName()] = accountMapper
+	mapperMap[bacc.AccountMapperName] = accountMapper
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
@@ -363,7 +363,7 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 	require.Nil(t, err)
 	require.False(t, useTx.ValidateData(ctx))
 
-	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.From)))
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.To)))
 
@@ -397,7 +397,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	useTx := ApproveUseTx{
 		genTestApprove(),
 	}
-	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.From)))
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.To)))
 

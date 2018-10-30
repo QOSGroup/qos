@@ -214,7 +214,7 @@ func (tx ApproveCreateTx) Exec(ctx context.Context) (result btypes.Result, cross
 		Code: btypes.ABCICodeOK,
 	}
 
-	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	fromAcc := accountMapper.GetAccount(tx.From)
 	if fromAcc == nil {
 		fromAcc = accountMapper.NewAccountWithAddress(tx.From).(*account.QOSAccount)
@@ -342,7 +342,7 @@ func (tx ApproveUseTx) ValidateData(ctx context.Context) bool {
 	}
 
 	// 校验授权用户状态
-	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	iAcc := accountMapper.GetAccount(tx.From)
 	if iAcc == nil {
 		return false
@@ -359,7 +359,7 @@ func (tx ApproveUseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
-	accountMapper := ctx.Mapper(bacc.GetAccountKVStoreName()).(*bacc.AccountMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	from := accountMapper.GetAccount(tx.From).(*account.QOSAccount)
 	to := accountMapper.GetAccount(tx.To).(*account.QOSAccount)
 

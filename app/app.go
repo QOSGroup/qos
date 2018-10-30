@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
+	"github.com/QOSGroup/qos/test"
 	"github.com/QOSGroup/qos/txs/approve"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -58,7 +59,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) abci.ResponseInitChain {
 	// 上下文中获取mapper
 	mainMapper := ctx.Mapper(mapper.GetMainStoreKey()).(*mapper.MainMapper)
-	accountMapper := ctx.Mapper(account.GetAccountKVStoreName()).(*account.AccountMapper)
+	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 
 	// 反序列化app_state
 	stateJSON := req.AppStateBytes
@@ -74,6 +75,13 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 	// 保存初始账户
 	for _, acc := range genesisState.Accounts {
 		accountMapper.SetAccount(acc)
+	}
+
+	// 设置初始账户(test only)
+	// todo: remove later
+	accret := test.InitKeys(app.GetCdc())
+	for _, ac := range accret {
+		accountMapper.SetAccount(&ac.Acc)
 	}
 
 	return abci.ResponseInitChain{}
