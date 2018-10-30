@@ -212,3 +212,14 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 
 	return
 }
+
+// 功能：检查 commmon.Address 的合法性
+// todo: types.Address的其他规则需在此处检测
+func CheckAddr(addr btypes.Address) (ret bool) {
+	ret = true
+	if addr.Empty() {
+		ret = false
+	}
+
+	return
+}
