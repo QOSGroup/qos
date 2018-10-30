@@ -26,6 +26,10 @@ func main() {
 	nonce := flag.Int64("nonce", 0, "input sender nonce")
 	to := flag.String("to", "", "input to addr")
 	coins := flag.String("coins", "", "input coinname,coinamount;coinname,coinamount")
+	fromChain := flag.String("fromchain", "", "input qcp fromchain")
+	toChain := flag.String("tochain", "", "input qcp tochain")
+	qcpPriKey := flag.String("qcpprikey", "", "input qcp prikey")
+	qcpseq := flag.Int64("qcpseq", 0, "input qcp sequence")
 
 	flag.Parse()
 
@@ -34,6 +38,8 @@ func main() {
 	switch *mode {
 	case "tx": // 预授权
 		approveHandle(http, cdc, *command, *from, *to, *prikey, *nonce, *coins)
+	case "qcptx": // 预授权
+		qcpApproveHandle(http, cdc, *command, *from, *to, *prikey, *nonce, *coins, *fromChain, *toChain, *qcpPriKey, *qcpseq)
 	case "approve": // 查询授权
 		queryApprove(http, cdc, *from, *to)
 	default:
@@ -42,26 +48,74 @@ func main() {
 }
 
 // 创建
-//-m=tx -c=create -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=0
+//-m=tx -c=create -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=1
 // 增加
-//-m=tx -c=increase -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=1
+//-m=tx -c=increase -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=2
 // 减少
-//-m=tx -c=decrease -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qstar,100 -nonce=2
+//-m=tx -c=decrease -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qstar,100 -nonce=3
 // 使用
-//-m=tx -c=use -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -coins=qstar,100 -nonce=0
+//-m=tx -c=use -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -coins=qstar,100 -nonce=1
 // 取消
-//-m=tx -c=cancel -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -nonce=3
+//-m=tx -c=cancel -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -nonce=4
 func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from string, to string, prihex string, nonce int64, coinStr string) {
 	if from == "" || to == "" || prihex == "" || nonce < 0 || (command != "cancel" && coinStr == "") {
-		panic("usage: -m=approve -c=create/increase/decrease/use/cancel -from=xxx -to=xxx -coin=xxx,xxx;xxx,xxx -prikey=xxx -nonce=xxx(>=0)")
+		panic("usage: -m=approve -c=create/increase/decrease/use/cancel -from=xxx -to=xxx -coin=xxx,xxx;xxx,xxx -prikey=xxx -nonce=xxx(>=1)")
 	}
+	var bz []byte
+	var err error
+	stdTx := genStdTx(cdc, command, from, to, prihex, nonce, coinStr)
+	bz, err = cdc.MarshalBinaryBare(stdTx)
+	if err != nil {
+		panic("use cdc encode object fail")
+	}
+	_, err = http.BroadcastTxSync(bz)
+	if err != nil {
+		fmt.Println(err)
+		panic("BroadcastTxSync err")
+	}
+	fmt.Println("send tx success")
+}
+
+// 创建
+//-m=tx -c=create -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=1 -fromchain=qstar -tochain=qos-chain -qcpprikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -qcpseq=1
+// 增加
+//-m=tx -c=increase -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qos,10;qstar,100 -nonce=2 -fromchain=qstar -tochain=qos-chain -qcpprikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -qcpseq=2
+// 减少
+//-m=tx -c=decrease -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -coins=qstar,100 -nonce=3 -fromchain=qstar -tochain=qos-chain -qcpprikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -qcpseq=3
+// 使用
+//-m=tx -c=use -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -coins=qstar,100 -nonce=1 -fromchain=qstar -tochain=qos-chain -qcpprikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -qcpseq=4
+// 取消
+//-m=tx -c=cancel -from=address1k0m8ucnqug974maa6g36zw7g2wvfd4sug6uxay -to=address103eak408d4yp944wv58epp3neyah8z5dlwyzg4 -prikey=0xa328891040ae9b773bcd30005235f99a8d62df03a89e4f690f9fa03abb1bf22715fc9ca05613f2d8061492e9f8149510b5b67d340d199ff24f34c85dbbbd7e0df780e9a6cc -nonce=4 -fromchain=qstar -tochain=qos-chain -qcpprikey=0xa3288910405746e29aeec7d5ed56fac138b215e651e3244e6d995f25cc8a74c40dd1ef8d2e8ac876faaa4fb281f17fb9bebb08bc14e016c3a88c6836602ca97595ae32300b -qcpseq=5
+func qcpApproveHandle(http *client.HTTP, cdc *amino.Codec, command string, from string, to string, prihex string, nonce int64, coinStr string, fromchain string, tochain string, qcpprikey string, qcpseq int64) {
+	if from == "" || to == "" || prihex == "" || nonce < 0 || (command != "cancel" && coinStr == "") || fromchain == "" || tochain == "" || qcpprikey == "" || qcpseq <= 0 {
+		panic("usage: -m=approve -c=create/increase/decrease/use/cancel -from=xxx -to=xxx -coin=xxx,xxx;xxx,xxx -prikey=xxx -nonce=xxx(>=1) -coins=xx,xx -fromchain=xxx -tochain=xx -qcpprikey=xxx -qcpseq=xxx")
+	}
+	stdTx := genStdTx(cdc, command, from, to, prihex, nonce, coinStr)
+	qcpTx := btxs.NewTxQCP(stdTx, fromchain, tochain, qcpseq, 0, 0, false)
+	caHex, _ := hex.DecodeString(qcpprikey[2:])
+	var caPriKey ed25519.PrivKeyEd25519
+	cdc.MustUnmarshalBinaryBare(caHex, &caPriKey)
+	sig, _ := qcpTx.SignTx(caPriKey)
+	qcpTx.Sig.Nonce = qcpseq
+	qcpTx.Sig.Signature = sig
+	qcpTx.Sig.Pubkey = caPriKey.PubKey()
+
+	bz, err := cdc.MarshalBinaryBare(qcpTx)
+	_, err = http.BroadcastTxSync(bz)
+	if err != nil {
+		fmt.Println(err)
+		panic("BroadcastTxSync err")
+	}
+	fmt.Println("send tx success")
+
+}
+
+func genStdTx(cdc *amino.Codec, command string, from string, to string, prihex string, nonce int64, coinStr string) *btxs.TxStd {
 	fromAddr, _ := btypes.GetAddrFromBech32(from)
 	toAddr, _ := btypes.GetAddrFromBech32(to)
 	priHex, _ := hex.DecodeString(prihex[2:])
 	var priKey ed25519.PrivKeyEd25519
 	cdc.MustUnmarshalBinaryBare(priHex, &priKey)
-	var bz []byte
-	var err error
 	if command != "cancel" { // 创建、增加、减少、使用授权
 		coinAndAmounts := strings.Split(coinStr, ";")
 		qscs := []*types.QSC{}
@@ -102,10 +156,7 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 			Signature: signature,
 			Nonce:     nonce,
 		}}
-		bz, err = cdc.MarshalBinaryBare(stdTx)
-		if err != nil {
-			panic("use cdc encode object fail")
-		}
+		return stdTx
 	} else { // 取消授权
 		tx := approve.ApproveCancelTx{
 			From: fromAddr,
@@ -118,17 +169,8 @@ func approveHandle(http *client.HTTP, cdc *amino.Codec, command string, from str
 			Signature: signature,
 			Nonce:     nonce,
 		}}
-		bz, err = cdc.MarshalBinaryBare(stdTx)
-		if err != nil {
-			panic("use cdc encode object fail")
-		}
+		return stdTx
 	}
-	_, err = http.BroadcastTxSync(bz)
-	if err != nil {
-		fmt.Println(err)
-		panic("BroadcastTxSync err")
-	}
-	fmt.Println("send tx success")
 }
 
 // 查询预授权
