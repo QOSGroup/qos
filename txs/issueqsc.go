@@ -1,6 +1,7 @@
 package txs
 
 import (
+	"bytes"
 	"fmt"
 	"github.com/QOSGroup/qbase/context"
 	btxs "github.com/QOSGroup/qbase/txs"
@@ -29,7 +30,7 @@ func (tx *TxIssueQsc) ValidateData(ctx context.Context) bool {
 		return false
 	}
 
-	return acc.GetPubicKey().Equals(qscinfo.PubkeyBank)
+	return bytes.Equal(acc.GetAddress(),qscinfo.PubkeyBank.Address())
 }
 
 // 功能：tx执行
