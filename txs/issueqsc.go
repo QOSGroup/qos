@@ -37,7 +37,7 @@ func (tx *TxIssueQsc) ValidateData(ctx context.Context) bool {
 func (tx *TxIssueQsc) Exec(ctx context.Context) (ret types.Result, crossTxQcps *btxs.TxQcp) {
 	banker := GetAccount(ctx, tx.Banker)
 	if &banker == nil {
-		ret.Log = "result: Can't find Bulanker"
+		ret.Log = "result: Can't find banker"
 		ret = types.ErrInternal(ret.Log).Result()
 		return
 	}
