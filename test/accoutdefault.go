@@ -40,15 +40,15 @@ func InitKeys(cdc *go_amino.Codec) (accret []*AccAndPrivkey) {
 },
 {
  "name": "banker",
- "addrbech32": "address1yyyyshlpl3rs27f69hdr6r2xyt9pqqdkvtdqxj",
- "address": "2108485FE1FC4705793A2DDA3D0D4622CA1001B6",
+ "addrbech32": "address1l7d3dc26adk9gwzp777s3a9p5tprn7m43p99cg",
+ "address": "FF9B16E15AEB6C543841F7BD08F4A1A2C239FB75",
  "pub_key": {
   "type": "tendermint/PubKeyEd25519",
-  "value": "8jzqwFn1U88f6ExtOMuPHFeyv3qHCKHu8BQdvZlorIc="
+  "value": "CCguu8/5aUY3uDQDehaWjAVriI4VnGHiOR8TIdp0zkI="
  },
  "priv_key": {
   "type": "tendermint/PrivKeyEd25519",
-  "value": "xs3y4D3kOfNjzL2U5iGPOGUJgU1hCXzJofP0wrDu3ofyPOrAWfVTzx/oTG04y48cV7K/eocIoe7wFB29mWishw=="
+  "value": "maD8NeYMqx6fHWHCiJdkV4/B+tDXFIpY4LX4vhrdmAYIKC67z/lpRje4NAN6FpaMBWuIjhWcYeI5HxMh2nTOQg=="
  }
 },
 {

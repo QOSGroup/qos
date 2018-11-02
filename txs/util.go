@@ -1,24 +1,18 @@
 package txs
 
 import (
+	"fmt"
 	baccount "github.com/QOSGroup/qbase/account"
 	bcontext "github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
-	qostest "github.com/QOSGroup/qos/test"
+	"github.com/QOSGroup/qos/mapper"
+	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/libs/common"
+	"time"
 )
-
-//CA结构体
-//todo: CA具体格式确定后会更改
-type CA struct {
-	Qcpname   string        `json:"qcpname"`
-	Banker    bool          `json:"banker"`
-	Pubkey    crypto.PubKey `json:"pubkey"`
-	Signature []byte        `json:"signature"`
-	Info      string        `json:"info"`
-}
 
 // 通过地址获取QOSAccount
 func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAccount) {
@@ -28,7 +22,7 @@ func GetAccount(ctx bcontext.Context, addr btypes.Address) (acc *account.QOSAcco
 	}
 
 	accbase := mapper.GetAccount(addr)
-	if accbase == nil{
+	if accbase == nil {
 		return nil
 	}
 	acc = accbase.(*account.QOSAccount)
@@ -65,102 +59,128 @@ func SaveAccount(ctx bcontext.Context, acc *account.QOSAccount) bool {
 	return true
 }
 
-// todo: 暂模拟
-var rootprivkey = ed25519.GenPrivKey()
-
-func FetchQscCA() (caQsc *[]byte) {
-	//pubkey := ed25519.GenPrivKey().PubKey()
-	accandkey := qostest.InitKeys(cdc)
-
-	ca := &CA{
-		"qsc1",
-		false,
-		accandkey[0].PrivKey.PubKey(),
-		[]byte{},
-		"qsc ca data",
+func GetRootPubkey(ctx bcontext.Context) crypto.PubKey {
+	mainmapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
+	if mainmapper == nil {
+		return nil
 	}
 
-	signdata := getsignCA(ca)
-	ca.Signature, _ = rootprivkey.Sign(signdata)
-	va, _ := cdc.MarshalBinaryBare(ca)
-	caQsc = &va
-
-	return
+	return mainmapper.GetRoot()
 }
 
-// todo: 暂模拟
-func FetchBankerCA() (caBanker *[]byte) {
-	accandkey := qostest.InitKeys(cdc)
+func GetCrtcodec() *amino.Codec {
+	cdccrt := amino.NewCodec()
+	CrtRegisterCodecSingle(cdccrt)
 
-	ca := &CA{
-		"qsc1",
-		true,
-		accandkey[1].PrivKey.PubKey(),
-		[]byte{},
-		"qsc ca of banker",
+	return cdccrt
+}
+
+func FetchCA(crtfile string) (caQsc *[]byte) {
+	var ca Certificate
+	cdccrt := GetCrtcodec()
+
+	byfile := common.MustReadFile(crtfile)
+	err := cdccrt.UnmarshalBinaryBare(byfile, &ca)
+	if err != nil {
+		panic(fmt.Sprintf("error: Decode %s", crtfile))
 	}
-
-	signdata := getsignCA(ca)
-	ca.Signature, _ = rootprivkey.Sign(signdata)
-	va, _ := cdc.MarshalBinaryBare(ca)
-	caBanker = &va
+	caQsc = &byfile
 
 	return
 }
 
-// todo: 暂模拟
-func getsignCA(ca *CA) (signdata []byte) {
-	signdata = append(signdata, []byte(ca.Qcpname)...)
-	signdata = append(signdata, btypes.Bool2Byte(ca.Banker)...)
-	signdata = append(signdata, ca.Pubkey.Bytes()...)
-	signdata = append(signdata, []byte(ca.Info)...)
-
-	return
+type Subject struct {
+	// TODO: Compatible with the openssl
+	CN string `json:"cn"`
 }
 
-// todo: 暂模拟
-func VerifyCA(pubkey crypto.PubKey, ca *CA) bool {
-	if ca == nil || len(pubkey.Bytes()) == 0 {
+type CertificateSigningRequest struct {
+	Subj      Subject               `json:"subj"`
+	IsCa      bool                  `json:"is_ca"`
+	IsBanker  bool                  `json:"is_banker"`
+	NotBefore time.Time             `json:"not_before"`
+	NotAfter  time.Time             `json:"not_after"`
+	PublicKey ed25519.PubKeyEd25519 `json:"public_key"`
+}
+
+type Issuer struct {
+	Subj      Subject               `json:"subj"`
+	PublicKey ed25519.PubKeyEd25519 `json:"public_key"`
+}
+
+type Certificate struct {
+	CSR       CertificateSigningRequest `json:"csr"`
+	CA        Issuer                    `json:"ca"`
+	Signature []byte                    `json:"signature"`
+}
+
+func CrtRegisterCodec(cdc *amino.Codec) {
+	const (
+		CsrAminoRoute = "certificate/csr"
+		CrtAminoRoute = "certificate/crt"
+	)
+
+	cdc.RegisterConcrete(CertificateSigningRequest{}, CsrAminoRoute, nil)
+	cdc.RegisterConcrete(Certificate{}, CrtAminoRoute, nil)
+}
+
+func CrtRegisterCodecSingle(cdc *amino.Codec) {
+	CrtRegisterCodec(cdc)
+
+	cdc.RegisterInterface((*crypto.PubKey)(nil), nil)
+	cdc.RegisterConcrete(ed25519.PubKeyEd25519{}, ed25519.Ed25519PubKeyAminoRoute, nil)
+
+	cdc.RegisterInterface((*crypto.PrivKey)(nil), nil)
+	cdc.RegisterConcrete(ed25519.PrivKeyEd25519{}, ed25519.Ed25519PrivKeyAminoRoute, nil)
+}
+
+func VerityCrt(caPublicKeys []ed25519.PubKeyEd25519, crt Certificate) bool {
+	ok := false
+
+	// Check issuer
+	cdc := GetCrtcodec()
+	signbyte, err := cdc.MarshalBinaryBare(crt.CSR)
+	if err != nil {
+		fmt.Print("Decode crt byte error!")
 		return false
 	}
 
-	return pubkey.VerifyBytes(getsignCA(ca), ca.Signature)
+	for _, value := range caPublicKeys {
+		if value.Equals(crt.CA.PublicKey) {
+			ok = crt.CA.PublicKey.VerifyBytes(signbyte, crt.Signature)
+			break
+		}
+	}
+
+	// Check timestamp
+	now := time.Now().Unix()
+	if now <= crt.CSR.NotBefore.Unix() || now >= crt.CSR.NotAfter.Unix() {
+		ok = false
+	}
+
+	return ok
 }
 
-//func MakeTxStd(tx btxs.ITx, chainid string, maxgas int64) (txstd *btxs.TxStd) {
-//	txstd = btxs.NewTxStd(tx, chainid, btypes.NewInt(maxgas))
-//	signer := txstd.ITx.GetSigner()
-//
-//	// no signer, no signature
-//	if signer == nil {
-//		txstd.Signature = []btxs.Signature{}
-//		return
-//	}
-//
-//	// accmapper := baccount.NewAccountMapper(baccount.ProtoBaseAccount)
-//	accmapper := baccount.NewAccountMapper(nil, account.ProtoQOSAccount)
-//
-//	// 填充 txstd.Signature[]
-//	for _, sg := range signer {
-//		prvKey := ed25519.GenPrivKey()
-//		nonce, err := accmapper.GetNonce(baccount.AddressStoreKey(sg))
-//		if err != nil {
-//			return nil
-//		}
-//
-//		signbyte, errsign := txstd.SignTx(prvKey, int64(nonce))
-//		if signbyte == nil || errsign != nil {
-//			return nil
-//		}
-//
-//		signdata := btxs.Signature{
-//			prvKey.PubKey(),
-//			signbyte,
-//			int64(nonce),
-//		}
-//
-//		txstd.Signature = append(txstd.Signature, signdata)
-//	}
-//
-//	return
-//}
+func NewCertificate(cdc *amino.Codec, qscname string, isbanker bool, pubkey crypto.PubKey, rootkey crypto.PubKey) []byte {
+	crt := Certificate{
+		CertificateSigningRequest{
+			Subject{qscname},
+			false,
+			isbanker,
+			time.Now(),
+			time.Now().AddDate(1, 0, 0),
+			pubkey.(ed25519.PubKeyEd25519),
+		},
+		Issuer{
+			Subject{"root"},
+			rootkey.(ed25519.PubKeyEd25519),
+		},
+		[]byte{},
+	}
+	crtbyte, err := cdc.MarshalBinaryBare(crt)
+	if err != nil {
+		return nil
+	}
+
+	return crtbyte
+}

@@ -22,11 +22,15 @@ import (
 //1, qos初始化(qosd)		init --chain-id=qos
 //2, qos启动(qosd)			start --with-tendermint=true
 //3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -chainid=qos -maxgas=100 -nonce=1
-//4, 发送TxIssue(cli端)		-m=txissue -qscname=qsc1 -nonce=1 -chainid=qos -maxgas=100
+//	 	3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径
+//	 	3.2, example: D:\job\QOSGroup\kepler\examples\v1\banker.crt
+// 		3.3, 参考: github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
+//4, 发送TxIssue(cli端)		-m=txissue -qscname=QSC -nonce=1 -chainid=qos -maxgas=100
+//		4.1, qscname需和banker中的qscname相同，区分大小写
 //--------------------------------
 //查询账户信息(步骤2,3,4之后都可以执行查询账户信息，验证tx结果)
 //
-//cli端查询banker		-m=accquery -addr=address1yyyyshlpl3rs27f69hdr6r2xyt9pqqdkvtdqxj
+//cli端查询banker		-m=accquery -addr=address1l7d3dc26adk9gwzp777s3a9p5tprn7m43p99cg
 //cli端查询acc1			-m=accquery -addr=address1zsqzn6wdecyar6c6nzem3e8qss2ws95csr8d0r
 
 func main() {
@@ -62,8 +66,10 @@ func main() {
 		addr := accary[1].Acc.GetAddress()
 		stdTxIssue(http, cdc, *qscname, btypes.NewInt(*amount), addr, privkey, *nonce, *chainid, *maxgas)
 	case "txcreateqsc":
-		caQsc := txs.FetchQscCA()
-		caBanker := txs.FetchBankerCA()
+		pathqsc := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\qsc.crt"
+		pathbank := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\banker.crt"
+		caQsc := txs.FetchCA(pathqsc)
+		caBanker := txs.FetchCA(pathbank)
 		acc := []txs.AddrCoin{}
 		accary := test.InitKeys(cdc)
 
@@ -129,7 +135,7 @@ func queryAccount(http *client.HTTP, cdc *amino.Codec, addr *string) (acc *accou
 	queryValueBz := result.Response.GetValue()
 	cdc.UnmarshalBinaryBare(queryValueBz, &acc)
 
-	jsacc,_ := cdc.MarshalJSONIndent(acc, "", " ")
+	jsacc, _ := cdc.MarshalJSONIndent(acc, "", " ")
 	fmt.Println(fmt.Sprintf("query addr is %s = %s", *addr, jsacc))
 
 	return
