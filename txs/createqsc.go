@@ -12,6 +12,7 @@ import (
 	"github.com/QOSGroup/qos/types"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 const BASEGAS_CREATEQSC int64 = 10000 //创建qsc需要的最少qos数
@@ -37,26 +38,36 @@ type AddrCoin struct {
 // 功能：检测合法性
 // 备注：
 //		1,成员字段的合法性
-//		2,creator的账户余额是否够gas抵扣
+//		2,证书合法性校验
 func (tx TxCreateQSC) ValidateData(ctx context.Context) bool {
 	if !btypes.CheckQscName(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
 		return false
 	}
 
-	var cabank,caqsc CA
-	errbank := cdc.UnmarshalBinaryBare(tx.CAbanker, &cabank)
-	errqsc := cdc.UnmarshalBinaryBare(tx.CAqsc, &caqsc)
+	var crtbank, crtqsc Certificate
+	errbank := cdc.UnmarshalBinaryBare(tx.CAbanker, &crtbank)
+	errqsc := cdc.UnmarshalBinaryBare(tx.CAqsc, &crtqsc)
 	if errbank != nil || errqsc != nil {
 		return false
 	}
 
-	//todo: CA签名校验
-
-	if !tx.QscPubkey.Equals(caqsc.Pubkey) {
+	//CA签名校验
+	var rootkey []ed25519.PubKeyEd25519
+	rtpubkey := GetRootPubkey(ctx)
+	if rtpubkey == nil {
 		return false
 	}
 
-	if !bytes.Equal(tx.Banker, cabank.Pubkey.Address()) {
+	rootkey = append(rootkey, rtpubkey.(ed25519.PubKeyEd25519))
+	if !VerityCrt(rootkey, crtbank) || !VerityCrt(rootkey, crtqsc) {
+		return false
+	}
+
+	if !tx.QscPubkey.Equals(crtqsc.CSR.PublicKey) {
+		return false
+	}
+
+	if !bytes.Equal(tx.Banker, crtbank.CSR.PublicKey.Address()) {
 		return false
 	}
 
@@ -187,20 +198,18 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 	createAddr btypes.Address, accs *[]AddrCoin,
 	extrate string, dsp string) (rTx *TxCreateQSC) {
 
-	var dataqsc CA
-	cdc.UnmarshalBinaryBare(*caqsc, &dataqsc)
-	if dataqsc.Banker {
+	var crtqsc, crtbank Certificate
+	err := cdc.UnmarshalBinaryBare(*caqsc, &crtqsc)
+	if err != nil || crtqsc.CSR.IsBanker {
 		//qsc的ca证书中banker == false
 		return nil
 	}
 
-	var databank CA
-	cdc.UnmarshalBinaryBare(*cabank, &databank)
-	if !databank.Banker {
-		//qsc的ca证书中banker == false
+	err = cdc.UnmarshalBinaryBare(*cabank, &crtbank)
+	if err != nil || !crtbank.CSR.IsBanker {
 		return nil
 	}
-	if databank.Qcpname != dataqsc.Qcpname {
+	if crtbank.CSR.Subj.CN != crtqsc.CSR.Subj.CN {
 		return nil
 	}
 
@@ -209,10 +218,10 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 	}
 
 	rTx = &TxCreateQSC{
-		dataqsc.Qcpname,
+		crtqsc.CSR.Subj.CN,
 		createAddr,
-		dataqsc.Pubkey,
-		[]byte(databank.Pubkey.Address()),
+		crtqsc.CSR.PublicKey,
+		[]byte(crtbank.CSR.PublicKey.Address()),
 		extrate,
 		*caqsc,
 		*cabank,

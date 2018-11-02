@@ -83,7 +83,7 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 	appState = json.RawMessage(fmt.Sprintf(`{
 		"ca_pub_key": {
 			"type": "tendermint/PubKeyEd25519",
-			"value": "0SDDvhiMsqX9XLuscqovU8l24txbV7Mg4ecs+R6Swzk="
+			"value": "Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE="
 		},
 		"accounts": [{
 			"base_account": {
