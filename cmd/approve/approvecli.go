@@ -91,7 +91,7 @@ func qcpApproveHandle(http *client.HTTP, cdc *amino.Codec, command string, from 
 		panic("usage: -m=approve -c=create/increase/decrease/use/cancel -from=xxx -to=xxx -coin=xxx,xxx;xxx,xxx -prikey=xxx -nonce=xxx(>=1) -coins=xx,xx -fromchain=xxx -tochain=xx -qcpprikey=xxx -qcpseq=xxx")
 	}
 	stdTx := genStdTx(cdc, command, from, to, prihex, nonce, coinStr)
-	qcpTx := btxs.NewTxQCP(stdTx, fromchain, tochain, qcpseq, 0, 0, false)
+	qcpTx := btxs.NewTxQCP(stdTx, fromchain, tochain, qcpseq, 0, 0, false, "")
 	caHex, _ := hex.DecodeString(qcpprikey[2:])
 	var caPriKey ed25519.PrivKeyEd25519
 	cdc.MustUnmarshalBinaryBare(caHex, &caPriKey)
