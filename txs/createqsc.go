@@ -2,6 +2,7 @@ package txs
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/qcp"
@@ -39,39 +40,39 @@ type AddrCoin struct {
 // 备注：
 //		1,成员字段的合法性
 //		2,证书合法性校验
-func (tx TxCreateQSC) ValidateData(ctx context.Context) bool {
+func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	if !btypes.CheckQscName(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
-		return false
+		return errors.New("QscName or CreateAddr or Banker not valid")
 	}
 
 	var crtbank, crtqsc Certificate
 	errbank := cdc.UnmarshalBinaryBare(tx.CAbanker, &crtbank)
 	errqsc := cdc.UnmarshalBinaryBare(tx.CAqsc, &crtqsc)
 	if errbank != nil || errqsc != nil {
-		return false
+		return errors.New("CA not valid")
 	}
 
 	//CA签名校验
 	var rootkey []ed25519.PubKeyEd25519
 	rtpubkey := GetRootPubkey(ctx)
 	if rtpubkey == nil {
-		return false
+		return errors.New("rootca not exists")
 	}
 
 	rootkey = append(rootkey, rtpubkey.(ed25519.PubKeyEd25519))
 	if !VerityCrt(rootkey, crtbank) || !VerityCrt(rootkey, crtqsc) {
-		return false
+		return errors.New("crtbank or crtqsc not valid")
 	}
 
 	if !tx.QscPubkey.Equals(crtqsc.CSR.PublicKey) {
-		return false
+		return errors.New("QscPubkey not valid")
 	}
 
 	if !bytes.Equal(tx.Banker, crtbank.CSR.PublicKey.Address()) {
-		return false
+		return errors.New("Banker not valid")
 	}
 
-	return true
+	return nil
 }
 
 // 功能：tx执行
