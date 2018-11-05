@@ -1,6 +1,8 @@
  QOS ABCI中包含以下存储集合
 * base 保存区块链基本信息、QSC基本信息
 * account 保存账户信息
+* approve 预授权信息
+
 
 ### base
 
@@ -24,3 +26,7 @@ qsc/[name]:{name,pubkey,bankerAddress,createAddress,exrate,CA,description}
 [accountAddress]:{}
 ```
 
+### approve
+```
+from:[fromAddress]/to:[toAddress]
+```
