@@ -2,6 +2,8 @@ package approve
 
 import (
 	"bytes"
+	"errors"
+	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
@@ -36,24 +38,24 @@ func NewApprove(from btypes.Address, to btypes.Address, qos btypes.BigInt, qscs 
 // 1.From，To不为空
 // 2.QOS、QscList内币值大于0
 // 3.QscList内币种不能重复，不能为qos(大小写不敏感)
-func (tx Approve) ValidateData(ctx context.Context) bool {
+func (tx Approve) ValidateData(ctx context.Context) error {
 	if tx.From == nil || tx.To == nil || !tx.IsPositive() {
-		return false
+		return errors.New("From、To is nil or coins is not positive")
 	}
 
 	m := make(map[string]bool)
 	for _, val := range tx.QSCs {
 		if strings.ToLower(val.Name) == "qos" {
-			return false
+			return errors.New("QSCs can not contain qos, not case sensitive")
 		}
 		if _, ok := m[val.Name]; !ok {
 			m[val.Name] = true
 		} else {
-			return false
+			return errors.New(fmt.Sprintf("repeat qsc:%s", val.Name))
 		}
 	}
 
-	return true
+	return nil
 }
 
 // 签名账号：授权账号，使用授权签名者：被授权账号
@@ -194,19 +196,20 @@ type ApproveCreateTx struct {
 	Approve
 }
 
-func (tx ApproveCreateTx) ValidateData(ctx context.Context) bool {
-	if !tx.Approve.ValidateData(ctx) {
-		return false
+func (tx ApproveCreateTx) ValidateData(ctx context.Context) error {
+	err := tx.Approve.ValidateData(ctx)
+	if err != nil {
+		return err
 	}
 
 	// 授权必须不存在
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if exists {
-		return false
+		return errors.New("approve already exists")
 	}
 
-	return true
+	return nil
 }
 
 func (tx ApproveCreateTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
@@ -238,19 +241,20 @@ type ApproveIncreaseTx struct {
 	Approve
 }
 
-func (tx ApproveIncreaseTx) ValidateData(ctx context.Context) bool {
-	if !tx.Approve.ValidateData(ctx) {
-		return false
+func (tx ApproveIncreaseTx) ValidateData(ctx context.Context) error {
+	err := tx.Approve.ValidateData(ctx)
+	if err != nil {
+		return err
 	}
 
 	// 授权必须存在
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return false
+		return errors.New("approve not exists")
 	}
 
-	return true
+	return nil
 }
 
 func (tx ApproveIncreaseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
@@ -278,23 +282,24 @@ type ApproveDecreaseTx struct {
 	Approve
 }
 
-func (tx ApproveDecreaseTx) ValidateData(ctx context.Context) bool {
-	if !tx.Approve.ValidateData(ctx) {
-		return false
+func (tx ApproveDecreaseTx) ValidateData(ctx context.Context) error {
+	err := tx.Approve.ValidateData(ctx)
+	if err != nil {
+		return err
 	}
 
 	// 授权必须存在
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	approve, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return false
+		return errors.New("approve not exists")
 	}
 
 	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		return false
+		return errors.New("qos、qscs in decreasing is bigger than approve")
 	}
 
-	return true
+	return nil
 }
 
 func (tx ApproveDecreaseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
@@ -326,33 +331,34 @@ type ApproveUseTx struct {
 	Approve
 }
 
-func (tx ApproveUseTx) ValidateData(ctx context.Context) bool {
-	if !tx.Approve.ValidateData(ctx) {
-		return false
+func (tx ApproveUseTx) ValidateData(ctx context.Context) error {
+	err := tx.Approve.ValidateData(ctx)
+	if err != nil {
+		return err
 	}
 
 	// 校验授权信息
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	approve, exisit := approveMapper.GetApprove(tx.From, tx.To)
 	if !exisit {
-		return false
+		return errors.New("approve not exists")
 	}
 	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		return false
+		return errors.New("qos、qscs in using is bigger than approve")
 	}
 
 	// 校验授权用户状态
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	iAcc := accountMapper.GetAccount(tx.From)
 	if iAcc == nil {
-		return false
+		return errors.New("from account not exists")
 	}
 	from := iAcc.(*account.QOSAccount)
 	if tx.IsGT(from.QOS, from.QSCs) {
-		return false
+		return errors.New("qos、qscs in using is bigger than from account")
 	}
 
-	return true
+	return nil
 }
 
 func (tx ApproveUseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
@@ -414,19 +420,19 @@ type ApproveCancelTx struct {
 	To   btypes.Address `json:"to"`   // 被授权账号
 }
 
-func (tx ApproveCancelTx) ValidateData(ctx context.Context) bool {
+func (tx ApproveCancelTx) ValidateData(ctx context.Context) error {
 	if tx.From == nil || tx.To == nil {
-		return false
+		return errors.New("from account not exists")
 	}
 
 	// 授权是否存在
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return false
+		return errors.New("from account not exists")
 	}
 
-	return true
+	return nil
 }
 
 func (tx ApproveCancelTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {

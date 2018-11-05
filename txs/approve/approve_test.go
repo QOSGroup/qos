@@ -82,27 +82,27 @@ func defaultContext() context.Context {
 func TestApprove_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 	approve := genTestApprove()
-	require.True(t, approve.ValidateData(ctx))
+	require.Nil(t, approve.ValidateData(ctx))
 
 	from := approve.From
 	to := approve.To
 
 	approve.From = nil
-	require.False(t, approve.ValidateData(ctx))
+	require.NotNil(t, approve.ValidateData(ctx))
 	approve.To = nil
-	require.False(t, approve.ValidateData(ctx))
+	require.NotNil(t, approve.ValidateData(ctx))
 	approve.From = from
-	require.False(t, approve.ValidateData(ctx))
+	require.NotNil(t, approve.ValidateData(ctx))
 
 	approve.To = to
 	approve.QOS = btypes.NewInt(0)
-	require.True(t, approve.ValidateData(ctx))
+	require.Nil(t, approve.ValidateData(ctx))
 
 	approve.QSCs = append(approve.QSCs, &types.QSC{
 		Name:   "qstar",
 		Amount: btypes.NewInt(100),
 	})
-	require.False(t, approve.ValidateData(ctx))
+	require.NotNil(t, approve.ValidateData(ctx))
 
 	approve.QSCs = types.QSCs{
 		{
@@ -110,7 +110,7 @@ func TestApprove_ValidateData(t *testing.T) {
 			Amount: btypes.NewInt(100),
 		},
 	}
-	require.False(t, approve.ValidateData(ctx))
+	require.NotNil(t, approve.ValidateData(ctx))
 }
 
 func TestApprove_GetSigner(t *testing.T) {
@@ -235,13 +235,13 @@ func TestTxApproveCreate_ValidateData(t *testing.T) {
 	tx := ApproveCreateTx{
 		genTestApprove(),
 	}
-	require.True(t, tx.ValidateData(ctx))
+	require.Nil(t, tx.ValidateData(ctx))
 
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	err := approveMapper.SaveApprove(tx.Approve)
 	require.Nil(t, err)
 
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 }
 
 func TestTxApproveCreate_Exec(t *testing.T) {
@@ -269,13 +269,13 @@ func TestTxApproveIncrease_ValidateData(t *testing.T) {
 	increaseTx := ApproveIncreaseTx{
 		genTestApprove(),
 	}
-	require.False(t, increaseTx.ValidateData(ctx))
+	require.NotNil(t, increaseTx.ValidateData(ctx))
 
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	err := approveMapper.SaveApprove(createTx.Approve)
 	require.Nil(t, err)
 
-	require.True(t, increaseTx.ValidateData(ctx))
+	require.Nil(t, increaseTx.ValidateData(ctx))
 }
 
 func TestTxApproveIncrease_Exec(t *testing.T) {
@@ -310,19 +310,19 @@ func TestTxApproveDecrease_ValidateData(t *testing.T) {
 	decreaseTx := ApproveDecreaseTx{
 		genTestApprove(),
 	}
-	require.False(t, decreaseTx.ValidateData(ctx))
+	require.NotNil(t, decreaseTx.ValidateData(ctx))
 
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	err := approveMapper.SaveApprove(createTx.Approve)
 	require.Nil(t, err)
 
-	require.True(t, decreaseTx.ValidateData(ctx))
+	require.Nil(t, decreaseTx.ValidateData(ctx))
 
 	decreaseTx.QOS = btypes.NewInt(100)
-	require.True(t, decreaseTx.ValidateData(ctx))
+	require.Nil(t, decreaseTx.ValidateData(ctx))
 
 	decreaseTx.QOS = btypes.NewInt(110)
-	require.False(t, decreaseTx.ValidateData(ctx))
+	require.NotNil(t, decreaseTx.ValidateData(ctx))
 }
 
 func TestTxApproveDecrease_Exec(t *testing.T) {
@@ -356,21 +356,21 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 	useTx := ApproveUseTx{
 		genTestApprove(),
 	}
-	require.False(t, useTx.ValidateData(ctx))
+	require.NotNil(t, useTx.ValidateData(ctx))
 
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	err := approveMapper.SaveApprove(createTx.Approve)
 	require.Nil(t, err)
-	require.False(t, useTx.ValidateData(ctx))
+	require.NotNil(t, useTx.ValidateData(ctx))
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.From)))
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.To)))
 
-	require.True(t, useTx.ValidateData(ctx))
+	require.Nil(t, useTx.ValidateData(ctx))
 
 	useTx.QOS = btypes.NewInt(110)
-	require.False(t, useTx.ValidateData(ctx))
+	require.NotNil(t, useTx.ValidateData(ctx))
 
 }
 
@@ -437,13 +437,13 @@ func TestTxApproveCancel_ValidateData(t *testing.T) {
 		createTx.From,
 		createTx.To,
 	}
-	require.False(t, cancelTx.ValidateData(ctx))
+	require.NotNil(t, cancelTx.ValidateData(ctx))
 
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	err := mapper.SaveApprove(createTx.Approve)
 	require.Nil(t, err)
 
-	require.True(t, cancelTx.ValidateData(ctx))
+	require.Nil(t, cancelTx.ValidateData(ctx))
 }
 
 func TestTxApproveCancel_Exec(t *testing.T) {

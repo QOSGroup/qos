@@ -38,36 +38,36 @@ func TestTransferTx_ValidateData(t *testing.T) {
 		Senders:   []TransItem{},
 		Receivers: []TransItem{},
 	}
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 
 	addr1 := ed25519.GenPrivKey().PubKey().Address().Bytes()
 	addr2 := ed25519.GenPrivKey().PubKey().Address().Bytes()
 	tx.Senders = append(tx.Senders, TransItem{addr1, btypes.NewInt(0), nil})
 	tx.Receivers = append(tx.Receivers, TransItem{addr2, btypes.NewInt(0), nil})
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 
 	// 账户
 	tx.Senders[0].QOS = btypes.NewInt(10)
 	tx.Receivers[0].QOS = btypes.NewInt(10)
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	accountMapper.SetAccount(accountMapper.NewAccountWithAddress(addr1))
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 	aac1 := accountMapper.GetAccount(addr1).(*account.QOSAccount)
 	aac1.QOS = btypes.NewInt(100)
 	accountMapper.SetAccount(aac1)
-	require.True(t, tx.ValidateData(ctx))
+	require.Nil(t, tx.ValidateData(ctx))
 
 	// 重复
 	tx.Senders = append(tx.Senders, tx.Senders[0])
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 
 	// 金额
 	tx.Senders = tx.Senders[0:1]
 	tx.Receivers[0].QOS = btypes.NewInt(20)
-	require.False(t, tx.ValidateData(ctx))
+	require.NotNil(t, tx.ValidateData(ctx))
 	tx.Receivers[0].QOS = btypes.NewInt(10)
-	require.True(t, tx.ValidateData(ctx))
+	require.Nil(t, tx.ValidateData(ctx))
 }
 
 func TestTransferTx_GetSigner(t *testing.T) {
