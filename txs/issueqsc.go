@@ -2,6 +2,7 @@ package txs
 
 import (
 	"bytes"
+	"errors"
 	"fmt"
 	baccount "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
@@ -19,19 +20,23 @@ type TxIssueQsc struct {
 }
 
 // 功能：检测TxIssuQsc结构体字段是否合法
-func (tx *TxIssueQsc) ValidateData(ctx context.Context) bool {
+func (tx *TxIssueQsc) ValidateData(ctx context.Context) error {
 	if tx.Amount.LT(btypes.NewInt(0)) || !btypes.CheckQscName(tx.QscName) {
-		return false
+		return errors.New("QscName or Amount not valid")
 	}
 
 	acc := GetAccount(ctx, tx.Banker)
 	mainmapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	qscinfo := mainmapper.GetQsc(tx.QscName)
 	if qscinfo == nil {
-		return false
+		return errors.New("Qsc not exists")
 	}
 
-	return bytes.Equal(acc.GetAddress(), qscinfo.BankAddr)
+	if !bytes.Equal(acc.GetAddress(), qscinfo.BankAddr) {
+		return errors.New("Banker Address not match")
+	}
+
+	return nil
 }
 
 // 功能：tx执行
