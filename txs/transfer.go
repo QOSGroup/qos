@@ -1,6 +1,8 @@
 package txs
 
 import (
+	"errors"
+	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
@@ -24,13 +26,13 @@ type TransferTx struct {
 // 1.Senders、Receivers不为空，地址不重复，币值大于0
 // 2.Senders、Receivers 币值总和对应币种相等
 // 3.Senders中账号对应币种币值足够
-func (tx TransferTx) ValidateData(ctx context.Context) bool {
+func (tx TransferTx) ValidateData(ctx context.Context) error {
 	if tx.Senders == nil || len(tx.Senders) == 0 {
-		return false
+		return errors.New("senders is empty")
 	}
 
 	if tx.Receivers == nil || len(tx.Receivers) == 0 {
-		return false
+		return errors.New("receivers is empty")
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
@@ -39,26 +41,26 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 	sumsqscs := types.QSCs{}
 	for _, sender := range tx.Senders {
 		if _, ok := smap[sender.Address.String()]; ok {
-			return false
+			return errors.New(fmt.Sprintf("repeat sender:%s", sender.Address.String()))
 		}
 		smap[sender.Address.String()] = true
 		sender.QOS = sender.QOS.NilToZero()
 		if sender.QOS.IsZero() && sender.QSCs.IsZero() {
-			return false
+			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
 		}
 		if btypes.ZeroInt().GT(sender.QOS) {
-			return false
+			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
 		}
 		if !sender.QSCs.IsNotNegative() {
-			return false
+			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
 		}
 		a := accountMapper.GetAccount(sender.Address)
 		if a == nil {
-			return false
+			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
 		}
 		acc := a.(*account.QOSAccount)
 		if acc == nil || acc.QOS.LT(sender.QOS) || acc.QSCs.IsLT(sender.QSCs) {
-			return false
+			return errors.New(fmt.Sprintf("Sender:%s not exists or QOS、QSCs not valid", sender.Address.String()))
 		}
 		sumsqos = sumsqos.Add(sender.QOS)
 		if nil != sender.QSCs {
@@ -70,18 +72,18 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 	sumrqscs := types.QSCs{}
 	for _, receiver := range tx.Receivers {
 		if _, ok := rmap[receiver.Address.String()]; ok {
-			return false
+			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
 		}
 		rmap[receiver.Address.String()] = true
 		receiver.QOS = receiver.QOS.NilToZero()
 		if receiver.QOS.IsZero() && receiver.QSCs.IsZero() {
-			return false
+			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
 		}
 		if btypes.ZeroInt().GT(receiver.QOS) {
-			return false
+			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
 		}
 		if !receiver.QSCs.IsNotNegative() {
-			return false
+			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
 		}
 		sumrqos = sumrqos.Add(receiver.QOS)
 		if nil != receiver.QSCs {
@@ -91,10 +93,10 @@ func (tx TransferTx) ValidateData(ctx context.Context) bool {
 
 	// 转入转出相等
 	if !sumsqos.Equal(sumrqos) || !sumsqscs.IsEqual(sumrqscs) {
-		return false
+		return errors.New("QOS、QSCs not equal in Senders and Receivers")
 	}
 
-	return true
+	return nil
 }
 
 // 转账
