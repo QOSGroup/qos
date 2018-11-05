@@ -112,7 +112,7 @@ func qcpTransfer(http *client.HTTP, cdc *amino.Codec, tx *string, prikeys *strin
 		})
 	}
 
-	qcpTx := btxs.NewTxQCP(stdTx, *fromChain, *toChain, *qcpseq, 0, 0, false)
+	qcpTx := btxs.NewTxQCP(stdTx, *fromChain, *toChain, *qcpseq, 0, 0, false, "")
 	caHex, _ := hex.DecodeString((*caPriHex)[2:])
 	var caPriKey ed25519.PrivKeyEd25519
 	cdc.MustUnmarshalBinaryBare(caHex, &caPriKey)
