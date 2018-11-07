@@ -19,6 +19,45 @@ type BaseAccount struct {
 * Address 采用ed25519加密，Bech32编码，"address"前缀
 
 ## Query
+* Query by name
 ```
-// TODO
+qoscli account --name=Arya
+{
+  "type": "qbase/account/QOSAccount",
+  "value": {
+    "base_account": {
+      "account_address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
+      "public_key": null,
+      "nonce": "0"
+    },
+    "qos": "100000000",
+    "qscs": [
+      {
+        "coin_name": "qstar",
+        "amount": "100000000"
+      }
+    ]
+  }
+} <nil>
+```
+* Query by address
+```
+qoscli account --addr=address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3
+{
+  "type": "qbase/account/QOSAccount",
+  "value": {
+    "base_account": {
+      "account_address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
+      "public_key": null,
+      "nonce": "0"
+    },
+    "qos": "100000000",
+    "qscs": [
+      {
+        "coin_name": "qstar",
+        "amount": "100000000"
+      }
+    ]
+  }
+} <nil>
 ```

@@ -1,18 +1,10 @@
 # Genesis
 
 ## genesis.json
-执行qosd init之后，会在$HOME/.qosd/config/目录下生成配置文件
+执行qosd init之后，默认会在$HOME/.qosd/config/目录下生成genesis.json配置文件
+
 ```
-[imuge@deepin:config]$ cd $HOME/.qosd/config
-[imuge@deepin:config]$ ll
-total 28
-drwx------ 2 imuge imuge 4096 Nov  6 15:50 .
-drwx------ 4 imuge imuge 4096 Nov  6 15:50 ..
--rw-r--r-- 1 imuge imuge 6178 Nov  6 15:50 config.toml
--rw-r--r-- 1 imuge imuge 1127 Nov  6 15:50 genesis.json
--rw------- 1 imuge imuge  148 Nov  6 15:50 node_key.json
--rw------- 1 imuge imuge  406 Nov  6 15:50 priv_validator.json
-[imuge@deepin:config]$ cat genesis.json
+cat genesis.json
 {
     ...
     "app_state":{
@@ -96,7 +88,7 @@ CA PubKey
     }
 ]
 ```
-联盟链的初始化在qbase baseapp InitChain方法下执行，将解析的qcp信息保存到store中
+联盟链的初始化可在qbase baseapp InitChain方法下执行，将解析的qcp信息保存到store中
 ```
 func (app *BaseApp) InitChain(req abci.RequestInitChain) (res abci.ResponseInitChain) {
     ...

@@ -74,7 +74,7 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 }
 
 // Parse TransItems from string
-// str example: Jia,qos 100, qstar 100; Liu,qos 100,qstar 100
+// str example: Jia,100qos,100qstar;Liu,100qos,100qstar
 func parseTransItem(cliCtx *context.CLIContext, str string) ([]string, []txs.TransItem) {
 	names := make([]string, 0)
 	items := make([]txs.TransItem, 0)
