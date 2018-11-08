@@ -20,14 +20,14 @@ CA证书：   qsc.crt, banker.crt为联盟链证书和banker证书.
 ### 2, qos启动(qosd)
     参数： qosd.exe start --with-tendermint=true  
 ### 3, 发送TxCreateQSC(cli端)
-    参数：	qosappcli.exe -m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -chainid=qsctest -maxgas=100 -nonce=1  
+    参数：	qosappcli.exe -m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -qscchainid=qsctest -qoschainid=qos -maxgas=100 -nonce=1  
 说明：  
     构建此tx需要CA证书 ( qsc.crt, banker.crt )  
     3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径  
     3.2, example: d:\banker.crt  
     3.3, 测试获取路径: github.com/QOSGroup/kepler/examples/v1  ( qsc.crt, banker.crt )  
 ### 4, 发送TxIssue(cli端)	
-    参数： qosappcli.exe -m=txissue -qscname=QSC -nonce=1 -chainid=qsctest -maxgas=100 -amount=20000  
+    参数： qosappcli.exe -m=txissue -qscname=QSC -nonce=1 -qoschainid=qos -maxgas=100 -amount=20000  
 说明：  
 4.1, qscname需和banker.crt中的CSR.Subj.CN相同，区分大小写  
 
