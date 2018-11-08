@@ -23,7 +23,7 @@ import (
 //2, qos启动(qosd)			start --with-tendermint=true
 //3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -chainid=qos -maxgas=100 -nonce=1
 //	 	3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径
-//	 	3.2, example: D:\job\QOSGroup\kepler\examples\v1\banker.crt
+//	 	3.2, example: D:\banker.crt
 // 		3.3, 参考: github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
 //4, 发送TxIssue(cli端)		-m=txissue -qscname=QSC -nonce=1 -chainid=qos -maxgas=100
 //		4.1, qscname需和banker中的qscname相同，区分大小写
@@ -68,8 +68,6 @@ func main() {
 		addr := accary[1].Acc.GetAddress()
 		stdTxIssue(http, cdc, *qscname, btypes.NewInt(*amount), addr, privkey, *nonce, *chainid, *maxgas)
 	case "txcreateqsc":
-		//pathqsc := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\qsc.crt"
-		//pathbank := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\banker.crt"
 		caQsc := txs.FetchCA(*pathqsc)
 		caBanker := txs.FetchCA(*pathbank)
 		acc := []txs.AddrCoin{}
