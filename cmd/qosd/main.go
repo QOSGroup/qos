@@ -9,7 +9,6 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	"io"
-	"os"
 )
 
 func main() {
@@ -25,8 +24,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
 
-	rootDir := os.ExpandEnv("$HOME/.qosd")
-	executor := cli.PrepareBaseCmd(rootCmd, "qos", rootDir)
+	executor := cli.PrepareBaseCmd(rootCmd, "qos", app.DefaultNodeHome)
 
 	err := executor.Execute()
 	if err != nil {

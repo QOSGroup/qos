@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/hex"
 	bacc "github.com/QOSGroup/qbase/account"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
@@ -43,14 +42,4 @@ func TestGenesisStateJSONMarshal(t *testing.T) {
 	err = cdc.UnmarshalJSON(genesisStateJson, &umState)
 	require.Nil(t, err)
 	require.Equal(t, *genesisState, umState)
-}
-
-func TestDefaultCoinKey(t *testing.T) {
-	addr, pubKey, priKey, err := GenerateCoinKey()
-	require.Nil(t, err)
-	require.Equal(t, addr, btypes.Address(pubKey.Address()))
-	priHex, _ := hex.DecodeString(priKey[2:])
-	var discoverPriKey ed25519.PrivKeyEd25519
-	cdc.MustUnmarshalBinaryBare(priHex, &discoverPriKey)
-	require.Equal(t, discoverPriKey.PubKey(), pubKey)
 }
