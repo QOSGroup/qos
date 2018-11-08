@@ -21,11 +21,11 @@ import (
 
 //1, qos初始化(qosd)		init --chain-id=qos
 //2, qos启动(qosd)			start --with-tendermint=true
-//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -chainid=qos -maxgas=100 -nonce=1
+//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -chainid=qsctest -maxgas=100 -nonce=1
 //	 	3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径
 //	 	3.2, example: D:\banker.crt
 // 		3.3, 参考: github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
-//4, 发送TxIssue(cli端)		-m=txissue -qscname=QSC -nonce=1 -chainid=qos -maxgas=100
+//4, 发送TxIssue(cli端)		-m=txissue -qscname=QSC -nonce=1 -chainid=qsctest -maxgas=100
 //		4.1, qscname需和banker中的qscname相同，区分大小写
 //--------------------------------
 //查询账户信息(步骤2,3,4之后都可以执行查询账户信息，验证tx结果)
