@@ -21,6 +21,7 @@ const BASEGAS_CREATEQSC int64 = 10000 //创建qsc需要的最少qos数
 // 功能："创建QSC" 对应的Tx结构
 type TxCreateQSC struct {
 	QscName     string         `json:"qscname"`     //从CA信息获取
+	ChainID     string         `json:"chainid"`     //chainid
 	CreateAddr  btypes.Address `json:"createaddr"`  //QSC创建账户
 	QscPubkey   crypto.PubKey  `json:"qscpubkey"`   //从CA信息获取
 	Banker      btypes.Address `json:"banker"`      //从CA信息获取
@@ -177,6 +178,7 @@ func (tx TxCreateQSC) GetGasPayer() (ret btypes.Address) {
 // 获取签名字段
 func (tx TxCreateQSC) GetSignData() (ret []byte) {
 	ret = append(ret, []byte(tx.QscName)...)
+	ret = append(ret, []byte(tx.ChainID)...)
 	ret = append(ret, tx.QscPubkey.Bytes()...)
 	ret = append(ret, []byte(tx.Banker)...)
 	ret = append(ret, []byte(tx.Extrate)...)
@@ -196,7 +198,7 @@ func (tx TxCreateQSC) GetSignData() (ret []byte) {
 // 备注：CA提供两个证书，联盟链证书 & Banker证书(banker字段)
 //		两种证书通过 qscName 字段关联起来
 func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
-	createAddr btypes.Address, accs *[]AddrCoin,
+	chainid string, createAddr btypes.Address, accs *[]AddrCoin,
 	extrate string, dsp string) (rTx *TxCreateQSC) {
 
 	var crtqsc, crtbank Certificate
@@ -220,6 +222,7 @@ func NewCreateQsc(cdc *go_amino.Codec, caqsc *[]byte, cabank *[]byte,
 
 	rTx = &TxCreateQSC{
 		crtqsc.CSR.Subj.CN,
+		chainid,
 		createAddr,
 		crtqsc.CSR.PublicKey,
 		[]byte(crtbank.CSR.PublicKey.Address()),
