@@ -141,7 +141,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 		ret = btypes.ErrInternal(ret.Log).Result()
 		return
 	}
-	qcpmapper.SetChainInTrustPubKey(tx.QscName, tx.QscPubkey)
+	qcpmapper.SetChainInTrustPubKey(tx.ChainID, tx.QscPubkey)
 	ret.Code = btypes.ABCICodeOK
 
 	return
