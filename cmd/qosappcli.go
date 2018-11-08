@@ -21,7 +21,7 @@ import (
 
 //1, qos初始化(qosd)		init --chain-id=qos
 //2, qos启动(qosd)			start --with-tendermint=true
-//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -chainid=qos -maxgas=100 -nonce=1
+//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -chainid=qos -maxgas=100 -nonce=1
 //	 	3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径
 //	 	3.2, example: D:\job\QOSGroup\kepler\examples\v1\banker.crt
 // 		3.3, 参考: github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
@@ -37,12 +37,15 @@ func main() {
 	cdc := app.MakeCodec()
 
 	mode := flag.String("m", "", "client mode: get/send")
+	chainid := flag.String("chainid", "", "chainid, used in tx")
 
 	// query
 	addr := flag.String("addr", "", "input account addr(bech32)")
 
 	// createQSC
 	extrate := flag.String("extrate", "1:280.0000", "extrate: qos/qscxxx")
+	pathqsc := flag.String("pathqsc", "", "path of CA(qsc)")
+	pathbank := flag.String("pathbank", "", "path of CA(banker)")
 
 	// issue
 	amount := flag.Int64("amount", 100000, "coins send to banker")
@@ -50,7 +53,6 @@ func main() {
 	nonce := flag.Int64("nonce", 0, "value of nonce")
 
 	// txstd
-	chainid := flag.String("chainid", "", "chainid, used in txstd")
 	maxgas := flag.Int64("maxgas", 0, "maxgas for txstd")
 
 	flag.Parse()
@@ -66,10 +68,10 @@ func main() {
 		addr := accary[1].Acc.GetAddress()
 		stdTxIssue(http, cdc, *qscname, btypes.NewInt(*amount), addr, privkey, *nonce, *chainid, *maxgas)
 	case "txcreateqsc":
-		pathqsc := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\qsc.crt"
-		pathbank := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\banker.crt"
-		caQsc := txs.FetchCA(pathqsc)
-		caBanker := txs.FetchCA(pathbank)
+		//pathqsc := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\qsc.crt"
+		//pathbank := "D:\\job\\QOSGroup\\kepler\\examples\\v1\\banker.crt"
+		caQsc := txs.FetchCA(*pathqsc)
+		caBanker := txs.FetchCA(*pathbank)
 		acc := []txs.AddrCoin{}
 		accary := test.InitKeys(cdc)
 
@@ -93,7 +95,7 @@ func stdTxCreateQSC(http *client.HTTP, cdc *amino.Codec, caqsc *[]byte, cabank *
 		nonce,
 	})
 
-	tx := txs.NewCreateQsc(cdc, caqsc, cabank, createaddr, accs, extrate, dsp)
+	tx := txs.NewCreateQsc(cdc, caqsc, cabank, chainid, createaddr,accs, extrate, dsp)
 	if tx == nil {
 		panic("createqsc error!")
 	}

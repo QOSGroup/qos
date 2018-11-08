@@ -28,7 +28,8 @@ func TestNewCreateQsc(t *testing.T) {
 		AddrCoin{[]byte("qscAddress2"), types.NewInt(2000)},
 	}
 
-	txCreateQsc := NewCreateQsc(cdc, &caQsc, &caBanker, []byte("creator_qsc10"), &accInit, "1:280.0000", "createQsc")
+	txCreateQsc := NewCreateQsc(cdc, &caQsc, &caBanker, "chainqsc1",
+				[]byte("creator_qsc10"), &accInit, "1:280.0000", "createQsc")
 	require.NotNil(t, txCreateQsc)
 	txCreateQsc.ValidateData(ctx)
 
