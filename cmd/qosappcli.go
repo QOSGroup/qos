@@ -21,7 +21,7 @@ import (
 
 //1, qos初始化(qosd)		init --chain-id=qos
 //2, qos启动(qosd)			start --with-tendermint=true
-//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -chainid=qsctest -maxgas=100 -nonce=1
+//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -qscchainid=qsctest -qoschainid=qos -maxgas=100 -nonce=1
 //	 	3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径
 //	 	3.2, example: D:\banker.crt
 // 		3.3, 参考: github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
@@ -37,7 +37,7 @@ func main() {
 	cdc := app.MakeCodec()
 
 	mode := flag.String("m", "", "client mode: get/send")
-	chainid := flag.String("chainid", "", "chainid, used in tx")
+	qoschainid := flag.String("qoschainid", "qos", "chainid of qos, used in tx")
 
 	// query
 	addr := flag.String("addr", "", "input account addr(bech32)")
@@ -46,6 +46,7 @@ func main() {
 	extrate := flag.String("extrate", "1:280.0000", "extrate: qos/qscxxx")
 	pathqsc := flag.String("pathqsc", "", "path of CA(qsc)")
 	pathbank := flag.String("pathbank", "", "path of CA(banker)")
+	qscchainid := flag.String("qscchainid", "", "chainid of qsc, used in tx")
 
 	// issue
 	amount := flag.Int64("amount", 100000, "coins send to banker")
@@ -66,7 +67,7 @@ func main() {
 		accary := test.InitKeys(cdc)
 		privkey := accary[1].PrivKey
 		addr := accary[1].Acc.GetAddress()
-		stdTxIssue(http, cdc, *qscname, btypes.NewInt(*amount), addr, privkey, *nonce, *chainid, *maxgas)
+		stdTxIssue(http, cdc, *qscname, btypes.NewInt(*amount), addr, privkey, *nonce, *qoschainid, *maxgas)
 	case "txcreateqsc":
 		caQsc := txs.FetchCA(*pathqsc)
 		caBanker := txs.FetchCA(*pathbank)
@@ -77,7 +78,7 @@ func main() {
 			acc = append(acc, txs.AddrCoin{accary[i].Acc.GetAddress(), btypes.NewInt(int64(i + 100))})
 		}
 
-		stdTxCreateQSC(http, cdc, caQsc, caBanker, accary[0].Acc.GetAddress(), accary[0].PrivKey, &acc, *extrate, "", *chainid, *maxgas, *nonce)
+		stdTxCreateQSC(http, cdc, caQsc, caBanker, accary[0].Acc.GetAddress(), accary[0].PrivKey, &acc, *extrate, "", *qscchainid, *qoschainid, *maxgas, *nonce)
 	default:
 		fmt.Printf("%s doen't support now!", *mode)
 	}
@@ -85,7 +86,7 @@ func main() {
 
 func stdTxCreateQSC(http *client.HTTP, cdc *amino.Codec, caqsc *[]byte, cabank *[]byte,
 	createaddr btypes.Address, privkey crypto.PrivKey, accs *[]txs.AddrCoin,
-	extrate string, dsp string, chainid string, maxgas int64, nonce int64) {
+	extrate string, dsp string, qscchainid string, qoschainid string, maxgas int64, nonce int64) {
 
 	var accsigner []*accsign
 	accsigner = append(accsigner, &accsign{
@@ -93,12 +94,12 @@ func stdTxCreateQSC(http *client.HTTP, cdc *amino.Codec, caqsc *[]byte, cabank *
 		nonce,
 	})
 
-	tx := txs.NewCreateQsc(cdc, caqsc, cabank, chainid, createaddr,accs, extrate, dsp)
+	tx := txs.NewCreateQsc(cdc, caqsc, cabank, qscchainid, createaddr,accs, extrate, dsp)
 	if tx == nil {
 		panic("createqsc error!")
 	}
 
-	txstd := genTxStd(cdc, tx, chainid, maxgas, accsigner)
+	txstd := genTxStd(cdc, tx, qoschainid, maxgas, accsigner)
 	if txstd == nil {
 		panic("gentxstd error!")
 	}
