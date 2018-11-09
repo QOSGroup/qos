@@ -14,7 +14,7 @@ import (
 
 // 功能：发币 对应的Tx结构
 type TxIssueQsc struct {
-	QscName string         `json:"qscName"` //发币账户名
+	QscName string         `json:"qscName"` //币名
 	Amount  btypes.BigInt  `json:"amount"`  //金额
 	Banker  btypes.Address `json:"banker"`  //banker地址
 }
@@ -29,11 +29,16 @@ func (tx *TxIssueQsc) ValidateData(ctx context.Context) error {
 	mainmapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	qscinfo := mainmapper.GetQsc(tx.QscName)
 	if qscinfo == nil {
-		return errors.New("Qsc not exists")
+		return errors.New("QscName not exists")
 	}
 
 	if !bytes.Equal(acc.GetAddress(), qscinfo.BankAddr) {
 		return errors.New("Banker Address not match")
+	}
+
+	if qscinfo.Qscname != tx.QscName {
+		errs := fmt.Sprintf("Banker expect coin(%s) but get (%s)", qscinfo.Qscname, tx.QscName)
+		return errors.New(errs)
 	}
 
 	return nil
