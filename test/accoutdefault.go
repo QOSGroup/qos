@@ -37,90 +37,23 @@ func InitKeys(cdc *go_amino.Codec) (accret []*AccAndPrivkey) {
   "type": "tendermint/PrivKeyEd25519",
   "value": "rDwWppdGKFCv0wUxFqVID87GI/CFwLbL9p6EM6ug5brPbkXQoZMIH9+Rgi1/vFcNJUHp88fKZDNFdEif8dg73A=="
  }
-},
-{
- "name": "banker",
- "addrbech32": "address1l7d3dc26adk9gwzp777s3a9p5tprn7m43p99cg",
- "address": "FF9B16E15AEB6C543841F7BD08F4A1A2C239FB75",
- "pub_key": {
-  "type": "tendermint/PubKeyEd25519",
-  "value": "CCguu8/5aUY3uDQDehaWjAVriI4VnGHiOR8TIdp0zkI="
- },
- "priv_key": {
-  "type": "tendermint/PrivKeyEd25519",
-  "value": "maD8NeYMqx6fHWHCiJdkV4/B+tDXFIpY4LX4vhrdmAYIKC67z/lpRje4NAN6FpaMBWuIjhWcYeI5HxMh2nTOQg=="
- }
-},
-{
- "name": "acc1",
- "addrbech32": "address1zsqzn6wdecyar6c6nzem3e8qss2ws95csr8d0r",
- "address": "140029E9CDCE09D1EB1A98B3B8E4E08414E81698",
- "pub_key": {
-  "type": "tendermint/PubKeyEd25519",
-  "value": "DcCiMiGEAbPVWcRsg/RUuSeF72Z7Z1Gk7aBrBJe/t4Y="
- },
- "priv_key": {
-  "type": "tendermint/PrivKeyEd25519",
-  "value": "vAeIlHuWjvz/JmyGcB46ZHfCZdXCYuRogqxDgjYUM5wNwKIyIYQBs9VZxGyD9FS5J4XvZntnUaTtoGsEl7+3hg=="
- }
-},
-{
- "name": "acc2",
- "addrbech32": "address12as5uhdpf2y9zjkurx2l6dz8g98qkgryc4x355",
- "address": "57614E5DA14A88514ADC1995FD3447414E0B2064",
- "pub_key": {
-  "type": "tendermint/PubKeyEd25519",
-  "value": "va8Kjc8UCZUD4efbWaW0tRHSE+kxOTei+9rHvQVHvYs="
- },
- "priv_key": {
-  "type": "tendermint/PrivKeyEd25519",
-  "value": "31PlT2p6UICjV63dG7Nh3Mh9W0b+7FAEU+KOAxyNbZ29rwqNzxQJlQPh59tZpbS1EdIT6TE5N6L72se9BUe9iw=="
- }
-},
-{
- "name": "acc3",
- "addrbech32": "address1y9r4pjjnvkmpvw46de8tmwunw4nx4qnz2ax5ux",
- "address": "214750CA5365B6163ABA6E4EBDBB9375666A8262",
- "pub_key": {
-  "type": "tendermint/PubKeyEd25519",
-  "value": "O8YzKrGr4XNfdMQhs2bl3I2qVGoYu2O79gw+Ic1QgLE="
- },
- "priv_key": {
-  "type": "tendermint/PrivKeyEd25519",
-  "value": "9QkouVPl29N2v1lBO1+azUDqm38fAgs6d3Xo8DcnCus7xjMqsavhc190xCGzZuXcjapUahi7Y7v2DD4hzVCAsQ=="
- }
 }
 ]`)
 
-	var accs []KeyPV
+	var accs KeyPV
 	cdc.UnmarshalJSON(jsbyte, &accs)
 	accret = []*AccAndPrivkey{}
 
-	for _, ks := range accs {
-		var qos int64 = 0
-
-		switch ks.Name {
-		case "creator":
-			qos = 2000000
-			break
-		case "banker":
-			qos = 10
-			break
-		default:
-			qos = 0
-		}
-
-		addr, _ := btypes.GetAddrFromBech32(ks.AddrBech32)
-		acc := account.QOSAccount{
-			baccount.BaseAccount{
-				addr,
-				ks.PubKey,
-				0},
-			btypes.NewInt(qos),
-			[]*types.QSC{},
-		}
-		accret = append(accret, &AccAndPrivkey{ks.PrivKey, acc})
+	addr, _ := btypes.GetAddrFromBech32(accs.AddrBech32)
+	acc := account.QOSAccount{
+		baccount.BaseAccount{
+			addr,
+			accs.PubKey,
+			0},
+		btypes.NewInt(200000),
+		[]*types.QSC{},
 	}
+	accret = append(accret, &AccAndPrivkey{accs.PrivKey, acc})
 
 	return
 }

@@ -14,6 +14,7 @@ import (
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
+	"strings"
 )
 
 const BASEGAS_CREATEQSC int64 = 10000 //创建qsc需要的最少qos数
@@ -44,6 +45,10 @@ type AddrCoin struct {
 func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	if !btypes.CheckQscName(tx.QscName) || !CheckAddr(tx.CreateAddr) || !CheckAddr(tx.Banker) {
 		return errors.New("QscName or CreateAddr or Banker not valid")
+	}
+
+	if strings.Compare(strings.ToLower(tx.QscName), "qos") == 0 {
+		return errors.New("qos is exist! please change another name")
 	}
 
 	var crtbank, crtqsc Certificate
@@ -106,6 +111,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 	// 保存qsc 信息
 	qscinfo := qosmapper.QscInfo{
 		tx.QscName,
+		tx.ChainID,
 		tx.Banker,
 		tx.CreateAddr,
 		tx.QscPubkey,
@@ -123,7 +129,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 	// 给账户分发qsc
 	for _, va := range tx.AccInit {
 		vaAcc := GetAccount(ctx, va.Address)
-		if &vaAcc == nil {
+		if vaAcc == nil {
 			// vaAcc, _ = CreateAndSaveAccount(ctx, va.Address)
 			vaAcc = account.ProtoQOSAccount().(*account.QOSAccount)
 			vaAcc.SetAddress(va.Address)

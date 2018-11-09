@@ -38,9 +38,9 @@ func CreateAndSaveAccount(ctx bcontext.Context, addr btypes.Address) (acc *accou
 		return nil, false
 	}
 
-	accfind := mapper.GetAccount(addr).(*account.QOSAccount)
+	accfind := mapper.GetAccount(addr)
 	if accfind != nil {
-		return accfind, false
+		return accfind.(*account.QOSAccount), false
 	}
 
 	acc = mapper.NewAccountWithAddress(addr).(*account.QOSAccount)

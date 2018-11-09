@@ -8,11 +8,14 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/test"
+	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/txs"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
+	"github.com/tendermint/tendermint/libs/bech32"
 	"github.com/tendermint/tendermint/rpc/client"
+	"math/rand"
 )
 
 //cli端： 	qos\cmd\qosappcli.go
@@ -21,17 +24,29 @@ import (
 
 //1, qos初始化(qosd)		init --chain-id=qos
 //2, qos启动(qosd)			start --with-tendermint=true
-//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -qscchainid=qsctest -qoschainid=qos -maxgas=100 -nonce=1
-//	 	3.1, pathqsc & pathbank 分别为qsc和banker的CA文件路径
-//	 	3.2, example: D:\banker.crt
-// 		3.3, 参考: github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
-//4, 发送TxIssue(cli端)		-m=txissue -qscname=QSC -nonce=1 -chainid=qsctest -maxgas=100
+//3, 发送TxCreateQSC(cli端)	-m=txcreateqsc -pathqsc=d:\qsc.crt -pathbank=d:\banker.crt -qscchainid=qcptest -qoschainid=qos -maxgas=100 -nonce=1 -privkeycreator=rDwWppdGKFCv0wUxFqVID87GI/CFwLbL9p6EM6ug5brPbkXQoZMIH9+Rgi1/vFcNJUHp88fKZDNFdEif8dg73A==
+//	 	3.1, pathqsc/pathbank: qsc/banker的CA文件路径
+// 			 github.com/QOSGroup/kepler/examples/v1  (qsc.crt, banker.crt)
+//		3.2, qscchainid:  联盟链chainid
+//		3.3, qoschainid:  公链chainid
+//		3.4, maxgas: 期望最大gas花费
+//		3.5, privkeycreator: creator的 private key.
+//4, 发送TxIssue(cli端)		-m=txissue -qscname=QSC -nonce=1 -qoschainid=qos -maxgas=100 -privkeybank=maD8NeYMqx6fHWHCiJdkV4/B+tDXFIpY4LX4vhrdmAYIKC67z/lpRje4NAN6FpaMBWuIjhWcYeI5HxMh2nTOQg==
 //		4.1, qscname需和banker中的qscname相同，区分大小写
+//		4.2, qoschainid:  公链chainid
+//		4.3, privkeybank: banker的privatekey
 //--------------------------------
+//查询创建的联盟链信息
+//	cli端:	-m=qscquery -qscname=QSC
+//		qscname: 要查询的联盟链名称
+//
 //查询账户信息(步骤2,3,4之后都可以执行查询账户信息，验证tx结果)
 //
+//cli端查询creator		-m=accquery -addr=address1auug9tjmkm00w36savxjywmj0sjccaam3pvjfu
 //cli端查询banker		-m=accquery -addr=address1l7d3dc26adk9gwzp777s3a9p5tprn7m43p99cg
 //cli端查询acc1			-m=accquery -addr=address1zsqzn6wdecyar6c6nzem3e8qss2ws95csr8d0r
+//cli端查询acc2			-m=accquery -addr=address12as5uhdpf2y9zjkurx2l6dz8g98qkgryc4x355
+//cli端查询acc3			-m=accquery -addr=address1y9r4pjjnvkmpvw46de8tmwunw4nx4qnz2ax5ux
 
 func main() {
 	cdc := app.MakeCodec()
@@ -47,11 +62,13 @@ func main() {
 	pathqsc := flag.String("pathqsc", "", "path of CA(qsc)")
 	pathbank := flag.String("pathbank", "", "path of CA(banker)")
 	qscchainid := flag.String("qscchainid", "", "chainid of qsc, used in tx")
+	privkeycreator := flag.String("privkeycreator", "", "private key of creator")
 
 	// issue
 	amount := flag.Int64("amount", 100000, "coins send to banker")
 	qscname := flag.String("qscname", "qsc1", "qsc name")
 	nonce := flag.Int64("nonce", 0, "value of nonce")
+	privkeybank := flag.String("privkeybank", "", "private key of creator")
 
 	// txstd
 	maxgas := flag.Int64("maxgas", 0, "maxgas for txstd")
@@ -63,22 +80,32 @@ func main() {
 	switch *mode {
 	case "accquery": // 账户查询
 		queryAccount(http, cdc, addr)
+	case "qscquery":
+		queryQscInfo(http, cdc, *qscname)
 	case "txissue":
-		accary := test.InitKeys(cdc)
-		privkey := accary[1].PrivKey
-		addr := accary[1].Acc.GetAddress()
+		addr, privkey := parseJsonPrivkey(cdc, *privkeybank)
 		stdTxIssue(http, cdc, *qscname, btypes.NewInt(*amount), addr, privkey, *nonce, *qoschainid, *maxgas)
 	case "txcreateqsc":
+		if !cmdcheck(*mode, *privkeycreator, *pathbank, *pathqsc) {
+			return
+		}
+
 		caQsc := txs.FetchCA(*pathqsc)
 		caBanker := txs.FetchCA(*pathbank)
 		acc := []txs.AddrCoin{}
-		accary := test.InitKeys(cdc)
-
-		for i := 2; i < 5; i++ {
-			acc = append(acc, txs.AddrCoin{accary[i].Acc.GetAddress(), btypes.NewInt(int64(i + 100))})
+		accprivkeys := []string {
+			"vAeIlHuWjvz/JmyGcB46ZHfCZdXCYuRogqxDgjYUM5wNwKIyIYQBs9VZxGyD9FS5J4XvZntnUaTtoGsEl7+3hg==",
+			"31PlT2p6UICjV63dG7Nh3Mh9W0b+7FAEU+KOAxyNbZ29rwqNzxQJlQPh59tZpbS1EdIT6TE5N6L72se9BUe9iw==",
+			"9QkouVPl29N2v1lBO1+azUDqm38fAgs6d3Xo8DcnCus7xjMqsavhc190xCGzZuXcjapUahi7Y7v2DD4hzVCAsQ==",
 		}
 
-		stdTxCreateQSC(http, cdc, caQsc, caBanker, accary[0].Acc.GetAddress(), accary[0].PrivKey, &acc, *extrate, "", *qscchainid, *qoschainid, *maxgas, *nonce)
+		for _, v := range accprivkeys {
+			addracc, _ := parseJsonPrivkey(cdc, v)
+			acc = append(acc, txs.AddrCoin{addracc, btypes.NewInt(int64(rand.Int()%1000 + 100))})
+		}
+
+		addr, privkey := parseJsonPrivkey(cdc, *privkeycreator)
+		stdTxCreateQSC(http, cdc, caQsc, caBanker, addr, privkey, &acc, *extrate, "", *qscchainid, *qoschainid, *maxgas, *nonce)
 	default:
 		fmt.Printf("%s doen't support now!", *mode)
 	}
@@ -142,6 +169,31 @@ func queryAccount(http *client.HTTP, cdc *amino.Codec, addr *string) (acc *accou
 	return
 }
 
+func queryQscInfo(http *client.HTTP, cdc *amino.Codec, qscname string) (err error) {
+	key := fmt.Sprintf("qsc/[%s]", qscname)
+	result, err := http.ABCIQuery("store/base/key", []byte(key))
+	if err != nil {
+		panic(err)
+	}
+
+	var qcpinfo mapper.QscInfo
+	queryValueBz := result.Response.GetValue()
+	if len(queryValueBz) == 0 {
+		fmt.Printf("Chain (%s) not exist!", qscname)
+		return nil
+	}
+
+	err = cdc.UnmarshalBinaryBare(queryValueBz, &qcpinfo)
+	if err != nil {
+		panic(err)
+	}
+
+	addr,err := bech32.ConvertAndEncode("address", qcpinfo.BankAddr)
+	fmt.Printf("qscname:%s \nbankeraddr:%s \nchainid: %s\n", qcpinfo.Qscname, addr, qcpinfo.ChainID)
+
+	return nil
+}
+
 type accsign struct {
 	privkey crypto.PrivKey `json:"privkey"`
 	nonce   int64          `json:"nonce"`
@@ -179,4 +231,45 @@ func broadcastTxStd(http *client.HTTP, cdc *amino.Codec, txstd *btxs.TxStd) {
 	}
 
 	fmt.Println(fmt.Sprintf("tx result:  %v", result))
+}
+
+func parseJsonPrivkey(cdc *amino.Codec, jsprivkey string) (addr []byte, privkey ed25519.PrivKeyEd25519) {
+	privstr := fmt.Sprintf(` {
+ 			 	"type": "tendermint/PrivKeyEd25519",
+ 			 	"value": "%s"
+ 			}`, jsprivkey)
+	err := cdc.UnmarshalJSON([]byte(privstr), &privkey)
+	if err != nil {
+		panic("parse json privkey error!")
+	}
+
+	addr = privkey.PubKey().Address()
+
+	return
+}
+
+func cmdcheck(mode string, option...string) bool {
+	switch mode {
+	case "txcreateqsc":
+		//*privkeybank, *pathbank, *pathqsc
+		for idx,v := range option {
+			switch idx {
+			case 0:
+				if len(v) < 64 {
+					fmt.Print("invalide private key!")
+					return false
+				}
+			case 1,2:
+				if len(v) < 6 {
+					fmt.Print("invalide path!")
+					return false
+				}
+			}
+		}
+	default:
+		fmt.Printf("cmd (%s) not support!", mode)
+		return false
+	}
+
+	return true
 }

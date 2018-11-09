@@ -18,6 +18,7 @@ type MainMapper struct {
 
 type QscInfo struct {
 	Qscname     string         `json:"qscname"`
+	ChainID     string         `json:"chainid"`
 	BankAddr    btypes.Address `json:"pubkeybank"`
 	CreateAddr  btypes.Address `json:"createaddr"`
 	QscPubkey   crypto.PubKey  `json:"qscpubkey"`
