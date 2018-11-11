@@ -1,10 +1,12 @@
 package main
 
 import (
+	bcli "github.com/QOSGroup/qbase/client"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
+	cmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	"github.com/tendermint/tendermint/libs/cli"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
@@ -20,6 +22,10 @@ func main() {
 		Short:             "qos Daemon (server)",
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
+
+	// tendermint testnet cmd
+	rootCmd.AddCommand(cmd.TestnetFilesCmd)
+	rootCmd.AddCommand(bcli.LineBreak)
 
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
