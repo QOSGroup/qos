@@ -4,6 +4,7 @@ import (
 	bcli "github.com/QOSGroup/qbase/client"
 	"github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/keys"
+	"github.com/QOSGroup/qbase/client/qcp"
 	"github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/client/txs/approve"
@@ -45,6 +46,10 @@ func main() {
 	approve.AddCommands(rootCmd, cdc)
 	createqsc.AddCommands(rootCmd, cdc)
 	issue.AddCommands(rootCmd, cdc)
+	rootCmd.AddCommand(bcli.LineBreak)
+
+	// qcp
+	qcp.AddCommands(rootCmd, cdc)
 	rootCmd.AddCommand(bcli.LineBreak)
 
 	// version
