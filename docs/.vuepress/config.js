@@ -43,8 +43,8 @@ module.exports = {
                     ["/spec/genesis", "Genesis"],
                     ["/spec/txs/transfer", "Transfer"],
                     ["/spec/txs/approve", "Approve"],
-                    ["/spec/txs/createqsc", "CreateQSC"],
-                    ["/spec/txs/issueqsc", "IssueQSC"]
+                    ["/spec/txs/createqsc_issue_cli", "CreateQSCIssueQSCcli"],
+                    ["/spec/txs/createqsc_issue_design", "CreateQSCIssueQSCdesign"]
                 ]
             }
         ]

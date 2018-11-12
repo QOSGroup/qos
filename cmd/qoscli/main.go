@@ -7,6 +7,8 @@ import (
 	"github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/client/txs/approve"
+	"github.com/QOSGroup/qos/client/txs/createqsc"
+	"github.com/QOSGroup/qos/client/txs/issue"
 	"github.com/QOSGroup/qos/client/txs/transfer"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
@@ -41,6 +43,8 @@ func main() {
 	tx.AddCommands(rootCmd, cdc)
 	transfer.AddCommands(rootCmd, cdc)
 	approve.AddCommands(rootCmd, cdc)
+	createqsc.AddCommands(rootCmd, cdc)
+	issue.AddCommands(rootCmd, cdc)
 	rootCmd.AddCommand(bcli.LineBreak)
 
 	// version
