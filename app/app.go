@@ -8,6 +8,8 @@ import (
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/test"
 	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/x/miner"
+
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -34,6 +36,11 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	// 设置 InitChainer
 	app.SetInitChainer(app.initChainer)
+
+	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+		miner.BeginBlocker(ctx , req)
+		return abci.ResponseBeginBlock{}
+	})
 
 	// 账户mapper
 	app.RegisterAccountProto(qosacc.ProtoQOSAccount)

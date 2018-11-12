@@ -4,6 +4,11 @@ import (
 	"github.com/QOSGroup/qbase/types"
 )
 
+const (
+	Qos         = int64(1e8)
+	BlockReward = int64(10 * Qos)
+)
+
 type QSC = types.BaseCoin
 
 func NewQSC(name string, amount types.BigInt) *QSC {
