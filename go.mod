@@ -3,7 +3,7 @@ module github.com/QOSGroup/qos
 // go: no requirements found in Gopkg.lock
 
 require (
-	github.com/QOSGroup/qbase v0.0.7-0.20181109061031-e52065906151
+	github.com/QOSGroup/qbase v0.0.7-0.20181112035505-9f9f6ea2c876
 	github.com/pkg/errors v0.8.0
 
 	github.com/spf13/cobra v0.0.3

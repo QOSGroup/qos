@@ -2,9 +2,7 @@
 
 QOS包含创建QSC，发放QSC，转账，预授权
 
-* [创建QSC](../spec/txs/createqsc.md)
-
-* [发放QSC](../spec/txs/issueqsc.md)
+* [CreateQSC & Issue](../spec/txs/createqcs_issue_cli.md)
 
 * [转账](../spec/txs/transfer.md)
 
