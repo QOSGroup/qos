@@ -62,8 +62,8 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Address to create approve")
-	cmd.Flags().String(flagTo, "", "Address to receive approve")
+	cmd.Flags().String(flagFrom, "", "Account name to create approve")
+	cmd.Flags().String(flagTo, "", "Account name to receive approve")
 
 	return cmd
 }
@@ -126,8 +126,8 @@ func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Address to create approve")
-	cmd.Flags().String(flagTo, "", "Address to receive approve")
+	cmd.Flags().String(flagFrom, "", "Account name to create approve")
+	cmd.Flags().String(flagTo, "", "Account name to receive approve")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
 
@@ -193,8 +193,8 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Address to create approve")
-	cmd.Flags().String(flagTo, "", "Address to receive approve")
+	cmd.Flags().String(flagFrom, "", "Account name to create approve")
+	cmd.Flags().String(flagTo, "", "Account name to receive approve")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
 
@@ -260,8 +260,8 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Address to create approve")
-	cmd.Flags().String(flagTo, "", "Address to receive approve")
+	cmd.Flags().String(flagFrom, "", "Account name to create approve")
+	cmd.Flags().String(flagTo, "", "Account name to receive approve")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
 
@@ -327,8 +327,8 @@ func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Address to create approve")
-	cmd.Flags().String(flagTo, "", "Address to receive approve")
+	cmd.Flags().String(flagFrom, "", "Account name to create approve")
+	cmd.Flags().String(flagTo, "", "Account name to receive approve")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
 
@@ -385,8 +385,8 @@ func CancelApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Address to create approve")
-	cmd.Flags().String(flagTo, "", "Address to receive approve")
+	cmd.Flags().String(flagFrom, "", "Account name to create approve")
+	cmd.Flags().String(flagTo, "", "Account name to receive approve")
 
 	return cmd
 }

@@ -67,8 +67,8 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagSenders, "", "Senders, eg: Jia,qos 10|qstar 100")
-	cmd.Flags().String(flagReceivers, "", "Receivers, eg: Liu,qos 10|qstar 100")
+	cmd.Flags().String(flagSenders, "", "Senders, eg: Arya,10qos,100qstar")
+	cmd.Flags().String(flagReceivers, "", "Receivers, eg: Sansa,10qos,100qstar")
 
 	return cmd
 }
