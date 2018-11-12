@@ -1,9 +1,9 @@
 package main
 
 import (
-	bcli "github.com/QOSGroup/qbase/client"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
@@ -25,7 +25,9 @@ func main() {
 
 	// tendermint testnet cmd
 	rootCmd.AddCommand(cmd.TestnetFilesCmd)
-	rootCmd.AddCommand(bcli.LineBreak)
+
+	// version cmd
+	rootCmd.AddCommand(version.VersionCmd)
 
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
