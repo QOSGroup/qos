@@ -8,13 +8,16 @@ import (
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/test"
 	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/txs/validator"
+	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/x/miner"
-
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	"io"
+	"strconv"
 )
 
 const (
@@ -38,7 +41,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.SetInitChainer(app.initChainer)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-		miner.BeginBlocker(ctx , req)
+		miner.BeginBlocker(ctx, req)
 		return abci.ResponseBeginBlock{}
 	})
 
@@ -53,6 +56,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	// 预授权mapper
 	app.RegisterMapper(approve.NewApproveMapper())
+
+	// Validator mapper
+	app.RegisterMapper(validator.NewValidatorMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -89,6 +95,19 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 	accret := test.InitKeys(app.GetCdc())
 	for _, ac := range accret {
 		accountMapper.SetAccount(&ac.Acc)
+	}
+
+	// 保存Validators以及对应账户信息
+	if len(req.Validators) > 0 {
+		validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
+		for i, v := range req.Validators {
+			var pubKey ed25519.PubKeyEd25519
+			copy(pubKey[:], v.PubKey.Data[:ed25519.PubKeyEd25519Size])
+			validator := types.NewValidator("v-"+strconv.Itoa(i), pubKey, v.Power, 1)
+			validatorMapper.SaveValidator(validator)
+			accountMapper.SetAccount(accountMapper.NewAccountWithAddress(pubKey.Address().Bytes()))
+		}
+		validatorMapper.SetUpdated(false)
 	}
 
 	return abci.ResponseInitChain{}
