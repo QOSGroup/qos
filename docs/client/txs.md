@@ -6,7 +6,7 @@ QOS包含创建QSC，发放QSC，转账，预授权
 
 交易中涉及账户名、地址和密码参照[Keys](../spec/keys.md)生成
 
-* [CreateQSC & Issue](../spec/txs/createqcs_issue_cli.md)
+* [CreateQSC & Issue](../spec/txs/createqsc_issue_cli.md)
 
 * [转账](../spec/txs/transfer.md)
 
