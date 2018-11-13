@@ -8,8 +8,8 @@ import (
 	btx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/client"
 	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -31,46 +31,42 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 			queryPath := "store/approve/key"
 
-			fromName := viper.GetString(flagFrom)
-			fromInfo, err := keys.GetKeyInfo(cliCtx, fromName)
+			fromStr := viper.GetString(flagFrom)
+			_, err := btypes.GetAddrFromBech32(fromStr)
 			if err != nil {
 				return err
 			}
 
-			toName := viper.GetString(flagTo)
-			toInfo, err := keys.GetKeyInfo(cliCtx, toName)
+			toStr := viper.GetString(flagTo)
+			_, err = btypes.GetAddrFromBech32(toStr)
 			if err != nil {
 				return err
 			}
 
-			output, err := cliCtx.Query(queryPath, approve.BuildApproveKey(fromInfo.GetAddress().String(), toInfo.GetAddress().String()))
+			output, err := cliCtx.Query(queryPath, approve.BuildApproveKey(fromStr, toStr))
 			if err != nil {
 				return err
 			}
 
-			if len(toName) > 0 {
-				approve := approve.Approve{}
-				cdc.MustUnmarshalBinaryBare(output, &approve)
-				fmt.Println(cliCtx.ToJSONIndentStr(approve))
-			} else {
-				approves := new([]approve.Approve)
-				cdc.MustUnmarshalBinary(output, approves)
-				fmt.Println(cliCtx.ToJSONIndentStr(approves))
-			}
+			approve := approve.Approve{}
+			cdc.MustUnmarshalBinaryBare(output, &approve)
+			fmt.Println(cliCtx.ToJSONIndentStr(approve))
 
 			return err
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Account name to create approve")
-	cmd.Flags().String(flagTo, "", "Account name to receive approve")
+	cmd.Flags().String(flagFrom, "", "Address of approve creator")
+	cmd.Flags().String(flagTo, "", "Address of approve receiver")
+	cmd.MarkFlagRequired(flagFrom)
+	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
 }
 
 func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "approve-create",
+		Use:   "create-approve",
 		Short: "Create approve",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().
@@ -86,27 +82,27 @@ func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			toName := viper.GetString(flagTo)
-			toInfo, err := keys.GetKeyInfo(cliCtx, toName)
+			toStr := viper.GetString(flagTo)
+			toAddr, err := btypes.GetAddrFromBech32(toStr)
 			if err != nil {
 				return err
 			}
 
 			qos := viper.GetInt64(flagQOS)
 			qscsStr := viper.GetString(flagQSCs)
-			_, qscs, err := client.ParseCoins(qscsStr)
+			_, qscs, err := types.ParseCoins(qscsStr)
 			if err != nil {
 				return err
 			}
 
-			chainId, err := client.GetDefaultChainId()
+			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
 			tx := btxs.NewTxStd(
 				approve.ApproveCreateTx{
 					Approve: approve.NewApprove(from.GetAddress(),
-						toInfo.GetAddress(),
+						toAddr,
 						btypes.NewInt(qos),
 						qscs),
 				},
@@ -126,17 +122,19 @@ func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Account name to create approve")
-	cmd.Flags().String(flagTo, "", "Account name to receive approve")
+	cmd.Flags().String(flagFrom, "", "Name of approve creator")
+	cmd.Flags().String(flagTo, "", "Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
+	cmd.MarkFlagRequired(flagFrom)
+	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
 }
 
 func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "approve-increase",
+		Use:   "increase-approve",
 		Short: "Increase approve",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().
@@ -152,20 +150,20 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			toName := viper.GetString(flagTo)
-			toInfo, err := keys.GetKeyInfo(cliCtx, toName)
+			toStr := viper.GetString(flagTo)
+			toAddr, err := btypes.GetAddrFromBech32(toStr)
 			if err != nil {
 				return err
 			}
 
 			qos := viper.GetInt64(flagQOS)
 			qscsStr := viper.GetString(flagQSCs)
-			_, qscs, err := client.ParseCoins(qscsStr)
+			_, qscs, err := types.ParseCoins(qscsStr)
 			if err != nil {
 				return err
 			}
 
-			chainId, err := client.GetDefaultChainId()
+			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
@@ -173,7 +171,7 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 			tx := btxs.NewTxStd(
 				approve.ApproveIncreaseTx{
 					Approve: approve.NewApprove(from.GetAddress(),
-						toInfo.GetAddress(),
+						toAddr,
 						btypes.NewInt(qos),
 						qscs),
 				},
@@ -193,17 +191,19 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Account name to create approve")
-	cmd.Flags().String(flagTo, "", "Account name to receive approve")
+	cmd.Flags().String(flagFrom, "", "Name of approve creator")
+	cmd.Flags().String(flagTo, "", "Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
+	cmd.MarkFlagRequired(flagFrom)
+	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
 }
 
 func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "approve-decrease",
+		Use:   "decrease-approve",
 		Short: "Decrease approve",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().
@@ -219,20 +219,20 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			toName := viper.GetString(flagTo)
-			toInfo, err := keys.GetKeyInfo(cliCtx, toName)
+			toStr := viper.GetString(flagTo)
+			toAddr, err := btypes.GetAddrFromBech32(toStr)
 			if err != nil {
 				return err
 			}
 
 			qos := viper.GetInt64(flagQOS)
 			qscsStr := viper.GetString(flagQSCs)
-			_, qscs, err := client.ParseCoins(qscsStr)
+			_, qscs, err := types.ParseCoins(qscsStr)
 			if err != nil {
 				return err
 			}
 
-			chainId, err := client.GetDefaultChainId()
+			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
@@ -240,7 +240,7 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 			tx := btxs.NewTxStd(
 				approve.ApproveDecreaseTx{
 					Approve: approve.NewApprove(from.GetAddress(),
-						toInfo.GetAddress(),
+						toAddr,
 						btypes.NewInt(qos),
 						qscs),
 				},
@@ -260,24 +260,26 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Account name to create approve")
-	cmd.Flags().String(flagTo, "", "Account name to receive approve")
+	cmd.Flags().String(flagFrom, "", "Name of approve creator")
+	cmd.Flags().String(flagTo, "", "Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
+	cmd.MarkFlagRequired(flagFrom)
+	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
 }
 
 func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "approve-use",
+		Use:   "use-approve",
 		Short: "Use approve",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().
 				WithCodec(cdc)
 
-			fromName := viper.GetString(flagFrom)
-			fromInfo, err := keys.GetKeyInfo(cliCtx, fromName)
+			fromStr := viper.GetString(flagFrom)
+			fromAddr, err := btypes.GetAddrFromBech32(fromStr)
 			if err != nil {
 				return err
 			}
@@ -294,19 +296,19 @@ func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 			qos := viper.GetInt64(flagQOS)
 			qscsStr := viper.GetString(flagQSCs)
-			_, qscs, err := client.ParseCoins(qscsStr)
+			_, qscs, err := types.ParseCoins(qscsStr)
 			if err != nil {
 				return err
 			}
 
-			chainId, err := client.GetDefaultChainId()
+			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
 
 			tx := btxs.NewTxStd(
 				approve.ApproveUseTx{
-					Approve: approve.NewApprove(fromInfo.GetAddress(),
+					Approve: approve.NewApprove(fromAddr,
 						toInfo.GetAddress(),
 						btypes.NewInt(qos),
 						qscs),
@@ -327,17 +329,19 @@ func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Account name to create approve")
-	cmd.Flags().String(flagTo, "", "Account name to receive approve")
+	cmd.Flags().String(flagFrom, "", "Address of approve creator")
+	cmd.Flags().String(flagTo, "", "Name of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
 	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs")
+	cmd.MarkFlagRequired(flagFrom)
+	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
 }
 
 func CancelApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "approve-cancel",
+		Use:   "cancel-approve",
 		Short: "Cancel approve",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().
@@ -353,13 +357,13 @@ func CancelApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			toName := viper.GetString(flagTo)
-			toInfo, err := keys.GetKeyInfo(cliCtx, toName)
+			toStr := viper.GetString(flagTo)
+			toAddr, err := btypes.GetAddrFromBech32(toStr)
 			if err != nil {
 				return err
 			}
 
-			chainId, err := client.GetDefaultChainId()
+			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
@@ -367,7 +371,7 @@ func CancelApproveCmd(cdc *amino.Codec) *cobra.Command {
 			tx := btxs.NewTxStd(
 				approve.ApproveCancelTx{
 					From: fromInfo.GetAddress(),
-					To:   toInfo.GetAddress(),
+					To:   toAddr,
 				},
 				chainId,
 				btypes.NewInt(0))
@@ -385,8 +389,10 @@ func CancelApproveCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagFrom, "", "Account name to create approve")
-	cmd.Flags().String(flagTo, "", "Account name to receive approve")
+	cmd.Flags().String(flagFrom, "", "Name of approve creator")
+	cmd.Flags().String(flagTo, "", "Address of approve receiver")
+	cmd.MarkFlagRequired(flagFrom)
+	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
 }

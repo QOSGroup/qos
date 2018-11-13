@@ -1,4 +1,4 @@
-package txs
+package qsc
 
 import (
 	bacc "github.com/QOSGroup/qbase/account"

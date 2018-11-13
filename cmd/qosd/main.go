@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -32,7 +33,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
 
-	executor := cli.PrepareBaseCmd(rootCmd, "qos", app.DefaultNodeHome)
+	executor := cli.PrepareBaseCmd(rootCmd, "qos", types.DefaultNodeHome)
 
 	err := executor.Execute()
 	if err != nil {

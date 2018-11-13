@@ -1,4 +1,4 @@
-package txs
+package transfer
 
 import (
 	"errors"

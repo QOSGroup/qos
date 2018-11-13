@@ -1,28 +1,25 @@
 package validator
 
 import (
-
-
 	"encoding/base64"
 	"errors"
 	"fmt"
+	cliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
+	"github.com/QOSGroup/qbase/client/keys"
 	ctxs "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qbase/client/keys"
-	"github.com/QOSGroup/qos/client"
 	"github.com/QOSGroup/qos/txs/validator"
+	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
-	flagName   = "name"
-	flagNonce = "nonce"
+	flagName       = "name"
 	flagConsPubKey = "cons-pubkey"
 )
 
@@ -48,40 +45,43 @@ example:
 
 			name := viper.GetString(flagName)
 			consPubkey := viper.GetString(flagConsPubKey)
-			nonce := viper.GetInt64(flagNonce)
 
 			if name == "" {
 				return errors.New("missing name flag")
+			}
+			creatorInfo, err := keys.GetKeyInfo(cliCtx, name)
+			if err != nil {
+				return err
+			}
+			creator, err := cliacc.GetAccount(cliCtx, creatorInfo.GetAddress())
+			if err != nil {
+				return err
 			}
 
 			if consPubkey == "" {
 				return errors.New("missing cons-pubkey flag")
 			}
 
-			if nonce == 0 {
-				return errors.New("operator account nonce not valid")
-			}
-
 			bz, err := base64.StdEncoding.DecodeString(consPubkey)
 			if err != nil {
-				return fmt.Errorf("cons-pubkey parse error: %s" , err.Error())
+				return fmt.Errorf("cons-pubkey parse error: %s", err.Error())
 			}
 			var cKey ed25519.PubKeyEd25519
 			copy(cKey[:], bz)
 
-			validatorTx, err := buildCreateValidatorTx(cliCtx , name ,cKey)
+			validatorTx := validator.NewCreateValidatorTx(name, cKey, creator.GetAddress())
 			if err != nil {
 				return err
 			}
 
-			chainID, err := client.GetDefaultChainId()
+			chainID, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
 
 			stdTx := btxs.NewTxStd(validatorTx, chainID, btypes.ZeroInt())
 
-			tx, err:= ctxs.SignStdTx(cliCtx,name,nonce,stdTx)
+			tx, err := ctxs.SignStdTx(cliCtx, name, creator.GetNonce()+1, stdTx)
 			if err != nil {
 				return err
 			}
@@ -97,24 +97,9 @@ example:
 
 	cmd.Flags().String(flagName, "", "operator keys name")
 	cmd.Flags().String(flagConsPubKey, "", "tendermint consensus validator public key")
-	cmd.Flags().Int(flagNonce , 0 , "operator account nonce")
 
-	cmd.MarkFlagRequired(flagNonce)
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagConsPubKey)
 
 	return cmd
 }
-
-
-func buildCreateValidatorTx(ctx context.CLIContext , name string , consPubkey crypto.PubKey) ( *validator.CreateValidatorTx , error ){
-
-	info , err := keys.GetKeyInfo(ctx , name)
-	if err != nil {
-		return nil , err
-	}
-
-	tx := validator.NewCreateValidatorTx(name , consPubkey, info.GetAddress())
-	return tx , nil
-}
-
