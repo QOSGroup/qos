@@ -4,6 +4,7 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/txs/validator"
 	"github.com/tendermint/go-amino"
 )
 
@@ -21,4 +22,5 @@ func RegisterCodec(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
 	cdc.RegisterConcrete(&TxIssueQsc{}, "qos/txs/TxIssueQsc", nil)
 	cdc.RegisterConcrete(&TransferTx{}, "qos/txs/TransferTx", nil)
+	validator.RegisterCodec(cdc)
 }

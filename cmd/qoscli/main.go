@@ -11,6 +11,7 @@ import (
 	"github.com/QOSGroup/qos/client/txs/createqsc"
 	"github.com/QOSGroup/qos/client/txs/issue"
 	"github.com/QOSGroup/qos/client/txs/transfer"
+	"github.com/QOSGroup/qos/client/txs/validator"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -46,6 +47,7 @@ func main() {
 	approve.AddCommands(rootCmd, cdc)
 	createqsc.AddCommands(rootCmd, cdc)
 	issue.AddCommands(rootCmd, cdc)
+	validator.AddCommands(rootCmd, cdc)
 	rootCmd.AddCommand(bcli.LineBreak)
 
 	// qcp
