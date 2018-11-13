@@ -1,7 +1,7 @@
 # 账户设计
 QOS账户包含账户地址，PubKey，Nonce，QOS法定代币以及QSCs联盟币集合
 
-## Struct
+* Struct
 ```
 type QOSAccount struct {
 	account.BaseAccount `json:"base_account"`       // inherits BaseAccount
@@ -16,48 +16,26 @@ type BaseAccount struct {
 	Nonce          int64         `json:"nonce"`           // identifies tx_status of an account
 }
 ```
-* Address 采用ed25519加密，Bech32编码，"address"前缀
 
-## Query
-* Query by name
+* Address 
+
+采用ed25519加密，Bech32编码，"address"前缀
+
+* QOS
+
+qos独立于其他联盟币
+
+BigInt：-(2^255-1) to 2^255-1
+
+* QSCs
+
+联盟币
 ```
-qoscli account --name=Arya
-{
-  "type": "qbase/account/QOSAccount",
-  "value": {
-    "base_account": {
-      "account_address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-      "public_key": null,
-      "nonce": "0"
-    },
-    "qos": "100000000",
-    "qscs": [
-      {
-        "coin_name": "qstar",
-        "amount": "100000000"
-      }
-    ]
-  }
-} <nil>
-```
-* Query by address
-```
-qoscli account --addr=address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3
-{
-  "type": "qbase/account/QOSAccount",
-  "value": {
-    "base_account": {
-      "account_address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-      "public_key": null,
-      "nonce": "0"
-    },
-    "qos": "100000000",
-    "qscs": [
-      {
-        "coin_name": "qstar",
-        "amount": "100000000"
-      }
-    ]
-  }
-} <nil>
+type QSCs = types.BaseCoins
+
+type BaseCoins []*BaseCoin      // in qbase
+type BaseCoin struct {          // in qbase
+	Name   string `json:"coin_name"`
+	Amount BigInt `json:"amount"`
+}
 ```

@@ -6,12 +6,12 @@
 qosd init --chain-id=qos-test
 {
   "chain_id": "qos-test",
-  "node_id": "c1c44c8ab99b894b559e6afd9f442d00e667dd9e",
+  "node_id": "1c3100c28a44f1facf45aa83e9aa3d8ff8ac6b1f",
   "app_message": {
+    "address": "address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn",
+    "secret": "vital unique glow midnight quality buddy fitness bachelor body right exercise grape perfect dice series service knee wasp alert twelve clown before swap stone",
     "name": "Arya",
-    "pass": "12345678",
-    "address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-    "secret": "course mimic uncover all man staff economy robust endorse series boring order apology document same retreat pelican choose skate round buzz habit transfer spoon"
+    "pass": "12345678"
   }
 }
 ```
@@ -21,8 +21,6 @@ qosd init --chain-id=qos-test
 qosd start --with-tendermint
 ```
 如果一切正常，会看到控制台输出打块信息
-
-可查看创世[账户](../spec/account.md)，进行[交易](../client/txs.md)操作
 
 ## Cluster
 

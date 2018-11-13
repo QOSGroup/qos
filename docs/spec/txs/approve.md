@@ -19,217 +19,78 @@ type ApproveCancel struct {
 }
 ```
 ## Store
-storeKey:	approve</br>
-key:		from:[addr]/to:[addr]</br>
+```
+approveStoreKey = "approve"             // store
+approveKey      = "from:[%s]/to:[%s]"   // key
+```
 
-## Query
-查询授权
+读写使用ApproveMapper
 ```
-qoscli approve --from=Arya --to=Sansa
-{
-  "from": "address1ah9uz0",
-  "to": "address1ah9uz0",
-  "qos": "0",
-  "qscs": null
-} <nil>
+type ApproveMapper struct {
+	*mapper.BaseMapper      // qbase BaseMapper封装 
+}
 ```
-查询账户
-```
-qoscli account --name=Arya
-{
-  "type": "qbase/account/QOSAccount",
-  "value": {
-    "base_account": {
-      "account_address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-      "public_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "tJXDzIjW1NZp3XiCxWDFBqyiMb2UpyoU8vp240DqsjY="
-      },
-      "nonce": "1"
-    },
-    "qos": "99999999",
-    "qscs": [
-      {
-        "coin_name": "qstar",
-        "amount": "99999999"
-      }
-    ]
-  }
-} <nil>
-qoscli account --name=Sansa
-{
-  "type": "qbase/account/QOSAccount",
-  "value": {
-    "base_account": {
-      "account_address": "address1spdn868fzcpah8zd74tjck0e5akacgt2gmccnq",
-      "public_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "Dc4YBO1JMlVteO5ka21FNbhRBqCeKacNYs62YBHhFcw="
-      },
-      "nonce": "0"
-    },
-    "qos": "1",
-    "qscs": [
-      {
-        "coin_name": "qstar",
-        "amount": "1"
-      }
-    ]
-  }
-} <nil>
-```
+提供获取授权（GetApprove）、保存授权（SaveApprove）、删除授权（DeleteApprove）方法
 
 ## Create
-Arya向Sansa授权100个qos，100个qstar
-```
-qoscli approve-create --from=Arya --to=Sansa --qos=100 --qscs=100qstar
-Password to sign with 'Arya':
-{"check_tx":{},"deliver_tx":{},"hash":"9E33CEC7C2589D3A62E60D3F1D3B0F8FE330B020","height":"370"}
-```
-查询授权
-```
-qoscli approve --from=Arya --to=Sansa
-{
-  "from": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-  "to": "address1spdn868fzcpah8zd74tjck0e5akacgt2gmccnq",
-  "qos": "100",
-  "qscs": [
-    {
-      "coin_name": "qstar",
-      "amount": "100"
-    }
-  ]
-} <nil>
-```
+
+From账户向To账户预授权一定量的QOS和QSCs，预授权创建成功并非转账成功，仅仅是记录，不改变账户状态。所以From/To账户在链上均可不存在，From拥有资产总量可以小于授权资产总量。假设From仅有1QOS，可授权To2QOS。
+
+* valid
+1. QOS、QSCs中币种不能重复、币值必须为正
+2. 创建前链上不存在From对To的预授权，若存在请执行approve的其他操作。
+
+* signer
+  
+From账户
 
 ## Increase
-Arya向Sansa增加授权100个qos，100个qstar
-```
-qoscli approve-increase --from=Arya --to=Sansa --qos=100 --qscs=100qstar
-Password to sign with 'Arya':
-{"check_tx":{},"deliver_tx":{},"hash":"3C06676C53A5439D39CB4D0FBA3213C44DC1BA8E","height":"406"}
-```
-查询授权
-```
-qoscli approve --from=Arya --to=Sansa
-{
-  "from": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-  "to": "address1spdn868fzcpah8zd74tjck0e5akacgt2gmccnq",
-  "qos": "200",
-  "qscs": [
-    {
-      "coin_name": "qstar",
-      "amount": "200"
-    }
-  ]
-} <nil>
-```
+
+From账户向To账户增加授权一定量的QOS和QSCs，在已存在预授权基础上增加预授权资产。假设From已对To授权1QOS，增加授权1QOS，完成后From对To的预授权为2QOS。
+
+* valid
+1. QOS、QSCs中币种不能重复、币值必须为正
+2. 链上存在From对To的预授权，若不存在请执行create操作。
+
+* signer
+
+From账户
 
 ## Decrease
-Arya向Sansa减少授权100个qos，100个qstar
-```
-qoscli approve-decrease --from=Arya --to=Sansa --qos=100 --qscs=100qstar
-Password to sign with 'Arya':
-{"check_tx":{},"deliver_tx":{},"hash":"9DC18AD3CB0B59FCD354C267D8C22A1CC75E5624","height":"414"}
-```
-查询授权
-```
-qoscli approve --from=Arya --to=Sansa
-{
-  "from": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-  "to": "address1spdn868fzcpah8zd74tjck0e5akacgt2gmccnq",
-  "qos": "100",
-  "qscs": [
-    {
-      "coin_name": "qstar",
-      "amount": "100"
-    }
-  ]
-} <nil>
-```
+
+From账户向To账户减少授权一定量的QOS和QSCs，在已存在预授权基础上减少预授权资产。假设From已对To授权2QOS，减少授权1QOS，完成后From对To的预授权为1QOS。
+
+* valid
+1. QOS、QSCs中币种不能重复、币值必须为正
+2. 链上存在From对To的预授权，若不存在请执行create操作。
+3. QOS、QSCs总量不能大于已授权币值总量
+
+* signer
+
+From账户
 
 ## Use
-Sansa使用Arya向自己授权的10个qos，10个qstar
-```
-qoscli approve-use --from=Arya --to=Sansa --qos=10 --qscs=10qstar
-Password to sign with 'Sansa':
-{"check_tx":{},"deliver_tx":{},"hash":"0573760D6B316E6695FBB63A56F2A20C0635FCAE","height":"437"}
-```
-查询授权
-```
-qoscli approve --from=Arya --to=Sansa
-{
-  "from": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-  "to": "address1spdn868fzcpah8zd74tjck0e5akacgt2gmccnq",
-  "qos": "90",
-  "qscs": [
-    {
-      "coin_name": "qstar",
-      "amount": "90"
-    }
-  ]
-} <nil>
-```
-查询账户
-```
-qoscli account --name=Arya
-{
-  "type": "qbase/account/QOSAccount",
-  "value": {
-    "base_account": {
-      "account_address": "address1cnfqru6rts4nz224mvrf58ne427uthmcut4kc3",
-      "public_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "tJXDzIjW1NZp3XiCxWDFBqyiMb2UpyoU8vp240DqsjY="
-      },
-      "nonce": "4"
-    },
-    "qos": "99999989",
-    "qscs": [
-      {
-        "coin_name": "qstar",
-        "amount": "99999989"
-      }
-    ]
-  }
-} <nil>
-qoscli account --name=Sansa
-{
-  "type": "qbase/account/QOSAccount",
-  "value": {
-    "base_account": {
-      "account_address": "address1spdn868fzcpah8zd74tjck0e5akacgt2gmccnq",
-      "public_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "Dc4YBO1JMlVteO5ka21FNbhRBqCeKacNYs62YBHhFcw="
-      },
-      "nonce": "1"
-    },
-    "qos": "11",
-    "qscs": [
-      {
-        "coin_name": "qstar",
-        "amount": "11"
-      }
-    ]
-  }
-} <nil>
-```
+
+To账户使用From账户预授权的QOS和QSCs。假设From已授权To 2QOS，执行use 1QOS后，From向To授权变成 1QOS，From账户向To账户转账1QOS。
+
+* valid
+1. QOS，QSCs中币种不能重复、币值必须为正
+2. 链上不存在From对To的预授权，若存在请执行approve的其他操作。
+3. QOS、QSCs总量不能大于已授权币值总量
+4. From账户必须存在
+3. QOS、QSCs总量不能大于From账户币值总量
+
+* signer
+  
+To账户
 
 ## Cancel
-Arya取消向Sansa授权任何资产
-```
-qoscli approve-cancel --from=Arya --to=Sansa
-Password to sign with 'Arya':
-{"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"484"}
-```
-查询授权
-```
-qoscli approve --from=Arya --to=Sansa
-{
-  "from": "address1ah9uz0",
-  "to": "address1ah9uz0",
-  "qos": "0",
-  "qscs": null
-} <nil>
-```
+
+From账户取消对To账户的预授权信息。假设From已授权To 2QOS，执行cancel后，将删除From对To的预授权信息，已使用的授权币种、币值不变。
+
+* valid
+1. 链上不存在From对To的预授权。
+
+* signer
+  
+From账户

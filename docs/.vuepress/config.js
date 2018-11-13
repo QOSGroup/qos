@@ -21,17 +21,21 @@ module.exports = {
                 title: "Getting Started",
                 collapsable: false,
                 children: [
-                    ["/start/installation", "Install"],
-                    ["/start/networks", "Networks"],
-                    ["/start/testnet", "Testnet"]
+                    ["/install/installation", "Install"],
+                    ["/install/networks", "Networks"],
+                    ["/install/testnet", "Testnet"]
                 ]
             },
             {
                 title: "Client",
                 collapsable: false,
                 children: [
-                    ["/client/txs", "TXs"],
-                    ["/client/qcp", "QCP"]
+                    ["/client/qoscli", "qoscli"],
+                    ["/client/account", "account"],
+                    ["/client/transfer", "transfer"],
+                    ["/client/approve", "approve"],
+                    ["/client/qsc", "qsc"],
+                    ["/client/qcp", "qcp"]
                 ]
             }
             ,
@@ -43,8 +47,7 @@ module.exports = {
                     ["/spec/genesis", "Genesis"],
                     ["/spec/txs/transfer", "Transfer"],
                     ["/spec/txs/approve", "Approve"],
-                    ["/spec/txs/createqsc_issue_cli", "CreateQSCIssueQSCcli"],
-                    ["/spec/txs/createqsc_issue_design", "CreateQSCIssueQSCdesign"]
+                    ["/spec/txs/qsc", "QSC"],
                 ]
             }
         ]

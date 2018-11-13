@@ -1,6 +1,5 @@
 # Genesis
 
-## genesis.json
 执行qosd init之后，默认会在$HOME/.qosd/config/目录下生成genesis.json配置文件
 
 ```
@@ -47,6 +46,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 ```
 
 ## ca_pub_key
+
 CA PubKey
 ```
 "ca_pub_key": {
@@ -56,6 +56,7 @@ CA PubKey
 ```
 
 ## accounts
+
 创世账户
 ```
 "accounts": [
@@ -75,6 +76,7 @@ CA PubKey
 ```
 
 ## qcps
+
 联盟链配置
 ```
 "qcps": [
