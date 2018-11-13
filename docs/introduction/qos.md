@@ -3,11 +3,11 @@
 qos公链，基于[qbase](https://www.github.com/QOSGroup/qbase)实现tendermint abci。
 
 ### QOS Testnet
-To join the latest testnet, follow [the guide](../start/testnet.md).
+To join the latest testnet, follow [the guide](../install/testnet.md).
 
 ### Install
-See the [install instructions](../start/installation.md).
+See the [install instructions](../install/installation.md).
 
 ### Quick Start
 
-[Getting started](../start/networks.md) with QOS
+[Getting started](../install/networks.md) with QOS
