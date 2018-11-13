@@ -1,4 +1,4 @@
-package txs
+package qsc
 
 import (
 	"github.com/QOSGroup/qbase/store"

@@ -4,7 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"os"
 	"path/filepath"
 
 	clikeys "github.com/QOSGroup/qbase/client/keys"
@@ -28,11 +27,6 @@ const (
 	DefaultAccountPass = "12345678"
 )
 
-var (
-	DefaultCLIHome  = os.ExpandEnv("$HOME/.qoscli")
-	DefaultNodeHome = os.ExpandEnv("$HOME/.qosd")
-)
-
 // QOS初始状态
 type GenesisState struct {
 	CAPubKey   crypto.PubKey         `json:"ca_pub_key"`
@@ -45,7 +39,7 @@ func QOSAppInit() server.AppInit {
 
 	fsAppGenTx := pflag.NewFlagSet("", pflag.ContinueOnError)
 	fsAppGenTx.String(server.FlagName, "", "validator moniker, required")
-	fsAppGenTx.String(server.FlagClientHome, DefaultCLIHome,
+	fsAppGenTx.String(server.FlagClientHome, types.DefaultCLIHome,
 		"home directory for the client, used for key generation")
 	fsAppGenTx.Bool(server.FlagOWK, false, "overwrite the accounts created")
 

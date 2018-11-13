@@ -7,9 +7,9 @@ import (
 	"github.com/QOSGroup/qbase/client/keys"
 	btx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/client"
-	"github.com/QOSGroup/qos/txs"
+	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/txs/transfer"
+	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -29,20 +29,26 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			sendersStr := viper.GetString(flagSenders)
-			names, senders := parseTransItem(&cliCtx, sendersStr)
+			names, senders, err := parseSenderTransItem(&cliCtx, sendersStr)
+			if err != nil {
+				return err
+			}
 			receiversStr := viper.GetString(flagReceivers)
-			_, receivers := parseTransItem(&cliCtx, receiversStr)
-			transferTx := txs.TransferTx{
+			receivers, err := parseReceiverTransItem(receiversStr)
+			if err != nil {
+				return err
+			}
+			transferTx := transfer.TransferTx{
 				Senders:   senders,
 				Receivers: receivers,
 			}
 
-			chainId, err := client.GetDefaultChainId()
+			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return nil
 			}
 
-			stdTx := btxs.NewTxStd(&transferTx, chainId, types.ZeroInt())
+			stdTx := btxs.NewTxStd(&transferTx, chainId, btypes.ZeroInt())
 			for _, name := range names {
 				info, err := keys.GetKeyInfo(cliCtx, name)
 				if err != nil {
@@ -68,16 +74,17 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(flagSenders, "", "Senders, eg: Arya,10qos,100qstar")
-	cmd.Flags().String(flagReceivers, "", "Receivers, eg: Sansa,10qos,100qstar")
+	cmd.Flags().String(flagReceivers, "", "Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar")
+	cmd.MarkFlagRequired(flagSenders)
+	cmd.MarkFlagRequired(flagReceivers)
 
 	return cmd
 }
 
-// Parse TransItems from string
-// str example: Jia,100qos,100qstar;Liu,100qos,100qstar
-func parseTransItem(cliCtx *context.CLIContext, str string) ([]string, []txs.TransItem) {
+// Parse SenderTransItems from string
+func parseSenderTransItem(cliCtx *context.CLIContext, str string) ([]string, []transfer.TransItem, error) {
 	names := make([]string, 0)
-	items := make([]txs.TransItem, 0)
+	items := make([]transfer.TransItem, 0)
 	tis := strings.Split(str, ";")
 	for _, ti := range tis {
 		index := strings.Index(ti, ",")
@@ -85,18 +92,43 @@ func parseTransItem(cliCtx *context.CLIContext, str string) ([]string, []txs.Tra
 		names = append(names, name)
 		info, err := keys.GetKeyInfo(*cliCtx, name)
 		if err != nil {
-			panic(info)
+			return nil, nil, err
 		}
-		qos, qscs, err := client.ParseCoins(ti[index+1:])
+		qos, qscs, err := types.ParseCoins(ti[index+1:])
 		if err != nil {
-			panic(err)
+			return nil, nil, err
 		}
-		items = append(items, txs.TransItem{
+		items = append(items, transfer.TransItem{
 			Address: info.GetAddress(),
 			QOS:     qos,
 			QSCs:    qscs,
 		})
 	}
 
-	return names, items
+	return names, items, nil
+}
+
+// Parse ReceiverTransItems from string
+func parseReceiverTransItem(str string) ([]transfer.TransItem, error) {
+	items := make([]transfer.TransItem, 0)
+	tis := strings.Split(str, ";")
+	for _, ti := range tis {
+		index := strings.Index(ti, ",")
+		addr := ti[:index]
+		address, err := btypes.GetAddrFromBech32(addr)
+		if err != nil {
+			return nil, err
+		}
+		qos, qscs, err := types.ParseCoins(ti[index+1:])
+		if err != nil {
+			return nil, err
+		}
+		items = append(items, transfer.TransItem{
+			Address: address,
+			QOS:     qos,
+			QSCs:    qscs,
+		})
+	}
+
+	return items, nil
 }
