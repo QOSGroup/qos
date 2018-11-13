@@ -18,8 +18,8 @@ import (
 
 var (
 	rootCmd = &cobra.Command{
-		Use:   "basecli",
-		Short: "Basecoin light-client",
+		Use:   "qoscli",
+		Short: "QOS light-client",
 	}
 )
 
