@@ -10,29 +10,19 @@ import (
 const (
 	ValidatorMapperName = "validator"
 	validatorKey        = "validator:"
-	validatorUpdatedKey = "updated"
+	validatorChangedKey = "validator_changed"
 )
 
 type ValidatorMapper struct {
 	*mapper.BaseMapper
 }
 
+var _ mapper.IMapper = (*ValidatorMapper)(nil)
+
 func NewValidatorMapper() *ValidatorMapper {
 	var validatorMapper = ValidatorMapper{}
 	validatorMapper.BaseMapper = mapper.NewBaseMapper(nil, ValidatorMapperName)
 	return &validatorMapper
-}
-
-func BuildUpdatedKey() []byte {
-	return []byte(validatorUpdatedKey)
-}
-
-func BuildValidatorKey(address btypes.Address) []byte {
-	return append([]byte(validatorKey), address...)
-}
-
-func (mapper *ValidatorMapper) MapperName() string {
-	return ValidatorMapperName
 }
 
 func (mapper *ValidatorMapper) Copy() mapper.IMapper {
@@ -41,25 +31,41 @@ func (mapper *ValidatorMapper) Copy() mapper.IMapper {
 	return validatorMapper
 }
 
-// 是否有新增validator
-func (mapper *ValidatorMapper) HasNewValidator() bool {
-	v, exists := mapper.GetBool(BuildUpdatedKey())
-	return exists && !v
+func BuildChangedKey() []byte {
+	return []byte(validatorChangedKey)
 }
 
-// 设置 新增validator 标识
-func (mapper *ValidatorMapper) SetUpdated(b bool) {
-	mapper.Set(BuildUpdatedKey(), b)
+func BuildValidatorKey(consAddress btypes.Address) []byte {
+	return append([]byte(validatorKey), consAddress...)
+}
+
+func (mapper *ValidatorMapper) IsValidatorChanged() bool {
+	v, _ := mapper.GetBool(BuildChangedKey())
+	return v
+}
+
+func (mapper *ValidatorMapper) SetValidatorChanged() {
+	mapper.Set(BuildChangedKey(), true)
+}
+
+func (mapper *ValidatorMapper) SetValidatorUnChanged() {
+	mapper.Set(BuildChangedKey(), false)
 }
 
 // 保存validator
 func (mapper *ValidatorMapper) SaveValidator(validator types.Validator) {
-	mapper.Set(BuildValidatorKey(validator.PubKey.Address().Bytes()), validator)
+	mapper.Set(BuildValidatorKey(validator.ConsPubKey.Address().Bytes()), validator)
 }
 
 // 是否已经存在
-func (mapper *ValidatorMapper) Exists(address btypes.Address) bool {
-	return mapper.Get(BuildValidatorKey(address), &(types.Validator{}))
+func (mapper *ValidatorMapper) Exists(consAddress btypes.Address) bool {
+	return mapper.Get(BuildValidatorKey(consAddress), &(types.Validator{}))
+}
+
+func (mapper *ValidatorMapper) GetByConsAddress(consAddress btypes.Address) (types.Validator, bool) {
+	var val types.Validator
+	exsits := mapper.Get(BuildValidatorKey(consAddress), &val)
+	return val, exsits
 }
 
 // 获取所有validator

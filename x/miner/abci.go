@@ -3,30 +3,32 @@ package miner
 import (
 	"fmt"
 
-	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/types"
 
 	qacc "github.com/QOSGroup/qos/account"
+	"github.com/QOSGroup/qos/txs/validator"
 	qtypes "github.com/QOSGroup/qos/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/libs/log"
 )
 
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	if ctx.BlockHeight() > 1 {
-		accountMapper := baseabci.GetAccountMapper(ctx)
-		rewardVoteValidator(accountMapper, req, ctx.Logger())
+		rewardVoteValidator(ctx, req)
 	}
 
 }
 
 //基于投票的挖矿奖励: 10QOS*valVotePower/totalVotePower
-func rewardVoteValidator(accMapper *account.AccountMapper, req abci.RequestBeginBlock, logger log.Logger) {
+func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock) {
+
+	logger := ctx.Logger()
+	accountMapper := baseabci.GetAccountMapper(ctx)
+	validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
 
 	totalVotePower := int64(0)
 	for _, val := range req.LastCommitInfo.Validators {
@@ -43,14 +45,21 @@ func rewardVoteValidator(accMapper *account.AccountMapper, req abci.RequestBegin
 	for _, val := range req.LastCommitInfo.Validators {
 		if val.SignedLastBlock {
 			//reward
-			addr := types.Address(val.Validator.Address)
-			acc := accMapper.GetAccount(addr)
+			consAddress := types.Address(val.Validator.Address)
+
+			qVal, exsits := validatorMapper.GetByConsAddress(consAddress)
+			if !exsits {
+				logger.Error(fmt.Sprintf("consAddress: %s not exsits", consAddress))
+				continue
+			}
+
+			acc := accountMapper.GetAccount(qVal.Operator)
 
 			if qosAcc, ok := acc.(*qacc.QOSAccount); ok {
 				rewardQos := calRewardQos(val.Validator.Power, totalVotePower)
-				logger.Debug(fmt.Sprintf("address: %s add vote reward: %s", addr.String(), rewardQos))
+				logger.Debug(fmt.Sprintf("address: %s add vote reward: %s", qosAcc.GetAddress().String(), rewardQos))
 				qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(rewardQos))
-				accMapper.SetAccount(acc)
+				accountMapper.SetAccount(acc)
 			}
 		}
 	}
