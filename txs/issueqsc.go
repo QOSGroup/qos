@@ -58,7 +58,7 @@ func (tx *TxIssueQsc) Exec(ctx context.Context) (ret btypes.Result, crossTxQcps 
 	qsccoin = banker.GetQSC(tx.QscName)
 	if qsccoin == nil {
 		qsccoin = types.NewQSC(tx.QscName, tx.Amount)
-	}else{
+	} else {
 		qsccoin.PlusByAmount(tx.Amount)
 	}
 

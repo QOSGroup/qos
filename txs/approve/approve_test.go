@@ -191,8 +191,7 @@ func TestApprove_Minus(t *testing.T) {
 func TestApprove_IsGTE(t *testing.T) {
 	approve := genTestApprove()
 	qos := btypes.NewInt(100)
-	require.True(t, approve.IsGTE(qos, types.QSCs{
-	}))
+	require.True(t, approve.IsGTE(qos, types.QSCs{}))
 
 	qsc := types.QSCs{
 		{

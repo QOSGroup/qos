@@ -1,7 +1,9 @@
 package txs
 
 import (
+	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
+	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
@@ -9,8 +11,6 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
-	bmapper "github.com/QOSGroup/qbase/mapper"
-	bacc "github.com/QOSGroup/qbase/account"
 	"testing"
 )
 
