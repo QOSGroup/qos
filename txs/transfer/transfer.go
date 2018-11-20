@@ -46,21 +46,24 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 		smap[sender.Address.String()] = true
 		sender.QOS = sender.QOS.NilToZero()
 		if sender.QOS.IsZero() && sender.QSCs.IsZero() {
-			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
+			return errors.New(fmt.Sprintf("Sender:%s QOS and QSCs are zero", sender.Address.String()))
 		}
 		if btypes.ZeroInt().GT(sender.QOS) {
-			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
+			return errors.New(fmt.Sprintf("Sender:%s QOS is lte zero", sender.Address.String()))
 		}
 		if !sender.QSCs.IsNotNegative() {
-			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
+			return errors.New(fmt.Sprintf("Sender:%s QSCs is lt zero", sender.Address.String()))
 		}
 		a := accountMapper.GetAccount(sender.Address)
 		if a == nil {
-			return errors.New(fmt.Sprintf("Sender:%s QOS、QSCs not valid", sender.Address.String()))
+			return errors.New(fmt.Sprintf("Sender:%s not exists", sender.Address.String()))
 		}
 		acc := a.(*account.QOSAccount)
-		if acc == nil || acc.QOS.LT(sender.QOS) || acc.QSCs.IsLT(sender.QSCs) {
-			return errors.New(fmt.Sprintf("Sender:%s not exists or QOS、QSCs not valid", sender.Address.String()))
+		if acc.QOS.LT(sender.QOS) {
+			return errors.New(fmt.Sprintf("Sender:%s QOS is not enough", sender.Address.String()))
+		}
+		if acc.QSCs.IsLT(sender.QSCs) {
+			return errors.New(fmt.Sprintf("Sender:%s QSCs is not enough", sender.Address.String()))
 		}
 		sumsqos = sumsqos.Add(sender.QOS)
 		if nil != sender.QSCs {
@@ -72,18 +75,18 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 	sumrqscs := types.QSCs{}
 	for _, receiver := range tx.Receivers {
 		if _, ok := rmap[receiver.Address.String()]; ok {
-			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
+			return errors.New(fmt.Sprintf("repeat receiver:%s", receiver.Address.String()))
 		}
 		rmap[receiver.Address.String()] = true
 		receiver.QOS = receiver.QOS.NilToZero()
 		if receiver.QOS.IsZero() && receiver.QSCs.IsZero() {
-			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
+			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs are zero", receiver.Address.String()))
 		}
 		if btypes.ZeroInt().GT(receiver.QOS) {
-			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
+			return errors.New(fmt.Sprintf("Receiver:%s QOS is lte zero", receiver.Address.String()))
 		}
 		if !receiver.QSCs.IsNotNegative() {
-			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs not valid", receiver.Address.String()))
+			return errors.New(fmt.Sprintf("Receiver:%s QSCs is lt zero", receiver.Address.String()))
 		}
 		sumrqos = sumrqos.Add(receiver.QOS)
 		if nil != receiver.QSCs {
