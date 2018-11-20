@@ -12,10 +12,10 @@ type Approve struct {
     QscList []*QSC         `json:"qsc"`  // qscs，币种不能重复，不能为"qos"（大小写敏感）
 }
 
-// 取消授权
-type ApproveCancel struct {
-	From  btypes.Address `json:"from"`  // 授权账号
-	To    btypes.Address `json:"to"`    // 被授权账号
+// 取消授权 Tx
+type TxCancelApprove struct {
+	From btypes.Address `json:"from"` // 授权账号
+	To   btypes.Address `json:"to"`   // 被授权账号
 }
 ```
 ## Store
