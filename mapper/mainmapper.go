@@ -1,31 +1,17 @@
 package mapper
 
 import (
-	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
-	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
 	BaseMapperName = "base"
-	QSCName        = "qsc/[%s]"
+	RootCAKey      = "rootca"
 )
 
 type MainMapper struct {
 	*mapper.BaseMapper
-}
-
-type QscInfo struct {
-	Qscname     string         `json:"qscname"`
-	ChainID     string         `json:"chainid"`
-	BankAddr    btypes.Address `json:"pubkeybank"`
-	CreateAddr  btypes.Address `json:"createaddr"`
-	QscPubkey   crypto.PubKey  `json:"qscpubkey"`
-	Extrate     string         `json:"extrate"`
-	CAqsc       []byte         `json:"caqsc"`
-	CAbanker    []byte         `json:"cabanker"`
-	Description string         `json:"description"`
 }
 
 func NewMainMapper() *MainMapper {
@@ -50,32 +36,13 @@ func (mapper *MainMapper) Copy() mapper.IMapper {
 
 // 保存CA
 func (mapper *MainMapper) SetRootCA(pubKey crypto.PubKey) error {
-	mapper.BaseMapper.Set([]byte("rootca"), pubKey)
+	mapper.BaseMapper.Set([]byte(RootCAKey), pubKey)
 	return nil
 }
 
 // 获取CA
-func (mapper *MainMapper) GetRoot() crypto.PubKey {
+func (mapper *MainMapper) GetRootCA() crypto.PubKey {
 	var pubKey crypto.PubKey
-	mapper.BaseMapper.Get([]byte("rootca"), &pubKey)
+	mapper.BaseMapper.Get([]byte(RootCAKey), &pubKey)
 	return pubKey
-}
-
-func (mapper *MainMapper) GetQsc(qscname string) (qscinfo *QscInfo) {
-	key := fmt.Sprintf(QSCName, qscname)
-
-	var qinfo QscInfo
-	exist := mapper.Get([]byte(key), &qinfo)
-	if !exist {
-		return nil
-	}
-
-	return &qinfo
-}
-
-func (mapper *MainMapper) SetQsc(qscname string, qscinfo *QscInfo) bool {
-	key := fmt.Sprintf(QSCName, qscname)
-	mapper.Set([]byte(key), qscinfo)
-
-	return true
 }

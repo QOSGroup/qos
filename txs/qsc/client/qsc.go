@@ -2,18 +2,20 @@ package qsc
 
 import (
 	"fmt"
+	bacc "github.com/QOSGroup/qbase/account"
 	cliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/client/keys"
 	btx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/mapper"
+	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/txs/qsc"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/libs/common"
 	"strconv"
 	"strings"
 )
@@ -53,15 +55,24 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			caQsc := qsc.FetchCA(pathqsc)
-			caBanker := qsc.FetchCA(pathbank)
+			var caQsc qsc.Certificate
+			err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqsc), &caQsc)
+			if err != nil {
+				return err
+			}
+
+			var caBanker qsc.Certificate
+			err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathbank), &caBanker)
+			if err != nil {
+				return err
+			}
 
 			chainId, err := types.GetDefaultChainId()
 			if err != nil {
 				return err
 			}
 
-			var acs []qsc.AddrCoin
+			var acs []account.QOSAccount
 			if len(accountStr) > 0 {
 				accArrs := strings.Split(accountStr, ";")
 				for _, accArrStr := range accArrs {
@@ -74,12 +85,34 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					if err != nil {
 						return err
 					}
-					acs = append(acs, qsc.AddrCoin{info.GetAddress(), btypes.NewInt(amount)})
+					acc := account.QOSAccount{
+						BaseAccount: bacc.BaseAccount{
+							info.GetAddress(),
+							nil,
+							0,
+						},
+						QOS: btypes.ZeroInt(),
+						QSCs: types.QSCs{
+							{
+								caQsc.CSR.Subj.CN,
+								btypes.NewInt(amount),
+							},
+						},
+					}
+					acs = append(acs, acc)
 				}
 			}
 
 			tx := btxs.NewTxStd(
-				qsc.NewCreateQsc(cdc, caQsc, caBanker, chainId, creator.GetAddress(), &acs, extrate, description),
+				qsc.TxCreateQSC{
+					ChainID:     chainId,
+					Creator:     creator.GetAddress(),
+					Extrate:     extrate,
+					QSCCA:       caQsc,
+					BankerCA:    caBanker,
+					Description: description,
+					Accounts:    acs,
+				},
 				chainId,
 				btypes.ZeroInt())
 			tx, err = btx.SignStdTx(cliCtx, creatorName, creator.GetNonce()+1, tx)
@@ -111,19 +144,18 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 
 func QueryQscCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "qsc [qsc-name]",
+		Use:   "query [qsc]",
 		Short: "query qsc info by name",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			key := fmt.Sprintf("qsc/[%s]", args[0])
-			result, err := cliCtx.Client.ABCIQuery("store/base/key", []byte(key))
+			result, err := cliCtx.Client.ABCIQuery("store/qsc/key", qsc.BuildQSCKey(args[0]))
 			if err != nil {
 				return err
 			}
 
-			var info mapper.QscInfo
+			var info qsc.QSCInfo
 			err = cdc.UnmarshalBinaryBare(result.Response.GetValue(), &info)
 			if err != nil {
 				return err
@@ -146,7 +178,7 @@ func IssueQSCCmd(cdc *amino.Codec) *cobra.Command {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			amount := viper.GetInt64(flagAmount)
-			qscname := viper.GetString(flagQscname)
+			qscName := viper.GetString(flagQscname)
 
 			chainId, err := types.GetDefaultChainId()
 			if err != nil {
@@ -164,7 +196,11 @@ func IssueQSCCmd(cdc *amino.Codec) *cobra.Command {
 			}
 
 			tx := btxs.NewTxStd(
-				qsc.NewTxIssueQsc(qscname, btypes.NewInt(amount), banker.GetAddress()),
+				qsc.TxIssueQSC{
+					qscName,
+					btypes.NewInt(amount),
+					banker.GetAddress(),
+				},
 				chainId,
 				btypes.ZeroInt())
 			tx, err = btx.SignStdTx(cliCtx, bankerName, banker.GetNonce()+1, tx)
