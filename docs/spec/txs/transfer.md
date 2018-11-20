@@ -10,7 +10,7 @@ type TransItem struct {
 	QSCs    types.QSCs     `json:"qscs"` // QSCs
 }
 
-type TransferTx struct {
+type TxTransfer struct {
 	Senders   []TransItem `json:"senders"`   // 发送集合
 	Receivers []TransItem `json:"receivers"` // 接收集合
 }
