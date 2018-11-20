@@ -10,23 +10,23 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 )
 
-type CreateValidatorTx struct {
+type TxCreateValidator struct {
 	Name       string         `json:"name""`
 	ConsPubKey crypto.PubKey  `json:"cons_pubkey"` //参与共识的validator公钥
 	Operator   btypes.Address `json:"operator"`    //QOS操作账户地址
 }
 
-var _ txs.ITx = (*CreateValidatorTx)(nil)
+var _ txs.ITx = (*TxCreateValidator)(nil)
 
-func NewCreateValidatorTx(name string, consPubKey crypto.PubKey, operator btypes.Address) *CreateValidatorTx {
-	return &CreateValidatorTx{
+func NewCreateValidatorTx(name string, consPubKey crypto.PubKey, operator btypes.Address) *TxCreateValidator {
+	return &TxCreateValidator{
 		Name:       name,
 		ConsPubKey: consPubKey,
 		Operator:   operator,
 	}
 }
 
-func (tx *CreateValidatorTx) ValidateData(ctx context.Context) error {
+func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
 	if len(tx.Name) == 0 {
 		return errors.New("Name is empty")
 	}
@@ -48,7 +48,7 @@ func (tx *CreateValidatorTx) ValidateData(ctx context.Context) error {
 	return nil
 }
 
-func (tx *CreateValidatorTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
 	accMapper := baseabci.GetAccountMapper(ctx)
 
@@ -66,19 +66,19 @@ func (tx *CreateValidatorTx) Exec(ctx context.Context) (result btypes.Result, cr
 	return btypes.Result{Code: btypes.ABCICodeOK}, nil
 }
 
-func (tx *CreateValidatorTx) GetSigner() []btypes.Address {
+func (tx *TxCreateValidator) GetSigner() []btypes.Address {
 	return []btypes.Address{tx.Operator}
 }
 
-func (tx *CreateValidatorTx) CalcGas() btypes.BigInt {
+func (tx *TxCreateValidator) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx *CreateValidatorTx) GetGasPayer() btypes.Address {
+func (tx *TxCreateValidator) GetGasPayer() btypes.Address {
 	return btypes.Address(tx.Operator)
 }
 
-func (tx *CreateValidatorTx) GetSignData() (ret []byte) {
+func (tx *TxCreateValidator) GetSignData() (ret []byte) {
 	ret = append(ret, tx.Name...)
 	ret = append(ret, tx.ConsPubKey.Bytes()...)
 	ret = append(ret, tx.Operator...)
