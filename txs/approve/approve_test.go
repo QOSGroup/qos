@@ -50,8 +50,8 @@ func genTestApprove() Approve {
 	}
 }
 
-func genApproveCancelTx() ApproveCancelTx {
-	return ApproveCancelTx{
+func genApproveCancelTx() TxCancelApprove {
+	return TxCancelApprove{
 		From: btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		To:   btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 	}
@@ -231,7 +231,7 @@ func TestApprove_Equals(t *testing.T) {
 func TestTxApproveCreate_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 
-	tx := ApproveCreateTx{
+	tx := TxCreateApprove{
 		genTestApprove(),
 	}
 	require.Nil(t, tx.ValidateData(ctx))
@@ -246,7 +246,7 @@ func TestTxApproveCreate_ValidateData(t *testing.T) {
 func TestTxApproveCreate_Exec(t *testing.T) {
 	ctx := defaultContext()
 
-	tx := ApproveCreateTx{
+	tx := TxCreateApprove{
 		genTestApprove(),
 	}
 	result, cross := tx.Exec(ctx)
@@ -262,10 +262,10 @@ func TestTxApproveCreate_Exec(t *testing.T) {
 func TestTxApproveIncrease_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	increaseTx := ApproveIncreaseTx{
+	increaseTx := TxIncreaseApprove{
 		genTestApprove(),
 	}
 	require.NotNil(t, increaseTx.ValidateData(ctx))
@@ -280,10 +280,10 @@ func TestTxApproveIncrease_ValidateData(t *testing.T) {
 func TestTxApproveIncrease_Exec(t *testing.T) {
 	ctx := defaultContext()
 
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	increaseTx := ApproveIncreaseTx{
+	increaseTx := TxIncreaseApprove{
 		genTestApprove(),
 	}
 
@@ -303,10 +303,10 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 func TestTxApproveDecrease_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	decreaseTx := ApproveDecreaseTx{
+	decreaseTx := TxDecreaseApprove{
 		genTestApprove(),
 	}
 	require.NotNil(t, decreaseTx.ValidateData(ctx))
@@ -327,10 +327,10 @@ func TestTxApproveDecrease_ValidateData(t *testing.T) {
 func TestTxApproveDecrease_Exec(t *testing.T) {
 	ctx := defaultContext()
 
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	decreaseTx := ApproveDecreaseTx{
+	decreaseTx := TxDecreaseApprove{
 		genTestApprove(),
 	}
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
@@ -349,10 +349,10 @@ func TestTxApproveDecrease_Exec(t *testing.T) {
 func TestTxApproveUse_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	useTx := ApproveUseTx{
+	useTx := TxUseApprove{
 		genTestApprove(),
 	}
 	require.NotNil(t, useTx.ValidateData(ctx))
@@ -374,14 +374,14 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 }
 
 func TestTxApproveUse_GetSigner(t *testing.T) {
-	useTx := ApproveUseTx{
+	useTx := TxUseApprove{
 		genTestApprove(),
 	}
 	require.Equal(t, useTx.GetSigner(), []btypes.Address{useTx.To})
 }
 
 func TestTxApproveUse_GetGasPayer(t *testing.T) {
-	useTx := ApproveUseTx{
+	useTx := TxUseApprove{
 		genTestApprove(),
 	}
 	require.Equal(t, useTx.GetGasPayer(), useTx.To)
@@ -390,10 +390,10 @@ func TestTxApproveUse_GetGasPayer(t *testing.T) {
 func TestTxApproveUse_Exec(t *testing.T) {
 	ctx := defaultContext()
 
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	useTx := ApproveUseTx{
+	useTx := TxUseApprove{
 		genTestApprove(),
 	}
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
@@ -429,10 +429,10 @@ func TestTxApproveUse_Exec(t *testing.T) {
 
 func TestTxApproveCancel_ValidateData(t *testing.T) {
 	ctx := defaultContext()
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	cancelTx := ApproveCancelTx{
+	cancelTx := TxCancelApprove{
 		createTx.From,
 		createTx.To,
 	}
@@ -447,10 +447,10 @@ func TestTxApproveCancel_ValidateData(t *testing.T) {
 
 func TestTxApproveCancel_Exec(t *testing.T) {
 	ctx := defaultContext()
-	createTx := ApproveCreateTx{
+	createTx := TxCreateApprove{
 		genTestApprove(),
 	}
-	cancelTx := ApproveCancelTx{
+	cancelTx := TxCancelApprove{
 		createTx.From,
 		createTx.To,
 	}

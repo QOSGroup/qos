@@ -100,7 +100,7 @@ func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 			tx := btxs.NewTxStd(
-				approve.ApproveCreateTx{
+				approve.TxCreateApprove{
 					Approve: approve.NewApprove(from.GetAddress(),
 						toAddr,
 						btypes.NewInt(qos),
@@ -169,7 +169,7 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 			}
 
 			tx := btxs.NewTxStd(
-				approve.ApproveIncreaseTx{
+				approve.TxIncreaseApprove{
 					Approve: approve.NewApprove(from.GetAddress(),
 						toAddr,
 						btypes.NewInt(qos),
@@ -238,7 +238,7 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 			}
 
 			tx := btxs.NewTxStd(
-				approve.ApproveDecreaseTx{
+				approve.TxDecreaseApprove{
 					Approve: approve.NewApprove(from.GetAddress(),
 						toAddr,
 						btypes.NewInt(qos),
@@ -307,7 +307,7 @@ func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 			}
 
 			tx := btxs.NewTxStd(
-				approve.ApproveUseTx{
+				approve.TxUseApprove{
 					Approve: approve.NewApprove(fromAddr,
 						toInfo.GetAddress(),
 						btypes.NewInt(qos),
@@ -369,7 +369,7 @@ func CancelApproveCmd(cdc *amino.Codec) *cobra.Command {
 			}
 
 			tx := btxs.NewTxStd(
-				approve.ApproveCancelTx{
+				approve.TxCancelApprove{
 					From: fromInfo.GetAddress(),
 					To:   toAddr,
 				},

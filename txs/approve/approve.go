@@ -192,11 +192,11 @@ func (tx Approve) String() string {
 //-----------------------------------------------------------------
 
 // 创建授权
-type ApproveCreateTx struct {
+type TxCreateApprove struct {
 	Approve
 }
 
-func (tx ApproveCreateTx) ValidateData(ctx context.Context) error {
+func (tx TxCreateApprove) ValidateData(ctx context.Context) error {
 	err := tx.Approve.ValidateData(ctx)
 	if err != nil {
 		return err
@@ -212,7 +212,7 @@ func (tx ApproveCreateTx) ValidateData(ctx context.Context) error {
 	return nil
 }
 
-func (tx ApproveCreateTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -237,11 +237,11 @@ func (tx ApproveCreateTx) Exec(ctx context.Context) (result btypes.Result, cross
 }
 
 // 增加授权
-type ApproveIncreaseTx struct {
+type TxIncreaseApprove struct {
 	Approve
 }
 
-func (tx ApproveIncreaseTx) ValidateData(ctx context.Context) error {
+func (tx TxIncreaseApprove) ValidateData(ctx context.Context) error {
 	err := tx.Approve.ValidateData(ctx)
 	if err != nil {
 		return err
@@ -257,7 +257,7 @@ func (tx ApproveIncreaseTx) ValidateData(ctx context.Context) error {
 	return nil
 }
 
-func (tx ApproveIncreaseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -278,11 +278,11 @@ func (tx ApproveIncreaseTx) Exec(ctx context.Context) (result btypes.Result, cro
 }
 
 // 减少授权
-type ApproveDecreaseTx struct {
+type TxDecreaseApprove struct {
 	Approve
 }
 
-func (tx ApproveDecreaseTx) ValidateData(ctx context.Context) error {
+func (tx TxDecreaseApprove) ValidateData(ctx context.Context) error {
 	err := tx.Approve.ValidateData(ctx)
 	if err != nil {
 		return err
@@ -302,7 +302,7 @@ func (tx ApproveDecreaseTx) ValidateData(ctx context.Context) error {
 	return nil
 }
 
-func (tx ApproveDecreaseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -327,11 +327,11 @@ func (tx ApproveDecreaseTx) Exec(ctx context.Context) (result btypes.Result, cro
 }
 
 // 使用授权
-type ApproveUseTx struct {
+type TxUseApprove struct {
 	Approve
 }
 
-func (tx ApproveUseTx) ValidateData(ctx context.Context) error {
+func (tx TxUseApprove) ValidateData(ctx context.Context) error {
 	err := tx.Approve.ValidateData(ctx)
 	if err != nil {
 		return err
@@ -361,7 +361,7 @@ func (tx ApproveUseTx) ValidateData(ctx context.Context) error {
 	return nil
 }
 
-func (tx ApproveUseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -406,21 +406,21 @@ func (tx ApproveUseTx) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	return
 }
 
-func (tx ApproveUseTx) GetSigner() []btypes.Address {
+func (tx TxUseApprove) GetSigner() []btypes.Address {
 	return []btypes.Address{tx.To}
 }
 
-func (tx ApproveUseTx) GetGasPayer() btypes.Address {
+func (tx TxUseApprove) GetGasPayer() btypes.Address {
 	return tx.To
 }
 
 // 取消授权 Tx
-type ApproveCancelTx struct {
+type TxCancelApprove struct {
 	From btypes.Address `json:"from"` // 授权账号
 	To   btypes.Address `json:"to"`   // 被授权账号
 }
 
-func (tx ApproveCancelTx) ValidateData(ctx context.Context) error {
+func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
 	if tx.From == nil || tx.To == nil {
 		return errors.New("from account not exists")
 	}
@@ -435,7 +435,7 @@ func (tx ApproveCancelTx) ValidateData(ctx context.Context) error {
 	return nil
 }
 
-func (tx ApproveCancelTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
+func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.ABCICodeOK,
 	}
@@ -458,22 +458,22 @@ func (tx ApproveCancelTx) Exec(ctx context.Context) (result btypes.Result, cross
 }
 
 // 签名账号：被授权账号
-func (tx ApproveCancelTx) GetSigner() []btypes.Address {
+func (tx TxCancelApprove) GetSigner() []btypes.Address {
 	return []btypes.Address{tx.From}
 }
 
 // Gas TODO
-func (tx ApproveCancelTx) CalcGas() btypes.BigInt {
+func (tx TxCancelApprove) CalcGas() btypes.BigInt {
 	return btypes.NewInt(0)
 }
 
 // Gas Payer：被授权账号
-func (tx ApproveCancelTx) GetGasPayer() btypes.Address {
+func (tx TxCancelApprove) GetGasPayer() btypes.Address {
 	return tx.From
 }
 
 // 签名字节
-func (tx ApproveCancelTx) GetSignData() (ret []byte) {
+func (tx TxCancelApprove) GetSignData() (ret []byte) {
 	ret = append(ret, tx.From...)
 	ret = append(ret, tx.To...)
 
