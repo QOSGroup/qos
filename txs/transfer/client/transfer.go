@@ -38,7 +38,7 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			transferTx := transfer.TransferTx{
+			transferTx := transfer.TxTransfer{
 				Senders:   senders,
 				Receivers: receivers,
 			}

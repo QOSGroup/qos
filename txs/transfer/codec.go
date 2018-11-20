@@ -15,5 +15,5 @@ func init() {
 
 func RegisterCodec(cdc *amino.Codec) {
 
-	cdc.RegisterConcrete(&TransferTx{}, "qos/txs/TransferTx", nil)
+	cdc.RegisterConcrete(&TxTransfer{}, "qos/txs/TxTransfer", nil)
 }

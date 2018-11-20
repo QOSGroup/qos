@@ -17,7 +17,7 @@ type TransItem struct {
 	QSCs    types.QSCs     `json:"qscs"` // QSCs
 }
 
-type TransferTx struct {
+type TxTransfer struct {
 	Senders   []TransItem `json:"senders"`   // 发送集合
 	Receivers []TransItem `json:"receivers"` // 接收集合
 }
@@ -26,7 +26,7 @@ type TransferTx struct {
 // 1.Senders、Receivers不为空，地址不重复，币值大于0
 // 2.Senders、Receivers 币值总和对应币种相等
 // 3.Senders中账号对应币种币值足够
-func (tx TransferTx) ValidateData(ctx context.Context) error {
+func (tx TxTransfer) ValidateData(ctx context.Context) error {
 	if tx.Senders == nil || len(tx.Senders) == 0 {
 		return errors.New("senders is empty")
 	}
@@ -100,7 +100,7 @@ func (tx TransferTx) ValidateData(ctx context.Context) error {
 }
 
 // 转账
-func (tx TransferTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
 	for _, sender := range tx.Senders {
@@ -131,7 +131,7 @@ func (tx TransferTx) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 }
 
 // 所有Senders
-func (tx TransferTx) GetSigner() []btypes.Address {
+func (tx TxTransfer) GetSigner() []btypes.Address {
 	addrs := make([]btypes.Address, 0)
 	for _, sender := range tx.Senders {
 		addrs = append(addrs, sender.Address)
@@ -141,17 +141,17 @@ func (tx TransferTx) GetSigner() []btypes.Address {
 }
 
 // Gas TODO
-func (tx TransferTx) CalcGas() btypes.BigInt {
+func (tx TxTransfer) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
 // Senders[0]
-func (tx TransferTx) GetGasPayer() btypes.Address {
+func (tx TxTransfer) GetGasPayer() btypes.Address {
 	return tx.Senders[0].Address
 }
 
 // 签名字节
-func (tx TransferTx) GetSignData() (ret []byte) {
+func (tx TxTransfer) GetSignData() (ret []byte) {
 	for _, sender := range tx.Senders {
 		ret = append(ret, sender.Address...)
 		ret = append(ret, (sender.QOS.NilToZero()).String()...)
