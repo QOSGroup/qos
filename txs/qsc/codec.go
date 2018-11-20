@@ -14,7 +14,8 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	CrtRegisterCodec(cdc)
+	cdc.RegisterConcrete(CertificateSigningRequest{}, "certificate/csr", nil)
+	cdc.RegisterConcrete(Certificate{}, "certificate/crt", nil)
 	cdc.RegisterConcrete(&TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
-	cdc.RegisterConcrete(&TxIssueQsc{}, "qos/txs/TxIssueQsc", nil)
+	cdc.RegisterConcrete(&TxIssueQSC{}, "qos/txs/TxIssueQSC", nil)
 }

@@ -7,8 +7,8 @@ import (
 	"github.com/QOSGroup/qbase/types"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/test"
 	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/txs/qsc"
 	"github.com/QOSGroup/qos/txs/validator"
 	"github.com/QOSGroup/qos/x/miner"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -57,6 +57,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// QCP mapper
 	// qbase 默认已注入
 
+	// QSC mapper
+	app.RegisterMapper(qsc.NewQSCMapper())
+
 	// 预授权mapper
 	app.RegisterMapper(approve.NewApproveMapper())
 
@@ -92,14 +95,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	for _, acc := range genesisState.Accounts {
 		accountMapper.SetAccount(acc)
 	}
-
-	// 设置初始账户(test only)
-	// todo: remove later
-	accret := test.InitKeys(app.GetCdc())
-	for _, ac := range accret {
-		accountMapper.SetAccount(&ac.Acc)
-	}
-
+	
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
 	if len(genesisState.Validators) > 0 {
 		validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
