@@ -422,14 +422,14 @@ type TxCancelApprove struct {
 
 func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
 	if tx.From == nil || tx.To == nil {
-		return errors.New("from account not exists")
+		return errors.New("from or to is empty")
 	}
 
 	// 授权是否存在
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return errors.New("from account not exists")
+		return errors.New("approve not exists")
 	}
 
 	return nil
