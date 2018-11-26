@@ -95,7 +95,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	for _, acc := range genesisState.Accounts {
 		accountMapper.SetAccount(acc)
 	}
-	
+
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
 	if len(genesisState.Validators) > 0 {
 		validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)

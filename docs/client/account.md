@@ -3,7 +3,7 @@
 [账户设计](../spec/account.md)，可通过用户名或账户地址查询。
 
 ```
-qoscli query account --help
+$ qoscli query account --help
 query account by address or name
 
 Usage:
@@ -27,7 +27,7 @@ Global Flags:
 
 * by name
 ```
-qoscli query account --name=Arya
+$ qoscli query account --name=Arya
 {
   "type": "qbase/account/QOSAccount",
   "value": {
@@ -52,7 +52,7 @@ qoscli query account --name=Arya
 
 * by address
 ```
-qoscli query account --addr=address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn
+$ qoscli query account --addr=address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn
 {
   "type": "qbase/account/QOSAccount",
   "value": {
@@ -72,5 +72,5 @@ qoscli query account --addr=address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn
       }
     ]
   }
-} 
+}
 ```

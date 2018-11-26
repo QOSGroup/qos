@@ -3,14 +3,14 @@
 提供与QOS交互的命令行工具。
 
 ```
-qoscli --help
+$ qoscli --help
 QOS light-client
 
 Usage:
   qoscli [command]
 
 Available Commands:
-              
+
   keys        keys management tools. Add or view local private keys
   qcp         qcp subcommands
   query       query subcommands
@@ -36,7 +36,7 @@ Use "qoscli [command] --help" for more information about a command.
 
 添加地址信息Sansa：
 ```
-qoscli keys add Sansa
+$ qoscli keys add Sansa
 Enter a passphrase for your key:12345678
 Repeat the passphrase:12345678
 NAME:	TYPE:	ADDRESS:						PUBKEY:
@@ -55,7 +55,7 @@ sentence swap network level reason jewel radio apple soap vessel symptom improve
 
 查询相关命令
 ```
-qoscli query --help
+$ qoscli query --help
 query subcommands
 
 Usage:
@@ -91,7 +91,7 @@ Use "qoscli query [command] --help" for more information about a command.
 
 ## tx
 ```
-qoscli tx --help
+$ qoscli tx --help
 tx subcommands
 
 Usage:
@@ -100,15 +100,15 @@ Usage:
 Available Commands:
   create-qsc       create qsc
   issue-qsc        issue qsc
-              
+
   transfer         Transfer QOS and QSCs
-              
+
   create-approve   Create approve
   increase-approve Increase approve
   decrease-approve Decrease approve
   use-approve      Use approve
   cancel-approve   Cancel approve
-              
+
   create-validator Create validator.
 
 Flags:
@@ -124,7 +124,7 @@ Use "qoscli tx [command] --help" for more information about a command.
 ```
 
 ### qsc
- 
+
 [创建、发放联盟币](qsc.md)
 
 ### transfer
@@ -141,7 +141,7 @@ Use "qoscli tx [command] --help" for more information about a command.
 
 ## tendermint
 ```
-qoscli tendermint --help
+$ qoscli tendermint --help
 tendermint subcommands
 
 Usage:
@@ -149,10 +149,10 @@ Usage:
 
 Available Commands:
   status      Query remote node for status
-              
+
   validators  Get validator set at given height
   block       Get block info at given height
-              
+
   txs         Search for all transactions that match the given tags.
   tx          query match hash tx in all commit block
 

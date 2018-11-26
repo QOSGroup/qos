@@ -1,37 +1,20 @@
 # QSC命令行工具
 
-[QSC](../spec/txs/qsc.md)，创建联盟币，发放联盟币。
+[QSC](../spec/txs/qsc.md)工具包含以下命令:
 
-```
-qoscli tx qsc
-QSC subcommands
+* `qoscli tx create-qsc`: 创建联盟币，发放联盟币。
+* `qoscli tx issue-qsc`: 发行联盟币
+* `qoscli query qsc`: 查询qsc信息
 
-Usage:
-  qoscli qsc [command]
-
-Available Commands:
-  query       query qsc info
-  create      create qsc
-  issue       issue qsc
-
-Flags:
-  -h, --help   help for qsc
-
-Global Flags:
-  -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
-      --home string       directory for config and data (default "/home/imuge/.qoscli")
-  -o, --output string     Output format (text|json) (default "text")
-      --trace             print out full stack trace on errors
-
-Use "qoscli qsc [command] --help" for more information about a command.
-```
-
-创建QSC需要申请[CA]()
 
 ## create
 
+> 创建QSC需要申请[CA]()
+
+1. 创建QSC
+
 ```
-qoscli tx create-qsc --help
+$ qoscli tx create-qsc --help
 create qsc
 
 Usage:
@@ -62,11 +45,30 @@ Global Flags:
 - creator   创建账号名
 - path-bank bank 证书位置
 - path-qsc  qsc 证书位置
+- qsc-chain qsc chainID
 - accounts  初始发放地址币值集合，[addr1],[amount];[addr2],[amount2],...，eg：address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,100;address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,100。
 该参数可为空，即只创建联盟币
+
+> 可以通过`qoscli keys import`导入*creator*账户
+
+
 ```
-qoscli tx create-qsc --creator=Arya --path-qsc="qsc.crt" --path-bank "banker.crt" 
+$ qoscli tx create-qsc --creator=Arya --path-qsc="qsc.crt" --path-bank "banker.crt" --qsc-chain qunion-chain
 ```
+
+2. 查询QOS绑定的chains
+
+```
+$ qoscli query store --path /store/qcp/subspace --data pubkey
+```
+
+3. 查询QOS绑定的QSCs
+
+```
+$ qoscli query store --path /store/qsc/subspace --data qsc
+```
+
+
 
 ## query
 ```
@@ -94,13 +96,13 @@ Global Flags:
 - qsc-name
 
 ```
-qoscli query qsc QSC
-``` 
+$ qoscli query qsc QSC
+```
 
 ## issue
 
 ```
-qoscli tx issue-qsc --help
+$ qoscli tx issue-qsc --help
 issue qsc
 
 Usage:
@@ -129,6 +131,8 @@ Global Flags:
 - banker    banker账户名
 - amount    qsc币值
 
+> 可以通过`qoscli keys import QSCBanker --file ~/banker.pri` 使用banker的私钥文件导入*QSCBanker*账户
+
 ```
-qoscli tx issue-qsc --qsc-name=QSC --banker=QSCBanker --amount=10000
-```  
+$ qoscli tx issue-qsc --qsc-name=QSC --banker=QSCBanker --amount=10000
+```

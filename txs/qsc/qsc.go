@@ -102,11 +102,17 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 
 	// creator账户存在，且有足够的QOS
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	creator := accountMapper.GetAccount(tx.Creator).(*account.QOSAccount)
+	creator := accountMapper.GetAccount(tx.Creator)
 	if nil == creator {
 		return errors.New("creator account not exists")
 	}
-	if creator.QOS.LT(CreatorQOSLimit) {
+
+	qosAcc, ok := creator.(*account.QOSAccount)
+	if !ok {
+		return errors.New("creator account is not a QOSAccount")
+	}
+
+	if qosAcc.QOS.LT(CreatorQOSLimit) {
 		return errors.New("creator account does not have enough qos")
 	}
 
