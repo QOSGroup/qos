@@ -1,12 +1,10 @@
 package transfer
 
 import (
-	"fmt"
-	cliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/client/keys"
-	btx "github.com/QOSGroup/qbase/client/tx"
-	btxs "github.com/QOSGroup/qbase/txs"
+	qclitx "github.com/QOSGroup/qbase/client/tx"
+	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/txs/transfer"
 	"github.com/QOSGroup/qos/types"
@@ -26,50 +24,22 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "transfer",
 		Short: "Transfer QOS and QSCs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			sendersStr := viper.GetString(flagSenders)
-			names, senders, err := parseSenderTransItem(&cliCtx, sendersStr)
-			if err != nil {
-				return err
-			}
-			receiversStr := viper.GetString(flagReceivers)
-			receivers, err := parseReceiverTransItem(receiversStr)
-			if err != nil {
-				return err
-			}
-			transferTx := transfer.TxTransfer{
-				Senders:   senders,
-				Receivers: receivers,
-			}
-
-			chainId, err := types.GetDefaultChainId()
-			if err != nil {
-				return nil
-			}
-
-			stdTx := btxs.NewTxStd(&transferTx, chainId, btypes.ZeroInt())
-			for _, name := range names {
-				info, err := keys.GetKeyInfo(cliCtx, name)
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+				sendersStr := viper.GetString(flagSenders)
+				_, senders, err := parseSenderTransItem(&ctx, sendersStr)
 				if err != nil {
-					return err
+					return nil, err
 				}
-				account, err := cliacc.GetAccount(cliCtx, info.GetAddress())
+				receiversStr := viper.GetString(flagReceivers)
+				receivers, err := parseReceiverTransItem(receiversStr)
 				if err != nil {
-					return err
+					return nil, err
 				}
-				stdTx, err = btx.SignStdTx(cliCtx, name, account.GetNonce()+1, stdTx)
-				if err != nil {
-					return err
-				}
-			}
-
-			result, err := cliCtx.BroadcastTx(cdc.MustMarshalBinaryBare(stdTx))
-
-			msg, _ := cdc.MarshalJSON(result)
-			fmt.Println(string(msg))
-
-			return err
+				return transfer.TxTransfer{
+					Senders:   senders,
+					Receivers: receivers,
+				}, nil
+			})
 		},
 	}
 

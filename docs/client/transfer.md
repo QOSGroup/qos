@@ -1,9 +1,17 @@
 # 转账命令行工具
 
+转账命令行工具:
+
+* `qoscli tx transfer`
+
+查询账户信息:
+
+* `qoscli query account`
+
 [转账设计](../spec/txs/transfer.md)
 
 ```
-qoscli tx transfer --help
+$ qoscli tx transfer --help
 Transfer QOS and QSCs
 
 Usage:
@@ -31,7 +39,7 @@ Global Flags:
 
 Arya向Sansa转账1个qos，1个qstar
 ```
-qoscli tx transfer --senders=Arya,1qos,1qstar --receivers=address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh,1qos,1qstar
+$ qoscli tx transfer --senders=Arya,1qos,1qstar --receivers=address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh,1qos,1qstar
 Password to sign with 'Arya':
 {"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"40"}
 ```

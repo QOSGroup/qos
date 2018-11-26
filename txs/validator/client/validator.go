@@ -2,16 +2,11 @@ package validator
 
 import (
 	"encoding/base64"
-	"errors"
 	"fmt"
-	cliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
-	"github.com/QOSGroup/qbase/client/keys"
-	ctxs "github.com/QOSGroup/qbase/client/tx"
-	btxs "github.com/QOSGroup/qbase/txs"
-	btypes "github.com/QOSGroup/qbase/types"
+	qclitx "github.com/QOSGroup/qbase/client/tx"
+	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/txs/validator"
-	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -41,57 +36,24 @@ example:
 
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+				name := viper.GetString(flagName)
+				consPubkey := viper.GetString(flagConsPubKey)
+				creatorAddr, err := qclitx.GetAddrFromFlag(ctx, flagName)
+				if err != nil {
+					return nil, err
+				}
 
-			name := viper.GetString(flagName)
-			consPubkey := viper.GetString(flagConsPubKey)
+				bz, err := base64.StdEncoding.DecodeString(consPubkey)
+				if err != nil {
+					return nil, fmt.Errorf("cons-pubkey parse error: %s", err.Error())
+				}
+				var cKey ed25519.PubKeyEd25519
+				copy(cKey[:], bz)
 
-			if name == "" {
-				return errors.New("missing name flag")
-			}
-			creatorInfo, err := keys.GetKeyInfo(cliCtx, name)
-			if err != nil {
-				return err
-			}
-			creator, err := cliacc.GetAccount(cliCtx, creatorInfo.GetAddress())
-			if err != nil {
-				return err
-			}
+				return validator.NewCreateValidatorTx(name, cKey, creatorAddr), nil
+			})
 
-			if consPubkey == "" {
-				return errors.New("missing cons-pubkey flag")
-			}
-
-			bz, err := base64.StdEncoding.DecodeString(consPubkey)
-			if err != nil {
-				return fmt.Errorf("cons-pubkey parse error: %s", err.Error())
-			}
-			var cKey ed25519.PubKeyEd25519
-			copy(cKey[:], bz)
-
-			validatorTx := validator.NewCreateValidatorTx(name, cKey, creator.GetAddress())
-			if err != nil {
-				return err
-			}
-
-			chainID, err := types.GetDefaultChainId()
-			if err != nil {
-				return err
-			}
-
-			stdTx := btxs.NewTxStd(validatorTx, chainID, btypes.ZeroInt())
-
-			tx, err := ctxs.SignStdTx(cliCtx, name, creator.GetNonce()+1, stdTx)
-			if err != nil {
-				return err
-			}
-
-			result, err := cliCtx.BroadcastTx(cdc.MustMarshalBinaryBare(tx))
-
-			msg, _ := cdc.MarshalJSON(result)
-			fmt.Println(string(msg))
-
-			return err
 		},
 	}
 
