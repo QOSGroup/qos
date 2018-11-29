@@ -104,7 +104,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 
 			addr := types.Address(v.Operator)
 			acc := accountMapper.GetAccount(addr)
-			if acc.GetPubicKey() == nil {
+			if acc == nil {
 				acc = accountMapper.NewAccountWithAddress(addr)
 				accountMapper.SetAccount(acc)
 			}

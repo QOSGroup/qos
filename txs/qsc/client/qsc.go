@@ -3,6 +3,7 @@ package qsc
 import (
 	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
+	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/client/keys"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
@@ -46,7 +47,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 				accountStr := viper.GetString(flagAccounts)
 				description := viper.GetString(flagDescription)
 
-				creatorAddr, err := qclitx.GetAddrFromFlag(ctx, flagCreator)
+				creatorAddr, err := qcliacc.GetAddrFromFlag(ctx, flagCreator)
 				if err != nil {
 					return nil, err
 				}
@@ -163,7 +164,7 @@ func IssueQSCCmd(cdc *amino.Codec) *cobra.Command {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
 				amount := viper.GetInt64(flagAmount)
 				qscName := viper.GetString(flagQscname)
-				bankerAddr, err := qclitx.GetAddrFromFlag(ctx, flagBanker)
+				bankerAddr, err := qcliacc.GetAddrFromFlag(ctx, flagBanker)
 				if err != nil {
 					return nil, err
 				}

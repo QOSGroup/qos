@@ -45,7 +45,6 @@ func main() {
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),
-		bcli.QcpCommand(cdc),
 		queryCommands,
 		txsCommands,
 		bcli.TendermintCommand(cdc),

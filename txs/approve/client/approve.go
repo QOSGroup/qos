@@ -2,6 +2,7 @@ package approve
 
 import (
 	"errors"
+	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
@@ -37,12 +38,12 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 			queryPath := "store/approve/key"
 
-			fromAddr, err := qclitx.GetAddrFromFlag(cliCtx, flagFrom)
+			fromAddr, err := qcliacc.GetAddrFromFlag(cliCtx, flagFrom)
 			if err != nil {
 				return err
 			}
 
-			toAddr, err := qclitx.GetAddrFromFlag(cliCtx, flagTo)
+			toAddr, err := qcliacc.GetAddrFromFlag(cliCtx, flagTo)
 			if err != nil {
 				return err
 			}
@@ -199,12 +200,12 @@ func applyApprove(cdc *amino.Codec, operType operateType) error {
 
 func handleOperateFlag(ctx context.CLIContext) error {
 
-	fromAddr, err := qclitx.GetAddrFromFlag(ctx, flagFrom)
+	fromAddr, err := qcliacc.GetAddrFromFlag(ctx, flagFrom)
 	if err != nil {
 		return err
 	}
 
-	toAddr, err := qclitx.GetAddrFromFlag(ctx, flagTo)
+	toAddr, err := qcliacc.GetAddrFromFlag(ctx, flagTo)
 	if err != nil {
 		return err
 	}
