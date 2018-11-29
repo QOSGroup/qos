@@ -26,8 +26,8 @@ const (
 	flagCreator     = "creator"
 	flagBanker      = "banker"
 	flagExtrate     = "extrate"
-	flagPathqsc     = "path-qsc"
-	flagPathbank    = "path-bank"
+	flagPathqsc     = "qsc.crt"
+	flagPathbank    = "banker.crt"
 	flagAccounts    = "accounts"
 	flagAmount      = "amount"
 	flagDescription = "desc"
@@ -52,14 +52,16 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				var caQsc qsc.Certificate
-				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqsc), &caQsc)
+				var caQsc *qsc.Certificate
+				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqsc), caQsc)
 				if err != nil {
 					return nil, err
 				}
 
-				var caBanker qsc.Certificate
-				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathbank), &caBanker)
+				var caBanker *qsc.Certificate
+				if(pathbank == ""){
+					err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathbank), &caBanker)
+				}
 				if err != nil {
 					return nil, err
 				}
@@ -121,7 +123,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagQscChainID)
 	cmd.MarkFlagRequired(flagCreator)
 	cmd.MarkFlagRequired(flagPathqsc)
-	cmd.MarkFlagRequired(flagPathbank)
+	//cmd.MarkFlagRequired(flagPathbank)
 
 	return cmd
 }
