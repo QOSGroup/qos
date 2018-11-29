@@ -6,7 +6,7 @@ import (
 
 const (
 	Qos         = int64(1e8)
-	BlockReward = int64(10 * Qos)
+	BlockReward = int64(0 * Qos)
 )
 
 type QSC = types.BaseCoin
