@@ -2,11 +2,10 @@ package transfer
 
 import (
 	"fmt"
+	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
-	"github.com/QOSGroup/qbase/client/keys"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/txs/transfer"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
@@ -63,16 +62,16 @@ func parseTransItem(cliCtx context.CLIContext, str string) ([]transfer.TransItem
 			continue
 		}
 
-		addrAndCoins := strings.Split(ti , ",")
+		addrAndCoins := strings.Split(ti, ",")
 		if len(addrAndCoins) < 2 {
-			return nil , fmt.Errorf("`%s` not match rules", ti)
+			return nil, fmt.Errorf("`%s` not match rules", ti)
 		}
 
-		addr, err := getAddress(cliCtx, addrAndCoins[0])
+		addr, err := qcliacc.GetAddrFromValue(cliCtx, addrAndCoins[0])
 		if err != nil {
 			return nil, err
 		}
-		qos, qscs, err := types.ParseCoins(strings.Join(addrAndCoins[1:],","))
+		qos, qscs, err := types.ParseCoins(strings.Join(addrAndCoins[1:], ","))
 		if err != nil {
 			return nil, err
 		}
@@ -84,19 +83,4 @@ func parseTransItem(cliCtx context.CLIContext, str string) ([]transfer.TransItem
 	}
 
 	return items, nil
-}
-
-
-func getAddress(ctx context.CLIContext , value string) (btypes.Address , error) {
-		address, err := btypes.GetAddrFromBech32(value)
-		if err == nil {
-			return address , nil
-		}
-
-		info, err := keys.GetKeyInfo(ctx, value)
-		if err != nil {
-			return nil, err
-		}
-
-		return info.GetAddress(),nil
 }

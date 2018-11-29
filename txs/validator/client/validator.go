@@ -3,6 +3,7 @@ package validator
 import (
 	"encoding/base64"
 	"fmt"
+	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
@@ -39,7 +40,7 @@ example:
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
 				name := viper.GetString(flagName)
 				consPubkey := viper.GetString(flagConsPubKey)
-				creatorAddr, err := qclitx.GetAddrFromFlag(ctx, flagName)
+				creatorAddr, err := qcliacc.GetAddrFromFlag(ctx, flagName)
 				if err != nil {
 					return nil, err
 				}
