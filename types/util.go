@@ -2,13 +2,14 @@ package types
 
 import (
 	"fmt"
-	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/pkg/errors"
-	"github.com/spf13/viper"
 	"os"
 	"regexp"
 	"strconv"
 	"strings"
+
+	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/pkg/errors"
+	"github.com/spf13/viper"
 )
 
 var (
@@ -45,6 +46,9 @@ func ParseCoins(str string) (btypes.BigInt, QSCs, error) {
 	qscs := QSCs{}
 	for _, q := range arr {
 		coin := reCoin.FindStringSubmatch(q)
+		if len(coin) != 3 {
+			return btypes.ZeroInt(), nil, fmt.Errorf("coins str: %s parse faild", q)
+		}
 		coin[2] = strings.TrimSpace(coin[2])
 		amount, err := strconv.ParseInt(strings.TrimSpace(coin[1]), 10, 64)
 		if err != nil {
