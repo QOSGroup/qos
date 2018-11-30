@@ -82,8 +82,8 @@ type TxCreateQSC struct {
 	ChainID     string               `json:"chain_id"`    //chain-id
 	Creator     btypes.Address       `json:"creator"`     //QSC创建账户
 	Extrate     string               `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
-	QSCCA       *Certificate          `json:"ca_qsc"`      //CA信息
-	BankerCA    *Certificate          `json:"ca_banker"`   //CA信息
+	QSCCA       *Certificate         `json:"ca_qsc"`      //CA信息
+	BankerCA    *Certificate         `json:"ca_banker"`   //CA信息
 	Description string               `json:"description"` //描述信息
 	Accounts    []account.QOSAccount `json:"accounts"`    //初始化时接受qsc的账户
 }
@@ -125,7 +125,7 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	if !VerityCrt(rootCA, tx.QSCCA) {
 		return errors.New("invalid QSC CA")
 	}
-	if !(tx.BankerCA == nil)  {
+	if !(tx.BankerCA == nil) {
 		if !VerityCrt(rootCA, tx.BankerCA) {
 			return errors.New("invalid banker CA")
 		}
@@ -231,7 +231,7 @@ func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
 	}
 
 	// banker 存在
-	if nil == qsc.BankerCA{
+	if nil == qsc.BankerCA {
 		return errors.New("banker not exists")
 	}
 

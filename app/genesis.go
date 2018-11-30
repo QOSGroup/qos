@@ -11,7 +11,6 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/server/config"
 
-	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/pflag"
@@ -59,18 +58,6 @@ type QOSGenTx struct {
 func QOSAppGenTx(cdc *amino.Codec, pk crypto.PubKey, genTxConfig config.GenTx) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 
-	pubkey, secret, err := GenerateCoinKey(cdc, genTxConfig.CliRoot)
-	if err != nil {
-		return
-	}
-
-	mm := map[string]string{"name": DefaultAccountName, "pass": DefaultAccountPass, "address": (btypes.Address(pubkey.Address())).String(), "secret": secret}
-	bz, err := cdc.MarshalJSON(mm)
-	if err != nil {
-		return
-	}
-	cliPrint = json.RawMessage(bz)
-
 	//JUST 占坑
 	validator.PubKey = ed25519.PubKeyEd25519{}
 	validator.Power = 1
@@ -80,12 +67,11 @@ func QOSAppGenTx(cdc *amino.Codec, pk crypto.PubKey, genTxConfig config.GenTx) (
 		PubKey: pk,
 		Power:  10,
 	}}
-	bz, err = cdc.MarshalJSON(simpleGenTx)
+	bz, err := cdc.MarshalJSON(simpleGenTx)
 	if err != nil {
 		return
 	}
 	appGenTx = json.RawMessage(bz)
-
 	return
 }
 
@@ -109,24 +95,6 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 	bz, _ := base64.StdEncoding.DecodeString("Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE=")
 	copy(caPubkey[:], bz)
 	appGenState.CAPubKey = caPubkey
-
-	internalQOSAccount := account.NewQOSAccount()
-	internalQOSAccount.SetPublicKey(genTx.Validator.PubKey)
-	internalQOSAccount.SetAddress(btypes.Address(genTx.Validator.PubKey.Address()))
-	internalQOSAccount.SetQOS(btypes.NewInt(100000000))
-	internalQOSAccount.SetQSC(types.NewQSC("qstar", btypes.NewInt(100000000)))
-	appGenState.Accounts = []*account.QOSAccount{internalQOSAccount}
-
-	val := types.Validator{
-		Name:        genTx.Validator.PubKey.Address().String(),
-		ConsPubKey:  genTx.Validator.PubKey,
-		Operator:    btypes.Address(genTx.Validator.PubKey.Address()),
-		VotingPower: genTx.Validator.Power,
-		Height:      1,
-	}
-
-	appGenState.Validators = append(appGenState.Validators, val)
-
 	appState, _ = cdc.MarshalJSONIndent(appGenState, "", " ")
 	return
 }
