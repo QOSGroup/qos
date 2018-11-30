@@ -53,7 +53,7 @@ Global Flags:
 
 
 ```
-$ qoscli tx create-qsc --creator=Arya --path-qsc="qsc.crt" --path-bank "banker.crt" --qsc-chain qunion-chain
+$ qoscli tx create-qsc --creator qosInitAcc --qsc.crt "qsc.crt" --banker.crt "banker.crt" --qsc-chain qunion-chain
 ```
 
 2. 查询QOS绑定的chains
@@ -133,6 +133,23 @@ Global Flags:
 
 > 可以通过`qoscli keys import QSCBanker --file ~/banker.pri` 使用banker的私钥文件导入*QSCBanker*账户
 
+
+导入QSCBanker秘钥
+
+```
+$ qoscli keys import QSCBanker --file ~/banker.pri
+> Enter a passphrase for your key:
+> Repeat the passphrase:
+```
+
+
 ```
 $ qoscli tx issue-qsc --qsc-name=QSC --banker=QSCBanker --amount=10000
 ```
+
+查询账户信息:
+
+```
+$ qoscli query account QSCBanker
+```
+

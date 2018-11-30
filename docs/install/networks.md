@@ -21,12 +21,17 @@ qosd init --chain-id=qos-test
 
 ```
 
+$ qoscli keys add qosInitAcc
+Enter a passphrase for your key:
+Repeat the passphrase:
+
 $ qoscli keys list
 
-NAME:	TYPE:	ADDRESS:						PUBKEY:
-Arya	local	address10glya79clhrk53pgvq0egh5mu0wctqxrkzqhhk	gWzs0dN+wRFEj8wFLydnC1VYEAjY6gpXPnxGIEtLqiU=
+NAME:   TYPE:   ADDRESS:                                                PUBKEY:
+qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
 
-$ qosd add-genesis-account address10glya79clhrk53pgvq0egh5mu0wctqxrkzqhhk 10000qos,20000qstar
+$ qosd add-genesis-account --addr $(qoscli keys list|grep qosInitAcc|awk '{print $3}') --coins 1000000qos,20000000qstar
+
 ```
 
 * add-genesis-validator
@@ -48,12 +53,10 @@ Flags:
       --operator string     operator address
       --power int           validator's voting power. default is 10 (default 10)
 
-$ qosd add-genesis-validator --operator address10glya79clhrk53pgvq0egh5mu0wctqxrkzqhhk
+$ qosd add-genesis-validator --operator $(qoscli keys list|grep qosInitAcc|awk '{print $3}')
 
 
 ```
-
-
 
 * start
 ```
