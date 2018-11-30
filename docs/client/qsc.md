@@ -53,7 +53,7 @@ Global Flags:
 
 
 ```
-$ qoscli tx create-qsc --creator=Arya --path-qsc="qsc.crt" --path-bank "banker.crt" --qsc-chain qunion-chain
+$ qoscli tx create-qsc --creator=Arya --qsc.crt="qsc.crt" --banker.crt "banker.crt" --qsc-chain qunion-chain
 ```
 
 2. 查询QOS绑定的chains
