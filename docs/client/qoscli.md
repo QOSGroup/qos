@@ -12,17 +12,16 @@ Usage:
 Available Commands:
 
   keys        keys management tools. Add or view local private keys
-  qcp         qcp subcommands
-  query       query subcommands
+  query       query(alias `q`) subcommands.
   tx          tx subcommands
-  tendermint  tendermint subcommands
+  tendermint  tendermint(alias `t`)  subcommands
   version     Print the app version
   help        Help about any command
 
 Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
   -h, --help              help for qoscli
-      --home string       directory for config and data (default "/home/imuge/.qoscli")
+      --home string       directory for config and data (default "/Users/gaoxiang/.qoscli")
   -o, --output string     Output format (text|json) (default "text")
       --trace             print out full stack trace on errors
 
@@ -47,22 +46,24 @@ It is the only way to recover your account if you ever forget your password.
 sentence swap network level reason jewel radio apple soap vessel symptom improve mimic early wise real float clarify forward turkey lake actress typical twin
 ```
 
-## qcp
-
-[跨链交易数据查询](qcp.md)
 
 ## query
 
 查询相关命令
 ```
 $ qoscli query --help
-query subcommands
+query(alias `q`) subcommands.
 
 Usage:
   qoscli query [command]
 
+Aliases:
+  query, q
+
 Available Commands:
-  account     query account by address or name
+  account     Query account info by address or name
+  store       Query store data by low level
+  qcp         qcp subcommands
   approve     Query approve by from and to
   qsc         query qsc info by name
 
@@ -71,7 +72,7 @@ Flags:
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
-      --home string       directory for config and data (default "/home/imuge/.qoscli")
+      --home string       directory for config and data (default "/Users/gaoxiang/.qoscli")
   -o, --output string     Output format (text|json) (default "text")
       --trace             print out full stack trace on errors
 
@@ -80,6 +81,42 @@ Use "qoscli query [command] --help" for more information about a command.
 ### account
 
 [链上账户状态查询](account.md)
+
+### store
+通过abci query直接查询store的底层方法，path参数指定查询路径，data指定查询key
+```
+$ qoscli query store --help
+Query store data by low level
+
+Usage:
+  qoscli query store [flags]
+
+Flags:
+      --data string   store query data
+  -h, --help          help for store
+      --indent        print indent result json
+  -n, --node string   Node to connect to (default "tcp://localhost:26657")
+      --path string   store query path
+
+Global Flags:
+  -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
+      --home string       directory for config and data (default "/Users/gaoxiang/.qoscli")
+  -o, --output string     Output format (text|json) (default "text")
+      --trace             print out full stack trace on errors
+```
+
+查询指定qsc
+```
+qoscli query store --path /store/qsc/key --data qsc/[QSC]
+```
+查询所有账户
+```
+qoscli query store --path /store/acc/subspace --data account:
+```
+
+### qcp
+
+[跨链交易数据查询](qcp.md)
 
 ### approve
 
