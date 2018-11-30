@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
@@ -32,6 +33,9 @@ func main() {
 
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
+
+	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
+	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
 
 	executor := cli.PrepareBaseCmd(rootCmd, "qos", types.DefaultNodeHome)
 

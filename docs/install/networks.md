@@ -7,18 +7,57 @@ qosd init --chain-id=qos-test
 {
   "chain_id": "qos-test",
   "node_id": "1c3100c28a44f1facf45aa83e9aa3d8ff8ac6b1f",
-  "app_message": {
-    "address": "address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn",
-    "secret": "vital unique glow midnight quality buddy fitness bachelor body right exercise grape perfect dice series service knee wasp alert twelve clown before swap stone",
-    "name": "Arya",
-    "pass": "12345678"
-  }
+  "app_message": "null"
 }
 ```
 注意init 可添加--home flag指定配置文件地址，默认在$HOME/.qosd
+`init`操作后,通过执行`qosd add-genesis-validator`添加validator
+
+* add-genesis-account
+
+使用`qosd add-genesis-account`初始化account账户到配置文件中.
+
+> 使用`qoscli keys add `创建account账户
+
+```
+
+$ qoscli keys list
+
+NAME:	TYPE:	ADDRESS:						PUBKEY:
+Arya	local	address10glya79clhrk53pgvq0egh5mu0wctqxrkzqhhk	gWzs0dN+wRFEj8wFLydnC1VYEAjY6gpXPnxGIEtLqiU=
+
+$ qosd add-genesis-account address10glya79clhrk53pgvq0egh5mu0wctqxrkzqhhk 10000qos,20000qstar
+```
+
+* add-genesis-validator
+
+使用`qosd add-genesis-validator`初始化validator到配置文件中.
+
+```
+
+$ qosd add-genesis-validator -h
+
+Add genesis validator to genesis.json
+
+Usage:
+  qosd add-genesis-validator [flags]
+
+Flags:
+      --consPubkey string   validator's ed25519 consPubkey
+  -h, --help                help for add-genesis-validator
+      --operator string     operator address
+      --power int           validator's voting power. default is 10 (default 10)
+
+$ qosd add-genesis-validator --operator address10glya79clhrk53pgvq0egh5mu0wctqxrkzqhhk
+
+
+```
+
+
+
 * start
 ```
-qosd start --with-tendermint
+$ qosd start --with-tendermint
 ```
 如果一切正常，会看到控制台输出打块信息
 
@@ -30,219 +69,251 @@ qosd start --with-tendermint
 
 * init
 ```
-qosd init --chain-id=qos-test --name=node --home=$HOME/node1
-qosd init --chain-id=qos-test --name=node --home=$HOME/node2
-qosd init --chain-id=qos-test --name=node --home=$HOME/node3
-qosd init --chain-id=qos-test --name=node --home=$HOME/node4
+$ cd && mkdir node{1..4}
+$ for i in {1..4}; do qosd init --chain-id=qos-test --name=node${i} --home=$HOME/node${i}; done
 ```
+
+* 添加创世账户
+
+```
+$ qoscli keys add qosgenesisacc
+Enter a passphrase for your key:
+Repeat the passphrase:
+
+$ qoscli keys  list
+NAME:	TYPE:	ADDRESS:						PUBKEY:
+qosgenesisacc	local	address1rh47fd6ykkj0kpkukkt9pskgppfl30lpv9n9pu	EnChknIClMgiwcqCKjIraYZdK4+wTaATAfp4GUNUIAo=
+
+
+$ for i in {1..4}; do qosd add-genesis-account --addr $(qoscli keys  list | grep qosgenesisacc | awk '{print $3}')  --coins 100000qos,1000000qstar --home=$HOME/node${i}; done
+
+//查看genesis.json配置
+$ cat $HOME/node1/config/genesis.json
+
+```
+
 
 * 配置validators
 
-查看genesis.json validators部分
-```
-# node1
-cat $HOME/node1/config/genesis.json
-"validators": [
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "uiKoUyDs5+5SrtTeZjPhO5Q87B2GTDcXKcUkn1k5J/g="
-      },
-      "power": "10",
-      "name": ""
-    }
-]
+查看每个节点的validator 配置文件:
 
-# node2
-cat $HOME/node2/config/genesis.json
-"validators": [
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "nDWoLDHfEMLqRwxQJR6oK/XOGzwZPUk8X4a5J6UVoMY="
-      },
-      "power": "10",
-      "name": ""
-    }
-]
-
-# node3
-cat $HOME/node3/config/genesis.json
-"validators": [
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "gQrmTG5NurpaLlzEvbC61fFKSMAQK+2BeYquJSIq4aI="
-      },
-      "power": "10",
-      "name": ""
-    }
-]
-
-# node4
-cat $HOME/node4/config/genesis.json
-"validators": [
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "exEwlLZSv6mnv8hD1MtISnU2/dsKn+Gi9o2s2sRwEuE="
-      },
-      "power": "10",
-      "name": ""
-    }
-]
 ```
-统一四个节点的genesis.json validators部分
-```
-"validators": [
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "uiKoUyDs5+5SrtTeZjPhO5Q87B2GTDcXKcUkn1k5J/g="
-      },
-      "power": "10",
-      "name": ""
-    },
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "nDWoLDHfEMLqRwxQJR6oK/XOGzwZPUk8X4a5J6UVoMY="
-      },
-      "power": "10",
-      "name": ""
-    },
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "gQrmTG5NurpaLlzEvbC61fFKSMAQK+2BeYquJSIq4aI="
-      },
-      "power": "10",
-      "name": ""
-    },
-    {
-      "pub_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "exEwlLZSv6mnv8hD1MtISnU2/dsKn+Gi9o2s2sRwEuE="
-      },
-      "power": "10",
-      "name": ""
-    }
-]
+//node1
+$ cat $HOME/node1/config/priv_validator.json
+
+//node2
+$ cat $HOME/node2/config/priv_validator.json
+
+//node3
+$ cat $HOME/node3/config/priv_validator.json
+
+//node4
+$ cat $HOME/node4/config/priv_validator.json
+
 ```
 
-* app_state
+使用`qosd add-genesis-validator`命令将每个节点的`validator`添加至`genesis.json`配置文件中
 
-统一genesis.json中 spp_state信息，参照[genesis](../spec/genesis.md)
+**添加`validator`需要指定操作者`operator`,可以通过`qoscli keys add`分别添加操作者`operator`**
 
-这里我们可以统一用node1的genesis.json的app_state部分
+
+```
+$ qoscli keys add node1oper
+$ qoscli keys add node2oper
+$ qoscli keys add node3oper
+$ qoscli keys add node4oper
+$ qoscli keys list
+```
+
+以下示例中使用创世账户`qosgenesisacc`作为4个节点`validator`的`operator`,也可以为节点指定不同的`operator`:
+
+```
+$ export node1pk=$(sed -n '/PubKey/,/value/p' $HOME/node1/config/priv_validator.json|sed 1d|awk -F\" '{print $4}')
+
+$ export node2pk=$(sed -n '/PubKey/,/value/p' $HOME/node2/config/priv_validator.json|sed 1d|awk -F\" '{print $4}')
+
+$ export node3pk=$(sed -n '/PubKey/,/value/p' $HOME/node3/config/priv_validator.json|sed 1d|awk -F\" '{print $4}')
+
+$ export node4pk=$(sed -n '/PubKey/,/value/p' $HOME/node4/config/priv_validator.json|sed 1d|awk -F\" '{print $4}')
+
+$ export operator=$(qoscli keys  list | grep qosgenesisacc | awk '{print $3}')
+
+$ export node1id=$(qosd tendermint show-node-id --home=$HOME/node1)
+
+#node1执行
+
+$ for i in {1..4}; do qosd add-genesis-validator --home=$HOME/node1 --consPubkey $(eval echo '$'"node"${i}pk) --operator $operator --power 10;done
+
+#将node1/config/genesis.json分别拷贝至其他节点config目录下
+$ cp $HOME/node1/config/genesis.json $HOME/node2/config
+$ cp $HOME/node1/config/genesis.json $HOME/node3/config
+$ cp $HOME/node1/config/genesis.json $HOME/node4/config
+```
 
 
 * 查看node1 node id
 ```
-qosd tendermint show-node-id --home=$HOME/node1
-b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb
+$ qosd tendermint show-node-id --home=$HOME/node1
+51bc172321ff3ea3e82f133d5116f0c11ac905d8
 ```
 
-* 修改node2配置
+* 修改节点端口配置文件
 
-config.toml
+`config/config.toml`定义了节点启动时不同的监听端口. 如果节点在不同的机器上运行,则只需修改`persistent_peers`选项即可:
+
+主要修改端口配置选项如下
+
+* moniker = ""
+* proxy_app = "tcp://127.0.0.1:26658"
+* prof_laddr = "localhost:6060"
+* [rpc] laddr = "tcp://0.0.0.0:26657"
+* [p2p] laddr = "tcp://0.0.0.0:26656"
+* [p2p] persistent_peers = ""
+* prometheus_listen_addr = ":26660"
+
+
+node1配置如下:
+* moniker = "node1"
+* proxy_app = "tcp://127.0.0.1:16658"
+* prof_laddr = "localhost:6061"
+* [rpc] laddr = "tcp://0.0.0.0:16657"
+* [p2p] laddr = "tcp://0.0.0.0:16656"
+* [p2p] persistent_peers = ""
+* prometheus_listen_addr = ":16660"
+
 ```
-cd $HOME/node2/config
-vi config.toml
-
-# TCP or UNIX socket address of the ABCI application,
-# or the name of an ABCI application compiled in with the Tendermint binary
-proxy_app = "tcp://127.0.0.1:26668"
-
-# TCP or UNIX socket address for the profiling server to listen on
-prof_laddr = "localhost:6061"
-
-# TCP or UNIX socket address for the RPC server to listen on
-laddr = "tcp://0.0.0.0:26667"
-
-# Address to listen for incoming connections
-laddr = "tcp://0.0.0.0:26666"
-
-# Comma separated list of nodes to keep persistent connections to
-persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@127.0.0.1:26656"
-
-# Address to listen for Prometheus collector(s) connections
-prometheus_listen_addr = ":26670"
+$ sed -i -e s#' *moniker.*'#'moniker = "node1"'#g   \
+         -e s#' *proxy_app.*'#'proxy_app = "tcp://127.0.0.1:16658"'#g \
+         -e s#' *prof_laddr.*'#'prof_laddr = "localhost:6061"'#g  \
+         -e '/rpc/,/p2p/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:16657"#g'  \
+         -e '/p2p/,/laddr/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:16656"#g' \
+         -e s#' *prometheus_listen_addr.*'#'prometheus_listen_addr = ":16660"'#g \
+         $HOME/node1/config/config.toml
 ```
-* 修改node3配置
+
+node2配置如下:
+
+* moniker = "node2"
+* proxy_app = "tcp://127.0.0.1:26658"
+* prof_laddr = "localhost:6062"
+* [rpc] laddr = "tcp://0.0.0.0:26657"
+* [p2p] laddr = "tcp://0.0.0.0:26656"
+* [p2p] persistent_peers = ""
+* prometheus_listen_addr = ":26660"
+
 ```
-cd $HOME/node3/config
-vi config.toml
 
-# TCP or UNIX socket address of the ABCI application,
-# or the name of an ABCI application compiled in with the Tendermint binary
-proxy_app = "tcp://127.0.0.1:26678"
 
-# TCP or UNIX socket address for the profiling server to listen on
-prof_laddr = "localhost:6062"
-
-# TCP or UNIX socket address for the RPC server to listen on
-laddr = "tcp://0.0.0.0:26677"
-
-# Address to listen for incoming connections
-laddr = "tcp://0.0.0.0:26676"
-
-# Comma separated list of nodes to keep persistent connections to
-persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@127.0.0.1:26656"
-
-# Address to listen for Prometheus collector(s) connections
-prometheus_listen_addr = ":26680"
+$ sed -i -e s#' *moniker.*'#'moniker = "node2"'#g   \
+         -e s#' *proxy_app.*'#'proxy_app = "tcp://127.0.0.1:26658"'#g \
+         -e s#' *prof_laddr.*'#'prof_laddr = "localhost:6062"'#g  \
+         -e '/rpc/,/p2p/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:26657"#g'  \
+         -e '/p2p/,/laddr/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:26656"#g' \
+         -e /p2p/,/upnp/s#' *persistent_peers = .*'#"persistent_peers = \"${node1id}@127.0.0.1:16656\""#g \
+         -e s#' *prometheus_listen_addr.*'#'prometheus_listen_addr = ":26660"'#g \
+         $HOME/node2/config/config.toml
 ```
-* 修改node4配置
+
+
+
+node3配置如下:
+
+* moniker = "node3"
+* proxy_app = "tcp://127.0.0.1:36658"
+* prof_laddr = "localhost:6063"
+* [rpc] laddr = "tcp://0.0.0.0:36657"
+* [p2p] laddr = "tcp://0.0.0.0:36656"
+* [p2p] persistent_peers = ""
+* prometheus_listen_addr = ":36660"
+
 ```
-cd $HOME/node4/config
-vi config.toml
-
-# TCP or UNIX socket address of the ABCI application,
-# or the name of an ABCI application compiled in with the Tendermint binary
-proxy_app = "tcp://127.0.0.1:26688"
-
-# TCP or UNIX socket address for the profiling server to listen on
-prof_laddr = "localhost:6063"
-
-# TCP or UNIX socket address for the RPC server to listen on
-laddr = "tcp://0.0.0.0:26687"
-
-# Address to listen for incoming connections
-laddr = "tcp://0.0.0.0:26686"
-
-# Comma separated list of nodes to keep persistent connections to
-persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@127.0.0.1:26656"
-
-# Address to listen for Prometheus collector(s) connections
-prometheus_listen_addr = ":26690"
+$ sed -i -e s#' *moniker.*'#'moniker = "node3"'#g   \
+         -e s#' *proxy_app.*'#'proxy_app = "tcp://127.0.0.1:36658"'#g \
+         -e s#' *prof_laddr.*'#'prof_laddr = "localhost:6063"'#g  \
+         -e '/rpc/,/p2p/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:36657"#g'  \
+         -e '/p2p/,/laddr/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:36656"#g' \
+         -e /p2p/,/upnp/s#' *persistent_peers = .*'#"persistent_peers = \"${node1id}@127.0.0.1:16656\""#g \
+         -e s#' *prometheus_listen_addr.*'#'prometheus_listen_addr = ":36660"'#g \
+         $HOME/node3/config/config.toml
 ```
+
+
+node4配置如下:
+
+* moniker = "node4"
+* proxy_app = "tcp://127.0.0.1:46658"
+* prof_laddr = "localhost:6064"
+* [rpc] laddr = "tcp://0.0.0.0:46657"
+* [p2p] laddr = "tcp://0.0.0.0:46656"
+* [p2p] persistent_peers = ""
+* prometheus_listen_addr = ":46660"
+
+```
+$ sed -i -e s#' *moniker.*'#'moniker = "node4"'#g   \
+         -e s#' *proxy_app.*'#'proxy_app = "tcp://127.0.0.1:46658"'#g \
+         -e s#' *prof_laddr.*'#'prof_laddr = "localhost:6064"'#g  \
+         -e '/rpc/,/p2p/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:46657"#g'  \
+         -e '/p2p/,/laddr/s#^ *laddr = .*$#laddr = "tcp://0.0.0.0:46656"#g' \
+         -e /p2p/,/upnp/s#' *persistent_peers = .*'#"persistent_peers = \"${node1id}@127.0.0.1:16656\""#g \
+         -e s#' *prometheus_listen_addr.*'#'prometheus_listen_addr = ":46660"'#g \
+         $HOME/node4/config/config.toml
+```
+
+
 
 * start
 ```
-qosd start --with-tendermint --home=$HOME/node1
-qosd start --with-tendermint --home=$HOME/node2
-qosd start --with-tendermint --home=$HOME/node3
-qosd start --with-tendermint --home=$HOME/node4
+$ qosd start --with-tendermint --home=$HOME/node1
+$ qosd start --with-tendermint --home=$HOME/node2
+$ qosd start --with-tendermint --home=$HOME/node3
+$ qosd start --with-tendermint --home=$HOME/node4
 ```
 
 ### 四台机器
 
-第一台IP为ip1
+第一台node1 IP为ip1
 
 * init
 
-四台机器分别执行 init 命令
+四台机器分别执行 init 命令,chain-id保持一致, name不同
 ```
-qosd init --chain-id=qos-test --name=node
+$ qosd init --chain-id=qos-test --name=node1
 ```
 
-* 统一app_state
+在node1上执行:
 
-统一genesis.json中 spp_state信息，参照[genesis](../spec/genesis.md)
+```
+$ qoscli keys add genAcc
+
+$ qoscli keys list
+NAME:	TYPE:	ADDRESS:						PUBKEY:
+genAcc	local	address17k688l8afk4t42dr4z5ay0cpke39we7kxm9pzk	c5UuUZ/REvHExIY/eDcQvdjxiapE+aVSd37DulaxwBU=
+
+```
+
+在node1配置文件`genesis.json`中添加初始账户:
+
+```
+$ qosd add-genesis-account --addr $(qoscli keys  list | grep genAcc | awk '{print $3}')  --coins 100000qos,1000000qstar
+```
+
+在node1配置文件`genesis.json`中添加node1节点为validator:
+
+```
+$ qosd add-genesis-validator --operator $(qoscli keys  list | grep genAcc | awk '{print $3}')
+```
+
+在node1配置文件`genesis.json`中分别添加其他节点为validator:
+
+```
+$ qosd add-genesis-validator --consPubkey $NODES_VALIDATOR_PUBKEY --operator $(qoscli keys  list | grep genAcc | awk '{print $3}')
+```
+
+
+* 将node1中`genesis.json`文件拷贝至其他节点的$HOME/.qosd/config目录下
 
 * 查看node1 node id</br>
-在第一台机器上运行：
+在node1上运行：
 ```
 qosd tendermint show-node-id
 b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb

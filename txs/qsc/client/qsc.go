@@ -59,7 +59,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				var caBanker *qsc.Certificate
-				if(pathbank != ""){
+				if pathbank != "" {
 					err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathbank), &caBanker)
 				}
 				if err != nil {

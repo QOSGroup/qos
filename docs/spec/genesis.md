@@ -57,7 +57,10 @@ CA PubKey
 
 ## accounts
 
-创世账户
+初始账户
+
+> 初始账户可以通过`qosd init add-genesis-account`命令添加
+
 ```
 "accounts": [
     {
