@@ -52,18 +52,21 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				var caQsc *qsc.Certificate
-				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqsc), caQsc)
+				var caQsc qsc.Certificate
+				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqsc), &caQsc)
 				if err != nil {
 					return nil, err
 				}
 
 				var caBanker *qsc.Certificate
+				var caBankerFile qsc.Certificate
 				if pathbank != "" {
-					err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathbank), &caBanker)
-				}
-				if err != nil {
-					return nil, err
+					err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathbank), &caBankerFile)
+					if err != nil {
+						return nil, err
+					}
+
+					caBanker = &caBankerFile
 				}
 
 				var acs []account.QOSAccount
@@ -101,7 +104,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					ChainID:     qscChainID,
 					Creator:     creatorAddr,
 					Extrate:     extrate,
-					QSCCA:       caQsc,
+					QSCCA:       &caQsc,
 					BankerCA:    caBanker,
 					Description: description,
 					Accounts:    acs,
