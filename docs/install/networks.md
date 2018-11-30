@@ -30,7 +30,8 @@ $ qoscli keys list
 NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
 
-$ qosd add-genesis-account --addr $(qoscli keys list|grep qosInitAcc|awk '{print $3}') --coins 1000000qos,20000000qstar
+# 初始化账户
+$ qosd add-genesis-account --addr address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --coins 1000000qos,20000000qstar
 
 ```
 
@@ -53,7 +54,8 @@ Flags:
       --operator string     operator address
       --power int           validator's voting power. default is 10 (default 10)
 
-$ qosd add-genesis-validator --operator $(qoscli keys list|grep qosInitAcc|awk '{print $3}')
+# 使用上面的初始化账户地址作为operator
+$ qosd add-genesis-validator --operator address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8
 
 
 ```
