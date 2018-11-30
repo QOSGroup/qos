@@ -30,8 +30,8 @@ Flags:
   -h, --help               help for create-qsc
       --max-gas int        gas limit to set per tx
       --node string        <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --path-bank string   path of CA(banker)
-      --path-qsc string    path of CA(qsc)
+      --banker.crt string  path of CA(banker)
+      --qsc.crt string     path of CA(qsc)
       --trust-node         Trust connected full node (don't verify proofs for responses) (default true)
 
 Global Flags:

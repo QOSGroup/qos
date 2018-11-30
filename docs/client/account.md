@@ -4,18 +4,15 @@
 
 ```
 $ qoscli query account --help
-query account by address or name
+qoscli query account [name or address] [flags]
 
 Usage:
   qoscli query account [flags]
 
 Flags:
-      --addr string       address of account
       --chain-id string   Chain ID of tendermint node
       --height int        block height to query, omit to get most recent provable block
   -h, --help              help for account
-      --name string       name of account
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --trust-node        Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
@@ -27,7 +24,7 @@ Global Flags:
 
 * by name
 ```
-$ qoscli query account --name=Arya
+$ qoscli query account Arya
 {
   "type": "qbase/account/QOSAccount",
   "value": {
@@ -52,7 +49,7 @@ $ qoscli query account --name=Arya
 
 * by address
 ```
-$ qoscli query account --addr=address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn
+$ qoscli query account address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn
 {
   "type": "qbase/account/QOSAccount",
   "value": {
