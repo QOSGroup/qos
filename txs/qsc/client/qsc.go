@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/client/keys"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
+	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
@@ -16,8 +17,10 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/common"
+	"os"
 	"strconv"
 	"strings"
+	"text/tabwriter"
 )
 
 const (
@@ -126,7 +129,6 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagQscChainID)
 	cmd.MarkFlagRequired(flagCreator)
 	cmd.MarkFlagRequired(flagPathqsc)
-	//cmd.MarkFlagRequired(flagPathbank)
 
 	return cmd
 }
@@ -155,6 +157,40 @@ func QueryQscCmd(cdc *amino.Codec) *cobra.Command {
 			}
 
 			return cliCtx.PrintResult(info)
+		},
+	}
+
+	return cmd
+}
+
+func QueryQscListCmd(cdc *amino.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "qscs",
+		Short: "query for all qscs",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			path := fmt.Sprintf("/store/%s/subspace", qsc.QSCMapperName)
+			data := "qsc/"
+			result, err := cliCtx.Query(path, []byte(data))
+
+			var kvPair []store.KVPair
+			err = cdc.UnmarshalBinary(result, &kvPair)
+			if err != nil {
+				return err
+			}
+
+			w := tabwriter.NewWriter(os.Stdout, 0, 0, 1, ' ', tabwriter.Debug)
+			fmt.Fprintln(w, "|ChainId\tName\t")
+			fmt.Fprintln(w, "|--------\t-------\t")
+			for _, kv := range kvPair {
+				var info qsc.QSCInfo
+				cdc.UnmarshalBinaryBare(kv.Value, &info)
+				fmt.Fprintf(w, "|%s\t%s\t\n", info.ChainID, info.QSCCA.CSR.Subj.CN)
+			}
+			w.Flush()
+
+			return nil
 		},
 	}
 

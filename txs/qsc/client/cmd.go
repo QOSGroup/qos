@@ -7,7 +7,7 @@ import (
 )
 
 func QueryCommands(cdc *amino.Codec) []*cobra.Command {
-	return bctypes.GetCommands(QueryQscCmd(cdc))
+	return bctypes.GetCommands(QueryQscCmd(cdc), QueryQscListCmd(cdc))
 }
 
 func TxCommands(cdc *amino.Codec) []*cobra.Command {
