@@ -320,14 +320,14 @@ $ qosd add-genesis-validator --consPubkey $NODES_VALIDATOR_PUBKEY --operator $(q
 * 查看node1 node id</br>
 在node1上运行：
 ```
-qosd tendermint show-node-id
+$ qosd tendermint show-node-id
 b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb
 ```
 
 * 修改node2配置
 ```
-cd $HOME/.qosd/config
-vi config.toml
+$ cd $HOME/.qosd/config
+$ vi config.toml
 
 # Comma separated list of nodes to keep persistent connections to
 persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@ip1:26656"
@@ -335,8 +335,8 @@ persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@ip1:26656"
 ```
 * 修改node3配置
 ```
-cd $HOME/.qosd/config
-vi config.toml
+$ cd $HOME/.qosd/config
+$ vi config.toml
 
 # Comma separated list of nodes to keep persistent connections to
 persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@ip1:26656"
@@ -344,8 +344,8 @@ persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@ip1:26656"
 ```
 * 修改node4配置
 ```
-cd $HOME/.qosd/config
-vi config.toml
+$ cd $HOME/.qosd/config
+$ vi config.toml
 
 # Comma separated list of nodes to keep persistent connections to
 persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@ip1:26656"
@@ -355,14 +355,14 @@ persistent_peers = "b70c6ce13a11e14ee14bc793cbef835aa1b4b6bb@ip1:26656"
 * start</br>
 四台机器上分别执行
 ```
-qosd start --with-tendermint
+$ qosd start --with-tendermint
 ```
 
-### Tendermint testnet cmd
+### testnet cmd
 
-qosd已集成tendermint testnet命令行工具，可批量生成集群配置文件，相关命令参考：
+qosd testnet命令行工具，可批量生成集群配置文件，相关命令参考：
 ```
-qosd testnet --help
+$ qosd testnet --help
 testnet will create "v" + "n" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
 
@@ -372,14 +372,17 @@ Optionally, it will fill in persistent_peers list in config file using either ho
 
 Example:
 
-	tendermint testnet --v 4 --o ./output --populate-persistent-peers --starting-ip-address 192.168.10.2
+	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars
 
 Usage:
   qosd testnet [flags]
 
 Flags:
+      --chain-id string              Chain ID
+      --genesis-accounts string      Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
   -h, --help                         help for testnet
       --hostname-prefix string       Hostname prefix (node results in persistent peers list ID0@node0:26656, ID1@node1:26656, ...) (default "node")
+      --moniker string               Moniker
       --n int                        Number of non-validators to initialize the testnet with
       --node-dir-prefix string       Prefix the directory name for each node with (node results in node0, node1, ...) (default "node")
       --o string                     Directory to store initialization data for the testnet (default "./mytestnet")
@@ -393,3 +396,4 @@ Global Flags:
       --log_level string   Log level (default "main:info,state:info,*:error")
       --trace              print out full stack trace on errors
 ```
+app_state下validators列表中的operator与其cons_pubkey对应

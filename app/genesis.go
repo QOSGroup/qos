@@ -4,10 +4,6 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"path/filepath"
-
-	clikeys "github.com/QOSGroup/qbase/client/keys"
-	bkeys "github.com/QOSGroup/qbase/keys"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/server/config"
 
@@ -17,7 +13,6 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -91,27 +86,14 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 
 	appGenState := GenesisState{}
 
-	var caPubkey ed25519.PubKeyEd25519
-	bz, _ := base64.StdEncoding.DecodeString("Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE=")
-	copy(caPubkey[:], bz)
-	appGenState.CAPubKey = caPubkey
+	appGenState.CAPubKey = DefaultRootCAPubkey()
 	appState, _ = cdc.MarshalJSONIndent(appGenState, "", " ")
 	return
 }
 
-// 默认地址
-func GenerateCoinKey(cdc *amino.Codec, clientRoot string) (pubkey crypto.PubKey, mnemonic string, err error) {
-	db, err := dbm.NewGoLevelDB(clikeys.KeyDBName, filepath.Join(clientRoot, "keys"))
-	if err != nil {
-		return nil, "", err
-	}
-	keybase := bkeys.New(db, cdc)
-
-	info, mnemonic, err := keybase.CreateEnMnemonic(DefaultAccountName, DefaultAccountPass)
-	if err != nil {
-		return nil, "", err
-	}
-
-	pubkey = info.GetPubKey()
-	return
+func DefaultRootCAPubkey() crypto.PubKey {
+	var caPubkey ed25519.PubKeyEd25519
+	bz, _ := base64.StdEncoding.DecodeString("Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE=")
+	copy(caPubkey[:], bz)
+	return caPubkey
 }
