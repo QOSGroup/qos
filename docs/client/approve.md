@@ -296,7 +296,7 @@ Global Flags:
 
 Arya取消向Sansa授权任何资产
 ```
-$ qoscli tx cancel-approve --from=Arya --to=address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh
+$ qoscli tx cancel-approve --from=Arya --to=Sansa
 Password to sign with 'Arya':
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"484"}
 ```
