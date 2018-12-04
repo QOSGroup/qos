@@ -159,6 +159,8 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 	// 保存QCP配置
 	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
 	qcpMapper.SetChainInTrustPubKey(tx.ChainID, tx.QSCCA.CSR.PublicKey)
+	qcpMapper.SetMaxChainInSequence(tx.ChainID, 0)
+	qcpMapper.SetMaxChainOutSequence(tx.ChainID, 0)
 
 	// 保存账户信息
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
