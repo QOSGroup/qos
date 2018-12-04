@@ -53,6 +53,10 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
+			if output == nil {
+				return errors.New("approve does not exist")
+			}
+
 			approve := approve.Approve{}
 			cdc.MustUnmarshalBinaryBare(output, &approve)
 
