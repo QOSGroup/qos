@@ -23,10 +23,9 @@ const (
 	useType
 	cancleType
 
-	flagFrom = "from"
-	flagTo   = "to"
-	flagQOS  = "qos"
-	flagQSCs = "qscs"
+	flagFrom  = "from"
+	flagTo    = "to"
+	flagCoins = "coins"
 )
 
 func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
@@ -83,10 +82,10 @@ func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
-	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
+	cmd.Flags().String(flagCoins, "", "Coins to approve. ex: 10qos,100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
+	cmd.MarkFlagRequired(flagCoins)
 
 	return cmd
 }
@@ -102,10 +101,10 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
-	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
+	cmd.Flags().String(flagCoins, "", "Coins to approve. ex: 10qos,100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
+	cmd.MarkFlagRequired(flagCoins)
 
 	return cmd
 }
@@ -121,10 +120,10 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
-	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
+	cmd.Flags().String(flagCoins, "", "Coins to approve. ex: 10qos,100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
+	cmd.MarkFlagRequired(flagCoins)
 
 	return cmd
 }
@@ -140,10 +139,10 @@ func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
-	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
+	cmd.Flags().String(flagCoins, "", "Coins to approve. ex: 10qos,100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
+	cmd.MarkFlagRequired(flagCoins)
 
 	return cmd
 }
@@ -181,9 +180,11 @@ func applyApprove(cdc *amino.Codec, operType operateType) error {
 			}, nil
 		}
 
-		qos := viper.GetInt64(flagQOS)
-		qscs := viper.Get(flagQSCs).(types.QSCs)
-		appr := approve.NewApprove(fromAddr, toAddr, btypes.NewInt(qos), qscs)
+		qos, qscs, err := types.ParseCoins(viper.GetString(flagCoins))
+		if err != nil {
+			return nil, err
+		}
+		appr := approve.NewApprove(fromAddr, toAddr, qos, qscs)
 
 		switch operType {
 		case createType:
@@ -216,15 +217,6 @@ func handleOperateFlag(ctx context.CLIContext) error {
 
 	viper.Set(flagFrom, fromAddr)
 	viper.Set(flagTo, toAddr)
-
-	if viper.IsSet(flagQSCs) {
-		qscsStr := viper.GetString(flagQSCs)
-		_, qscs, err := types.ParseCoins(qscsStr)
-		if err != nil {
-			return err
-		}
-		viper.Set(flagQSCs, qscs)
-	}
 
 	return nil
 }
