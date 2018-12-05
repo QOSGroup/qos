@@ -18,14 +18,24 @@ Usage:
   qoscli tx transfer [flags]
 
 Flags:
-      --async              broadcast transactions asynchronously
-      --chain-id string    Chain ID of tendermint node
-  -h, --help               help for transfer
-      --max-gas int        gas limit to set per tx
-      --node string        <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --receivers string   Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar
-      --senders string     Senders, eg: Arya,10qos,100qstar
-      --trust-node         Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+  -h, --help                  help for transfer
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --receivers string      Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar. multiple users separated by ';'
+      --senders string        Senders, eg: Arya,10qos,100qstar. multiple users separated by ';' 
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -34,8 +44,8 @@ Global Flags:
       --trace             print out full stack trace on errors
 ```
 主要参数：
-- senders   发送集合，账户参数传入存在keys中的name
-- receivers 接收集合，账户参数传入地址
+- senders   发送集合，账户传keystore name 或 address，多个账户半角分号分隔
+- receivers 接收集合，账户传keystore name 或 address，多个账户半角分号分隔
 
 Arya向Sansa转账1个qos，1个qstar
 ```
