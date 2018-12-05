@@ -1,6 +1,7 @@
 package app
 
 import (
+	"github.com/QOSGroup/kepler/cert"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qos/account"
@@ -28,4 +29,5 @@ func MakeCodec() *amino.Codec {
 func RegisterCodec(cdc *amino.Codec) {
 	txs.RegisterCodec(cdc)
 	account.RegisterCodec(cdc)
+	cert.RegisterCodec(cdc)
 }

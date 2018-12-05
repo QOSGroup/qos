@@ -5,6 +5,7 @@ import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/txs/approve/client"
+	"github.com/QOSGroup/qos/txs/qcp/client"
 	"github.com/QOSGroup/qos/txs/qsc/client"
 	"github.com/QOSGroup/qos/txs/transfer/client"
 	"github.com/QOSGroup/qos/txs/validator/client"
@@ -36,6 +37,8 @@ func main() {
 	// txs commands
 	txsCommands := bcli.TxCommand()
 	txsCommands.AddCommand(qsc.TxCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(qcp.TxCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
 	txsCommands.AddCommand(transfer.TxCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
