@@ -45,8 +45,8 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagSenders, "", "Senders, eg: Arya,10qos,100qstar. multiple users separated by `;` ")
-	cmd.Flags().String(flagReceivers, "", "Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar. multiple users separated by `;`")
+	cmd.Flags().String(flagSenders, "", "Senders, eg: Arya,10qos,100qstar. multiple users separated by ';' ")
+	cmd.Flags().String(flagReceivers, "", "Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar. multiple users separated by ';'")
 	cmd.MarkFlagRequired(flagSenders)
 	cmd.MarkFlagRequired(flagReceivers)
 
