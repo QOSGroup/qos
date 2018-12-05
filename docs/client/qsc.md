@@ -21,18 +21,26 @@ Usage:
   qoscli tx create-qsc [flags]
 
 Flags:
-      --accounts string    init accounts: Sansa,100;Lisa,100
-      --async              broadcast transactions asynchronously
-      --chain-id string    Chain ID of tendermint node
-      --creator string     name of banker
-      --desc string        description
-      --extrate string     extrate: qos:qscxxx (default "1:280.0000")
-  -h, --help               help for create-qsc
-      --max-gas int        gas limit to set per tx
-      --node string        <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --banker.crt string  path of CA(banker)
-      --qsc.crt string     path of CA(qsc)
-      --trust-node         Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+      --creator string        name or address of creator
+      --desc string           description
+      --extrate string        extrate: qos:qscxxx (default "1:280.0000")
+  -h, --help                  help for create-qsc
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --qsc.crt string        path of CA(qsc)
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -42,46 +50,36 @@ Global Flags:
 ```
 主要参数：
 
-- creator   创建账号名
-- path-bank bank 证书位置
-- path-qsc  qsc 证书位置
-- qsc-chain qsc chainID
-- accounts  初始发放地址币值集合，[addr1],[amount];[addr2],[amount2],...，eg：address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,100;address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,100。
+- creator       创建账号
+- qsc.crt       证书位置
+- accounts      初始发放地址币值集合，[addr1],[amount];[addr2],[amount2],...，eg：address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,100;address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,100。
 该参数可为空，即只创建联盟币
 
 > 可以通过`qoscli keys import`导入*creator*账户
 
-
 ```
-$ qoscli tx create-qsc --creator qosInitAcc --qsc.crt "qsc.crt" --banker.crt "banker.crt" --qsc-chain qunion-chain
-```
-
-2. 查询QOS绑定的chains
-
-```
-$ qoscli query store --path /store/qcp/subspace --data pubkey
+$ qoscli tx create-qsc --creator qosInitAcc --qsc.crt "qsc.crt"
 ```
 
-3. 查询QOS绑定的QSCs
+2. 查询QOS绑定的QSCs
 
 ```
 $ qoscli query store --path /store/qsc/subspace --data qsc
 ```
 
-
-
 ## query
 ```
-qoscli query qsc --help
+$ qoscli query qsc --help
 query qsc info by name
 
 Usage:
-  qoscli query qsc [qsc-name] [flags]
+  qoscli query qsc [qsc] [flags]
 
 Flags:
       --chain-id string   Chain ID of tendermint node
       --height int        block height to query, omit to get most recent provable block
   -h, --help              help for qsc
+      --indent            add indent to json response
       --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --trust-node        Trust connected full node (don't verify proofs for responses)
 
@@ -93,7 +91,7 @@ Global Flags:
 ```
 主要参数：
 
-- qsc-name
+- qsc
 
 ```
 $ qoscli query qsc QSC
@@ -109,15 +107,25 @@ Usage:
   qoscli tx issue-qsc [flags]
 
 Flags:
-      --amount int        coin amount send to banker (default 100000)
-      --async             broadcast transactions asynchronously
-      --banker string     name of banker
-      --chain-id string   Chain ID of tendermint node
-  -h, --help              help for issue-qsc
-      --max-gas int       gas limit to set per tx
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --qsc-name string   qsc name
-      --trust-node        Trust connected full node (don't verify proofs for responses) (default true)
+      --amount int            coin amount send to banker (default 100000)
+      --async                 broadcast transactions asynchronously
+      --banker string         address or name of banker
+      --chain-id string       Chain ID of tendermint node
+  -h, --help                  help for issue-qsc
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --qsc-name string       qsc name
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -134,7 +142,7 @@ Global Flags:
 > 可以通过`qoscli keys import QSCBanker --file ~/banker.pri` 使用banker的私钥文件导入*QSCBanker*账户
 
 
-导入QSCBanker秘钥
+导入QSCBanker密钥
 
 ```
 $ qoscli keys import QSCBanker --file ~/banker.pri
@@ -142,6 +150,7 @@ $ qoscli keys import QSCBanker --file ~/banker.pri
 > Repeat the passphrase:
 ```
 
+发放联盟币
 
 ```
 $ qoscli tx issue-qsc --qsc-name=QSC --banker=QSCBanker --amount=10000
