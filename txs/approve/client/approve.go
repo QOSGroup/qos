@@ -84,7 +84,7 @@ func CreateApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. ex: 100qstars,50qsc")
+	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
 
@@ -103,7 +103,7 @@ func IncreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. ex: 100qstars,50qsc")
+	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
 
@@ -122,7 +122,7 @@ func DecreaseApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. ex: 100qstars,50qsc")
+	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
 
@@ -141,7 +141,7 @@ func UseApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagFrom, "", "Name or Address of approve creator")
 	cmd.Flags().String(flagTo, "", "Name or Address of approve receiver")
 	cmd.Flags().Int64(flagQOS, 0, "Amount of QOS")
-	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. ex: 100qstars,50qsc")
+	cmd.Flags().String(flagQSCs, "", "Names and amounts of QSCs. eg: 100qstars,50qsc")
 	cmd.MarkFlagRequired(flagFrom)
 	cmd.MarkFlagRequired(flagTo)
 

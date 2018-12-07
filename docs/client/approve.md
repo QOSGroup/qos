@@ -23,16 +23,26 @@ Usage:
   qoscli tx create-approve [flags]
 
 Flags:
-      --async             broadcast transactions asynchronously
-      --chain-id string   Chain ID of tendermint node
-      --from string       Name of approve creator
-  -h, --help              help for create-approve
-      --max-gas int       gas limit to set per tx
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --qos int           Amount of QOS
-      --qscs string       Names and amounts of QSCs
-      --to string         Address of approve receiver
-      --trust-node        Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+      --from string           Name or Address of approve creator
+  -h, --help                  help for create-approve
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --qos int               Amount of QOS
+      --qscs string           Names and amounts of QSCs. eg: 100qstars,50qsc
+      --to string             Name or Address of approve receiver
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -66,11 +76,12 @@ Usage:
 
 Flags:
       --chain-id string   Chain ID of tendermint node
-      --from string       Address of approve creator
+      --from string       Name or Address of approve creator
       --height int        block height to query, omit to get most recent provable block
   -h, --help              help for approve
+      --indent            add indent to json response
       --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --to string         Address of approve receiver
+      --to string         Name or Address of approve receiver
       --trust-node        Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
@@ -108,16 +119,26 @@ Usage:
   qoscli tx increase-approve [flags]
 
 Flags:
-      --async             broadcast transactions asynchronously
-      --chain-id string   Chain ID of tendermint node
-      --from string       Name of approve creator
-  -h, --help              help for increase-approve
-      --max-gas int       gas limit to set per tx
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --qos int           Amount of QOS
-      --qscs string       Names and amounts of QSCs
-      --to string         Address of approve receiver
-      --trust-node        Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+      --from string           Name or Address of approve creator
+  -h, --help                  help for increase-approve
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --qos int               Amount of QOS
+      --qscs string           Names and amounts of QSCs. eg: 100qstars,50qsc
+      --to string             Name or Address of approve receiver
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -149,16 +170,26 @@ Usage:
   qoscli tx decrease-approve [flags]
 
 Flags:
-      --async             broadcast transactions asynchronously
-      --chain-id string   Chain ID of tendermint node
-      --from string       Name of approve creator
-  -h, --help              help for decrease-approve
-      --max-gas int       gas limit to set per tx
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --qos int           Amount of QOS
-      --qscs string       Names and amounts of QSCs
-      --to string         Address of approve receiver
-      --trust-node        Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+      --from string           Name or Address of approve creator
+  -h, --help                  help for decrease-approve
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --qos int               Amount of QOS
+      --qscs string           Names and amounts of QSCs. eg: 100qstars,50qsc
+      --to string             Name or Address of approve receiver
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -190,16 +221,26 @@ Usage:
   qoscli tx use-approve [flags]
 
 Flags:
-      --async             broadcast transactions asynchronously
-      --chain-id string   Chain ID of tendermint node
-      --from string       Address of approve creator
-  -h, --help              help for use-approve
-      --max-gas int       gas limit to set per tx
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --qos int           Amount of QOS
-      --qscs string       Names and amounts of QSCs
-      --to string         Name of approve receiver
-      --trust-node        Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+      --from string           Name or Address of approve creator
+  -h, --help                  help for use-approve
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --qos int               Amount of QOS
+      --qscs string           Names and amounts of QSCs. eg: 100qstars,50qsc
+      --to string             Name or Address of approve receiver
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
@@ -231,14 +272,24 @@ Usage:
   qoscli tx cancel-approve [flags]
 
 Flags:
-      --async             broadcast transactions asynchronously
-      --chain-id string   Chain ID of tendermint node
-      --from string       Name of approve creator
-  -h, --help              help for cancel-approve
-      --max-gas int       gas limit to set per tx
-      --node string       <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
-      --to string         Address of approve receiver
-      --trust-node        Trust connected full node (don't verify proofs for responses) (default true)
+      --async                 broadcast transactions asynchronously
+      --chain-id string       Chain ID of tendermint node
+      --from string           Name or Address of approve creator
+  -h, --help                  help for cancel-approve
+      --indent                add indent to json response
+      --max-gas int           gas limit to set per tx
+      --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
+      --nonce int             account nonce to sign the tx
+      --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
+      --qcp                   enable qcp mode. send qcp tx
+      --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
+      --qcp-extends string    qcp mode flag. qcp tx extends info
+      --qcp-from string       qcp mode flag. qcp tx source chainID
+      --qcp-seq int           qcp mode flag.  qcp in sequence
+      --qcp-signer string     qcp mode flag. qcp tx signer key name
+      --qcp-txindex int       qcp mode flag. original tx index
+      --to string             Name or Address of approve receiver
+      --trust-node            Trust connected full node (don't verify proofs for responses)
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
