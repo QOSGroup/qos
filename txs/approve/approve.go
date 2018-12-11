@@ -23,9 +23,6 @@ type Approve struct {
 }
 
 func NewApprove(from btypes.Address, to btypes.Address, qos btypes.BigInt, qscs types.QSCs) Approve {
-	if qscs == nil {
-		qscs = types.QSCs{}
-	}
 	return Approve{
 		From: from,
 		To:   to,
