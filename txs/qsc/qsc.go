@@ -18,10 +18,6 @@ import (
 	"time"
 )
 
-var (
-	CreatorQOSLimit = btypes.NewInt(0) //TODO
-)
-
 // types and funcs for CA
 // copy from QOSGroup/kepler
 // TODO remove
@@ -90,8 +86,15 @@ type TxCreateQSC struct {
 
 func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	// chainId 不能为空
-	if len(strings.TrimSpace(tx.ChainID)) == 0 {
+	tx.ChainID = strings.TrimSpace(tx.ChainID)
+	if len(tx.ChainID) == 0 {
 		return errors.New("chain-id is empty")
+	}
+
+	// QCP 不存在
+	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+	if pubKey := qcpMapper.GetChainInTrustPubKey(tx.ChainID); pubKey != nil {
+		return errors.New("qcp chain already exists")
 	}
 
 	// QSC不存在
@@ -100,20 +103,16 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 		return errors.New("qsc already exists")
 	}
 
-	// creator账户存在，且有足够的QOS
+	// creator账户存在
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	creator := accountMapper.GetAccount(tx.Creator)
 	if nil == creator {
 		return errors.New("creator account not exists")
 	}
 
-	qosAcc, ok := creator.(*account.QOSAccount)
+	_, ok := creator.(*account.QOSAccount)
 	if !ok {
 		return errors.New("creator account is not a QOSAccount")
-	}
-
-	if qosAcc.QOS.LT(CreatorQOSLimit) {
-		return errors.New("creator account does not have enough qos")
 	}
 
 	// CA校验
@@ -164,12 +163,20 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 
 	// 保存账户信息
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	banker := btypes.Address(tx.BankerCA.CSR.PublicKey.Address())
-	if nil == accountMapper.GetAccount(banker) {
-		accountMapper.SetAccount(accountMapper.NewAccountWithAddress(banker))
+	if nil != tx.BankerCA {
+		banker := btypes.Address(tx.BankerCA.CSR.PublicKey.Address())
+		if nil == accountMapper.GetAccount(banker) {
+			accountMapper.SetAccount(accountMapper.NewAccountWithAddress(banker))
+		}
 	}
-	for _, account := range tx.Accounts {
-		accountMapper.SetAccount(accountMapper.NewAccountWithAddress(account.AccountAddress))
+	for _, acc := range tx.Accounts {
+		if a := accountMapper.GetAccount(acc.AccountAddress); a != nil {
+			qosAccount := a.(*account.QOSAccount)
+			qosAccount.QSCs.Plus((acc.QSCs))
+			accountMapper.SetAccount(qosAccount)
+		} else {
+			accountMapper.SetAccount(accountMapper.NewAccountWithAddress(acc.AccountAddress))
+		}
 	}
 
 	return
