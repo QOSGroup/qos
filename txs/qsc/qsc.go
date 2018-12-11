@@ -253,11 +253,7 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
 	banker := accountMapper.GetAccount(tx.Banker).(*account.QOSAccount)
-	if nil != banker.QSCs {
-		banker.QSCs = banker.QSCs.Plus(types.QSCs{btypes.NewBaseCoin(tx.QscName, tx.Amount)})
-	} else {
-		banker.QSCs = types.QSCs{btypes.NewBaseCoin(tx.QscName, tx.Amount)}
-	}
+	banker.QSCs = banker.QSCs.Plus(types.QSCs{btypes.NewBaseCoin(tx.QscName, tx.Amount)})
 	accountMapper.SetAccount(banker)
 
 	return

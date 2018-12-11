@@ -66,9 +66,7 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 			return errors.New(fmt.Sprintf("Sender:%s QSCs is not enough", sender.Address.String()))
 		}
 		sumsqos = sumsqos.Add(sender.QOS)
-		if nil != sender.QSCs {
-			sumsqscs = sumsqscs.Plus(sender.QSCs)
-		}
+		sumsqscs = sumsqscs.Plus(sender.QSCs)
 	}
 	rmap := map[string]bool{}
 	sumrqos := btypes.ZeroInt()
@@ -89,9 +87,7 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 			return errors.New(fmt.Sprintf("Receiver:%s QSCs is lt zero", receiver.Address.String()))
 		}
 		sumrqos = sumrqos.Add(receiver.QOS)
-		if nil != receiver.QSCs {
-			sumrqscs = sumrqscs.Plus(receiver.QSCs)
-		}
+		sumrqscs = sumrqscs.Plus(receiver.QSCs)
 	}
 
 	// 转入转出相等
