@@ -3,10 +3,12 @@ package main
 import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
+	"github.com/QOSGroup/qos/cmd/qosd/testnet"
+	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
-	cmd "github.com/tendermint/tendermint/cmd/tendermint/commands"
 	"github.com/tendermint/tendermint/libs/cli"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
@@ -23,8 +25,8 @@ func main() {
 		PersistentPreRunE: server.PersistentPreRunEFn(ctx),
 	}
 
-	// tendermint testnet cmd
-	rootCmd.AddCommand(cmd.TestnetFilesCmd)
+	// testnet cmd
+	rootCmd.AddCommand(testnet.TestnetFileCmd(cdc))
 
 	// version cmd
 	rootCmd.AddCommand(version.VersionCmd)
@@ -32,7 +34,10 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
 
-	executor := cli.PrepareBaseCmd(rootCmd, "qos", app.DefaultNodeHome)
+	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
+	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
+
+	executor := cli.PrepareBaseCmd(rootCmd, "qos", types.DefaultNodeHome)
 
 	err := executor.Execute()
 	if err != nil {

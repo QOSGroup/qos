@@ -2,16 +2,13 @@ package main
 
 import (
 	bcli "github.com/QOSGroup/qbase/client"
-	"github.com/QOSGroup/qbase/client/account"
-	"github.com/QOSGroup/qbase/client/keys"
-	"github.com/QOSGroup/qbase/client/qcp"
-	"github.com/QOSGroup/qbase/client/tx"
+	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/client/txs/approve"
-	"github.com/QOSGroup/qos/client/txs/createqsc"
-	"github.com/QOSGroup/qos/client/txs/issue"
-	"github.com/QOSGroup/qos/client/txs/transfer"
-	"github.com/QOSGroup/qos/client/txs/validator"
+	"github.com/QOSGroup/qos/txs/approve/client"
+	"github.com/QOSGroup/qos/txs/qsc/client"
+	"github.com/QOSGroup/qos/txs/transfer/client"
+	"github.com/QOSGroup/qos/txs/validator/client"
+	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
@@ -29,37 +26,32 @@ func main() {
 
 	cdc := app.MakeCodec()
 
-	rootCmd.AddCommand(bcli.LineBreak)
+	rootCmd.AddCommand(bctypes.LineBreak)
 
-	// account
+	// query commands
+	queryCommands := bcli.QueryCommand(cdc)
+	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
+	queryCommands.AddCommand(qsc.QueryCommands(cdc)...)
+
+	// txs commands
+	txsCommands := bcli.TxCommand()
+	txsCommands.AddCommand(qsc.TxCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(transfer.TxCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(approve.TxCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(validator.TxCommands(cdc)...)
+
 	rootCmd.AddCommand(
-		bcli.GetCommands(account.QueryAccountCmd(cdc))...)
-	rootCmd.AddCommand(bcli.LineBreak)
-
-	// keys
-	rootCmd.AddCommand(
-		bcli.GetCommands(keys.Commands(cdc))...)
-	rootCmd.AddCommand(bcli.LineBreak)
-
-	// qos txs
-	tx.AddCommands(rootCmd, cdc)
-	transfer.AddCommands(rootCmd, cdc)
-	approve.AddCommands(rootCmd, cdc)
-	createqsc.AddCommands(rootCmd, cdc)
-	issue.AddCommands(rootCmd, cdc)
-	validator.AddCommands(rootCmd, cdc)
-	rootCmd.AddCommand(bcli.LineBreak)
-
-	// qcp
-	qcp.AddCommands(rootCmd, cdc)
-	rootCmd.AddCommand(bcli.LineBreak)
-
-	// version
-	rootCmd.AddCommand(
+		bcli.KeysCommand(cdc),
+		queryCommands,
+		txsCommands,
+		bcli.TendermintCommand(cdc),
 		version.VersionCmd,
 	)
 
-	executor := cli.PrepareMainCmd(rootCmd, "qos", app.DefaultCLIHome)
+	executor := cli.PrepareMainCmd(rootCmd, "qos", types.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		panic(err)

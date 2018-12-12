@@ -40,6 +40,6 @@ func TestSaveCAPubKey(t *testing.T) {
 
 	origin := ed25519.GenPrivKey().PubKey()
 	baseMapper.SetRootCA(origin)
-	recover := baseMapper.GetRoot()
+	recover := baseMapper.GetRootCA()
 	require.Equal(t, origin, recover)
 }

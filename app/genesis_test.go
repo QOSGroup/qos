@@ -1,13 +1,15 @@
 package app
 
 import (
+	"fmt"
+	"testing"
+
 	bacc "github.com/QOSGroup/qbase/account"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"testing"
 )
 
 func genGenesisState() *GenesisState {
@@ -37,6 +39,7 @@ func genGenesisState() *GenesisState {
 func TestGenesisStateJSONMarshal(t *testing.T) {
 	genesisState := genGenesisState()
 	genesisStateJson, err := cdc.MarshalJSON(genesisState)
+	fmt.Println(string(genesisStateJson))
 	require.Nil(t, err)
 	umState := GenesisState{}
 	err = cdc.UnmarshalJSON(genesisStateJson, &umState)

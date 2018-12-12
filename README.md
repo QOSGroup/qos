@@ -15,11 +15,11 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 qos公链，基于qbase实现tendermint abci。
 
 ### QOS Testnet
-To join the latest testnet, follow [the guide](docs/start/testnet.md).
+To join the latest testnet, follow [the guide](docs/install/testnet.md).
 
 ### Install
-See the [install instructions](docs/start/installation.md).
+See the [install instructions](docs/install/installation.md).
 
 ### Quick Start
 
-[Getting started](docs/start/networks.md) with QOS
+[Getting started](docs/install/networks.md) with QOS

@@ -12,5 +12,5 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&CreateValidatorTx{}, "qos/txs/CreateValidatorTx", nil)
+	cdc.RegisterConcrete(&TxCreateValidator{}, "qos/txs/TxCreateValidator", nil)
 }

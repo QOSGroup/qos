@@ -4,20 +4,18 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/types"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/test"
 	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/txs/qsc"
 	"github.com/QOSGroup/qos/txs/validator"
-	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/x/miner"
 	abci "github.com/tendermint/tendermint/abci/types"
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	"io"
-	"strconv"
 )
 
 const (
@@ -45,6 +43,11 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		return abci.ResponseBeginBlock{}
 	})
 
+	//设置endblocker
+	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		return validator.EndBlocker(ctx)
+	})
+
 	// 账户mapper
 	app.RegisterAccountProto(qosacc.ProtoQOSAccount)
 
@@ -53,6 +56,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	// QCP mapper
 	// qbase 默认已注入
+
+	// QSC mapper
+	app.RegisterMapper(qsc.NewQSCMapper())
 
 	// 预授权mapper
 	app.RegisterMapper(approve.NewApproveMapper())
@@ -69,7 +75,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 }
 
 // 初始配置
-func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) abci.ResponseInitChain {
+func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
 	// 上下文中获取mapper
 	mainMapper := ctx.Mapper(mapper.GetMainStoreKey()).(*mapper.MainMapper)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
@@ -90,25 +96,23 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 		accountMapper.SetAccount(acc)
 	}
 
-	// 设置初始账户(test only)
-	// todo: remove later
-	accret := test.InitKeys(app.GetCdc())
-	for _, ac := range accret {
-		accountMapper.SetAccount(&ac.Acc)
-	}
-
-	// 保存Validators以及对应账户信息
-	if len(req.Validators) > 0 {
+	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
+	if len(genesisState.Validators) > 0 {
 		validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
-		for i, v := range req.Validators {
-			var pubKey ed25519.PubKeyEd25519
-			copy(pubKey[:], v.PubKey.Data[:ed25519.PubKeyEd25519Size])
-			validator := types.NewValidator("v-"+strconv.Itoa(i), pubKey, v.Power, 1)
-			validatorMapper.SaveValidator(validator)
-			accountMapper.SetAccount(accountMapper.NewAccountWithAddress(pubKey.Address().Bytes()))
+		for _, v := range genesisState.Validators {
+			validatorMapper.SaveValidator(v)
+
+			addr := types.Address(v.Operator)
+			acc := accountMapper.GetAccount(addr)
+			if acc == nil {
+				acc = accountMapper.NewAccountWithAddress(addr)
+				accountMapper.SetAccount(acc)
+			}
+
+			res.Validators = append(res.Validators, v.ToABCIValidator())
 		}
-		validatorMapper.SetUpdated(false)
+		validatorMapper.SetValidatorUnChanged()
 	}
 
-	return abci.ResponseInitChain{}
+	return
 }

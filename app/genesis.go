@@ -1,22 +1,19 @@
 package app
 
 import (
+	"encoding/base64"
 	"encoding/json"
 	"errors"
-	"fmt"
-	clikeys "github.com/QOSGroup/qbase/client/keys"
-	bkeys "github.com/QOSGroup/qbase/keys"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/server/config"
-	btypes "github.com/QOSGroup/qbase/types"
+
 	"github.com/QOSGroup/qos/account"
+	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/pflag"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
-	dbm "github.com/tendermint/tendermint/libs/db"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"os"
-	"path/filepath"
 )
 
 const (
@@ -24,15 +21,11 @@ const (
 	DefaultAccountPass = "12345678"
 )
 
-var (
-	DefaultCLIHome  = os.ExpandEnv("$HOME/.qoscli")
-	DefaultNodeHome = os.ExpandEnv("$HOME/.qosd")
-)
-
 // QOS初始状态
 type GenesisState struct {
-	CAPubKey crypto.PubKey         `json:"ca_pub_key"`
-	Accounts []*account.QOSAccount `json:"accounts"`
+	CAPubKey   crypto.PubKey         `json:"ca_pub_key"`
+	Accounts   []*account.QOSAccount `json:"accounts"`
+	Validators []types.Validator     `json:"validators"`
 }
 
 func QOSAppInit() server.AppInit {
@@ -40,7 +33,7 @@ func QOSAppInit() server.AppInit {
 
 	fsAppGenTx := pflag.NewFlagSet("", pflag.ContinueOnError)
 	fsAppGenTx.String(server.FlagName, "", "validator moniker, required")
-	fsAppGenTx.String(server.FlagClientHome, DefaultCLIHome,
+	fsAppGenTx.String(server.FlagClientHome, types.DefaultCLIHome,
 		"home directory for the client, used for key generation")
 	fsAppGenTx.Bool(server.FlagOWK, false, "overwrite the accounts created")
 
@@ -53,39 +46,27 @@ func QOSAppInit() server.AppInit {
 }
 
 type QOSGenTx struct {
-	Addr btypes.Address `json:"addr"`
+	Validator tmtypes.GenesisValidator `json:"validator"`
 }
 
 // Generate a genesis transaction
 func QOSAppGenTx(cdc *amino.Codec, pk crypto.PubKey, genTxConfig config.GenTx) (
 	appGenTx, cliPrint json.RawMessage, validator tmtypes.GenesisValidator, err error) {
 
-	var addr btypes.Address
-	var secret string
-	addr, secret, err = GenerateCoinKey(cdc, genTxConfig.CliRoot)
-	if err != nil {
-		return
-	}
+	//JUST 占坑
+	validator.PubKey = ed25519.PubKeyEd25519{}
+	validator.Power = 1
+	validator.Name = "Use app_state.validators Instead"
 
-	var bz []byte
-	simpleGenTx := QOSGenTx{addr}
-	bz, err = cdc.MarshalJSON(simpleGenTx)
+	simpleGenTx := QOSGenTx{tmtypes.GenesisValidator{
+		PubKey: pk,
+		Power:  10,
+	}}
+	bz, err := cdc.MarshalJSON(simpleGenTx)
 	if err != nil {
 		return
 	}
 	appGenTx = json.RawMessage(bz)
-
-	mm := map[string]string{"name": DefaultAccountName, "pass": DefaultAccountPass, "address": addr.String(), "secret": secret}
-	bz, err = cdc.MarshalJSON(mm)
-	if err != nil {
-		return
-	}
-	cliPrint = json.RawMessage(bz)
-
-	validator = tmtypes.GenesisValidator{
-		PubKey: pk,
-		Power:  10,
-	}
 	return
 }
 
@@ -103,39 +84,16 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 		return
 	}
 
-	addr, _ := cdc.MarshalJSON(genTx.Addr)
-	appState = json.RawMessage(fmt.Sprintf(`{
-		"ca_pub_key": {
-			"type": "tendermint/PubKeyEd25519",
-			"value": "Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE="
-		},
-		"accounts": [{
-			"base_account": {
-				"account_address": %s
-			},
-			"qos": "100000000",
-			"qscs": [{
-				"coin_name": "qstar",
-				"amount": "100000000"
-			}]
-		}]
-	}`, addr))
+	appGenState := GenesisState{}
+
+	appGenState.CAPubKey = DefaultRootCAPubkey()
+	appState, _ = cdc.MarshalJSONIndent(appGenState, "", " ")
 	return
 }
 
-// 默认地址
-func GenerateCoinKey(cdc *amino.Codec, clientRoot string) (addr btypes.Address, mnemonic string, err error) {
-	db, err := dbm.NewGoLevelDB(clikeys.KeyDBName, filepath.Join(clientRoot, "keys"))
-	if err != nil {
-		return btypes.Address([]byte{}), "", err
-	}
-	keybase := bkeys.New(db, cdc)
-
-	info, secret, err := keybase.CreateEnMnemonic(DefaultAccountName, DefaultAccountPass)
-	if err != nil {
-		return btypes.Address([]byte{}), "", err
-	}
-
-	addr = btypes.Address(info.GetPubKey().Address())
-	return addr, secret, nil
+func DefaultRootCAPubkey() crypto.PubKey {
+	var caPubkey ed25519.PubKeyEd25519
+	bz, _ := base64.StdEncoding.DecodeString("Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE=")
+	copy(caPubkey[:], bz)
+	return caPubkey
 }
