@@ -13,9 +13,9 @@ qosd init --chain-id=qos-test
 注意init 可添加--home flag指定配置文件地址，默认在$HOME/.qosd
 `init`操作后,通过执行`qosd add-genesis-validator`添加validator
 
-* add-genesis-account
+* add-genesis-accounts
 
-使用`qosd add-genesis-account`初始化account账户到配置文件中.
+使用`qosd add-genesis-accounts`初始化account账户到配置文件中.
 
 > 使用`qoscli keys add `创建account账户
 
@@ -31,9 +31,31 @@ NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
 
 # 初始化账户
-$ qosd add-genesis-account --addr address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --coins 1000000qos,20000000qstar
+$ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos
 
 ```
+
+* config-root-ca
+
+使用`qosd config-root-ca`初始化root CA公钥到配置文件.
+```
+Config root CA
+
+Usage:
+  qosd config-root-ca [root.pub] [flags]
+
+Flags:
+  -h, --help   help for config-root-ca
+
+Global Flags:
+      --home string        directory for config and data (default "/home/imuge/.qosd")
+      --log_level string   Log level (default "main:info,state:info,*:error")
+      --trace              print out full stack trace on errors
+      
+# 设置roort CA
+$ qosd config-root-ca root.pub
+```
+查看genesis.json内容，确认配置成功。
 
 * add-genesis-validator
 
@@ -388,6 +410,7 @@ Flags:
       --o string                     Directory to store initialization data for the testnet (default "./mytestnet")
       --p2p-port int                 P2P Port (default 26656)
       --populate-persistent-peers    Update config of each node with the list of persistent peers build using either hostname-prefix or starting-ip-address (default true)
+      --root-ca string               Config root CA
       --starting-ip-address string   Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:26656, ID1@192.168.0.2:26656, ...)
       --v int                        Number of validators to initialize the testnet with (default 4)
 
