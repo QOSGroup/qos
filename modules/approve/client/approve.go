@@ -8,6 +8,7 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/modules/approve"
+	approvetypes "github.com/QOSGroup/qos/modules/approve/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -56,7 +57,7 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return errors.New("approve does not exist")
 			}
 
-			approve := approve.Approve{}
+			approve := approvetypes.Approve{}
 			cdc.MustUnmarshalBinaryBare(output, &approve)
 
 			return cliCtx.PrintResult(approve)
@@ -184,7 +185,7 @@ func applyApprove(cdc *amino.Codec, operType operateType) error {
 		if err != nil {
 			return nil, err
 		}
-		appr := approve.NewApprove(fromAddr, toAddr, qos, qscs)
+		appr := approvetypes.NewApprove(fromAddr, toAddr, qos, qscs)
 
 		switch operType {
 		case createType:
