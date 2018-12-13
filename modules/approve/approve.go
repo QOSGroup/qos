@@ -1,210 +1,31 @@
 package approve
 
 import (
-	"bytes"
-	"errors"
-	"fmt"
-	"sort"
-	"strings"
-
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qos/modules/approve/types"
+	"github.com/QOSGroup/qos/modules/qsc"
 )
-
-// 授权 Common 结构
-type Approve struct {
-	From btypes.Address `json:"from"` // 授权账号
-	To   btypes.Address `json:"to"`   // 被授权账号
-	QOS  btypes.BigInt  `json:"qos"`  // QOS
-	QSCs types.QSCs     `json:"qscs"` // QSCs
-}
-
-func NewApprove(from btypes.Address, to btypes.Address, qos btypes.BigInt, qscs types.QSCs) Approve {
-	return Approve{
-		From: from,
-		To:   to,
-		QOS:  qos.NilToZero(),
-		QSCs: qscs,
-	}
-}
-
-// 基础数据校验
-// 1.From，To不为空
-// 2.QOS、QscList内币值大于0
-// 3.QscList内币种不能重复，不能为qos(大小写不敏感)
-func (tx Approve) ValidateData(ctx context.Context) error {
-	if tx.From == nil || tx.To == nil || !tx.IsPositive() {
-		return errors.New("From、To is nil or coins is not positive")
-	}
-
-	m := make(map[string]bool)
-	for _, val := range tx.QSCs {
-		if strings.ToLower(val.Name) == "qos" {
-			return errors.New("QSCs can not contain qos, not case sensitive")
-		}
-		if _, ok := m[val.Name]; !ok {
-			m[val.Name] = true
-		} else {
-			return errors.New(fmt.Sprintf("repeat qsc:%s", val.Name))
-		}
-	}
-
-	return nil
-}
-
-// 签名账号：授权账号，使用授权签名者：被授权账号
-func (tx Approve) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.From}
-}
-
-// Gas TODO
-func (tx Approve) CalcGas() btypes.BigInt {
-	return btypes.NewInt(0)
-}
-
-// Gas Payer 授权账号，使用授权：被授权账号
-func (tx Approve) GetGasPayer() btypes.Address {
-	return tx.From
-}
-
-// 签名字节
-func (tx Approve) GetSignData() (ret []byte) {
-	tx.QOS = tx.QOS.NilToZero()
-
-	ret = append(ret, tx.From...)
-	ret = append(ret, tx.To...)
-	ret = append(ret, tx.QOS.String()...)
-	for _, coin := range tx.QSCs {
-		ret = append(ret, []byte(coin.Name)...)
-		ret = append(ret, []byte(coin.Amount.String())...)
-	}
-
-	return ret
-}
-
-// 通用方法
-//-----------------------------------------------------------------
-
-// 是否为正值
-func (tx Approve) IsPositive() bool {
-	if tx.QOS.IsNil() || tx.QOS.IsZero() {
-		return tx.QSCs.IsPositive()
-	} else if tx.QOS.GT(btypes.NewInt(0)) {
-		return tx.IsNotNegative()
-	} else {
-		return false
-	}
-}
-
-// 是否为非负值
-func (tx Approve) IsNotNegative() bool {
-	tx.QOS = tx.QOS.NilToZero()
-
-	if tx.QOS.LT(btypes.NewInt(0)) {
-		return false
-	}
-
-	return tx.QSCs.IsNotNegative()
-}
-
-// 返回相反值
-func (tx Approve) Negative() (a Approve) {
-	a = NewApprove(tx.From, tx.To, tx.QOS.Neg(), tx.QSCs.Negative())
-
-	return a
-}
-
-// Plus
-func (tx Approve) Plus(qos btypes.BigInt, qscs types.QSCs) (a Approve) {
-	a = NewApprove(tx.From, tx.To, tx.QOS.Add(qos.NilToZero()), tx.QSCs.Plus(qscs))
-
-	return a
-}
-
-// Minus
-func (tx Approve) Minus(qos btypes.BigInt, qscs types.QSCs) (a Approve) {
-	tx.QOS = tx.QOS.NilToZero()
-	qos = qos.NilToZero()
-	a = NewApprove(tx.From, tx.To, tx.QOS.Add(qos.Neg()), tx.QSCs.Minus(qscs))
-
-	return a
-}
-
-// 是否大于等于
-func (tx Approve) IsGTE(qos btypes.BigInt, qscs types.QSCs) bool {
-	tx.QOS = tx.QOS.NilToZero()
-	qos = qos.NilToZero()
-
-	if tx.QOS.LT(qos) {
-		return false
-	}
-
-	return tx.QSCs.IsGTE(qscs)
-}
-
-// 是否大于
-func (tx Approve) IsGT(qos btypes.BigInt, qscs types.QSCs) bool {
-	tx.QOS = tx.QOS.NilToZero()
-	qos = qos.NilToZero()
-
-	if tx.QOS.LT(qos) {
-		return false
-	} else if tx.QOS.Equal(qos) {
-		return !tx.QSCs.IsLT(qscs) && !tx.QSCs.IsEqual(qscs)
-	} else {
-		return qscs.IsNotNegative()
-	}
-}
-
-// 重写Equals
-func (tx Approve) Equals(approve Approve) bool {
-	return tx.String() == approve.String()
-}
-
-// 输出字符串
-func (tx Approve) String() string {
-	tx.QOS = tx.QOS.NilToZero()
-
-	var buf bytes.Buffer
-	buf.WriteString("from:" + tx.From.String() + " ")
-	buf.WriteString("to:" + tx.To.String() + " ")
-	buf.WriteString("qos:" + tx.QOS.String() + " ")
-	names := make([]string, 0, len(tx.QSCs))
-	m1 := make(map[string]btypes.BigInt)
-	for _, val := range tx.QSCs {
-		names = append(names, val.Name)
-		m1[val.Name] = val.Amount
-	}
-	sort.Strings(names)
-	for _, name := range names {
-		buf.WriteString(name + ":")
-		buf.WriteString(m1[name].String() + " ")
-	}
-	return buf.String()
-}
-
-//-----------------------------------------------------------------
 
 // 创建授权
 type TxCreateApprove struct {
-	Approve
+	types.Approve
 }
 
 func (tx TxCreateApprove) ValidateData(ctx context.Context) error {
-	err := tx.Approve.ValidateData(ctx)
+	err := validateData(ctx, tx.Approve)
 	if err != nil {
 		return err
 	}
 
 	// 授权必须不存在
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if exists {
-		return errors.New("approve already exists")
+		return ErrApproveExists(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -228,28 +49,43 @@ func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, cross
 	}
 
 	// 创建授权
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	mapper.SaveApprove(tx.Approve)
 
 	return
 }
 
+// 签名账号：授权账号
+func (tx TxCreateApprove) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.From}
+}
+
+// Gas TODO
+func (tx TxCreateApprove) CalcGas() btypes.BigInt {
+	return btypes.NewInt(0)
+}
+
+// Gas Payer：授权账号
+func (tx TxCreateApprove) GetGasPayer() btypes.Address {
+	return tx.From
+}
+
 // 增加授权
 type TxIncreaseApprove struct {
-	Approve
+	types.Approve
 }
 
 func (tx TxIncreaseApprove) ValidateData(ctx context.Context) error {
-	err := tx.Approve.ValidateData(ctx)
+	err := validateData(ctx, tx.Approve)
 	if err != nil {
 		return err
 	}
 
 	// 授权必须存在
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return errors.New("approve not exists")
+		return ErrApproveNotExists(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -259,42 +95,52 @@ func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 	result = btypes.Result{
 		Code: btypes.CodeOK,
 	}
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 
-	// 校验授权信息
-	approve, exisit := mapper.GetApprove(tx.From, tx.To)
-	if !exisit {
-		result.Code = btypes.CodeOK
-		return
-	}
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
+	approve, _ := mapper.GetApprove(tx.From, tx.To)
+	approve = approve.Plus(tx.QOS, tx.QSCs)
 
 	// 保存更新
-	approve = approve.Plus(tx.QOS, tx.QSCs)
 	mapper.SaveApprove(approve)
 
 	return
 }
 
+// 签名账号：授权账号
+func (tx TxIncreaseApprove) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.From}
+}
+
+// Gas TODO
+func (tx TxIncreaseApprove) CalcGas() btypes.BigInt {
+	return btypes.NewInt(0)
+}
+
+// Gas Payer：授权账号
+func (tx TxIncreaseApprove) GetGasPayer() btypes.Address {
+	return tx.From
+}
+
 // 减少授权
 type TxDecreaseApprove struct {
-	Approve
+	types.Approve
 }
 
 func (tx TxDecreaseApprove) ValidateData(ctx context.Context) error {
-	err := tx.Approve.ValidateData(ctx)
+	err := validateData(ctx, tx.Approve)
 	if err != nil {
 		return err
 	}
 
 	// 授权必须存在
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	approve, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return errors.New("approve not exists")
+		return ErrApproveNotExists(DefaultCodeSpace, "")
 	}
 
 	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		return errors.New("qos、qscs in decreasing is bigger than approve")
+		return ErrApproveNotEnough(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -304,56 +150,62 @@ func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 	result = btypes.Result{
 		Code: btypes.CodeOK,
 	}
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 
-	// 校验授权信息
-	approve, exisit := mapper.GetApprove(tx.From, tx.To)
-	if !exisit {
-		result.Code = btypes.CodeInternal
-		return
-	}
-	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		result.Code = btypes.CodeInternal
-		return
-	}
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
+	approve, _ := mapper.GetApprove(tx.From, tx.To)
+	approve = approve.Minus(tx.QOS, tx.QSCs)
 
 	// 保存更新
-	approve = approve.Minus(tx.QOS, tx.QSCs)
 	mapper.SaveApprove(approve)
 
 	return
 }
 
+// 签名账号：授权账号
+func (tx TxDecreaseApprove) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.From}
+}
+
+// Gas TODO
+func (tx TxDecreaseApprove) CalcGas() btypes.BigInt {
+	return btypes.NewInt(0)
+}
+
+// Gas Payer：授权账号
+func (tx TxDecreaseApprove) GetGasPayer() btypes.Address {
+	return tx.From
+}
+
 // 使用授权
 type TxUseApprove struct {
-	Approve
+	types.Approve
 }
 
 func (tx TxUseApprove) ValidateData(ctx context.Context) error {
-	err := tx.Approve.ValidateData(ctx)
+	err := validateData(ctx, tx.Approve)
 	if err != nil {
 		return err
 	}
 
 	// 校验授权信息
-	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
+	approveMapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	approve, exisit := approveMapper.GetApprove(tx.From, tx.To)
 	if !exisit {
-		return errors.New("approve not exists")
+		return ErrApproveNotExists(DefaultCodeSpace, "")
 	}
 	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		return errors.New("qos、qscs in using is bigger than approve")
+		return ErrApproveNotEnough(DefaultCodeSpace, "")
 	}
 
 	// 校验授权用户状态
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	iAcc := accountMapper.GetAccount(tx.From)
 	if iAcc == nil {
-		return errors.New("from account not exists")
+		return ErrFromAccountNotExists(DefaultCodeSpace, "")
 	}
 	from := iAcc.(*account.QOSAccount)
 	if tx.IsGT(from.QOS, from.QSCs) {
-		return errors.New("qos、qscs in using is bigger than from account")
+		return ErrFromAccountCoinsNotEnough(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -363,51 +215,39 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	result = btypes.Result{
 		Code: btypes.CodeOK,
 	}
+
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	from := accountMapper.GetAccount(tx.From).(*account.QOSAccount)
 	to := accountMapper.GetAccount(tx.To).(*account.QOSAccount)
 
-	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
-
-	// 校验授权信息
-	approve, exisit := approveMapper.GetApprove(tx.From, tx.To)
-	if !exisit {
-		result.Code = btypes.CodeInternal
-		return
-	}
-	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		result.Code = btypes.CodeInternal
-		return
-	}
-
-	// 校验授权用户状态
-	if tx.IsGT(from.QOS, from.QSCs) {
-		result.Code = btypes.CodeInternal
-		return
-	}
+	approveMapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
+	approve, _ := approveMapper.GetApprove(tx.From, tx.To)
 
 	// 更新授权用户状态
-
-	fromQscs := tx.Negative().Plus(from.QOS, from.QSCs)
-	from.QOS = fromQscs.QOS
-	from.QSCs = fromQscs.QSCs
+	from.MustMinus(tx.QOS, tx.QSCs)
 	accountMapper.SetAccount(from)
 
 	// 更新被授权账户
-	toList := tx.Plus(to.QOS, to.QSCs)
-	to.QOS = toList.QOS
-	to.QSCs = toList.QSCs
+	to.MustPlus(tx.QOS, tx.QSCs)
 	accountMapper.SetAccount(to)
+
 	// 保存更新
 	approveMapper.SaveApprove(approve.Minus(tx.QOS, tx.QSCs))
 
 	return
 }
 
+// 签名账号：被授权账户
 func (tx TxUseApprove) GetSigner() []btypes.Address {
 	return []btypes.Address{tx.To}
 }
 
+// Gas TODO
+func (tx TxUseApprove) CalcGas() btypes.BigInt {
+	return btypes.NewInt(0)
+}
+
+// Gas Payer：被授权账户
 func (tx TxUseApprove) GetGasPayer() btypes.Address {
 	return tx.To
 }
@@ -420,14 +260,14 @@ type TxCancelApprove struct {
 
 func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
 	if tx.From == nil || tx.To == nil {
-		return errors.New("from or to is empty")
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
 	// 授权是否存在
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		return errors.New("approve not exists")
+		return ErrApproveNotExists(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -438,19 +278,8 @@ func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, cross
 		Code: btypes.CodeOK,
 	}
 
-	// 授权是否存在
-	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
-	_, exists := mapper.GetApprove(tx.From, tx.To)
-	if !exists {
-		result.Code = btypes.CodeInternal
-		return
-	}
-
-	err := mapper.DeleteApprove(tx.From, tx.To)
-	if err != nil {
-		result.Code = btypes.CodeInternal
-		return
-	}
+	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
+	mapper.DeleteApprove(tx.From, tx.To)
 
 	return
 }
@@ -476,4 +305,23 @@ func (tx TxCancelApprove) GetSignData() (ret []byte) {
 	ret = append(ret, tx.To...)
 
 	return ret
+}
+
+// 基础数据校验
+func validateData(ctx context.Context, msg types.Approve) error {
+	if valid, err := msg.IsValid(); !valid {
+		return ErrInvalidInput(DefaultCodeSpace, err.Error())
+	}
+
+	if msg.QSCs.Len() > 0 {
+		mapper := ctx.Mapper(qsc.QSCMapperName).(*qsc.QSCMapper)
+		for _, val := range msg.QSCs {
+			// 币种存在
+			if !mapper.Exists(val.Name) {
+				return ErrQSCNotExists(DefaultCodeSpace, "")
+			}
+		}
+	}
+
+	return nil
 }

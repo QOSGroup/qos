@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/modules/approve/types"
 )
 
 const (
-	approveStoreKey = "approve"
-	approveKey      = "from:[%s]/to:[%s]"
+	ApproveMapperName = "approve"
+	approveKey        = "from:[%s]/to:[%s]"
 )
 
 type ApproveMapper struct {
@@ -17,12 +18,8 @@ type ApproveMapper struct {
 
 func NewApproveMapper() *ApproveMapper {
 	var approveMapper = ApproveMapper{}
-	approveMapper.BaseMapper = mapper.NewBaseMapper(nil, approveStoreKey)
+	approveMapper.BaseMapper = mapper.NewBaseMapper(nil, ApproveMapperName)
 	return &approveMapper
-}
-
-func GetApproveMapperStoreKey() string {
-	return approveStoreKey
 }
 
 func BuildApproveKey(from string, to string) []byte {
@@ -37,23 +34,21 @@ func (mapper *ApproveMapper) Copy() mapper.IMapper {
 }
 
 // 获取授权
-func (mapper *ApproveMapper) GetApprove(from btypes.Address, to btypes.Address) (Approve, bool) {
-	approve := NewApprove(from, to, btypes.ZeroInt(), nil)
+func (mapper *ApproveMapper) GetApprove(from btypes.Address, to btypes.Address) (types.Approve, bool) {
+	approve := types.Approve{}
 	key := BuildApproveKey(from.String(), to.String())
 	exists := mapper.BaseMapper.Get(key, &approve)
 	return approve, exists
 }
 
 // 保存授权
-func (mapper *ApproveMapper) SaveApprove(approve Approve) error {
+func (mapper *ApproveMapper) SaveApprove(approve types.Approve) {
 	key := BuildApproveKey(approve.From.String(), approve.To.String())
 	mapper.BaseMapper.Set(key, approve)
-	return nil
 }
 
 // 删除授权
-func (mapper *ApproveMapper) DeleteApprove(from btypes.Address, to btypes.Address) error {
+func (mapper *ApproveMapper) DeleteApprove(from btypes.Address, to btypes.Address) {
 	key := BuildApproveKey(from.String(), to.String())
 	mapper.BaseMapper.Del(key)
-	return nil
 }
