@@ -2,12 +2,11 @@ package testnet
 
 import (
 	"fmt"
-	baccount "github.com/QOSGroup/qbase/account"
-	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/crypto"
 	"net"
 	"os"
 	"path/filepath"
@@ -16,6 +15,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	cfg "github.com/tendermint/tendermint/config"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
@@ -37,6 +37,7 @@ var (
 	startingIPAddress       string
 	p2pPort                 int
 
+	rootCA   string
 	accounts string
 )
 
@@ -73,7 +74,16 @@ Example:
 			genesisAccounts := make([]*account.QOSAccount, 0)
 			var err error
 			if accounts != "" {
-				genesisAccounts, err = parseAccounts(accounts)
+				genesisAccounts, err = qosdinit.ParseAccounts(accounts)
+				if err != nil {
+					return err
+				}
+			}
+
+			// root ca
+			var pubKey crypto.PubKey
+			if rootCA != "" {
+				err := cdc.UnmarshalJSON(cmn.MustReadFile(rootCA), &pubKey)
 				if err != nil {
 					return err
 				}
@@ -119,7 +129,7 @@ Example:
 			}
 
 			appState := app.GenesisState{
-				CAPubKey:   app.DefaultRootCAPubkey(),
+				CAPubKey:   pubKey,
 				Validators: genVals,
 				Accounts:   genesisAccounts,
 			}
@@ -180,6 +190,7 @@ Example:
 		"P2P Port")
 	cmd.Flags().StringVar(&accounts, "genesis-accounts", "",
 		"Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'")
+	cmd.Flags().StringVar(&rootCA, "root-ca", "", "Config pubKey of root CA")
 	cmd.Flags().StringVar(&chainId, "chain-id", "", "Chain ID")
 	cmd.Flags().StringVar(&moniker, "moniker", "", "Moniker")
 
@@ -267,39 +278,4 @@ func initFilesWithConfig(config *cfg.Config) error {
 	}
 
 	return nil
-}
-
-// Parse accounts from string
-func parseAccounts(str string) ([]*account.QOSAccount, error) {
-	accounts := make([]*account.QOSAccount, 0)
-	tis := strings.Split(str, ";")
-	for _, ti := range tis {
-		if ti == "" {
-			continue
-		}
-
-		addrAndCoins := strings.Split(ti, ",")
-		if len(addrAndCoins) < 2 {
-			return nil, fmt.Errorf("`%s` not match rules", ti)
-		}
-
-		addr, err := btypes.GetAddrFromBech32(addrAndCoins[0])
-		if err != nil {
-			return nil, err
-		}
-		qos, qscs, err := types.ParseCoins(strings.Join(addrAndCoins[1:], ","))
-		if err != nil {
-			return nil, err
-		}
-		accounts = append(accounts, &account.QOSAccount{
-			BaseAccount: baccount.BaseAccount{
-				AccountAddress: addr,
-				Nonce:          0,
-			},
-			QOS:  qos,
-			QSCs: qscs,
-		})
-	}
-
-	return accounts, nil
 }

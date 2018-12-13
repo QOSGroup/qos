@@ -2,6 +2,7 @@ package init
 
 import (
 	"fmt"
+	"github.com/tendermint/tendermint/crypto"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -14,17 +15,10 @@ import (
 	"github.com/tendermint/tendermint/libs/common"
 )
 
-func AddGenesisAccount(cdc *amino.Codec) *cobra.Command {
+func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "add-genesis-accounts [accounts]",
-		Short: "Add genesis accounts to genesis.json",
-		Long: `add-genesis-accounts [accounts] will add [accounts] into app_state.
-Multiple accounts separated by ';'.
-
-Example:
-
-	qosd add-genesis-accounts "address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos;address1auhqphrnk74jx2c5n80m9pdgl0ln79tyz32xlc,100000qos"
-	`,
+		Use:   "config-root-ca [root.pub]",
+		Short: "Config pubKey of root CA",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
 
@@ -35,7 +29,11 @@ Example:
 				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
 			}
 
-			accounts, err := ParseAccounts(args[0])
+			var pubKey crypto.PubKey
+			err := cdc.UnmarshalJSON(common.MustReadFile(args[0]), &pubKey)
+			if err != nil {
+				return err
+			}
 
 			genDoc, err := loadGenesisDoc(cdc, genFile)
 			if err != nil {
@@ -47,15 +45,7 @@ Example:
 				return err
 			}
 
-			for _, v := range appState.Accounts {
-				for _, acc := range accounts {
-					if acc.AccountAddress.EqualsTo(v.GetAddress()) {
-						return fmt.Errorf("addr: %s has already exsits", v.AccountAddress.String())
-					}
-				}
-			}
-
-			appState.Accounts = append(appState.Accounts, accounts...)
+			appState.CAPubKey = pubKey
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage
