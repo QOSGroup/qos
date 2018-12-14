@@ -69,7 +69,7 @@ Global Flags:
 > 可以通过`qoscli keys import`导入*owner*账户，并保证owner持有QOS
 
 ## revoke
-撤销validator，撤销之后validator处于pending状态
+撤销validator，撤销之后validator处于Inactive状态
 
 ```bash
 $ qoscli tx revoke-validator --help
@@ -207,7 +207,7 @@ $ qoscli query validator --owner address1gmllq4fgtlfe574dffaj90t3tkvy232phcukhq 
 }                                                               
 ```
 
-> 其中`status`表示当前validator状态，0 active，1 pending
+> 其中`status`表示当前validator状态，0 active，1 inactive
 
 ### validators
 
