@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
+	"github.com/QOSGroup/qos/modules/transfer/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -35,15 +36,15 @@ func TestTransferTx_ValidateData(t *testing.T) {
 
 	// 空
 	tx := TxTransfer{
-		Senders:   []TransItem{},
-		Receivers: []TransItem{},
+		Senders:   types.TransItems{},
+		Receivers: types.TransItems{},
 	}
 	require.NotNil(t, tx.ValidateData(ctx))
 
 	addr1 := ed25519.GenPrivKey().PubKey().Address().Bytes()
 	addr2 := ed25519.GenPrivKey().PubKey().Address().Bytes()
-	tx.Senders = append(tx.Senders, TransItem{addr1, btypes.NewInt(0), nil})
-	tx.Receivers = append(tx.Receivers, TransItem{addr2, btypes.NewInt(0), nil})
+	tx.Senders = append(tx.Senders, types.TransItem{addr1, btypes.NewInt(0), nil})
+	tx.Receivers = append(tx.Receivers, types.TransItem{addr2, btypes.NewInt(0), nil})
 	require.NotNil(t, tx.ValidateData(ctx))
 
 	// 账户
@@ -72,11 +73,11 @@ func TestTransferTx_ValidateData(t *testing.T) {
 
 func TestTransferTx_GetSigner(t *testing.T) {
 	tx := TxTransfer{
-		Senders: []TransItem{
+		Senders: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
-		Receivers: []TransItem{
+		Receivers: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(20), nil},
 		},
 	}
@@ -85,10 +86,10 @@ func TestTransferTx_GetSigner(t *testing.T) {
 
 func TestTransferTx_CalcGas(t *testing.T) {
 	tx := TxTransfer{
-		Senders: []TransItem{
+		Senders: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
-		Receivers: []TransItem{
+		Receivers: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
 	}
@@ -97,11 +98,11 @@ func TestTransferTx_CalcGas(t *testing.T) {
 
 func TestTransferTx_GetGasPayer(t *testing.T) {
 	tx := TxTransfer{
-		Senders: []TransItem{
+		Senders: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
-		Receivers: []TransItem{
+		Receivers: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(20), nil},
 		},
 	}
@@ -110,11 +111,11 @@ func TestTransferTx_GetGasPayer(t *testing.T) {
 
 func TestTransferTx_GetSignData(t *testing.T) {
 	tx := TxTransfer{
-		Senders: []TransItem{
+		Senders: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
-		Receivers: []TransItem{
+		Receivers: types.TransItems{
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(20), nil},
 		},
 	}

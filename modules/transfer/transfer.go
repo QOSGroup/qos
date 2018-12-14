@@ -1,98 +1,42 @@
 package transfer
 
 import (
-	"errors"
-	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qos/modules/transfer/types"
 )
 
-type TransItem struct {
-	Address btypes.Address `json:"addr"` // 账户地址
-	QOS     btypes.BigInt  `json:"qos"`  // QOS
-	QSCs    types.QSCs     `json:"qscs"` // QSCs
-}
-
 type TxTransfer struct {
-	Senders   []TransItem `json:"senders"`   // 发送集合
-	Receivers []TransItem `json:"receivers"` // 接收集合
+	Senders   types.TransItems `json:"senders"`   // 发送集合
+	Receivers types.TransItems `json:"receivers"` // 接收集合
 }
 
 // 数据校验
-// 1.Senders、Receivers不为空，地址不重复，币值大于0
-// 2.Senders、Receivers 币值总和对应币种相等
-// 3.Senders中账号对应币种币值足够
 func (tx TxTransfer) ValidateData(ctx context.Context) error {
-	if tx.Senders == nil || len(tx.Senders) == 0 {
-		return errors.New("senders is empty")
+	if valid, err := tx.Senders.IsValid(); !valid {
+		return ErrSenderAccountNotExists(DefaultCodeSpace, err.Error())
+	}
+	if valid, err := tx.Receivers.IsValid(); !valid {
+		return ErrSenderAccountNotExists(DefaultCodeSpace, err.Error())
 	}
 
-	if tx.Receivers == nil || len(tx.Receivers) == 0 {
-		return errors.New("receivers is empty")
+	if valid, err := tx.Senders.Match(tx.Receivers); !valid {
+		return ErrSenderAccountNotExists(DefaultCodeSpace, err.Error())
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	smap := map[string]bool{}
-	sumsqos := btypes.ZeroInt()
-	sumsqscs := types.QSCs{}
 	for _, sender := range tx.Senders {
-		if _, ok := smap[sender.Address.String()]; ok {
-			return errors.New(fmt.Sprintf("repeat sender:%s", sender.Address.String()))
-		}
-		smap[sender.Address.String()] = true
-		sender.QOS = sender.QOS.NilToZero()
-		if sender.QOS.IsZero() && sender.QSCs.IsZero() {
-			return errors.New(fmt.Sprintf("Sender:%s QOS and QSCs are zero", sender.Address.String()))
-		}
-		if btypes.ZeroInt().GT(sender.QOS) {
-			return errors.New(fmt.Sprintf("Sender:%s QOS is lte zero", sender.Address.String()))
-		}
-		if !sender.QSCs.IsNotNegative() {
-			return errors.New(fmt.Sprintf("Sender:%s QSCs is lt zero", sender.Address.String()))
-		}
 		a := accountMapper.GetAccount(sender.Address)
 		if a == nil {
-			return errors.New(fmt.Sprintf("Sender:%s not exists", sender.Address.String()))
+			return ErrSenderAccountNotExists(DefaultCodeSpace, "")
 		}
 		acc := a.(*account.QOSAccount)
-		if acc.QOS.LT(sender.QOS) {
-			return errors.New(fmt.Sprintf("Sender:%s QOS is not enough", sender.Address.String()))
+		if !acc.EnoughOf(sender.QOS, sender.QSCs) {
+			return ErrSenderAccountCoinsNotEnough(DefaultCodeSpace, "")
 		}
-		if acc.QSCs.IsLT(sender.QSCs) {
-			return errors.New(fmt.Sprintf("Sender:%s QSCs is not enough", sender.Address.String()))
-		}
-		sumsqos = sumsqos.Add(sender.QOS)
-		sumsqscs = sumsqscs.Plus(sender.QSCs)
-	}
-	rmap := map[string]bool{}
-	sumrqos := btypes.ZeroInt()
-	sumrqscs := types.QSCs{}
-	for _, receiver := range tx.Receivers {
-		if _, ok := rmap[receiver.Address.String()]; ok {
-			return errors.New(fmt.Sprintf("repeat receiver:%s", receiver.Address.String()))
-		}
-		rmap[receiver.Address.String()] = true
-		receiver.QOS = receiver.QOS.NilToZero()
-		if receiver.QOS.IsZero() && receiver.QSCs.IsZero() {
-			return errors.New(fmt.Sprintf("Receiver:%s QOS、QSCs are zero", receiver.Address.String()))
-		}
-		if btypes.ZeroInt().GT(receiver.QOS) {
-			return errors.New(fmt.Sprintf("Receiver:%s QOS is lte zero", receiver.Address.String()))
-		}
-		if !receiver.QSCs.IsNotNegative() {
-			return errors.New(fmt.Sprintf("Receiver:%s QSCs is lt zero", receiver.Address.String()))
-		}
-		sumrqos = sumrqos.Add(receiver.QOS)
-		sumrqscs = sumrqscs.Plus(receiver.QSCs)
-	}
-
-	// 转入转出相等
-	if !sumsqos.Equal(sumrqos) || !sumsqscs.IsEqual(sumrqscs) {
-		return errors.New("QOS、QSCs not equal in Senders and Receivers")
 	}
 
 	return nil
@@ -104,10 +48,7 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 
 	for _, sender := range tx.Senders {
 		acc := accountMapper.GetAccount(sender.Address).(*account.QOSAccount)
-		acc.QOS = acc.QOS.NilToZero()
-		sender.QOS = sender.QOS.NilToZero()
-		acc.QOS = acc.QOS.Add(sender.QOS.Neg())
-		acc.QSCs = acc.QSCs.Minus(sender.QSCs)
+		acc.MustMinus(sender.QOS, sender.QSCs)
 		accountMapper.SetAccount(acc)
 	}
 	for _, receiver := range tx.Receivers {
@@ -116,13 +57,9 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		if a != nil {
 			acc = a.(*account.QOSAccount)
 		} else {
-			acc = accountMapper.NewAccountWithAddress(receiver.Address).(*account.QOSAccount)
-			accountMapper.SetAccount(acc)
+			acc = account.NewQOSAccountWithAddress(receiver.Address)
 		}
-		acc.QOS = acc.QOS.NilToZero()
-		receiver.QOS = receiver.QOS.NilToZero()
-		acc.QOS = acc.QOS.Add(receiver.QOS)
-		acc.QSCs = acc.QSCs.Plus(receiver.QSCs)
+		acc.MustPlus(receiver.QOS, receiver.QSCs)
 		accountMapper.SetAccount(acc)
 	}
 
