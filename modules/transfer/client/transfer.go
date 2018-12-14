@@ -7,6 +7,7 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/modules/transfer"
+	transtypes "github.com/QOSGroup/qos/modules/transfer/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -54,8 +55,8 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 }
 
 // Parse flags from string
-func parseTransItem(cliCtx context.CLIContext, str string) ([]transfer.TransItem, error) {
-	items := make([]transfer.TransItem, 0)
+func parseTransItem(cliCtx context.CLIContext, str string) (transtypes.TransItems, error) {
+	items := make(transtypes.TransItems, 0)
 	tis := strings.Split(str, ";")
 	for _, ti := range tis {
 		if ti == "" {
@@ -75,7 +76,7 @@ func parseTransItem(cliCtx context.CLIContext, str string) ([]transfer.TransItem
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, transfer.TransItem{
+		items = append(items, transtypes.TransItem{
 			Address: addr,
 			QOS:     qos,
 			QSCs:    qscs,
