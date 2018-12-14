@@ -15,7 +15,6 @@ import (
 
 	"github.com/spf13/cobra"
 
-	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	cfg "github.com/tendermint/tendermint/config"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
@@ -74,7 +73,7 @@ Example:
 			genesisAccounts := make([]*account.QOSAccount, 0)
 			var err error
 			if accounts != "" {
-				genesisAccounts, err = qosdinit.ParseAccounts(accounts)
+				genesisAccounts, err = account.ParseAccounts(accounts)
 				if err != nil {
 					return err
 				}
