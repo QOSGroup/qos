@@ -24,7 +24,7 @@ ex: pubkey: {"type":"tendermint/PubKeyEd25519","value":"VOn2rPx+t7Njdgi+eLb+jBuF
 
 example:
 
-         qoscli create-validator --name validatorName --owner ownerName --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
+         qoscli tx create-validator --name validatorName --owner ownerName --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
 
 Usage:
   qoscli tx create-validator [flags]
@@ -40,8 +40,8 @@ Flags:
       --node string           <host>:<port> to tendermint rpc interface for this chain (default "tcp://localhost:26657")
       --nonce int             account nonce to sign the tx
       --nonce-node string     tcp://<host>:<port> to tendermint rpc interface for some chain to query account nonce
-      --owner string          keystore name or account address
-      --pubkey string         tendermint consensus validator public key
+      --owner string          keystore name
+      --pubkey string         tendermint consensus validator public key (in priv_validator.json)
       --qcp                   enable qcp mode. send qcp tx
       --qcp-blockheight int   qcp mode flag. original tx blockheight, blockheight must greater than 0
       --qcp-extends string    qcp mode flag. qcp tx extends info
@@ -190,21 +190,21 @@ Global Flags:
 查询实例：
 ```bash
 $ qoscli query validator --owner address1gmllq4fgtlfe574dffaj90t3tkvy232phcukhq --indent
-{                                                               
-  "name": "imuge",                                              
-  "owner": "address1gmllq4fgtlfe574dffaj90t3tkvy232phcukhq",    
-  "validatorPubkey": {                                          
-    "type": "tendermint/PubKeyEd25519",                         
-    "value": "Z4gGHPR6l0sFJiC3zn9tNH5jivwpfBSWp/yPzvTkmIE="     
-  },                                                            
-  "bondTokens": "100",                                          
-  "description": "",                                            
-  "status": 0,                                                  
-  "inactiveCode": 0,                                            
-  "inactiveTime": "0001-01-01T00:00:00Z",                       
-  "inactiveHeight": "0",                                        
-  "bondHeight": "1"                                             
-}                                                               
+{
+  "name": "imuge",
+  "owner": "address1gmllq4fgtlfe574dffaj90t3tkvy232phcukhq",
+  "validatorPubkey": {
+    "type": "tendermint/PubKeyEd25519",
+    "value": "Z4gGHPR6l0sFJiC3zn9tNH5jivwpfBSWp/yPzvTkmIE="
+  },
+  "bondTokens": "100",
+  "description": "",
+  "status": 0,
+  "inactiveCode": 0,
+  "inactiveTime": "0001-01-01T00:00:00Z",
+  "inactiveHeight": "0",
+  "bondHeight": "1"
+}
 ```
 
 > 其中`status`表示当前validator状态，0 active，1 inactive
