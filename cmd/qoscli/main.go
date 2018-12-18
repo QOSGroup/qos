@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/txs/approve/client"
 	"github.com/QOSGroup/qos/txs/qcp/client"
 	"github.com/QOSGroup/qos/txs/qsc/client"
+	"github.com/QOSGroup/qos/txs/staking/client"
 	"github.com/QOSGroup/qos/txs/transfer/client"
 	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
@@ -43,7 +44,7 @@ func main() {
 	txsCommands.AddCommand(bctypes.LineBreak)
 	txsCommands.AddCommand(approve.TxCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
-	// txsCommands.AddCommand(validator.TxCommands(cdc)...)
+	txsCommands.AddCommand(staking.TxCommands(cdc)...)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),

@@ -11,7 +11,6 @@ import (
 	"github.com/QOSGroup/qos/txs/approve"
 	"github.com/QOSGroup/qos/txs/qsc"
 	"github.com/QOSGroup/qos/txs/staking"
-	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/x/miner"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -96,7 +95,9 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	}
 
 	// 保存CA
-	mainMapper.SetRootCA(genesisState.CAPubKey)
+	if genesisState.CAPubKey != nil {
+		mainMapper.SetRootCA(genesisState.CAPubKey)
+	}
 
 	// 保存SPOConfig
 	mainMapper.SetSPOConfig(genesisState.SPOConfig)
@@ -118,10 +119,16 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
 	if len(genesisState.Validators) > 0 {
 		validatorMapper := ctx.Mapper(staking.ValidatorMapperName).(*staking.ValidatorMapper)
-		signInfoMapper := ctx.Mapper(staking.VoteInfoMapperName).(*staking.VoteInfoMapper)
 		for _, v := range genesisState.Validators {
-			validatorMapper.SaveValidator(v)
-			signInfoMapper.SetValidatorVoteInfo(v.ValidatorPubKey.Address().Bytes(), types.NewValidatorVoteInfo(v.BondHeight, 0, 0))
+
+			if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
+				panic(fmt.Errorf("validator %s already exists", v.ValidatorPubKey.Address()))
+			}
+			if validatorMapper.ExistsWithOwner(v.Owner) {
+				panic(fmt.Errorf("owner %s already bind a validator", v.Owner))
+			}
+
+			validatorMapper.CreateValidator(v)
 
 			acc := accountMapper.GetAccount(v.Owner)
 			if acc == nil {

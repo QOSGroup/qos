@@ -7,7 +7,7 @@ type SPOConfig struct {
 
 func DefaultSPOConfig() SPOConfig {
 	return SPOConfig{
-		51e8,
+		100e8,
 		6307200,
 	}
 }
