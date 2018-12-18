@@ -74,6 +74,12 @@ func (mapper *VoteInfoMapper) SetValidatorVoteInfo(valAddr btypes.Address, info 
 	mapper.Set(key, info)
 }
 
+func (mapper *VoteInfoMapper) ResetValidatorVoteInfo(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+	key := BuildValidatorVoteInfoKey(valAddr)
+	mapper.ClearValidatorVoteInfoInWindow(valAddr)
+	mapper.Del(key)
+}
+
 func (mapper *VoteInfoMapper) DelValidatorVoteInfo(valAddr btypes.Address) {
 	key := BuildValidatorVoteInfoKey(valAddr)
 	mapper.Del(key)
