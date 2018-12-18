@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	btypes "github.com/QOSGroup/qbase/types"
 	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	cfg "github.com/tendermint/tendermint/config"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -42,7 +44,10 @@ var (
 )
 
 const (
-	nodeDirPerm = 0755
+	nodeDirPerm  = 0755
+	nodeFilePerm = 0644
+
+	validatorOperatorFile = "priv_operator.json"
 )
 
 func TestnetFileCmd(cdc *amino.Codec) *cobra.Command {
@@ -105,13 +110,19 @@ Example:
 
 				pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
 				pv := privval.LoadFilePV(pvFile)
+				operator := ed25519.GenPrivKey()
 				genVals[i] = types.Validator{
 					Name:        nodeDirName,
 					ConsPubKey:  pv.GetPubKey(),
-					Operator:    pv.GetPubKey().Address().Bytes(),
+					Operator:    btypes.Address(operator.PubKey().Address()),
 					VotingPower: 1,
 					Height:      1,
 				}
+
+				// write private key of validator operator
+				operatorFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
+				operatorBz, _ := cdc.MarshalJSON(operator)
+				cmn.MustWriteFile(operatorFile, operatorBz, nodeFilePerm)
 			}
 
 			// non-validators
