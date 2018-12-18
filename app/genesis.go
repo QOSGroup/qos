@@ -20,6 +20,37 @@ type GenesisState struct {
 	CAPubKey   crypto.PubKey         `json:"ca_pub_key"`
 	Accounts   []*account.QOSAccount `json:"accounts"`
 	Validators []types.Validator     `json:"validators"`
+
+	SPO     SPO     `json:"spo"`
+	Staking Staking `json:"staking"`
+}
+
+type SPO struct {
+	TotalAmount uint64 `json:"total_amount"`
+	TotalBlock  uint64 `json:"total_block"`
+}
+
+func DefaultSPO() SPO {
+	return SPO{
+		51e8,
+		6307200,
+	}
+}
+
+type Staking struct {
+	MaxValidatorCnt            uint64 `json:"max_validator_cnt"`   //TODO uint64 ?
+	ValidatorVotingStatusLen   uint64 `json:"voting_status_len"`   //TODO uint64 ?
+	ValidatorVotingStatusLeast uint64 `json:"voting_status_least"` //TODO uint64 ?
+	ValidatorSurvivalSecs      uint64 `json:"survival_secs"`       //TODO uint64 ?
+}
+
+func DefaultStaking() Staking {
+	return Staking{
+		10000,
+		10000,
+		5000,
+		86400,
+	}
 }
 
 func QOSAppInit() server.AppInit {
@@ -78,7 +109,10 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 		return
 	}
 
-	appGenState := GenesisState{}
+	appGenState := GenesisState{
+		SPO:     DefaultSPO(),
+		Staking: DefaultStaking(),
+	}
 
 	appState, _ = cdc.MarshalJSONIndent(appGenState, "", " ")
 	return

@@ -143,6 +143,8 @@ Example:
 				CAPubKey:   pubKey,
 				Validators: genVals,
 				Accounts:   genesisAccounts,
+				SPO:        app.DefaultSPO(),
+				Staking:    app.DefaultStaking(),
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
 
