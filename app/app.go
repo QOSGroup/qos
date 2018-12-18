@@ -1,14 +1,17 @@
 package app
 
 import (
+	"fmt"
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	btypes "github.com/QOSGroup/qbase/types"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/txs/approve"
 	"github.com/QOSGroup/qos/txs/qsc"
 	"github.com/QOSGroup/qos/txs/staking"
+	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/x/miner"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -95,29 +98,46 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	// 保存CA
 	mainMapper.SetRootCA(genesisState.CAPubKey)
 
+	// 保存SPOConfig
+	mainMapper.SetSPOConfig(genesisState.SPOConfig)
+
+	// 保存StakeConfig
+	mainMapper.SetStakeConfig(genesisState.StakeConfig)
+
+	var minedQOS uint64
+
 	// 保存初始账户
 	for _, acc := range genesisState.Accounts {
 		accountMapper.SetAccount(acc)
+		minedQOS += uint64(acc.QOS.Int64())
 	}
 
+	// 保存 mined QOS amount
+	mainMapper.SetMinedQOS(minedQOS)
+
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
-	// TODO 初始化Validator
-	// if len(genesisState.Validators) > 0 {
-	// 	validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
-	// 	for _, v := range genesisState.Validators {
-	// 		validatorMapper.SaveValidator(v)
+	if len(genesisState.Validators) > 0 {
+		validatorMapper := ctx.Mapper(staking.ValidatorMapperName).(*staking.ValidatorMapper)
+		signInfoMapper := ctx.Mapper(staking.SignInfoMapperName).(*staking.SignInfoMapper)
+		for _, v := range genesisState.Validators {
+			validatorMapper.SaveValidator(v)
+			signInfoMapper.SetValidatorSignInfo(v.ValidatorPubKey.Address().Bytes(), types.NewValidatorSignInfo(v.BondHeight, 0, 0))
 
-	// 		addr := types.Address(v.Operator)
-	// 		acc := accountMapper.GetAccount(addr)
-	// 		if acc == nil {
-	// 			acc = accountMapper.NewAccountWithAddress(addr)
-	// 			accountMapper.SetAccount(acc)
-	// 		}
+			acc := accountMapper.GetAccount(v.Owner)
+			if acc == nil {
+				panic(fmt.Errorf("owner of %s not exists", v.Name))
+			}
+			owner := acc.(*qosacc.QOSAccount)
+			tokens := btypes.NewInt(int64(v.BondTokens))
+			if !owner.EnoughOfQOS(tokens) {
+				panic(fmt.Errorf("%s no enough QOS", v.Name))
+			}
+			owner.MustMinusQOS(tokens)
+			accountMapper.SetAccount(acc)
 
-	// 		res.Validators = append(res.Validators, v.ToABCIValidator())
-	// 	}
-	// 	validatorMapper.SetValidatorUnChanged()
-	// }
+			res.Validators = append(res.Validators, v.ToABCIValidator())
+		}
+	}
 
 	return
 }
