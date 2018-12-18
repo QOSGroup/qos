@@ -116,7 +116,7 @@ Example:
 					Owner:           btypes.Address(owner.PubKey().Address()),
 					Status:          types.Active,
 					IsRevoke:        false,
-					BondTokens:      1,
+					BondTokens:      10,
 					BondHeight:      1,
 				}
 
@@ -141,9 +141,11 @@ Example:
 			}
 
 			appState := app.GenesisState{
-				CAPubKey:   pubKey,
-				Validators: genVals,
-				Accounts:   genesisAccounts,
+				CAPubKey:    pubKey,
+				Validators:  genVals,
+				Accounts:    genesisAccounts,
+				SPOConfig:   types.DefaultSPOConfig(),
+				StakeConfig: types.DefaultStakeConfig(),
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
 

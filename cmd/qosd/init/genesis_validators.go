@@ -37,8 +37,7 @@ func AddGenesisValidator(cdc *amino.Codec) *cobra.Command {
 				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
 			}
 
-			//TODO
-			_, err := qbtypes.GetAddrFromBech32(viper.GetString(flagOperator))
+			operatorAddr, err := qbtypes.GetAddrFromBech32(viper.GetString(flagOperator))
 			if err != nil {
 				return err
 			}
@@ -80,17 +79,17 @@ func AddGenesisValidator(cdc *amino.Codec) *cobra.Command {
 					return fmt.Errorf("validator name: %s has already exsits", name)
 				}
 			}
-			//TODO
 
-			// val := types.Validator{
-			// 	Name:        name,
-			// 	ConsPubKey:  consPubkey,
-			// 	Operator:    operatorAddr,
-			// 	VotingPower: viper.GetInt64(flagPower),
-			// 	Height:      1,
-			// }
+			val := types.Validator{
+				Name:            name,
+				ValidatorPubKey: consPubkey,
+				Owner:           operatorAddr,
+				BondTokens:      uint64(viper.GetInt64(flagPower)),
+				Status:          types.Active,
+				BondHeight:      1,
+			}
 
-			// appState.Validators = append(appState.Validators, val)
+			appState.Validators = append(appState.Validators, val)
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage
 

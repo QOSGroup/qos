@@ -20,6 +20,9 @@ type GenesisState struct {
 	CAPubKey   crypto.PubKey         `json:"ca_pub_key"`
 	Accounts   []*account.QOSAccount `json:"accounts"`
 	Validators []types.Validator     `json:"validators"`
+
+	SPOConfig   types.SPOConfig   `json:"spo_config"`
+	StakeConfig types.StakeConfig `json:"stake_config"`
 }
 
 func QOSAppInit() server.AppInit {
@@ -78,7 +81,10 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 		return
 	}
 
-	appGenState := GenesisState{}
+	appGenState := GenesisState{
+		SPOConfig:   types.DefaultSPOConfig(),
+		StakeConfig: types.DefaultStakeConfig(),
+	}
 
 	appState, _ = cdc.MarshalJSONIndent(appGenState, "", " ")
 	return
