@@ -40,7 +40,7 @@ module.exports = {
             }
             ,
             {
-                title: "SPEC",
+                title: "Spec",
                 collapsable: false,
                 children: [
                     ["/spec/account", "Account"],
@@ -48,6 +48,7 @@ module.exports = {
                     ["/spec/txs/transfer", "Transfer"],
                     ["/spec/txs/approve", "Approve"],
                     ["/spec/txs/qsc", "QSC"],
+                    ["/spec/txs/qcp", "QCP"],
                 ]
             }
         ]

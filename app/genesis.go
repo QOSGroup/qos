@@ -1,7 +1,6 @@
 package app
 
 import (
-	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"github.com/QOSGroup/qbase/server"
@@ -14,11 +13,6 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	tmtypes "github.com/tendermint/tendermint/types"
-)
-
-const (
-	DefaultAccountName = "Arya"
-	DefaultAccountPass = "12345678"
 )
 
 // QOS初始状态
@@ -86,14 +80,6 @@ func QOSAppGenState(cdc *amino.Codec, appGenTxs []json.RawMessage) (appState jso
 
 	appGenState := GenesisState{}
 
-	appGenState.CAPubKey = DefaultRootCAPubkey()
 	appState, _ = cdc.MarshalJSONIndent(appGenState, "", " ")
 	return
-}
-
-func DefaultRootCAPubkey() crypto.PubKey {
-	var caPubkey ed25519.PubKeyEd25519
-	bz, _ := base64.StdEncoding.DecodeString("Py/hnnJJKXkWLAx/g+bMt9WDLGDLLNt0l4OXezIEuyE=")
-	copy(caPubkey[:], bz)
-	return caPubkey
 }

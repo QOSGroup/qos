@@ -34,6 +34,7 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
 		server.ConstructAppCreator(newApp, "qos"))
 
+	rootCmd.AddCommand(qosdinit.ConfigRootCA(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
 

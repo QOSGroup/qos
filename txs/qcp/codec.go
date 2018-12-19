@@ -1,4 +1,4 @@
-package qsc
+package qcp
 
 import (
 	"github.com/QOSGroup/kepler/cert"
@@ -16,6 +16,5 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
-	cdc.RegisterConcrete(&TxIssueQSC{}, "qos/txs/TxIssueQSC", nil)
+	cdc.RegisterConcrete(&TxInitQCP{}, "qos/txs/TxInitQCP", nil)
 }

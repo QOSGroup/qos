@@ -3,6 +3,7 @@ package qsc
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
+	"github.com/QOSGroup/qos/types"
 )
 
 const (
@@ -30,16 +31,16 @@ func (mapper *QSCMapper) Copy() mapper.IMapper {
 	return qscMapper
 }
 
-func (mapper *QSCMapper) SaveQsc(qscInfo *QSCInfo) {
-	mapper.Set(BuildQSCKey(qscInfo.QSCCA.CSR.Subj.CN), qscInfo)
+func (mapper *QSCMapper) SaveQsc(qscInfo *types.QSCInfo) {
+	mapper.Set(BuildQSCKey(qscInfo.Name), qscInfo)
 }
 
 func (mapper *QSCMapper) Exists(qscName string) bool {
 	return nil != mapper.GetQsc(qscName)
 }
 
-func (mapper *QSCMapper) GetQsc(qscName string) (qscinfo *QSCInfo) {
-	var info QSCInfo
+func (mapper *QSCMapper) GetQsc(qscName string) (qscinfo *types.QSCInfo) {
+	var info types.QSCInfo
 	exist := mapper.Get(BuildQSCKey(qscName), &info)
 	if !exist {
 		return nil

@@ -1,10 +1,9 @@
 package init
 
 import (
-	"io/ioutil"
-
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 	tmtypes "github.com/tendermint/tendermint/types"
+	"io/ioutil"
 )
 
 func loadGenesisDoc(cdc *amino.Codec, genFile string) (genDoc tmtypes.GenesisDoc, err error) {

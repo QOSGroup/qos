@@ -1,4 +1,4 @@
-package validator
+package qcp
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
@@ -7,5 +7,7 @@ import (
 )
 
 func TxCommands(cdc *amino.Codec) []*cobra.Command {
-	return bctypes.PostCommands(ValidatorCreateCmd(cdc))
+	return bctypes.PostCommands(
+		InitQCPCmd(cdc),
+	)
 }
