@@ -102,15 +102,17 @@ Example:
 
 				initFilesWithConfig(config)
 
-				pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
-				pv := privval.LoadFilePV(pvFile)
-				genVals[i] = types.Validator{
-					Name:        nodeDirName,
-					ConsPubKey:  pv.GetPubKey(),
-					Operator:    pv.GetPubKey().Address().Bytes(),
-					VotingPower: 1,
-					Height:      1,
-				}
+				//todo
+				// pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
+				// pv := privval.LoadFilePV(pvFile)
+
+				// genVals[i] = types.Validator{
+				// 	Name:        nodeDirName,
+				// 	ConsPubKey:  pv.GetPubKey(),
+				// 	Operator:    pv.GetPubKey().Address().Bytes(),
+				// 	VotingPower: 1,
+				// 	Height:      1,
+				// }
 			}
 
 			// non-validators
