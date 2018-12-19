@@ -8,7 +8,6 @@ import (
 	"github.com/QOSGroup/qos/txs/qcp/client"
 	"github.com/QOSGroup/qos/txs/qsc/client"
 	"github.com/QOSGroup/qos/txs/transfer/client"
-	"github.com/QOSGroup/qos/txs/validator/client"
 	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
@@ -44,7 +43,7 @@ func main() {
 	txsCommands.AddCommand(bctypes.LineBreak)
 	txsCommands.AddCommand(approve.TxCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(validator.TxCommands(cdc)...)
+	// txsCommands.AddCommand(validator.TxCommands(cdc)...)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),
