@@ -4,12 +4,11 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/types"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
 	"github.com/QOSGroup/qos/txs/approve"
 	"github.com/QOSGroup/qos/txs/qsc"
-	"github.com/QOSGroup/qos/txs/validator"
+	"github.com/QOSGroup/qos/txs/staking"
 	"github.com/QOSGroup/qos/x/miner"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -39,13 +38,15 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.SetInitChainer(app.initChainer)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+
+		staking.BeginBlocker(ctx, req)
 		miner.BeginBlocker(ctx, req)
 		return abci.ResponseBeginBlock{}
 	})
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-		return validator.EndBlocker(ctx)
+		return staking.EndBlocker(ctx)
 	})
 
 	// 账户mapper
@@ -63,8 +64,11 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// 预授权mapper
 	app.RegisterMapper(approve.NewApproveMapper())
 
-	// Validator mapper
-	app.RegisterMapper(validator.NewValidatorMapper())
+	// Staking Validator mapper
+	app.RegisterMapper(staking.NewValidatorMapper())
+
+	// Staking mapper
+	app.RegisterMapper(staking.NewStakingMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -97,22 +101,23 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	}
 
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
-	if len(genesisState.Validators) > 0 {
-		validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
-		for _, v := range genesisState.Validators {
-			validatorMapper.SaveValidator(v)
+	// TODO 初始化Validator
+	// if len(genesisState.Validators) > 0 {
+	// 	validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
+	// 	for _, v := range genesisState.Validators {
+	// 		validatorMapper.SaveValidator(v)
 
-			addr := types.Address(v.Operator)
-			acc := accountMapper.GetAccount(addr)
-			if acc == nil {
-				acc = accountMapper.NewAccountWithAddress(addr)
-				accountMapper.SetAccount(acc)
-			}
+	// 		addr := types.Address(v.Operator)
+	// 		acc := accountMapper.GetAccount(addr)
+	// 		if acc == nil {
+	// 			acc = accountMapper.NewAccountWithAddress(addr)
+	// 			accountMapper.SetAccount(acc)
+	// 		}
 
-			res.Validators = append(res.Validators, v.ToABCIValidator())
-		}
-		validatorMapper.SetValidatorUnChanged()
-	}
+	// 		res.Validators = append(res.Validators, v.ToABCIValidator())
+	// 	}
+	// 	validatorMapper.SetValidatorUnChanged()
+	// }
 
 	return
 }

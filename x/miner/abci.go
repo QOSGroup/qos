@@ -1,15 +1,7 @@
 package miner
 
 import (
-	"fmt"
-
-	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/types"
-
-	qacc "github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/txs/validator"
-	qtypes "github.com/QOSGroup/qos/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -26,47 +18,47 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 //基于投票的挖矿奖励: 10QOS*valVotePower/totalVotePower
 func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock) {
 
-	logger := ctx.Logger()
-	accountMapper := baseabci.GetAccountMapper(ctx)
-	validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
+	// logger := ctx.Logger()
+	// accountMapper := baseabci.GetAccountMapper(ctx)
+	// validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
 
-	totalVotePower := int64(0)
-	for _, val := range req.LastCommitInfo.Validators {
-		if val.SignedLastBlock {
-			totalVotePower += val.Validator.Power
-		}
-	}
+	// totalVotePower := int64(0)
+	// for _, val := range req.LastCommitInfo.Validators {
+	// 	if val.SignedLastBlock {
+	// 		totalVotePower += val.Validator.Power
+	// 	}
+	// }
 
-	if totalVotePower <= int64(0) {
-		logger.Error(fmt.Sprintf("totalVotePower: %d lte 0", totalVotePower))
-		return
-	}
+	// if totalVotePower <= int64(0) {
+	// 	logger.Error(fmt.Sprintf("totalVotePower: %d lte 0", totalVotePower))
+	// 	return
+	// }
 
-	for _, val := range req.LastCommitInfo.Validators {
-		if val.SignedLastBlock {
-			//reward
-			consAddress := types.Address(val.Validator.Address)
+	// for _, val := range req.LastCommitInfo.Validators {
+	// 	if val.SignedLastBlock {
+	// 		//reward
+	// 		consAddress := types.Address(val.Validator.Address)
 
-			qVal, exsits := validatorMapper.GetByConsAddress(consAddress)
-			if !exsits {
-				logger.Error(fmt.Sprintf("consAddress: %s not exsits", consAddress))
-				continue
-			}
+	// 		qVal, exsits := validatorMapper.GetByConsAddress(consAddress)
+	// 		if !exsits {
+	// 			logger.Error(fmt.Sprintf("consAddress: %s not exsits", consAddress))
+	// 			continue
+	// 		}
 
-			acc := accountMapper.GetAccount(qVal.Operator)
+	// 		acc := accountMapper.GetAccount(qVal.Operator)
 
-			if qosAcc, ok := acc.(*qacc.QOSAccount); ok {
-				rewardQos := calRewardQos(val.Validator.Power, totalVotePower)
-				logger.Debug(fmt.Sprintf("address: %s add vote reward: %s", qosAcc.GetAddress().String(), rewardQos))
-				qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(rewardQos))
-				accountMapper.SetAccount(acc)
-			}
-		}
-	}
+	// 		if qosAcc, ok := acc.(*qacc.QOSAccount); ok {
+	// 			rewardQos := calRewardQos(val.Validator.Power, totalVotePower)
+	// 			logger.Debug(fmt.Sprintf("address: %s add vote reward: %s", qosAcc.GetAddress().String(), rewardQos))
+	// 			qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(rewardQos))
+	// 			accountMapper.SetAccount(acc)
+	// 		}
+	// 	}
+	// }
 
 }
 
-func calRewardQos(valVotePower int64, totalVotePower int64) types.BigInt {
-	t := types.NewInt(qtypes.BlockReward).Mul(types.NewInt(valVotePower))
-	return t.Div(types.NewInt(totalVotePower))
-}
+// func calRewardQos(valVotePower int64, totalVotePower int64) types.BigInt {
+// 	t := types.NewInt(qtypes.BlockReward).Mul(types.NewInt(valVotePower))
+// 	return t.Div(types.NewInt(totalVotePower))
+// }
