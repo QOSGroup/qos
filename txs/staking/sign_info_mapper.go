@@ -69,7 +69,7 @@ func (mapper *SignInfoMapper) SetValidatorSignInfo(valAddr btypes.Address, info 
 	mapper.Set(key, info)
 }
 
-func (mapper *SignInfoMapper) DelValidatorSignInfo(valAddr btypes.Address) {
+func (mapper *SignInfoMapper) RemoveValidatorSignInfo(valAddr btypes.Address) {
 	key := BuildValidatorSignInfoKey(valAddr)
 	mapper.Del(key)
 }

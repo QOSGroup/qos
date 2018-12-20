@@ -42,12 +42,12 @@ func BuildOwnerWithValidatorKey(ownerAddress btypes.Address, valAddress btypes.A
 	return bz
 }
 
-func BuildInActiveValidatorKey(inActiveTime time.Time, valAddress btypes.Address) []byte {
+func BuildInactiveValidatorKey(inactiveTime time.Time, valAddress btypes.Address) []byte {
 
 	lenz := 1 + 8 + len(valAddress)
 	bz := make([]byte, lenz)
 
-	sec := inActiveTime.UTC().Unix()
+	sec := inactiveTime.UTC().Unix()
 	secBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(secBytes, uint64(sec))
 
