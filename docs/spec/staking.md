@@ -99,7 +99,7 @@ path: /store/main/key
 
 | Prefix Key | Key     | Value | 备注|
 |:----       | :-------| :---- | :----|
-| | MINT_QOS_AMOUNT|uint64|实际分配QOS总量|
+| | APPLIED_QOS_AMOUNT|uint64|已分配QOS总量|
 
 
 

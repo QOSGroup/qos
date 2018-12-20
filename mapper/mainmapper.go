@@ -1,17 +1,20 @@
 package mapper
 
 import (
+	"github.com/QOSGroup/qbase/context"
+
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
-	BaseMapperName    = "base"
-	RootCAKey         = "rootca"
-	MinedQOSAmountKey = "minedqos"
-	SPOConfigKey      = "spo"
-	StakeConfigKey    = "stake"
+	BaseMapperName      = "base"
+	RootCAKey           = "rootca"
+	TotalQOSAmountKey   = "totalqos"
+	AppliedQOSAmountKey = "appliedqos"
+	SPOConfigKey        = "spo"
+	StakeConfigKey      = "stake"
 )
 
 type MainMapper struct {
@@ -22,6 +25,10 @@ func NewMainMapper() *MainMapper {
 	var baseMapper = MainMapper{}
 	baseMapper.BaseMapper = mapper.NewBaseMapper(nil, BaseMapperName)
 	return &baseMapper
+}
+
+func GetMainMapper(ctx context.Context) *MainMapper {
+	return ctx.Mapper(BaseMapperName).(*MainMapper)
 }
 
 func GetMainStoreKey() string {
@@ -74,9 +81,9 @@ func (mapper *MainMapper) GetStakeConfig() types.StakeConfig {
 	return config
 }
 
-// 获取 mined QOS amount
-func (mapper *MainMapper) GetMinedQOS() (v uint64) {
-	exists := mapper.Get([]byte(MinedQOSAmountKey), &v)
+// 获取已分配QOS总数
+func (mapper *MainMapper) GetAppliedQOSAmount() (v uint64) {
+	exists := mapper.Get([]byte(AppliedQOSAmountKey), &v)
 	if !exists {
 		return 0
 	}
@@ -84,14 +91,14 @@ func (mapper *MainMapper) GetMinedQOS() (v uint64) {
 	return v
 }
 
-// 设置 mined QOS amount
-func (mapper *MainMapper) SetMinedQOS(amount uint64) {
-	mapper.Set([]byte(MinedQOSAmountKey), amount)
+// 设置 已分配 QOS amount
+func (mapper *MainMapper) SetAppliedQOSAmount(amount uint64) {
+	mapper.Set([]byte(AppliedQOSAmountKey), amount)
 }
 
-// 增加 mined QOS amount
-func (mapper *MainMapper) AddMinedQOS(amount uint64) {
-	mined := mapper.GetMinedQOS()
+// 增加 已分配 QOS amount
+func (mapper *MainMapper) AddAppliedQOSAmount(amount uint64) {
+	mined := mapper.GetAppliedQOSAmount()
 	mined += amount
-	mapper.SetMinedQOS(mined)
+	mapper.SetAppliedQOSAmount(mined)
 }

@@ -39,3 +39,7 @@ func (val Validator) ToABCIValidator() (abciVal abci.Validator) {
 	abciVal.Address = val.ValidatorPubKey.Address()
 	return
 }
+
+func (val Validator) IsActive() bool {
+	return val.Status == Active
+}
