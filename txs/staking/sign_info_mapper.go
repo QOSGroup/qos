@@ -13,7 +13,7 @@ import (
 )
 
 const (
-	signInfoMapperName = "signInfo"
+	SignInfoMapperName = "signInfo"
 )
 
 var (
@@ -23,7 +23,7 @@ var (
 )
 
 func BuildSignInfoStoreQueryPath() []byte {
-	return []byte(fmt.Sprintf("/store/%s/key", signInfoMapperName))
+	return []byte(fmt.Sprintf("/store/%s/key", SignInfoMapperName))
 }
 
 func BuildValidatorSignInfoKey(valAddress btypes.Address) []byte {
@@ -48,7 +48,7 @@ var _ mapper.IMapper = (*SignInfoMapper)(nil)
 
 func NewSignInfoMapper() *SignInfoMapper {
 	var signInfoMapper = SignInfoMapper{}
-	signInfoMapper.BaseMapper = mapper.NewBaseMapper(nil, signInfoMapperName)
+	signInfoMapper.BaseMapper = mapper.NewBaseMapper(nil, SignInfoMapperName)
 	return &signInfoMapper
 }
 

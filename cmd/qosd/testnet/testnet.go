@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	btypes "github.com/QOSGroup/qbase/types"
 	cfg "github.com/tendermint/tendermint/config"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
@@ -41,7 +43,10 @@ var (
 )
 
 const (
-	nodeDirPerm = 0755
+	nodeDirPerm  = 0755
+	nodeFilePerm = 0644
+
+	validatorOperatorFile = "priv_validator_owner.json"
 )
 
 func TestnetFileCmd(cdc *amino.Codec) *cobra.Command {
@@ -102,17 +107,23 @@ Example:
 
 				initFilesWithConfig(config)
 
-				//todo
-				// pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
-				// pv := privval.LoadFilePV(pvFile)
+				pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
+				pv := privval.LoadFilePV(pvFile)
+				owner := ed25519.GenPrivKey()
+				genVals[i] = types.Validator{
+					Name:            nodeDirName,
+					ValidatorPubKey: pv.GetPubKey(),
+					Owner:           btypes.Address(owner.PubKey().Address()),
+					Status:          types.Active,
+					IsRevoke:        false,
+					BondTokens:      10,
+					BondHeight:      1,
+				}
 
-				// genVals[i] = types.Validator{
-				// 	Name:        nodeDirName,
-				// 	ConsPubKey:  pv.GetPubKey(),
-				// 	Operator:    pv.GetPubKey().Address().Bytes(),
-				// 	VotingPower: 1,
-				// 	Height:      1,
-				// }
+				// write private key of validator owner
+				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
+				ownerBz, _ := cdc.MarshalJSON(owner)
+				cmn.MustWriteFile(ownerFile, ownerBz, nodeFilePerm)
 			}
 
 			// non-validators
@@ -130,9 +141,11 @@ Example:
 			}
 
 			appState := app.GenesisState{
-				CAPubKey:   pubKey,
-				Validators: genVals,
-				Accounts:   genesisAccounts,
+				CAPubKey:    pubKey,
+				Validators:  genVals,
+				Accounts:    genesisAccounts,
+				SPOConfig:   types.DefaultSPOConfig(),
+				StakeConfig: types.DefaultStakeConfig(),
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
 

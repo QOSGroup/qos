@@ -3,6 +3,7 @@ package staking
 import (
 	"encoding/binary"
 	"fmt"
+	"github.com/QOSGroup/qos/types"
 	"time"
 
 	"github.com/QOSGroup/qbase/mapper"
@@ -11,7 +12,7 @@ import (
 )
 
 const (
-	validatorMapperName = "stakingvalidator"
+	ValidatorMapperName = "stakingvalidator"
 )
 
 var (
@@ -23,7 +24,7 @@ var (
 )
 
 func BuildValidatorStoreQueryPath() []byte {
-	return []byte(fmt.Sprintf("/store/%s/key", validatorMapperName))
+	return []byte(fmt.Sprintf("/store/%s/key", ValidatorMapperName))
 }
 
 func BuildValidatorKey(valAddress btypes.Address) []byte {
@@ -80,7 +81,7 @@ var _ mapper.IMapper = (*ValidatorMapper)(nil)
 
 func NewValidatorMapper() *ValidatorMapper {
 	var validatorMapper = ValidatorMapper{}
-	validatorMapper.BaseMapper = mapper.NewBaseMapper(nil, validatorMapperName)
+	validatorMapper.BaseMapper = mapper.NewBaseMapper(nil, ValidatorMapperName)
 	return &validatorMapper
 }
 
@@ -88,4 +89,14 @@ func (mapper *ValidatorMapper) Copy() mapper.IMapper {
 	validatorMapper := &ValidatorMapper{}
 	validatorMapper.BaseMapper = mapper.BaseMapper.Copy()
 	return validatorMapper
+}
+
+func (mapper *ValidatorMapper) SaveValidator(validator types.Validator) {
+	mapper.Set(BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
+	mapper.Set(BuildOwnerWithValidatorKey(validator.Owner.Bytes(), validator.ValidatorPubKey.Address().Bytes()), validator)
+	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), validator)
+}
+
+func (mapper *ValidatorMapper) Exists(consAddress btypes.Address) bool {
+	return mapper.Get(BuildValidatorKey(consAddress), &(types.Validator{}))
 }
