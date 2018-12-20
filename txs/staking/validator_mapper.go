@@ -50,12 +50,11 @@ func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
 	return bz
 }
 
-func BuildInActiveValidatorKeyByTime(inActiveTime time.Time, valAddress btypes.Address) []byte {
+func BuildInactiveValidatorKeyByTime(inActiveTime time.Time, valAddress btypes.Address) []byte {
 	return BuildInActiveValidatorKey(uint64(inActiveTime.UTC().Unix()), valAddress)
 }
 
-func BuildInActiveValidatorKey(sec uint64, valAddress btypes.Address) []byte {
-
+func BuildInactiveValidatorKey(sec uint64, valAddress btypes.Address) []byte {
 	lenz := 1 + 8 + len(valAddress)
 	bz := make([]byte, lenz)
 
