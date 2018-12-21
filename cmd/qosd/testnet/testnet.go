@@ -115,7 +115,6 @@ Example:
 					ValidatorPubKey: pv.GetPubKey(),
 					Owner:           btypes.Address(owner.PubKey().Address()),
 					Status:          types.Active,
-					IsRevoke:        false,
 					BondTokens:      10,
 					BondHeight:      1,
 				}

@@ -116,14 +116,14 @@ func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validato
 	return
 }
 
-func (mapper *ValidatorMapper) MakeValidatorInActive(valAddress btypes.Address, inActiveHeight uint64, inActiveTime time.Time, isRevoke bool) {
+func (mapper *ValidatorMapper) MakeValidatorInActive(valAddress btypes.Address, inActiveHeight uint64, inActiveTime time.Time, code types.InActiveCode) {
 	validator, exsits := mapper.GetValidator(valAddress)
 	if !exsits {
 		return
 	}
 
 	validator.Status = types.InActive
-	validator.IsRevoke = isRevoke
+	validator.InActiveCode = code
 	validator.InActiveHeight = inActiveHeight
 	validator.InActiveTime = inActiveTime.UTC()
 	mapper.Set(validatorKey, validator)

@@ -1,6 +1,8 @@
 package staking
 
 import (
+	"bytes"
+
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -78,17 +80,37 @@ func getLatestValidators(ctx context.Context, maxValidatorCount uint64) []abci.V
 	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
 	defer iterator.Close()
 
+	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		if i >= maxValidatorCount {
 			break
 		}
 
 		i++
-		key := iterator.Key()
+		key = iterator.Key()
 		valAddr := btypes.Address(key[9:])
 		if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
 			validators = append(validators, validator.ToABCIValidator())
 		}
+	}
+
+	//active validator总数未达到最大值
+	if i < maxValidatorCount {
+		return validators
+	}
+
+	//将小于 `key`的validator置为inactive
+	iter := validatorMapper.IteratorValidatrorByVoterPower(true)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		k := iter.Key()
+		if bytes.Equal(k, key) {
+			break
+		}
+
+		valAddr := btypes.Address(k[9:])
+		validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
 	}
 
 	return validators
@@ -158,5 +180,5 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 //
 func blockValidator(ctx context.Context, valAddr btypes.Address) {
 	validatorMapper := GetValidatorMapper(ctx)
-	validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, false)
+	validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MissVoteBlock)
 }
