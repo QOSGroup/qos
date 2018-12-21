@@ -41,9 +41,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.SetInitChainer(app.initChainer)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-
-		staking.BeginBlocker(ctx, req)
 		miner.BeginBlocker(ctx, req)
+		staking.BeginBlocker(ctx, req)
+
 		return abci.ResponseBeginBlock{}
 	})
 
@@ -71,7 +71,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(staking.NewValidatorMapper())
 
 	// Staking mapper
-	app.RegisterMapper(staking.NewSignInfoMapper())
+	app.RegisterMapper(staking.NewVoteInfoMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -104,24 +104,24 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	// 保存StakeConfig
 	mainMapper.SetStakeConfig(genesisState.StakeConfig)
 
-	var minedQOS uint64
+	var appliedQOSAmount uint64
 
 	// 保存初始账户
 	for _, acc := range genesisState.Accounts {
 		accountMapper.SetAccount(acc)
-		minedQOS += uint64(acc.QOS.Int64())
+		appliedQOSAmount += uint64(acc.QOS.Int64())
 	}
 
-	// 保存 mined QOS amount
-	mainMapper.SetMinedQOS(minedQOS)
+	// 保存 QOS amount
+	mainMapper.SetAppliedQOSAmount(appliedQOSAmount)
 
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
 	if len(genesisState.Validators) > 0 {
 		validatorMapper := ctx.Mapper(staking.ValidatorMapperName).(*staking.ValidatorMapper)
-		signInfoMapper := ctx.Mapper(staking.SignInfoMapperName).(*staking.SignInfoMapper)
+		signInfoMapper := ctx.Mapper(staking.VoteInfoMapperName).(*staking.VoteInfoMapper)
 		for _, v := range genesisState.Validators {
 			validatorMapper.SaveValidator(v)
-			signInfoMapper.SetValidatorSignInfo(v.ValidatorPubKey.Address().Bytes(), types.NewValidatorSignInfo(v.BondHeight, 0, 0))
+			signInfoMapper.SetValidatorVoteInfo(v.ValidatorPubKey.Address().Bytes(), types.NewValidatorVoteInfo(v.BondHeight, 0, 0))
 
 			acc := accountMapper.GetAccount(v.Owner)
 			if acc == nil {

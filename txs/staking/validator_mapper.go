@@ -3,10 +3,12 @@ package staking
 import (
 	"encoding/binary"
 	"fmt"
-	"github.com/QOSGroup/qos/types"
 	"time"
 
+	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
+	"github.com/QOSGroup/qbase/store"
+	"github.com/QOSGroup/qos/types"
 
 	btypes "github.com/QOSGroup/qbase/types"
 )
@@ -43,14 +45,25 @@ func BuildOwnerWithValidatorKey(ownerAddress btypes.Address, valAddress btypes.A
 	return bz
 }
 
+<<<<<<< HEAD
 func BuildInactiveValidatorKey(inactiveTime time.Time, valAddress btypes.Address) []byte {
+=======
+func BuildInActiveValidatorKeyByTime(inActiveTime time.Time, valAddress btypes.Address) []byte {
+	return BuildInActiveValidatorKey(uint64(inActiveTime.UTC().Unix()), valAddress)
+}
+
+func BuildInActiveValidatorKey(sec uint64, valAddress btypes.Address) []byte {
+>>>>>>> 1d82e332dbb31187bce816e1449376a4670642ce
 
 	lenz := 1 + 8 + len(valAddress)
 	bz := make([]byte, lenz)
 
+<<<<<<< HEAD
 	sec := inactiveTime.UTC().Unix()
+=======
+>>>>>>> 1d82e332dbb31187bce816e1449376a4670642ce
 	secBytes := make([]byte, 8)
-	binary.BigEndian.PutUint64(secBytes, uint64(sec))
+	binary.BigEndian.PutUint64(secBytes, sec)
 
 	copy(bz[0:1], validatorByInActiveKey)
 	copy(bz[1:9], secBytes)
@@ -85,6 +98,10 @@ func NewValidatorMapper() *ValidatorMapper {
 	return &validatorMapper
 }
 
+func GetValidatorMapper(ctx context.Context) *ValidatorMapper {
+	return ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+}
+
 func (mapper *ValidatorMapper) Copy() mapper.IMapper {
 	validatorMapper := &ValidatorMapper{}
 	validatorMapper.BaseMapper = mapper.BaseMapper.Copy()
@@ -99,4 +116,66 @@ func (mapper *ValidatorMapper) SaveValidator(validator types.Validator) {
 
 func (mapper *ValidatorMapper) Exists(consAddress btypes.Address) bool {
 	return mapper.Get(BuildValidatorKey(consAddress), &(types.Validator{}))
+}
+
+func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validator types.Validator, exsits bool) {
+	validatorKey := BuildValidatorKey(valAddress)
+	exsits = mapper.Get(validatorKey, &validator)
+	return
+}
+
+func (mapper *ValidatorMapper) MakeValidatorInActive(valAddress btypes.Address, inActiveHeight uint64, inActiveTime time.Time, isRevoke bool) {
+	validator, exsits := mapper.GetValidator(valAddress)
+	if !exsits {
+		return
+	}
+
+	validator.Status = types.InActive
+	validator.IsRevoke = isRevoke
+	validator.InActiveHeight = inActiveHeight
+	validator.InActiveTime = inActiveTime.UTC()
+	mapper.Set(validatorKey, validator)
+
+	validatorInActiveKey := BuildInActiveValidatorKeyByTime(inActiveTime, valAddress)
+	mapper.Set(validatorInActiveKey, inActiveTime.UTC().Unix())
+
+	validatorVotePowerKey := BuildValidatorByVotePower(validator.BondTokens, valAddress)
+	mapper.Del(validatorVotePowerKey)
+}
+
+func (mapper *ValidatorMapper) KickValidator(valAddress btypes.Address) (validator types.Validator, ok bool) {
+	validator, exsits := mapper.GetValidator(valAddress)
+	if !exsits {
+		return validator, false
+	}
+
+	mapper.Del(BuildValidatorKey(valAddress))
+	mapper.Del(BuildOwnerWithValidatorKey(validator.Owner, valAddress))
+	mapper.Del(BuildInActiveValidatorKeyByTime(validator.InActiveTime, valAddress))
+	mapper.Del(BuildValidatorByVotePower(validator.BondTokens, valAddress))
+
+	return validator, true
+}
+
+func (mapper *ValidatorMapper) IteratorInActiveValidator(fromSecond, endSecond uint64) store.Iterator {
+
+	secBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(secBytes, fromSecond)
+	startKey := append(validatorByInActiveKey, secBytes...)
+
+	binary.BigEndian.PutUint64(secBytes, endSecond)
+	endKey := append(validatorByInActiveKey, secBytes...)
+
+	return mapper.GetStore().Iterator(startKey, endKey)
+}
+
+func (mapper *ValidatorMapper) IteratorInActiveValidatorByTime(fromTime, endTime time.Time) store.Iterator {
+	return mapper.IteratorInActiveValidator(uint64(fromTime.UTC().Unix()), uint64(endTime.UTC().Unix()))
+}
+
+func (mapper *ValidatorMapper) IteratorValidatrorByVoterPower(ascending bool) store.Iterator {
+	if ascending {
+		return store.KVStorePrefixIterator(mapper.GetStore(), validatorByVotePowerKey)
+	}
+	return store.KVStoreReversePrefixIterator(mapper.GetStore(), validatorByVotePowerKey)
 }
