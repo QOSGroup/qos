@@ -6,7 +6,7 @@ type ValidatorVoteInfo struct {
 	MissedBlocksCounter uint64 `json:"missedBlocksCounter"`
 }
 
-func NewValidatorVoteInfo(startHeight uint64, indexOffset uint64, missedBlocksCounter uint64) ValidatorVoteInfo {
+func NewValidatorVoteInfo(startHeight, indexOffset, missedBlocksCounter uint64) ValidatorVoteInfo {
 	return ValidatorVoteInfo{
 		StartHeight:         startHeight,
 		IndexOffset:         indexOffset,
