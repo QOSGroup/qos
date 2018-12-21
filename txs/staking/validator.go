@@ -11,7 +11,6 @@ import (
 	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto"
-	"time"
 )
 
 type TxCreateValidator struct {
@@ -153,7 +152,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	if !exists {
 		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
 	}
-	mapper.MakeValidatorInActive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), time.Now().UTC(), types.Revoke)
+	mapper.MakeValidatorInActive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.Revoke)
 
 	return btypes.Result{Code: btypes.ABCICodeOK}, nil
 }
