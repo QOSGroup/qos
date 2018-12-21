@@ -17,14 +17,22 @@ import (
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	mainMapper := mapper.GetMainMapper(ctx)
+	validatorMapper := GetValidatorMapper(ctx)
+
 	votingWindowLen := uint64(mainMapper.GetStakeConfig().ValidatorVotingStatusLen)
 	minVotingCounter := uint64(mainMapper.GetStakeConfig().ValidatorVotingStatusLeast)
 
+	lastValidators := make([]abci.Validator, 0, len(req.LastCommitInfo.Validators))
+
 	for _, signingValidator := range req.LastCommitInfo.Validators {
 		valAddr := btypes.Address(signingValidator.Validator.Address)
+		lastValidators = append(lastValidators, signingValidator.Validator)
 		voted := signingValidator.SignedLastBlock
 		handleValidatorValidatorVoteInfo(ctx, valAddr, voted, votingWindowLen, minVotingCounter)
 	}
+
+	//保存上一次validator 地址集合
+	validatorMapper.Set(BuildLastValidatorAddressSetKey(), lastValidators)
 }
 
 //1. 将所有InActive到一定期限的validator删除
@@ -95,24 +103,38 @@ func getLatestValidators(ctx context.Context, maxValidatorCount uint64) []abci.V
 	}
 
 	//active validator总数未达到最大值
-	if i < maxValidatorCount {
-		return validators
-	}
+	if i >= maxValidatorCount {
+		//将小于 `key`的validator置为inactive
+		iter := validatorMapper.IteratorValidatrorByVoterPower(true)
+		defer iter.Close()
 
-	//将小于 `key`的validator置为inactive
-	iter := validatorMapper.IteratorValidatrorByVoterPower(true)
-	defer iter.Close()
+		for ; iter.Valid(); iter.Next() {
+			k := iter.Key()
+			if bytes.Equal(k, key) {
+				break
+			}
 
-	for ; iter.Valid(); iter.Next() {
-		k := iter.Key()
-		if bytes.Equal(k, key) {
-			break
+			valAddr := btypes.Address(k[9:])
+			validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
 		}
-
-		valAddr := btypes.Address(k[9:])
-		validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
 	}
 
+	//将不存在于当前集合中的validator删除
+	validatorsMap := make(map[string]struct{})
+	for _, validator := range validators {
+		validatorsMap[btypes.Address(validator.Address).String()] = struct{}{}
+	}
+
+	var lastValidators []abci.Validator
+	validatorMapper.Get(BuildLastValidatorAddressSetKey(), &lastValidators)
+
+	for _, lastValidator := range lastValidators {
+		lastValidatorAddr := btypes.Address(lastValidator.Address).String()
+		if _, ok := validatorsMap[lastValidatorAddr]; !ok {
+			lastValidator.Power = 0
+			validators = append(validators, lastValidator)
+		}
+	}
 	return validators
 }
 
