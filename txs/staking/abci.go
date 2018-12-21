@@ -30,10 +30,10 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 
 	mainMapper := mapper.GetMainMapper(ctx)
-	survivalSecs := mainMapper.GetStakeConfig().ValidatorSurvivalSecs
+	// survivalSecs := mainMapper.GetStakeConfig().ValidatorSurvivalSecs
 	maxValidatorCount := uint64(mainMapper.GetStakeConfig().MaxValidatorCnt)
 
-	closeExpireInactiveValidator(ctx, survivalSecs)
+	// closeExpireInactiveValidator(ctx, survivalSecs)
 	res.ValidatorUpdates = getLatestValidators(ctx, maxValidatorCount)
 	return
 }
@@ -133,10 +133,11 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 		log.Info("validatorVoteInfo", "height", height, valAddr.String(), "not vote")
 	}
 
-	minHeight := voteInfo.StartHeight + votingWindowLen
+	// minHeight := voteInfo.StartHeight + votingWindowLen
 	maxMissedCounter := votingWindowLen - minVotingCounter
 
-	if height > minHeight && voteInfo.MissedBlocksCounter > maxMissedCounter {
+	// if height > minHeight && voteInfo.MissedBlocksCounter > maxMissedCounter
+	if voteInfo.MissedBlocksCounter > maxMissedCounter {
 		log.Info("validator to inActive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
 
 		blockValidator(ctx, valAddr)
