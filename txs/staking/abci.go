@@ -41,6 +41,7 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 	log := ctx.Logger()
 	validatorMapper := GetValidatorMapper(ctx)
+	voteInfoMapper := GetVoteInfoMapper(ctx)
 	accountMapper := baseabci.GetAccountMapper(ctx)
 
 	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
@@ -53,6 +54,10 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 
 		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
 		if validator, ok := validatorMapper.KickValidator(valAddress); ok {
+
+			voteInfoMapper.DelValidatorVoteInfo(valAddress)
+			voteInfoMapper.ClearValidatorVoteInfoInWindow(valAddress)
+
 			//关闭validator后,归还绑定的token
 			owner := accountMapper.GetAccount(validator.Owner)
 			if qosAcc, ok := owner.(*qacc.QOSAccount); ok {
@@ -110,7 +115,7 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 	voteInfo, exsits := voteInfoMapper.GetValidatorVoteInfo(valAddr)
 	if !exsits {
-		voteInfo = types.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
+		voteInfo = types.NewValidatorVoteInfo(height, 0, 0)
 	}
 
 	index := voteInfo.IndexOffset % votingWindowLen
@@ -142,9 +147,9 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 		blockValidator(ctx, valAddr)
 
-		voteInfo.IndexOffset = 0
-		voteInfo.MissedBlocksCounter = 0
-		voteInfoMapper.ClearValidatorVoteInfoInWindow(valAddr)
+		// voteInfo.IndexOffset = 0
+		// voteInfo.MissedBlocksCounter = 0
+		// voteInfoMapper.ClearValidatorVoteInfoInWindow(valAddr)
 	}
 
 	voteInfoMapper.SetValidatorVoteInfo(valAddr, voteInfo)
