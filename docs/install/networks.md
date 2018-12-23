@@ -65,20 +65,59 @@ $ qosd config-root-ca root.pub
 
 $ qosd add-genesis-validator -h
 
-Add genesis validator to genesis.json
+pubkey is a tendermint validator pubkey. the public key of the validator used in
+Tendermint consensus.
+
+home node's home directory.
+
+owner is account address.
+
+ex: pubkey: {"type":"tendermint/PubKeyEd25519","value":"VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="}
+
+example:
+
+         qoscli add-genesis-validator --home "/.qosd/" --name validatorName --owner address1vdp54s5za8tl4dmf9dcldfzn62y66m40ursfsa --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
 
 Usage:
   qosd add-genesis-validator [flags]
 
 Flags:
-      --consPubkey string   validator's ed25519 consPubkey
-  -h, --help                help for add-genesis-validator
-      --operator string     operator address
-      --power int           validator's voting power. default is 10 (default 10)
+      --description string   description
+  -h, --help                 help for add-genesis-validator
+      --name string          name for validator
+      --owner string         account address
+      --pubkey string        tendermint consensus validator public key
+      --tokens int           bond tokens amount
 
-# 使用上面的初始化账户地址作为operator
-$ qosd add-genesis-validator --operator address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8
+Global Flags:
+      --home string        directory for config and data (default "C:\\Users\\imuge/.qosd")
+      --log_level string   Log level (default "main:info,state:info,*:error")
+      --trace              print out full stack trace on errors
+```    
 
+查看priv_validator.json
+```
+$ cat  $HOME/.qosd/config/priv_validator.json
+{                                                                             
+  "address": "CBB6D9DF3C19A897AEED6E387992106C0B16DF51",                      
+  "pub_key": {                                                                
+    "type": "tendermint/PubKeyEd25519",                                       
+    "value": "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo="                   
+  },                                                                          
+  "last_height": "0",                                                         
+  "last_round": "0",                                                          
+  "last_step": 0,                                                             
+  "priv_key": {                                                               
+    "type": "tendermint/PrivKeyEd25519",                                      
+    "value": "jISQomswckTLAS2QzN0HNMrIhsrfibgIlFDIWrVLZs48nnwvg65mnbSinHZiGcyG
+RxPN0RYj5RrKJy5yR0ppOg=="                                                     
+  }                                                                           
+}                                                                             
+```
+
+```
+# 使用上面的初始化账户地址作为owner
+$ qosd add-genesis-validator --name "validatorName" --owner qosInitAcc --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator." --home "$HOME/.qosd/"
 
 ```
 
