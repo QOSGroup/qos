@@ -152,7 +152,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	if !exists {
 		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
 	}
-	mapper.MakeValidatorInActive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.Revoke)
+	mapper.MakeValidatorInactive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.Revoke)
 
 	return btypes.Result{Code: btypes.ABCICodeOK}, nil
 }

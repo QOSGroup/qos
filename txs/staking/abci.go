@@ -11,7 +11,7 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-//1. 统计validator投票信息, 将不活跃的validator转成InActive状态
+//1. 统计validator投票信息, 将不活跃的validator转成Inactive状态
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	mainMapper := mapper.GetMainMapper(ctx)
@@ -26,7 +26,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	}
 }
 
-//1. 将所有InActive到一定期限的validator删除
+//1. 将所有Inactive到一定期限的validator删除
 //2. 统计新的validator
 func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 
@@ -48,7 +48,7 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
 	lastCloseValidatorSec := blockTimeSec - survivalSecs
 
-	iterator := validatorMapper.IteratorInActiveValidator(uint64(0), lastCloseValidatorSec)
+	iterator := validatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
 		valAddress := btypes.Address(key[9:])
@@ -99,7 +99,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
-			validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
+			validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
 		} else {
 			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
 				i++
@@ -150,7 +150,7 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 	//非Active状态不处理
 	if !validator.IsActive() {
-		log.Info("validatorVoteInfo", valAddr.String(), "is InActive")
+		log.Info("validatorVoteInfo", valAddr.String(), "is Inactive")
 		return
 	}
 
@@ -184,7 +184,7 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 	// if height > minHeight && voteInfo.MissedBlocksCounter > maxMissedCounter
 	if voteInfo.MissedBlocksCounter > maxMissedCounter {
-		log.Info("validator to inActive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
+		log.Info("validator gets inactive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
 
 		blockValidator(ctx, valAddr)
 
@@ -199,5 +199,5 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 //
 func blockValidator(ctx context.Context, valAddr btypes.Address) {
 	validatorMapper := GetValidatorMapper(ctx)
-	validatorMapper.MakeValidatorInActive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MissVoteBlock)
+	validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MissVoteBlock)
 }

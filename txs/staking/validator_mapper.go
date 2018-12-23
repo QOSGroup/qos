@@ -21,7 +21,7 @@ var (
 	//keys see docs/spec/staking.md
 	validatorKey            = []byte{0x01} // 保存Validator信息. key: ValidatorAddress
 	validatorByOwnerKey     = []byte{0x02} // 保存Owner与Validator的映射关系. key: OwnerAddress, value : ValidatorAddress
-	validatorByInActiveKey  = []byte{0x03} // 保存处于`inactive`状态的Validator. key: ValidatorInActiveTime + ValidatorAddress
+	validatorByInactiveKey  = []byte{0x03} // 保存处于`inactive`状态的Validator. key: ValidatorInactiveTime + ValidatorAddress
 	validatorByVotePowerKey = []byte{0x04} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + ValidatorAddress
 
 	currentValidatorAddressKey = []byte("currentValidatorAddressKey")
@@ -50,8 +50,9 @@ func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
 	return bz
 }
 
-func BuildInactiveValidatorKeyByTime(inActiveTime time.Time, valAddress btypes.Address) []byte {
-	return BuildInActiveValidatorKey(uint64(inActiveTime.UTC().Unix()), valAddress)
+
+func BuildInactiveValidatorKeyByTime(inactiveTime time.Time, valAddress btypes.Address) []byte {
+	return BuildInactiveValidatorKey(uint64(inactiveTime.UTC().Unix()), valAddress)
 }
 
 func BuildInactiveValidatorKey(sec uint64, valAddress btypes.Address) []byte {
@@ -61,7 +62,7 @@ func BuildInactiveValidatorKey(sec uint64, valAddress btypes.Address) []byte {
 	secBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(secBytes, sec)
 
-	copy(bz[0:1], validatorByInActiveKey)
+	copy(bz[0:1], validatorByInactiveKey)
 	copy(bz[1:9], secBytes)
 	copy(bz[9:len(valAddress)+9], valAddress)
 
@@ -124,20 +125,20 @@ func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validato
 	return
 }
 
-func (mapper *ValidatorMapper) MakeValidatorInActive(valAddress btypes.Address, inActiveHeight uint64, inActiveTime time.Time, code types.InActiveCode) {
+func (mapper *ValidatorMapper) MakeValidatorInactive(valAddress btypes.Address, inactiveHeight uint64, inactiveTime time.Time, code types.InactiveCode) {
 	validator, exsits := mapper.GetValidator(valAddress)
 	if !exsits {
 		return
 	}
 
-	validator.Status = types.InActive
-	validator.InActiveCode = code
-	validator.InActiveHeight = inActiveHeight
-	validator.InActiveTime = inActiveTime.UTC()
+	validator.Status = types.Inactive
+	validator.InactiveCode = code
+	validator.InactiveHeight = inactiveHeight
+	validator.InactiveTime = inactiveTime.UTC()
 	mapper.Set(BuildValidatorKey(valAddress), validator)
 
-	validatorInActiveKey := BuildInActiveValidatorKeyByTime(inActiveTime, valAddress)
-	mapper.Set(validatorInActiveKey, inActiveTime.UTC().Unix())
+	validatorInactiveKey := BuildInactiveValidatorKeyByTime(inactiveTime, valAddress)
+	mapper.Set(validatorInactiveKey, inactiveTime.UTC().Unix())
 
 	validatorVotePowerKey := BuildValidatorByVotePower(validator.BondTokens, valAddress)
 	mapper.Del(validatorVotePowerKey)
@@ -151,26 +152,26 @@ func (mapper *ValidatorMapper) KickValidator(valAddress btypes.Address) (validat
 
 	mapper.Del(BuildValidatorKey(valAddress))
 	mapper.Del(BuildOwnerWithValidatorKey(validator.Owner))
-	mapper.Del(BuildInActiveValidatorKeyByTime(validator.InActiveTime, valAddress))
+	mapper.Del(BuildInactiveValidatorKeyByTime(validator.InactiveTime, valAddress))
 	mapper.Del(BuildValidatorByVotePower(validator.BondTokens, valAddress))
 
 	return validator, true
 }
 
-func (mapper *ValidatorMapper) IteratorInActiveValidator(fromSecond, endSecond uint64) store.Iterator {
+func (mapper *ValidatorMapper) IteratorInactiveValidator(fromSecond, endSecond uint64) store.Iterator {
 
 	secBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(secBytes, fromSecond)
-	startKey := append(validatorByInActiveKey, secBytes...)
+	startKey := append(validatorByInactiveKey, secBytes...)
 
 	binary.BigEndian.PutUint64(secBytes, endSecond)
-	endKey := append(validatorByInActiveKey, secBytes...)
+	endKey := append(validatorByInactiveKey, secBytes...)
 
 	return mapper.GetStore().Iterator(startKey, endKey)
 }
 
-func (mapper *ValidatorMapper) IteratorInActiveValidatorByTime(fromTime, endTime time.Time) store.Iterator {
-	return mapper.IteratorInActiveValidator(uint64(fromTime.UTC().Unix()), uint64(endTime.UTC().Unix()))
+func (mapper *ValidatorMapper) IteratorInactiveValidatorByTime(fromTime, endTime time.Time) store.Iterator {
+	return mapper.IteratorInactiveValidator(uint64(fromTime.UTC().Unix()), uint64(endTime.UTC().Unix()))
 }
 
 func (mapper *ValidatorMapper) IteratorValidatrorByVoterPower(ascending bool) store.Iterator {
@@ -189,7 +190,7 @@ func (mapper *ValidatorMapper) MakeValidatorActive(valAddress btypes.Address) {
 	validator.Status = types.Active
 
 	mapper.Set(BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
-	mapper.Del(BuildInActiveValidatorKey(uint64(validator.InActiveTime.UTC().Unix()), valAddress))
+	mapper.Del(BuildInactiveValidatorKey(uint64(validator.InactiveTime.UTC().Unix()), valAddress))
 	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), 1)
 }
 
