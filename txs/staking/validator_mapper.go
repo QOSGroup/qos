@@ -14,33 +14,38 @@ import (
 )
 
 const (
-	ValidatorMapperName = "stakingvalidator"
+	ValidatorMapperName = "validator"
 )
 
 var (
 	//keys see docs/spec/staking.md
 	validatorKey            = []byte{0x01} // 保存Validator信息. key: ValidatorAddress
-	validatorByOwnerKey     = []byte{0x02} // 保存Owner与Validator的映射关系. key: OwnerAddress + ValidatorAddress
+	validatorByOwnerKey     = []byte{0x02} // 保存Owner与Validator的映射关系. key: OwnerAddress, value : ValidatorAddress
 	validatorByInActiveKey  = []byte{0x03} // 保存处于`inactive`状态的Validator. key: ValidatorInActiveTime + ValidatorAddress
 	validatorByVotePowerKey = []byte{0x04} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + ValidatorAddress
+
+	lastValidateAddressSetKey = []byte("lastValidateAddressSetKey")
 )
 
 func BuildValidatorStoreQueryPath() []byte {
 	return []byte(fmt.Sprintf("/store/%s/key", ValidatorMapperName))
 }
 
+func BuildLastValidatorAddressSetKey() []byte {
+	return lastValidateAddressSetKey
+}
+
 func BuildValidatorKey(valAddress btypes.Address) []byte {
 	return append(validatorKey, valAddress...)
 }
 
-func BuildOwnerWithValidatorKey(ownerAddress btypes.Address, valAddress btypes.Address) []byte {
+func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
 
-	lenz := 1 + len(ownerAddress) + len(valAddress)
+	lenz := 1 + len(ownerAddress)
 	bz := make([]byte, lenz)
 
 	copy(bz[0:1], validatorByOwnerKey)
 	copy(bz[1:len(ownerAddress)+1], ownerAddress)
-	copy(bz[1+len(ownerAddress):1+len(ownerAddress)+len(valAddress)], valAddress)
 
 	return bz
 }
@@ -108,14 +113,18 @@ func (mapper *ValidatorMapper) Copy() mapper.IMapper {
 	return validatorMapper
 }
 
-func (mapper *ValidatorMapper) SaveValidator(validator types.Validator) {
+func (mapper *ValidatorMapper) CreateValidator(validator types.Validator) {
 	mapper.Set(BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
-	mapper.Set(BuildOwnerWithValidatorKey(validator.Owner.Bytes(), validator.ValidatorPubKey.Address().Bytes()), validator)
-	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), validator)
+	mapper.Set(BuildOwnerWithValidatorKey(validator.Owner), validator.ValidatorPubKey.Address().Bytes())
+	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), 1)
 }
 
-func (mapper *ValidatorMapper) Exists(consAddress btypes.Address) bool {
-	return mapper.Get(BuildValidatorKey(consAddress), &(types.Validator{}))
+func (mapper *ValidatorMapper) Exists(valAddress btypes.Address) bool {
+	return mapper.Get(BuildValidatorKey(valAddress), &(types.Validator{}))
+}
+
+func (mapper *ValidatorMapper) ExistsWithOwner(owner btypes.Address) bool {
+	return mapper.Get(BuildOwnerWithValidatorKey(owner), &(btypes.Address{}))
 }
 
 func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validator types.Validator, exsits bool) {
@@ -124,17 +133,17 @@ func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validato
 	return
 }
 
-func (mapper *ValidatorMapper) MakeValidatorInActive(valAddress btypes.Address, inActiveHeight uint64, inActiveTime time.Time, isRevoke bool) {
+func (mapper *ValidatorMapper) MakeValidatorInActive(valAddress btypes.Address, inActiveHeight uint64, inActiveTime time.Time, code types.InActiveCode) {
 	validator, exsits := mapper.GetValidator(valAddress)
 	if !exsits {
 		return
 	}
 
 	validator.Status = types.InActive
-	validator.IsRevoke = isRevoke
+	validator.InActiveCode = code
 	validator.InActiveHeight = inActiveHeight
 	validator.InActiveTime = inActiveTime.UTC()
-	mapper.Set(validatorKey, validator)
+	mapper.Set(BuildValidatorKey(valAddress), validator)
 
 	validatorInActiveKey := BuildInActiveValidatorKeyByTime(inActiveTime, valAddress)
 	mapper.Set(validatorInActiveKey, inActiveTime.UTC().Unix())
@@ -150,7 +159,7 @@ func (mapper *ValidatorMapper) KickValidator(valAddress btypes.Address) (validat
 	}
 
 	mapper.Del(BuildValidatorKey(valAddress))
-	mapper.Del(BuildOwnerWithValidatorKey(validator.Owner, valAddress))
+	mapper.Del(BuildOwnerWithValidatorKey(validator.Owner))
 	mapper.Del(BuildInActiveValidatorKeyByTime(validator.InActiveTime, valAddress))
 	mapper.Del(BuildValidatorByVotePower(validator.BondTokens, valAddress))
 
@@ -178,4 +187,27 @@ func (mapper *ValidatorMapper) IteratorValidatrorByVoterPower(ascending bool) st
 		return store.KVStorePrefixIterator(mapper.GetStore(), validatorByVotePowerKey)
 	}
 	return store.KVStoreReversePrefixIterator(mapper.GetStore(), validatorByVotePowerKey)
+}
+
+func (mapper *ValidatorMapper) MakeValidatorActive(valAddress btypes.Address) {
+	validator, exsits := mapper.GetValidator(valAddress)
+	if !exsits {
+		return
+	}
+
+	validator.Status = types.Active
+
+	mapper.Set(BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
+	mapper.Del(BuildInActiveValidatorKey(uint64(validator.InActiveTime.UTC().Unix()), valAddress))
+	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), 1)
+}
+
+func (mapper *ValidatorMapper) GetValidatorByOwner(owner btypes.Address) (validator types.Validator, exsits bool) {
+	var valAddress btypes.Address
+	exsits = mapper.Get(BuildOwnerWithValidatorKey(owner), &valAddress)
+	if !exsits {
+		return validator, false
+	}
+
+	return mapper.GetValidator(valAddress)
 }

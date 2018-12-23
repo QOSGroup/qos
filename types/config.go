@@ -7,7 +7,7 @@ type SPOConfig struct {
 
 func DefaultSPOConfig() SPOConfig {
 	return SPOConfig{
-		51e8,
+		100e8,
 		6307200,
 	}
 }
@@ -21,9 +21,9 @@ type StakeConfig struct {
 
 func DefaultStakeConfig() StakeConfig {
 	return StakeConfig{
-		10000,
-		10000,
-		5000,
-		86400,
+		10,
+		100,
+		50,
+		600,
 	}
 }
