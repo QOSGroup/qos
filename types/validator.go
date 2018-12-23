@@ -10,17 +10,17 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-type InActiveCode int8
+type InactiveCode int8
 
 const (
 	//Active 可获得挖矿奖励状态
 	Active int8 = iota
 
-	//InActive
-	InActive
+	//Inactive
+	Inactive
 
-	//InActive Code
-	Revoke InActiveCode = iota
+	//Inactive Code
+	Revoke InactiveCode = iota
 	MissVoteBlock
 	MaxValidator
 )
@@ -33,9 +33,9 @@ type Validator struct {
 	Description     string         `json:"description"`
 
 	Status         int8         `json:"status"`
-	InActiveCode   InActiveCode `json:"inActiveCode"`
-	InActiveTime   time.Time    `json:"inActiveTime"`
-	InActiveHeight uint64       `json:"inActiveHeight"`
+	InactiveCode   InactiveCode `json:"inactiveCode"`
+	InactiveTime   time.Time    `json:"inactiveTime"`
+	InactiveHeight uint64       `json:"inactiveHeight"`
 
 	BondHeight uint64 `json:"bondHeight"`
 }

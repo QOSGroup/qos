@@ -49,10 +49,10 @@ func TestValidatorMapper(t *testing.T) {
 	now := uint64(time.Now().UTC().Unix())
 	for i := uint64(0); i <= uint64(100); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(BuildInActiveValidatorKey(now+i, addr), i)
+		validatorMapper.Set(BuildInactiveValidatorKey(now+i, addr), i)
 	}
 
-	iter := validatorMapper.IteratorInActiveValidator(0, now+20)
+	iter := validatorMapper.IteratorInactiveValidator(0, now+20)
 	defer iter.Close()
 
 	i := 0
