@@ -11,7 +11,7 @@ Validators are responsible for committing new blocks to the blockchain through c
 You need to get `qosd` and `qoscli` installed first. If you don't create an account before, follow the instructions below to create a new account.
 
 ```bash
-$ qoscli keys add <NAME_OF_KEY>
+$ qoscli keys add <name_of_key>
 ```
 
 Then, you should set a password of at least 8 characters.
@@ -35,7 +35,7 @@ $ qoscli keys add <name_of_key> --recover
 
 ### Claim tokens
 
-You can always get some `QOS` by using the [Faucet](). The faucet will send you 10QOS every request, Please don't abuse it.
+You can always get some `QOS` by using the [Faucet](). The faucet will send you some QOS every request, Please don't abuse it.
 
 You can use the following command to check the balance of you account.
 ```bash
@@ -47,15 +47,7 @@ Once you have created your own address, you can use this　account to stake as a
 
 ## Create Validator
 
-### Confirm Your Validator is Synced
-
-Your validator is active if the following command returns anything:
-
-```bash
-$ qoscli tendermint status
-```
-
-You should also be able to see `catching_up` is `false`. 
+### Create Your Validator
 
 You need to get the public key of your node before upgrade your node to a validator node, it can be used to create a new validator by staking tokens. 
 
@@ -66,12 +58,10 @@ $ qosd tendermint show-validator
 {"type":"tendermint/PubKeyEd25519","value":"4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="}
 ```
 
-The use the [validator commands](../client/validator.md) to create the validator: 
+Then use the [validator commands](../client/validator.md) to create the validator: 
 ```
 qoscli tx create-validator --owner owner --name name --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 10 --description "I am a validator."
 ```
-
-To read more about stake mechanism in QOS, go to this [doc](../spec/staking.md)
 
 ### View Validator Info
 
@@ -88,14 +78,14 @@ Mind the value of `status`, zero indicate your validator is active.
 Your validator is active if the following command returns anything:
 
 ```bash
-$ qosd tendermint status
+$ qoscli tendermint status
 ```
 
-You should also be able to see your power is above 0.
+You should also be able to see your token is above 0.
 
 
-### Use QOS Testnet Explorer
+### Use QOS Explorer
 
-You can see your validator on the [Explorer]() If your bonded token is in top 100. The `bech32` encoded `address` of you validator you can find in the `~/.qosd/config/priv_validator.json` file.
+You can see your validator on the [Explorer](http://explorer.qoschain.com).
 
 Also, you can see all the other information of the testnet on the explorer.
