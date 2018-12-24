@@ -142,9 +142,10 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 			owner.MustMinusQOS(tokens)
 			accountMapper.SetAccount(acc)
 
-			res.Validators = append(res.Validators, v.ToABCIValidator())
+			// res.Validators = append(res.Validators, v.ToABCIValidator())
 		}
 	}
 
+	res.Validators = staking.GetUpdatedValidators(ctx, uint64(genesisState.StakeConfig.MaxValidatorCnt))
 	return
 }
