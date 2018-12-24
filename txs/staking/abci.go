@@ -106,6 +106,7 @@ func getUpdateValidators(ctx context.Context, maxValidatorCount uint64) []abci.V
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
 			validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
+
 		} else {
 			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
 				i++
