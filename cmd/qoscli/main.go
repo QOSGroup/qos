@@ -33,6 +33,7 @@ func main() {
 	queryCommands := bcli.QueryCommand(cdc)
 	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
 	queryCommands.AddCommand(qsc.QueryCommands(cdc)...)
+	queryCommands.AddCommand(staking.QueryCommands(cdc)...)
 
 	// txs commands
 	txsCommands := bcli.TxCommand()

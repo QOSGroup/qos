@@ -12,3 +12,10 @@ func TxCommands(cdc *amino.Codec) []*cobra.Command {
 		RevokeValidatorCmd(cdc),
 		ActiveValidatorCmd(cdc))
 }
+
+func QueryCommands(cdc *amino.Codec) []*cobra.Command {
+	return bctypes.GetCommands(
+		queryAllValidatorsCommand(cdc),
+		queryValidatorInfoCommand(cdc),
+	)
+}

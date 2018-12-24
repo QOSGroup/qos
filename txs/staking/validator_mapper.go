@@ -39,6 +39,10 @@ func BuildValidatorKey(valAddress btypes.Address) []byte {
 	return append(validatorKey, valAddress...)
 }
 
+func BulidValidatorPrefixKey() []byte {
+	return validatorKey
+}
+
 func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
 
 	lenz := 1 + len(ownerAddress)
