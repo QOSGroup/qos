@@ -138,6 +138,8 @@ Available Commands:
   create-qsc       create qsc
   issue-qsc        issue qsc
 
+  init-qcp         init qcp
+
   transfer         Transfer QOS and QSCs
 
   create-approve   Create approve
@@ -146,14 +148,16 @@ Available Commands:
   use-approve      Use approve
   cancel-approve   Cancel approve
 
-  create-validator Create validator.
+  create-validator Create validator
+  revoke-validator Revoke validator
+  active-validator Active validator
 
 Flags:
   -h, --help   help for tx
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
-      --home string       directory for config and data (default "/home/imuge/.qoscli")
+      --home string       directory for config and data (default "C:\\Users\\imuge/.qoscli")
   -o, --output string     Output format (text|json) (default "text")
       --trace             print out full stack trace on errors
 
@@ -174,7 +178,7 @@ Use "qoscli tx [command] --help" for more information about a command.
 
 ### validator
 
-验证节点
+[验证节点](validator.md)
 
 ## tendermint
 ```

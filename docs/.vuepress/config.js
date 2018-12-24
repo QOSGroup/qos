@@ -35,7 +35,8 @@ module.exports = {
                     ["/client/transfer", "transfer"],
                     ["/client/approve", "approve"],
                     ["/client/qsc", "qsc"],
-                    ["/client/qcp", "qcp"]
+                    ["/client/qcp", "qcp"],
+                    ["/client/validator", "validator"],
                 ]
             }
             ,
