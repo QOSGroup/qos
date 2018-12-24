@@ -10,7 +10,7 @@
 
 [转账设计](../spec/txs/transfer.md)
 
-```
+```bash
 $ qoscli tx transfer --help
 Transfer QOS and QSCs
 
@@ -48,8 +48,8 @@ Global Flags:
 - receivers 接收集合，账户传keystore name 或 address，多个账户半角分号分隔
 
 Arya向Sansa转账1个qos，1个qstar
-```
-$ qoscli tx transfer --senders=Arya,1qos,1qstar --receivers=address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh,1qos,1qstar
+```bash
+$ qoscli tx transfer --senders Arya,1qos,1qstar --receivers address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh,1qos,1qstar
 Password to sign with 'Arya':
 {"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"40"}
 ```

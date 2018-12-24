@@ -2,7 +2,7 @@
 
 [账户设计](../spec/account.md)，可通过用户名或账户地址查询。
 
-```
+```bash
 $ qoscli query account --help
 qoscli query account [name or address] [flags]
 
@@ -23,7 +23,7 @@ Global Flags:
 ```
 
 * by name
-```
+```bash
 $ qoscli query account Arya
 {
   "type": "qbase/account/QOSAccount",
@@ -48,7 +48,7 @@ $ qoscli query account Arya
 ```
 
 * by address
-```
+```bash
 $ qoscli query account address1evmncf3z99a4uhq5n5yjwputfqmtjsuknv43fn
 {
   "type": "qbase/account/QOSAccount",

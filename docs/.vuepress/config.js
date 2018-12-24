@@ -46,10 +46,12 @@ module.exports = {
                 children: [
                     ["/spec/account", "Account"],
                     ["/spec/genesis", "Genesis"],
+                    ["/spec/ca", "CA"],
                     ["/spec/txs/transfer", "Transfer"],
                     ["/spec/txs/approve", "Approve"],
                     ["/spec/txs/qsc", "QSC"],
                     ["/spec/txs/qcp", "QCP"],
+                    ["/spec/txs/stake", "Stake"],
                 ]
             }
         ]

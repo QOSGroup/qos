@@ -1,7 +1,7 @@
 # QSC
 
 ## Struct
-```
+```go
 // create QSC
 type TxCreateQSC struct {
 	Creator     btypes.Address        `json:"creator"`     //QSC创建账户
@@ -20,13 +20,13 @@ type TxIssueQSC struct {
 ```
 
 ## Store
-```
+```go
 QSCMapperName = "qsc"       // store
 QSCKey        = "qsc/[%s]"  // key，qscName，保存types.QSCInfo
 ```
 
 读写使用QSCMapper
-```
+```go
 type QSCMapper struct {
 	*mapper.BaseMapper      // qbase BaseMapper封装
 }

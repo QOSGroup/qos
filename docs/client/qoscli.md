@@ -2,7 +2,7 @@
 
 提供与QOS交互的命令行工具。
 
-```
+```bash
 $ qoscli --help
 QOS light-client
 
@@ -27,14 +27,13 @@ Flags:
 
 Use "qoscli [command] --help" for more information about a command.
 ```
-所有操作实例基于[Single-node](../install/networks.md#single-node)网络
 
 ## keys
 
 [keystore](https://www.github.com/QOSGroup/qbase)
 
 添加地址信息Sansa：
-```
+```bash
 $ qoscli keys add Sansa
 Enter a passphrase for your key:12345678
 Repeat the passphrase:12345678
@@ -50,7 +49,7 @@ sentence swap network level reason jewel radio apple soap vessel symptom improve
 ## query
 
 查询相关命令
-```
+```bash
 $ qoscli query --help
 query(alias `q`) subcommands.
 
@@ -84,7 +83,7 @@ Use "qoscli query [command] --help" for more information about a command.
 
 ### store
 通过abci query直接查询store的底层方法，path参数指定查询路径，data指定查询key
-```
+```bash
 $ qoscli query store --help
 Query store data by low level
 
@@ -106,11 +105,11 @@ Global Flags:
 ```
 
 查询指定qsc
-```
-qoscli query store --path /store/qsc/key --data qsc/[QSC]
+```bash
+qoscli query store --path /store/qsc/key --data qsc/<qsc_name>
 ```
 查询所有账户
-```
+```bash
 qoscli query store --path /store/acc/subspace --data account:
 ```
 
@@ -127,7 +126,7 @@ qoscli query store --path /store/acc/subspace --data account:
 [联盟链信息查询](qsc.md)
 
 ## tx
-```
+```bash
 $ qoscli tx --help
 tx subcommands
 
@@ -181,7 +180,7 @@ Use "qoscli tx [command] --help" for more information about a command.
 [验证节点](validator.md)
 
 ## tendermint
-```
+```bash
 $ qoscli tendermint --help
 tendermint subcommands
 

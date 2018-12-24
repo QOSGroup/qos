@@ -3,7 +3,7 @@
 实现多账户，多币种交易，只需保证发送和接收集合QOS、QSCs总量相等
 
 * Struct
-```
+```go
 type TransItem struct {
 	Address btypes.Address `json:"addr"` // 账户地址
 	QOS     btypes.BigInt  `json:"qos"`  // QOS
