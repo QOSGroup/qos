@@ -1,21 +1,26 @@
 # QOS验证人节点详解
 
-*随着QOS版本迭代，本文档亦在更新中
-*文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置]https://github.com/QOSGroup/testnets
+:::
+
+*随着QOS版本迭代，本文档亦在更新中*
+
+文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/testnets)
+
+:::
 
 ## QOS验证人的权利
 
 * 对交易进行验证
 * 获得挖矿收益
-* 通过制定代理合约受益（待实现功能）
-* 获得交易费用（待实现功能）
+* 通过制定代理合约受益*（待实现功能）*
+* 获得交易费用*（待实现功能）*
 
 ## QOS验证人的义务
 
 * 保证稳定在线
 * 对交易进行验证
 * 保证自己的私钥安全
-* 参与社区治理（待实现功能）
+* 参与社区治理*（待实现功能）*
 
 ## 如何成为QOS验证人
 
@@ -30,22 +35,24 @@
 ### 验证人的数量限制
 
 QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数不超过$max_validator_cnt
-*在测试网中，$max_validator_cnt=10000，相当于无限制
+
+*在测试网中，$max_validator_cnt=10000，相当于无限制*
 
 ### 验证人节点的几种状态
 
-![验证人状态转换]https://github.com/QOSGroup/qos/tree/master/docs/client/validators/validator_status.png
+![验证人状态转换](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/validator_status.png)
 
 * 活跃状态
 
 保持不间断地验证区块交易，以私钥签名并广播的状态。
 普通全节点，通过发出create-validator交易，或者一个非活跃状态的验证人，通过active-validator交易，可能转为活跃状态。
-*但并非任意全节点都可以通过以上方式成为活跃验证人，由于网络限制了总验证人数量，仅当
 
-在一个特定时间，QOS网络以过去的$voting_status_len个块中，验证过并有签名的块数至少要达到$voting_status_least，来明确一个验证人节点是否活跃。我们称$voting_status_len为验证人保活窗口。
+但并非任意全节点都可以通过以上方式成为活跃验证人，由于网络限制了总验证人数量，在一个特定时间，QOS网络以过去的$voting_status_len个块中，验证过并有签名的块数至少要达到$voting_status_least，来明确一个验证人节点是否活跃。我们称$voting_status_len为验证人保活窗口。
+
 例如，测试网中的保活窗口宽度$voting_status_len=10000，最小保活块数$voting_status_least=5000
 
 如果验证人未能达到这个要求，将被强制切换到[非活跃状态]
+
 一个新创建或者重新激活的验证人，如果经历的总块数尚不足窗口宽度，但漏签块数已达$voting_status_least，也将被切换到非活跃状态
 
 活跃状态的验证人，可以进行区块验证，可以提交区块，获得挖矿收益，可以通过达成代理合约获得收益，也可以获得交易费用。
@@ -68,11 +75,14 @@ QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数�
 
 作为一个DPOS区块链网络，QOS网络中的验证人节点需要绑定一定量的QOS来构成其权益。
 
-QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证人节点。创建后，其绑定的QOS可以来自于验证人所有者（owner）自己的账户，在createValidatorTX初始化时绑定，或者后期再绑定给自己（后续版本）；也可以通过发布和签订代理合约（delegation contract），来吸纳不具备代理人资格的节点的投资（后续版本）。
+QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证人节点。创建后，其绑定的QOS可以来自于验证人所有者（owner）自己的账户，在createValidatorTX初始化时绑定，或者后期再绑定给自己*（后续版本）*；也可以通过发布和签订代理合约（delegation contract），来吸纳不具备代理人资格的节点的投资*（后续版本）*。
 
-*参与挖矿收益的分配
+* 参与挖矿收益的分配
+
 每出一个新块时，验证人的权重决定了其分配挖矿收益的比例，如下：
-![挖矿分配]https://github.com/QOSGroup/qos/tree/master/docs/client/validators/voting_power.png
 
-*社区自治的话语权
-（待实现功能）进行社区自治投票时，验证人的权重决定其决定的话语权比例。但普通节点也有社区自治的投票权，当验证人绑定的QOS来自普通节点的委托协议时，投资者的意志将覆盖验证人这部分权重。
+![挖矿分配](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/voting_power.png)
+
+* 社区自治的话语权
+
+进行社区自治投票时，验证人的权重决定其决定的话语权比例。但普通节点也有社区自治的投票权，当验证人绑定的QOS来自普通节点的委托协议时，投资者的意志将覆盖验证人这部分权重*(待实现功能)*。
