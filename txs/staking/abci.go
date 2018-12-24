@@ -1,8 +1,6 @@
 package staking
 
 import (
-	"bytes"
-
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -44,7 +42,7 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 	maxValidatorCount := uint64(mainMapper.GetStakeConfig().MaxValidatorCnt)
 
 	closeExpireInactiveValidator(ctx, survivalSecs)
-	res.ValidatorUpdates = getLatestValidators(ctx, maxValidatorCount)
+	res.ValidatorUpdates = getUpdateValidators(ctx, maxValidatorCount)
 	return
 }
 
@@ -79,63 +77,62 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 	}
 }
 
-func getLatestValidators(ctx context.Context, maxValidatorCount uint64) []abci.Validator {
+func getUpdateValidators(ctx context.Context, maxValidatorCount uint64) []abci.Validator {
+	log := ctx.Logger()
 	validatorMapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
 
+	var lastValidators []abci.Validator
+	validatorMapper.Get(BuildLastValidatorAddressSetKey(), &lastValidators)
+
+	lastValidatorMap := make(map[string]abci.Validator)
+	for _, lastValidator := range lastValidators {
+		lastValidatorAddr := btypes.Address(lastValidator.Address).String()
+		lastValidatorMap[lastValidatorAddr] = lastValidator
+	}
+
+	updateValidators := make([]abci.Validator, 0, len(lastValidatorMap))
+
 	i := uint64(0)
-	validators := make([]abci.Validator, 0, maxValidatorCount)
+	validatorsMap := make(map[string]abci.Validator)
 
 	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
 	defer iterator.Close()
 
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
-		if i >= maxValidatorCount {
-			break
-		}
-
-		i++
 		key = iterator.Key()
 		valAddr := btypes.Address(key[9:])
-		if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
-			validators = append(validators, validator.ToABCIValidator())
-		}
-	}
 
-	//active validator总数未达到最大值
-	if i >= maxValidatorCount {
-		//将小于 `key`的validator置为inactive
-		iter := validatorMapper.IteratorValidatrorByVoterPower(true)
-		defer iter.Close()
-
-		for ; iter.Valid(); iter.Next() {
-			k := iter.Key()
-			if bytes.Equal(k, key) {
-				break
-			}
-
-			valAddr := btypes.Address(k[9:])
+		if i >= maxValidatorCount {
+			//超出MaxValidatorCnt的validator修改为Inactive状态
 			validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
+		} else {
+			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
+				i++
+				abciValidator := validator.ToABCIValidator()
+				abciAddr := btypes.Address(abciValidator.Address).String()
+				validatorsMap[abciAddr] = abciValidator
+
+				//新增或修改
+				lastValidator, exsits := lastValidatorMap[abciAddr]
+				if !exsits || (abciValidator.Power != lastValidator.Power) {
+					updateValidators = append(updateValidators, abciValidator)
+				}
+			}
 		}
 	}
 
-	//将不存在于当前集合中的validator删除
-	validatorsMap := make(map[string]struct{})
-	for _, validator := range validators {
-		validatorsMap[btypes.Address(validator.Address).String()] = struct{}{}
-	}
-
-	var lastValidators []abci.Validator
-	validatorMapper.Get(BuildLastValidatorAddressSetKey(), &lastValidators)
-
-	for _, lastValidator := range lastValidators {
-		lastValidatorAddr := btypes.Address(lastValidator.Address).String()
+	//删除
+	for lastValidatorAddr, lastValidator := range lastValidatorMap {
 		if _, ok := validatorsMap[lastValidatorAddr]; !ok {
 			lastValidator.Power = 0
-			validators = append(validators, lastValidator)
+			updateValidators = append(updateValidators, lastValidator)
 		}
 	}
-	return validators
+
+	log.Info("update Validators", "len", len(updateValidators))
+
+	return updateValidators
 }
 
 func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Address, isVote bool, votingWindowLen, minVotingCounter uint64) {
