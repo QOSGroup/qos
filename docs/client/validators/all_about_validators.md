@@ -2,9 +2,9 @@
 
 :::
 
-随着QOS版本迭代，本文档亦在更新中
+*随着QOS版本迭代，本文档亦在更新中*
 
-文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置]https://github.com/QOSGroup/testnets
+文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/testnets)
 
 :::
 
@@ -12,15 +12,15 @@
 
 * 对交易进行验证
 * 获得挖矿收益
-* 通过制定代理合约受益（待实现功能）
-* 获得交易费用（待实现功能）
+* 通过制定代理合约受益*（待实现功能）*
+* 获得交易费用*（待实现功能）*
 
 ## QOS验证人的义务
 
 * 保证稳定在线
 * 对交易进行验证
 * 保证自己的私钥安全
-* 参与社区治理（待实现功能）
+* 参与社区治理*（待实现功能）*
 
 ## 如何成为QOS验证人
 
@@ -36,11 +36,11 @@
 
 QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数不超过$max_validator_cnt
 
-*在测试网中，$max_validator_cnt=10000，相当于无限制
+*在测试网中，$max_validator_cnt=10000，相当于无限制*
 
 ### 验证人节点的几种状态
 
-![验证人状态转换]https://github.com/QOSGroup/qos/tree/master/docs/client/validators/validator_status.png
+![验证人状态转换](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/validator_status.png)
 
 * 活跃状态
 
@@ -75,14 +75,14 @@ QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数�
 
 作为一个DPOS区块链网络，QOS网络中的验证人节点需要绑定一定量的QOS来构成其权益。
 
-QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证人节点。创建后，其绑定的QOS可以来自于验证人所有者（owner）自己的账户，在createValidatorTX初始化时绑定，或者后期再绑定给自己（后续版本）；也可以通过发布和签订代理合约（delegation contract），来吸纳不具备代理人资格的节点的投资（后续版本）。
+QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证人节点。创建后，其绑定的QOS可以来自于验证人所有者（owner）自己的账户，在createValidatorTX初始化时绑定，或者后期再绑定给自己*（后续版本）*；也可以通过发布和签订代理合约（delegation contract），来吸纳不具备代理人资格的节点的投资*（后续版本）*。
 
 * 参与挖矿收益的分配
 
 每出一个新块时，验证人的权重决定了其分配挖矿收益的比例，如下：
 
-![挖矿分配]https://github.com/QOSGroup/qos/tree/master/docs/client/validators/voting_power.png
+![挖矿分配](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/voting_power.png)
 
 * 社区自治的话语权
 
-（待实现功能）进行社区自治投票时，验证人的权重决定其决定的话语权比例。但普通节点也有社区自治的投票权，当验证人绑定的QOS来自普通节点的委托协议时，投资者的意志将覆盖验证人这部分权重。
+*（待实现功能）*进行社区自治投票时，验证人的权重决定其决定的话语权比例。但普通节点也有社区自治的投票权，当验证人绑定的QOS来自普通节点的委托协议时，投资者的意志将覆盖验证人这部分权重。
