@@ -5,17 +5,17 @@ import (
 	"encoding/base64"
 	"errors"
 	"fmt"
-	"github.com/spf13/viper"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-	"path/filepath"
-
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
+	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
+	"path/filepath"
+	"strings"
 )
 
 const (
@@ -59,12 +59,12 @@ example:
 			}
 
 			ownerStr := viper.GetString(flagOwner)
-			if len(ownerStr) == 0 {
-				return errors.New("owner is empty")
+			if !strings.HasPrefix(ownerStr, "address") {
+				return errors.New("owner is invalid")
 			}
 
 			owner, err := btypes.GetAddrFromBech32(ownerStr)
-			if err == nil {
+			if err != nil {
 				return err
 			}
 			valPubkey := viper.GetString(flagPubKey)
@@ -142,7 +142,6 @@ example:
 	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagPubKey)
 	cmd.MarkFlagRequired(flagBondTokens)
-	cmd.MarkFlagRequired(cli.HomeFlag)
 
 	return cmd
 }
