@@ -42,10 +42,10 @@ QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数�
 
 ![验证人状态转换](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/validator_status.png)
 
-* **活跃状态**
+* 活跃状态
 
 保持不间断地验证区块交易，以私钥签名并广播的状态。
-普通全节点，通过发出[create-validator](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/all_about_validators.md#create-validator)交易，或者一个非活跃状态的验证人，通过[active-validator](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/all_about_validators.md#active-validator)交易，可能转为活跃状态。
+普通全节点，通过发出create-validator交易，或者一个非活跃状态的验证人，通过active-validator交易，可能转为活跃状态。
 
 但并非任意全节点都可以通过以上方式成为活跃验证人，由于网络限制了总验证人数量，在一个特定时间，QOS网络以过去的$voting_status_len个块中，验证过并有签名的块数至少要达到$voting_status_least，来明确一个验证人节点是否活跃。我们称$voting_status_len为验证人保活窗口。
 
@@ -57,15 +57,15 @@ QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数�
 
 活跃状态的验证人，可以进行区块验证，可以提交区块，获得挖矿收益，可以通过达成代理合约获得收益，也可以获得交易费用。
 
-* **非活跃状态**
+* 非活跃状态
 
-由于未达到活跃窗口要求，或者通过发出[revoke-validator](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/all_about_validators.md#revoke-validator)交易主动要求，验证人将转为非活跃状态。非活跃状态是验证人从活跃状态到退出状态之间所必须经历的中间态。
+由于未达到活跃窗口要求，或者通过发出revoke-validator交易主动要求，验证人将转为非活跃状态。非活跃状态是验证人从活跃状态到退出状态之间所必须经历的中间态。
 
 非活跃状态最久能够维持观察期即$survival_secs秒，非活跃的验证人如果什么都不做，经过$survival_secs后将自动退出，失去其验证人身份。
 
 非活跃状态的验证人，不能进行区块验证，不能提交区块，不能获得挖矿收益和交易费用，不能达成代理合约，需要渡过观察期退出后，通过代理合约绑定的QOS才能回到投资者账户上。
 
-* **退出状态**
+* 退出状态
 
 退出状态的验证人将其上绑定的QOS自动返还给各投资者，自绑定的部分也会回到验证节点的所有者（owner）账户上。
 
@@ -86,47 +86,3 @@ QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证�
 * 社区自治的话语权
 
 进行社区自治投票时，验证人的权重决定其决定的话语权比例。但普通节点也有社区自治的投票权，当验证人绑定的QOS来自普通节点的委托协议时，投资者的意志将覆盖验证人这部分权重*(待实现功能)*。
-
-## 验证人交易类型
-
-### create-validator
-
-全节点通过发出create-validator交易来成为验证人，该交易需要提供以下参数：
-
-- name 验证人的名字，必须提供
-
-- owner 验证人节点所有者，对应keybase中的用户名或者地址（以"address"开头）
-
-- pubkey 验证人节点公钥(ed25519)
-
-- tokens 初始化自绑定的Token数量
-
-- description 描述信息，可选
-
-命令格式：
-
-```
-qoscli create-validator --name validatorName --owner ownerName --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
-```
-
-### revoke-validator
-
-活跃的验证人放弃验证人身份，转为非活跃状态，该交易需要提供参数：
-
-- owner 验证人节点所有者，对应keybase中的用户名或者地址（以"address"开头）
-
-命令格式:
-
-```
-qoscli revoke-validator --owner ownerName
-```
-
-### active-validator
-
-非活跃状态的验证人恢复活跃状态，该交易需要提供参数：
-
-- owner 验证人节点所有者，对应keybase中的用户名或者地址（以"address"开头）
-
-```
-qoscli revoke-validator --owner ownerName
-```
