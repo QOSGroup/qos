@@ -13,4 +13,5 @@ require (
 	github.com/stretchr/testify v1.2.2
 	github.com/tendermint/go-amino v0.12.0
 	github.com/tendermint/tendermint v0.23.1
+	github.com/tendermint/tmlibs v0.9.0 // indirect
 )
