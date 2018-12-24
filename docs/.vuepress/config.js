@@ -35,7 +35,8 @@ module.exports = {
                     ["/client/transfer", "transfer"],
                     ["/client/approve", "approve"],
                     ["/client/qsc", "qsc"],
-                    ["/client/qcp", "qcp"]
+                    ["/client/qcp", "qcp"],
+                    ["/client/validator", "validator"],
                 ]
             }
             ,
@@ -45,10 +46,12 @@ module.exports = {
                 children: [
                     ["/spec/account", "Account"],
                     ["/spec/genesis", "Genesis"],
+                    ["/spec/ca", "CA"],
                     ["/spec/txs/transfer", "Transfer"],
                     ["/spec/txs/approve", "Approve"],
                     ["/spec/txs/qsc", "QSC"],
                     ["/spec/txs/qcp", "QCP"],
+                    ["/spec/txs/stake", "Stake"],
                 ]
             }
         ]

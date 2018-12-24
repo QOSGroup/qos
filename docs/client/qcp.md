@@ -6,9 +6,9 @@
 * `qoscli query qcp`: 查询qcp信息
 
 ## init
-> 初始化QCP需要申请[CA]()
+> 初始化QCP需要申请[CA](../spec/ca.md)
 
-```
+```bash
 $ qoscli tx init-qcp --help
 init qcp
 
@@ -48,13 +48,13 @@ Global Flags:
 
 > 可以通过`qoscli keys import`导入*creator*账户
 
-```
-$ qoscli tx init-qcp --creator qosInitAcc --qcp.crt "qcp.crt"
+```bash
+$ qoscli tx init-qcp --creator qosInitAcc --qcp.crt qcp.crt
 ```
 
 ## query
 
-```
+```bash
 $ qoscli query qcp --help
 qcp subcommands
 

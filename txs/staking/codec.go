@@ -1,4 +1,4 @@
-package validator
+package staking
 
 import (
 	"github.com/QOSGroup/qbase/baseabci"
@@ -13,4 +13,6 @@ func init() {
 
 func RegisterCodec(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&TxCreateValidator{}, "qos/txs/TxCreateValidator", nil)
+	cdc.RegisterConcrete(&TxRevokeValidator{}, "qos/txs/TxRevokeValidator", nil)
+	cdc.RegisterConcrete(&TxActiveValidator{}, "qos/txs/TxActiveValidator", nil)
 }

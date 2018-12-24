@@ -5,30 +5,48 @@ import (
 
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/types"
+	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/txs/staking"
 
 	qacc "github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/txs/validator"
-	qtypes "github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qos/mapper"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
+	height := uint64(ctx.BlockHeight())
+	mainMapper := mapper.GetMainMapper(ctx)
 
-	if ctx.BlockHeight() > 1 {
-		rewardVoteValidator(ctx, req)
+	toalQOSAmount := mainMapper.GetSPOConfig().TotalAmount
+	totalBlock := mainMapper.GetSPOConfig().TotalBlock
+	appliedQOSAmount := mainMapper.GetAppliedQOSAmount()
+
+	if appliedQOSAmount >= toalQOSAmount {
+		return
 	}
 
+	if height >= totalBlock {
+		return
+	}
+
+	if ctx.BlockHeight() > 1 {
+		rewardPerBlock := (toalQOSAmount - appliedQOSAmount) / (totalBlock - height)
+		if rewardPerBlock > 0 {
+			rewardVoteValidator(ctx, req, rewardPerBlock)
+		}
+	}
 }
 
 //基于投票的挖矿奖励: 10QOS*valVotePower/totalVotePower
-func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock) {
+func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, rewardPerBlock uint64) {
 
 	logger := ctx.Logger()
+
+	mainMapper := mapper.GetMainMapper(ctx)
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	validatorMapper := ctx.Mapper(validator.ValidatorMapperName).(*validator.ValidatorMapper)
+	validatorMapper := staking.GetValidatorMapper(ctx)
 
 	totalVotePower := int64(0)
 	for _, val := range req.LastCommitInfo.Validators {
@@ -42,31 +60,36 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock) {
 		return
 	}
 
+	actualAppliedQOSAccount := btypes.NewInt(0)
+
 	for _, val := range req.LastCommitInfo.Validators {
 		if val.SignedLastBlock {
 			//reward
-			consAddress := types.Address(val.Validator.Address)
-
-			qVal, exsits := validatorMapper.GetByConsAddress(consAddress)
+			addr := btypes.Address(val.Validator.Address)
+			validator, exsits := validatorMapper.GetValidator(addr)
 			if !exsits {
-				logger.Error(fmt.Sprintf("consAddress: %s not exsits", consAddress))
+				logger.Error(fmt.Sprintf("validator: %s not exsits", addr.String()))
 				continue
 			}
 
-			acc := accountMapper.GetAccount(qVal.Operator)
-
+			acc := accountMapper.GetAccount(validator.Owner)
 			if qosAcc, ok := acc.(*qacc.QOSAccount); ok {
-				rewardQos := calRewardQos(val.Validator.Power, totalVotePower)
+				rewardQos := calRewardQos(val.Validator.Power, totalVotePower, rewardPerBlock)
 				logger.Debug(fmt.Sprintf("address: %s add vote reward: %s", qosAcc.GetAddress().String(), rewardQos))
 				qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(rewardQos))
 				accountMapper.SetAccount(acc)
+
+				actualAppliedQOSAccount = actualAppliedQOSAccount.Add(rewardQos)
 			}
 		}
 	}
 
+	logger.Info("mint reward", "predict", rewardPerBlock, "actual", actualAppliedQOSAccount.Int64())
+	mainMapper.AddAppliedQOSAmount(uint64(actualAppliedQOSAccount.Int64()))
+
 }
 
-func calRewardQos(valVotePower int64, totalVotePower int64) types.BigInt {
-	t := types.NewInt(qtypes.BlockReward).Mul(types.NewInt(valVotePower))
-	return t.Div(types.NewInt(totalVotePower))
+func calRewardQos(valVotePower int64, totalVotePower int64, rewardPerBlock uint64) btypes.BigInt {
+	t := btypes.NewInt(int64(rewardPerBlock)).Mul(btypes.NewInt(valVotePower))
+	return t.Div(btypes.NewInt(totalVotePower))
 }

@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"net"
 	"os"
 	"path/filepath"
@@ -15,6 +16,7 @@ import (
 
 	"github.com/spf13/cobra"
 
+	btypes "github.com/QOSGroup/qbase/types"
 	cfg "github.com/tendermint/tendermint/config"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/p2p"
@@ -41,7 +43,12 @@ var (
 )
 
 const (
-	nodeDirPerm = 0755
+	nodeDirPerm  = 0755
+	nodeFilePerm = 0644
+
+	validatorBondTokens   = 1000
+	validatorOwnerInitQOS = 1000000
+	validatorOperatorFile = "priv_validator_owner.json"
 )
 
 func TestnetFileCmd(cdc *amino.Codec) *cobra.Command {
@@ -63,7 +70,9 @@ Example:
 			config := cfg.DefaultConfig()
 
 			// moniker
-			if moniker != "" {
+			if moniker == "" {
+				return fmt.Errorf("name is empty")
+			} else {
 				config.BaseConfig.Moniker = moniker
 			}
 
@@ -104,13 +113,22 @@ Example:
 
 				pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
 				pv := privval.LoadFilePV(pvFile)
+				owner := ed25519.GenPrivKey()
 				genVals[i] = types.Validator{
-					Name:        nodeDirName,
-					ConsPubKey:  pv.GetPubKey(),
-					Operator:    pv.GetPubKey().Address().Bytes(),
-					VotingPower: 1,
-					Height:      1,
+					Name:            nodeDirName,
+					ValidatorPubKey: pv.GetPubKey(),
+					Owner:           btypes.Address(owner.PubKey().Address()),
+					Status:          types.Active,
+					BondTokens:      validatorBondTokens,
+					BondHeight:      1,
 				}
+
+				genesisAccounts = append(genesisAccounts, account.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
+
+				// write private key of validator owner
+				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
+				ownerBz, _ := cdc.MarshalJSON(owner)
+				cmn.MustWriteFile(ownerFile, ownerBz, nodeFilePerm)
 			}
 
 			// non-validators
@@ -128,16 +146,24 @@ Example:
 			}
 
 			appState := app.GenesisState{
-				CAPubKey:   pubKey,
-				Validators: genVals,
-				Accounts:   genesisAccounts,
+				CAPubKey:    pubKey,
+				Validators:  genVals,
+				Accounts:    genesisAccounts,
+				SPOConfig:   types.DefaultSPOConfig(),
+				StakeConfig: types.DefaultStakeConfig(),
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
+
+			//JUST 占坑
+			validator := ttypes.GenesisValidator{}
+			validator.PubKey = ed25519.PubKeyEd25519{}
+			validator.Power = 1
+			validator.Name = "Use app_state.validators Instead"
 
 			// Generate genesis doc from generated validators
 			genDoc := &ttypes.GenesisDoc{
 				GenesisTime: time.Now(),
-				Validators:  make([]ttypes.GenesisValidator, 0),
+				Validators:  []ttypes.GenesisValidator{validator},
 				AppState:    rawState,
 			}
 
@@ -191,7 +217,7 @@ Example:
 		"Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'")
 	cmd.Flags().StringVar(&rootCA, "root-ca", "", "Config pubKey of root CA")
 	cmd.Flags().StringVar(&chainId, "chain-id", "", "Chain ID")
-	cmd.Flags().StringVar(&moniker, "moniker", "", "Moniker")
+	cmd.Flags().StringVar(&moniker, "name", "", "Moniker")
 
 	return cmd
 }

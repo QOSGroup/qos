@@ -1,6 +1,8 @@
 package types
 
 import (
+	"time"
+
 	"github.com/tendermint/tendermint/crypto"
 
 	btypes "github.com/QOSGroup/qbase/types"
@@ -8,27 +10,43 @@ import (
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-type Validator struct {
-	Name        string         `json:"name""`
-	ConsPubKey  crypto.PubKey  `json:"cons_pubkey"`
-	Operator    btypes.Address `json:"operator"`
-	VotingPower int64          `json:"voting_power"`
-	Height      int64          `json:"height"`
-}
+type InactiveCode int8
 
-func NewValidator(name string, consPubKey crypto.PubKey, operator btypes.Address, votingPower int64, height int64) Validator {
-	return Validator{
-		Name:        name,
-		ConsPubKey:  consPubKey,
-		Operator:    operator,
-		VotingPower: votingPower,
-		Height:      height,
-	}
+const (
+	//Active 可获得挖矿奖励状态
+	Active int8 = iota
+
+	//Inactive
+	Inactive
+
+	//Inactive Code
+	Revoke InactiveCode = iota
+	MissVoteBlock
+	MaxValidator
+)
+
+type Validator struct {
+	Name            string         `json:"name"`
+	Owner           btypes.Address `json:"owner"`
+	ValidatorPubKey crypto.PubKey  `json:"validatorPubkey"`
+	BondTokens      uint64         `json:"bondTokens"` //不能超过int64最大值
+	Description     string         `json:"description"`
+
+	Status         int8         `json:"status"`
+	InactiveCode   InactiveCode `json:"inactiveCode"`
+	InactiveTime   time.Time    `json:"inactiveTime"`
+	InactiveHeight uint64       `json:"inactiveHeight"`
+
+	BondHeight uint64 `json:"bondHeight"`
 }
 
 func (val Validator) ToABCIValidator() (abciVal abci.Validator) {
-	abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ConsPubKey)
-	abciVal.Power = val.VotingPower
-	abciVal.Address = val.ConsPubKey.Address()
+	abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ValidatorPubKey)
+	abciVal.Power = int64(val.BondTokens)
+	abciVal.Address = val.ValidatorPubKey.Address()
 	return
+}
+
+func (val Validator) IsActive() bool {
+	return val.Status == Active
 }

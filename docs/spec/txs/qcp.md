@@ -1,7 +1,7 @@
 # QCP
 
 * Struct
-```
+```go
 // init QCP
 type TxInitQCP struct {
 	Creator btypes.Address       `json:"creator"` //创建账户
@@ -10,7 +10,7 @@ type TxInitQCP struct {
 ```
 
 * Store
-```
+```go
 QcpMapperName = "qcp"               //需要输出到"chainId"的qcp tx最大序号
 outSequenceKey = "sequence/out/%s"  //需要输出到"chainId"的每个qcp tx
 outSequenceTxKey = "tx/out/%s/%d"   //已经接受到来自"chainId"的qcp 的合法公钥tx最大序号
