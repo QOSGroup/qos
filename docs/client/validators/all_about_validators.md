@@ -1,7 +1,10 @@
 # QOS验证人节点详解
 
-*随着QOS版本迭代，本文档亦在更新中
-*文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置]https://github.com/QOSGroup/testnets
+:::
+随着QOS版本迭代，本文档亦在更新中
+
+文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置]https://github.com/QOSGroup/testnets
+:::
 
 ## QOS验证人的权利
 
@@ -30,6 +33,7 @@
 ### 验证人的数量限制
 
 QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数不超过$max_validator_cnt
+
 *在测试网中，$max_validator_cnt=10000，相当于无限制
 
 ### 验证人节点的几种状态
