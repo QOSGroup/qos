@@ -5,7 +5,7 @@ Validator状态图:
 ```
 
       TxCreateValidator->           ->TxRevokeValidator          TimePeriod
-none---------------------->Active <------------------->inActive------------->none
+none---------------------->Active <------------------->Inactive------------->none
                                     <-TxActiveValidator
 ```
 
@@ -32,8 +32,8 @@ type Validator struct {
 
   Status  enum// ACTIVE/INACTIVE
   IsRevoke bool
-  InActiveTime time.Time
-  InActiveHeight uint64
+  InactiveTime time.Time
+  InactiveHeight uint64
 
   BondHeight uint64
 }
@@ -80,7 +80,7 @@ path: /store/validator/key
 |:--|:----       | :-------| :---- | :----|
 |a| []byte{0x01} | ValidatorAddress | Validator | 保存Validator信息|
 |b| []byte{0x02} | OwnerAddress-ValidatorAddress | 1 | Owner与Validator映射关系 |
-|c| []byte{0x03} | ValidatorInActiveTime-ValidatorAddress |InActiveTime| 处于inactive状态的Validator|
+|c| []byte{0x03} | ValidatorInactiveTime-ValidatorAddress |InactiveTime| 处于inactive状态的Validator|
 |d| []byte{0x04} | VotePower-ValidatorAddress|1| 按VotePower排序的Validator地址,不包含`inactive`状态的Validator|
 
 2. Staking Store
@@ -121,7 +121,7 @@ type ValidatorSignInfo struct { //签名窗口信息
 * MaxValidatorCnt: validator最大数目,默认10000
 * ValidatorVotingStatusLen: 投票窗口高度
 * ValidatorVotingStatusLeast: 投票窗口高度内最小投票数
-* ValidatorSurvivalSecs: 处于InActive状态的vaidator生存时间(s)
+* ValidatorSurvivalSecs: 处于Inactive状态的vaidator生存时间(s)
 
 
 ### BeginBlocker处理步骤
