@@ -46,6 +46,8 @@ const (
 	nodeDirPerm  = 0755
 	nodeFilePerm = 0644
 
+	validatorBondTokens   = 1000
+	validatorOwnerInitQOS = 1000000
 	validatorOperatorFile = "priv_validator_owner.json"
 )
 
@@ -68,7 +70,9 @@ Example:
 			config := cfg.DefaultConfig()
 
 			// moniker
-			if moniker != "" {
+			if moniker == "" {
+				return fmt.Errorf("name is empty")
+			} else {
 				config.BaseConfig.Moniker = moniker
 			}
 
@@ -115,9 +119,11 @@ Example:
 					ValidatorPubKey: pv.GetPubKey(),
 					Owner:           btypes.Address(owner.PubKey().Address()),
 					Status:          types.Active,
-					BondTokens:      10,
+					BondTokens:      validatorBondTokens,
 					BondHeight:      1,
 				}
+
+				genesisAccounts = append(genesisAccounts, account.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
 
 				// write private key of validator owner
 				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
@@ -211,7 +217,7 @@ Example:
 		"Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'")
 	cmd.Flags().StringVar(&rootCA, "root-ca", "", "Config pubKey of root CA")
 	cmd.Flags().StringVar(&chainId, "chain-id", "", "Chain ID")
-	cmd.Flags().StringVar(&moniker, "moniker", "", "Moniker")
+	cmd.Flags().StringVar(&moniker, "name", "", "Moniker")
 
 	return cmd
 }
