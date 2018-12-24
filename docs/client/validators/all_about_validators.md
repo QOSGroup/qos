@@ -40,7 +40,7 @@ QOS网络中将以验证人绑定QOS总数即权重从大到小排序，总数�
 
 ### 验证人节点的几种状态
 
-![验证人状态转换](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/validator_status.png)
+![验证人状态转换](https://github.com/QOSGroup/static/blob/master/validator_status.png?raw=true)
 
 * **活跃状态**
 
@@ -81,7 +81,8 @@ QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证�
 
 每出一个新块时，验证人的权重决定了其分配挖矿收益的比例，如下：
 
-![挖矿分配](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/voting_power.png)
+
+![挖矿分配](https://github.com/QOSGroup/static/blob/master/voting_power.png?raw=true)
 
 * 社区自治的话语权
 
