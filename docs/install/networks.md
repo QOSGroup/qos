@@ -2,8 +2,8 @@
 
 ## Single-node
 * init
-```
-qosd init --chain-id=qos-test
+```bash
+$ qosd init --chain-id qos-test
 {
   "chain_id": "qos-test",
   "node_id": "1c3100c28a44f1facf45aa83e9aa3d8ff8ac6b1f",
@@ -19,7 +19,7 @@ qosd init --chain-id=qos-test
 
 > 使用`qoscli keys add `创建account账户
 
-```
+```bash
 
 $ qoscli keys add qosInitAcc
 Enter a passphrase for your key:
@@ -30,15 +30,19 @@ $ qoscli keys list
 NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
 
-# 初始化账户
-$ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos
+```
 
+初始化账户
+```bash
+$ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos
 ```
 
 * config-root-ca
 
 使用`qosd config-root-ca`初始化root CA公钥到配置文件.
-```
+```bash
+$ qosd add-genesis-validator --help
+
 Config root CA
 
 Usage:
@@ -52,18 +56,21 @@ Global Flags:
       --log_level string   Log level (default "main:info,state:info,*:error")
       --trace              print out full stack trace on errors
       
-# 设置roort CA
+```
+设置roort CA
+```bash
 $ qosd config-root-ca root.pub
 ```
+
 查看genesis.json内容，确认配置成功。
 
 * add-genesis-validator
 
 使用`qosd add-genesis-validator`初始化validator到配置文件中.
 
-```
+```bash
 
-$ qosd add-genesis-validator -h
+$ qosd add-genesis-validator --help
 
 pubkey is a tendermint validator pubkey. the public key of the validator used in
 Tendermint consensus.
@@ -96,7 +103,7 @@ Global Flags:
 ```    
 
 查看priv_validator.json
-```
+```bash
 $ cat  $HOME/.qosd/config/priv_validator.json
 {                                                                             
   "address": "CBB6D9DF3C19A897AEED6E387992106C0B16DF51",                      
@@ -115,14 +122,14 @@ RxPN0RYj5RrKJy5yR0ppOg=="
 }                                                                             
 ```
 
-```
-# 使用上面的初始化账户地址作为owner
-$ qosd add-genesis-validator --name "validatorName" --owner qosInitAcc --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator." --home "$HOME/.qosd/"
+使用上面的初始化账户地址作为owner
+```bash
+$ qosd add-genesis-validator --name validatorName --owner qosInitAcc --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator." --home "$HOME/.qosd/"
 
 ```
 
 * start
-```
+```bash
 $ qosd start --with-tendermint
 ```
 如果一切正常，会看到控制台输出打块信息
@@ -131,7 +138,7 @@ $ qosd start --with-tendermint
 
 ### qosd testnet
 `qosd testnet`命令行工具，可批量生成集群配置文件，相关命令参考：
-```
+```bash
 $ qosd testnet --help
 testnet will create "v" + "n" number of directories and populate each with
 necessary files (private validator, genesis, config, etc.).
@@ -177,7 +184,7 @@ Global Flags:
 - starting-ip-address 起始IP地址
 
 假设第一台机器IP: 192.168.1.100
-```
+```bash
 $ qosd testnet --v 4 --name capricorn --starting-ip-address 192.168.1.100
 Successfully initialized 4 node directories
 
@@ -190,7 +197,7 @@ Successfully initialized 4 node directories
 ### start
 启动前请确保按照[安装说明](installation.md)在四台机器上正确安装QOS。
 拷贝node0-3至不同机器，分别执行：
-```
-$ qosd start --home <PATH_OF_NODE> --withtendermint
+```bash
+$ qosd start --home <path_of_node> --withtendermint
 
 ```

@@ -9,11 +9,11 @@
 
 ## create
 
-> 创建QSC需要申请[CA]()
+> 创建QSC需要申请[CA](../spec/ca.md)
 
 1. 创建QSC
 
-```
+```bash
 $ qoscli tx create-qsc --help
 create qsc
 
@@ -57,18 +57,18 @@ Global Flags:
 
 > 可以通过`qoscli keys import`导入*creator*账户
 
-```
-$ qoscli tx create-qsc --creator qosInitAcc --qsc.crt "qsc.crt"
+```bash
+$ qoscli tx create-qsc --creator qosInitAcc --qsc.crt qsc.crt
 ```
 
 2. 查询QOS绑定的QSCs
 
-```
+```bash
 $ qoscli query store --path /store/qsc/subspace --data qsc
 ```
 
 ## query
-```
+```bash
 $ qoscli query qsc --help
 query qsc info by name
 
@@ -93,13 +93,13 @@ Global Flags:
 
 - qsc
 
-```
-$ qoscli query qsc QSC
+```bash
+$ qoscli query qsc <qsc_name>
 ```
 
 ## issue
 
-```
+```bash
 $ qoscli tx issue-qsc --help
 issue qsc
 
@@ -144,7 +144,7 @@ Global Flags:
 
 导入QSCBanker密钥
 
-```
+```bash
 $ qoscli keys import QSCBanker --file ~/banker.pri
 > Enter a passphrase for your key:
 > Repeat the passphrase:
@@ -152,13 +152,13 @@ $ qoscli keys import QSCBanker --file ~/banker.pri
 
 发放联盟币
 
-```
-$ qoscli tx issue-qsc --qsc-name=QSC --banker=QSCBanker --amount=10000
+```bash
+$ qoscli tx issue-qsc --qsc-name <qsc_name> --banker <keystore_name_of_banker or address_of_banker_account> --amount <qsc_amount>
 ```
 
 查询账户信息:
 
-```
-$ qoscli query account QSCBanker
+```bash
+$ qoscli query account <keystore_name_of_banker or address_of_banker_account>
 ```
 

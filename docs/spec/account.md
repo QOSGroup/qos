@@ -2,7 +2,7 @@
 QOS账户包含账户地址，PubKey，Nonce，QOS法定代币以及QSCs联盟币集合
 
 * Struct
-```
+```go
 type QOSAccount struct {
 	account.BaseAccount `json:"base_account"`       // inherits BaseAccount
 	QOS                 btypes.BigInt `json:"qos"`  // coins in public chain
@@ -30,7 +30,7 @@ BigInt：-(2^255-1) to 2^255-1
 * QSCs
 
 联盟币
-```
+```go
 type QSCs = types.BaseCoins
 
 type BaseCoins []*BaseCoin      // in qbase

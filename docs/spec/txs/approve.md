@@ -3,7 +3,7 @@
 授权、使用授权、增加授权、减少授权、取消授权，暂未涉及Gas逻辑
 
 ## Struct
-```
+```go
 // 授权、增加授权、减少授权、使用授权
 type Approve struct {
     From    btypes.Address `json:"from"` // 授权账号，不能为空
@@ -19,13 +19,13 @@ type TxCancelApprove struct {
 }
 ```
 ## Store
-```
+```go
 approveStoreKey = "approve"             // store
 approveKey      = "from:[%s]/to:[%s]"   // key
 ```
 
 读写使用ApproveMapper
-```
+```go
 type ApproveMapper struct {
 	*mapper.BaseMapper      // qbase BaseMapper封装 
 }

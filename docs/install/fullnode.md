@@ -36,17 +36,11 @@ Your full node has been initialized!
 Fetch the testnet's `genesis.json`, `config.toml` file into `qosd`'s config directory.
 
 ```bash
-curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/lastest/genesis.json > $HOME/.gaiad/config/genesis.json
-curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/lastest/config.toml > $HOME/.gaiad/config/config.toml
+curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/capricorn-1000/genesis.json > $HOME/.qosd/config/genesis.json
+curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/capricorn-1000/config.toml > $HOME/.qosd/config/config.toml
 ```
 
-Note we use the `latest` directory in the [testnets repo](https://github.com/QOSGroup/qos-testnets)
-which contains details for the latest testnet. If you are connecting to a different testnet, ensure you get the right files.
-
-
-## Add Seed Nodes
-
-// TODO seed nodes
+Note we use the `capricorn-1000` directory, that may not be the latest. Search your version In the [testnets repo](https://github.com/QOSGroup/qos-testnets).
 
 ## Run a Full Node
 
@@ -59,7 +53,7 @@ qosd start --with-tendermint
 Check that everything is running smoothly:
 
 ```bash
-qoscli status
+qoscli tendermint status
 ```
 
 If you see the catching_up is false, it means your node is fully synced with the network, otherwise your node is still downloading blocks. Once fully synced, you could upgrade your node to a validator node. The instructions is in [here](validator.md).

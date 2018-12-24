@@ -31,7 +31,7 @@ func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
 pubkey is a tendermint validator pubkey. the public key of the validator used in
 Tendermint consensus.
 
-owner is a keybase name or account address.
+owner is a keystore name or account address.
 
 ex: pubkey: {"type":"tendermint/PubKeyEd25519","value":"VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="}
 
@@ -71,7 +71,7 @@ example:
 	}
 
 	cmd.Flags().String(flagName, "", "name for validator")
-	cmd.Flags().String(flagOwner, "", "keybase name or account address")
+	cmd.Flags().String(flagOwner, "", "keystore name or account address")
 	cmd.Flags().String(flagPubKey, "", "tendermint consensus validator public key")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().String(flagDescription, "", "description")
@@ -101,7 +101,7 @@ func RevokeValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "owner keybase name or address")
+	cmd.Flags().String(flagOwner, "", "owner keystore name or address")
 
 	cmd.MarkFlagRequired(flagOwner)
 
@@ -125,7 +125,7 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "owner keybase or address")
+	cmd.Flags().String(flagOwner, "", "owner keystore or address")
 
 	cmd.MarkFlagRequired(flagOwner)
 
