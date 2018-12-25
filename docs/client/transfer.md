@@ -39,7 +39,7 @@ Flags:
 
 Global Flags:
   -e, --encoding string   Binary encoding (hex|b64|btc) (default "hex")
-      --home string       directory for config and data (default "/home/imuge/.qoscli")
+      --home string       directory for config and data (default "$HOME/.qoscli")
   -o, --output string     Output format (text|json) (default "text")
       --trace             print out full stack trace on errors
 ```
