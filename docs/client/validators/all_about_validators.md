@@ -4,7 +4,7 @@
 
 *随着QOS版本迭代，本文档亦在更新中*
 
-文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/testnets)
+文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/qos-testnets)
 
 :::
 
