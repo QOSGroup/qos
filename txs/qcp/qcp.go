@@ -3,7 +3,6 @@ package qcp
 import (
 	"fmt"
 	"github.com/QOSGroup/kepler/cert"
-	keplercmd "github.com/QOSGroup/kepler/cmd"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/qcp"
@@ -49,7 +48,7 @@ func (tx TxInitQCP) ValidateData(ctx context.Context) error {
 	}
 	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	rootCA := baseMapper.GetRootCA()
-	if !keplercmd.VerityCrt([]crypto.PubKey{rootCA}, *tx.QCPCA) {
+	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QCPCA) {
 		return errors.New("invalid CA")
 	}
 

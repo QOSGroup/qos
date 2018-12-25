@@ -54,7 +54,6 @@ func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
 	return bz
 }
 
-
 func BuildInactiveValidatorKeyByTime(inactiveTime time.Time, valAddress btypes.Address) []byte {
 	return BuildInactiveValidatorKey(uint64(inactiveTime.UTC().Unix()), valAddress)
 }

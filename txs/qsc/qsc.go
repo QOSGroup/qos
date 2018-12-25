@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"fmt"
 	"github.com/QOSGroup/kepler/cert"
-	keplercmd "github.com/QOSGroup/kepler/cmd"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
@@ -39,7 +38,7 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	}
 	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	rootCA := baseMapper.GetRootCA()
-	if !keplercmd.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
+	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
 		return errors.New("invalid CA")
 	}
 

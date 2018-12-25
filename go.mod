@@ -3,7 +3,7 @@ module github.com/QOSGroup/qos
 // go: no requirements found in Gopkg.lock
 
 require (
-	github.com/QOSGroup/kepler v0.0.0-20181213103916-3ca96737c8d5
+	github.com/QOSGroup/kepler v0.5.0
 	github.com/QOSGroup/qbase v0.0.9
 	github.com/pkg/errors v0.8.0
 
