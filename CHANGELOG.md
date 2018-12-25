@@ -3,6 +3,10 @@
 ## v0.0.3
 2018.12.24
 
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
 **FEATURES**
 * [abci] 实现最小化经济模型:验证者加入、撤销及惩罚机制
 * [abci] 实现验证者挖矿奖励
