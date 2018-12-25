@@ -22,7 +22,7 @@ QOS公链验证人，必须是QOS公链的全节点，但全节点需要发出[�
 
 QOS公链中有一个验证人节点的集合，验证人节点担当了BFT共识算法的具体实现——网络中的每一块都需要收集至少2/3的验证人节点签名。QOS公链中的每一块包含零到多条交易，验证人节点对块中的交易进行校验，对校验通过的块用自己的私钥签名，并广播到网络中去。
 
-QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的实现——依照其绑定的QOS数量，获得QOS网络挖矿的收益。详见[QOS公链挖矿机制]https://github.com/QOSGroup/qos/tree/master/docs/client/validators/eco_module.md#QOS公链挖矿机制
+QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的实现——依照其绑定的QOS数量，获得QOS网络挖矿的收益。详见[QOS公链挖矿机制](https://github.com/QOSGroup/qos/tree/master/docs/client/validators/eco_module.md#QOS公链挖矿机制)
 
 希望了解更多验证人节点的信息或希望成为QOS验证人，请查阅[验证人节点详解](https://github.com/QOSGroup/qos/blob/master/docs/client/validators/all_about_validators.md)
 
