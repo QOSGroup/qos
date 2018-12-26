@@ -12,7 +12,7 @@ https://camo.githubusercontent.com/915b7be44ada53c290eb157634330494ebe3e30a/6874
 
 [白皮书](https://github.com/QOSGroup/whitepaper)
 
-qos公链，基于qbase实现tendermint abci。
+qos公链，基于qbase实现tendermint abci。查阅[官方文档](http://docs.qoschain.info/qos/)了解更多。
 
 ### QOS Testnet
 To join the latest testnet, follow [the guide](docs/install/testnet.md).

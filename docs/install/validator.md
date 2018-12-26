@@ -1,6 +1,6 @@
 # Running a Validator Node
 
-Before setting up your validator node, make sure you've already installed QOS by this [guide](fullnode.md)
+Before setting up your validator node, make sure you've already run a full-node by this [guide](fullnode.md)
 
 Validators are responsible for committing new blocks to the blockchain through consensus.
 
@@ -35,7 +35,11 @@ $ qoscli keys add <name_of_key> --recover
 
 ### Claim tokens
 
-You can always get some `QOS` by using the [Faucet](). The faucet will send you 10QOS every request, Please don't abuse it.
+You can always get some `QOS` by using the [Faucet](http://explorer.qoschain.info/freecoin/get). The faucet will send you some QOS every request, Please don't abuse it.
+
+::: warning Note 
+QOS you got from [Faucet](http://explorer.qoschain.info/freecoin/get) only valuable in the QOS testnets.
+:::
 
 You can use the following command to check the balance of you account.
 ```bash
@@ -94,8 +98,8 @@ $ qosd tendermint status
 You should also be able to see your power is above 0.
 
 
-### Use QOS Testnet Explorer
+### Use QOS Explorer
 
-You can see your validator on the [Explorer]() If your bonded token is in top 100. The `bech32` encoded `address` of you validator you can find in the `~/.qosd/config/priv_validator.json` file.
+You can see your validator on the [Explorer](http://explorer.qoschain.info/dashboard) If your bonded token is in top 100. The `bech32` encoded `address` of you validator you can find in the `~/.qosd/config/priv_validator.json` file.
 
 Also, you can see all the other information of the testnet on the explorer.

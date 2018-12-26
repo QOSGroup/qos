@@ -2,12 +2,11 @@ module.exports = {
     title: "QOS",
     description: "Documentation for the QOS.",
     dest: "./dist/docs",
-    base: "/docs/",
+    base: "/qos/",
     markdown: {
         lineNumbers: true
     },
     themeConfig: {
-        lastUpdated: "Last Updated",
         nav: [{text: "Back to QOS", link: "https://www.github.com/QOSGroup/qos"}],
         sidebar: [
             {
@@ -51,7 +50,7 @@ module.exports = {
                     ["/spec/txs/approve", "Approve"],
                     ["/spec/txs/qsc", "QSC"],
                     ["/spec/txs/qcp", "QCP"],
-                    ["/spec/txs/stake", "Stake"],
+                    ["/client/validators/all_about_validators", "Stake"],
                 ]
             }
         ]
