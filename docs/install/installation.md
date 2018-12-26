@@ -14,7 +14,7 @@ echo "export PATH=$PATH:$GOBIN" >> ~/.bash_profile
 
 设置环境变量：
 ```
-echo "export GO111MODULES=on" >> ~/.bash_profile
+echo "export GO111MODULE=on" >> ~/.bash_profile
 ```
 或在相应ide开启go modules支持
 

@@ -52,7 +52,7 @@ Flags:
   -h, --help   help for config-root-ca
 
 Global Flags:
-      --home string        directory for config and data (default "/home/imuge/.qosd")
+      --home string        directory for config and data (default "$HOME/.qosd")
       --log_level string   Log level (default "main:info,state:info,*:error")
       --trace              print out full stack trace on errors
       
