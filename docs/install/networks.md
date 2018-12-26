@@ -97,7 +97,7 @@ Flags:
       --tokens int           bond tokens amount
 
 Global Flags:
-      --home string        directory for config and data (default "C:\\Users\\imuge/.qosd")
+      --home string        directory for config and data (default "$HOME//.qosd")
       --log_level string   Log level (default "main:info,state:info,*:error")
       --trace              print out full stack trace on errors
 ```    

@@ -19,13 +19,22 @@ echo "export GO111MODULE=on" >> ~/.bash_profile
 或在相应ide开启go modules支持
 
 ## Install QOS
+
+### Build from source code
 ```
 mkdir -p $GOPATH/src/github.com/QOSGroup
 cd $GOPATH/src/github.com/QOSGroup
 git clone https://github.com/QOSGroup/qos
 make install
 ```
-会安装qosd,qoscli到GOBIN目录下，运行以下指令：
+会安装qosd,qoscli到GOBIN目录下
+
+### Download runnable files
+
+[Download](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+
+运行以下指令：
 ```
 qosd version
 qoscli version
