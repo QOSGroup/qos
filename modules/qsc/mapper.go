@@ -3,7 +3,7 @@ package qsc
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qos/modules/qsc/types"
 )
 
 const (
