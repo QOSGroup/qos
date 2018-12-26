@@ -4,7 +4,7 @@
 
 *随着QOS版本迭代，本文档亦在更新中*
 
-文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/testnets)
+文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/qos-testnets)
 
 :::
 
@@ -96,9 +96,9 @@ QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证�
 
 - name 验证人的名字，必须提供
 
-- owner 验证人节点所有者，对应keybase中的用户名或者地址（以"address"开头）
+- owner 验证人节点所有者，对应keybase中的用户名
 
-- pubkey 验证人节点公钥(ed25519)
+- pubkey 验证人节点公钥(ed25519)，位于priv_validator.json文件中
 
 - tokens 初始化自绑定的Token数量
 

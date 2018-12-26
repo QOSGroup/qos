@@ -198,6 +198,6 @@ Successfully initialized 4 node directories
 启动前请确保按照[安装说明](installation.md)在四台机器上正确安装QOS。
 拷贝node0-3至不同机器，分别执行：
 ```bash
-$ qosd start --home <path_of_node> --withtendermint
+$ qosd start --home <path_of_node> --with-tendermint
 
 ```
