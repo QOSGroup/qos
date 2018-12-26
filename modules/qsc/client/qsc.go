@@ -12,6 +12,7 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/modules/qsc"
+	qsctypes "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -132,7 +133,7 @@ func QueryQscCmd(cdc *amino.Codec) *cobra.Command {
 				return fmt.Errorf("%s not exists.", args[0])
 			}
 
-			var info types.QSCInfo
+			var info qsctypes.QSCInfo
 			err = cdc.UnmarshalBinaryBare(result.Response.GetValue(), &info)
 			if err != nil {
 				return err

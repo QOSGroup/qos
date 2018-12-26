@@ -10,8 +10,8 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
+	qsctypes "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
-	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -27,50 +27,42 @@ type TxCreateQSC struct {
 func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	// CA校验
 	if tx.QSCCA == nil {
-		return errors.New("QSCCA is empty")
+		return ErrInvalidQSCCA(DefaultCodeSpace, "")
 	}
 	subj, ok := tx.QSCCA.CSR.Subj.(cert.QSCSubject)
 	if !ok {
-		return errors.New("invalid QSCSubject")
+		return ErrInvalidQSCCA(DefaultCodeSpace, "")
 	}
 	if subj.ChainId != ctx.ChainID() {
-		return errors.New(fmt.Sprintf("chainId %s not matches %s ", subj.ChainId, ctx.ChainID()))
+		return ErrInvalidQSCCA(DefaultCodeSpace, "")
 	}
+
 	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
 	rootCA := baseMapper.GetRootCA()
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
-		return errors.New("invalid CA")
+		return ErrWrongQSCCA(DefaultCodeSpace, "")
+	}
+
+	// accounts校验
+	for _, account := range tx.Accounts {
+		if account.QOS.NilToZero().GT(btypes.ZeroInt()) ||
+			len(account.QSCs) != 1 || account.QSCs[0].Name != subj.Name ||
+			!account.QSCs[0].Amount.NilToZero().GT(btypes.ZeroInt()) {
+			return ErrInvalidInitAccounts(DefaultCodeSpace, "")
+		}
 	}
 
 	// QSC不存在
 	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
 	if qscMapper.Exists(subj.Name) {
-		return errors.New(fmt.Sprintf("%s already exists", subj.Name))
+		return ErrQSCExists(DefaultCodeSpace, "")
 	}
 
 	// creator账户存在
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	creator := accountMapper.GetAccount(tx.Creator)
 	if nil == creator {
-		return errors.New("Creator account not exists")
-	}
-
-	_, ok = creator.(*account.QOSAccount)
-	if !ok {
-		return errors.New("Creator account is not a QOSAccount")
-	}
-
-	// accounts校验
-	for _, account := range tx.Accounts {
-		if account.QOS.NilToZero().GT(btypes.ZeroInt()) {
-			return errors.New(fmt.Sprintf("invalid Accounts, %s QOS must be zero", account.AccountAddress))
-		}
-		if len(account.QSCs) != 1 || account.QSCs[0].Name != subj.Name {
-			return errors.New(fmt.Sprintf("invalid Accounts, %s len(QSCs) must be 1 and QSCs[0].Name must be %s", account.AccountAddress, subj.Name))
-		}
-		if !account.QSCs[0].Amount.NilToZero().GT(btypes.ZeroInt()) {
-			return errors.New(fmt.Sprintf("invalid Accounts, %s QSCs[0].Amount must gt zero", account.AccountAddress))
-		}
+		return ErrCreatorNotExists(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -81,7 +73,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 		Code: btypes.CodeOK,
 	}
 
-	qscInfo := types.NewQSCInfoWithQSCCA(tx.QSCCA)
+	qscInfo := qsctypes.NewQSCInfoWithQSCCA(tx.QSCCA)
 	qscInfo.Extrate = tx.Extrate
 	qscInfo.Description = tx.Description
 
@@ -100,7 +92,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 	for _, acc := range tx.Accounts {
 		if a := accountMapper.GetAccount(acc.AccountAddress); a != nil {
 			qosAccount := a.(*account.QOSAccount)
-			qosAccount.QSCs = qosAccount.QSCs.Plus(acc.QSCs)
+			qosAccount.MustPlusQSCs(acc.QSCs)
 			accountMapper.SetAccount(qosAccount)
 		} else {
 			accountMapper.SetAccount(acc)
@@ -145,34 +137,34 @@ type TxIssueQSC struct {
 func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
 	// QscName不能为空
 	if len(tx.QSCName) < 0 {
-		return errors.New("QSCName is empty")
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
 	// Amount大于0
 	if !tx.Amount.GT(btypes.ZeroInt()) {
-		return errors.New("Amount is lte zero")
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
 	// QSC存在
 	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
 	qscInfo := qscMapper.GetQsc(tx.QSCName)
 	if nil == qscInfo {
-		return errors.New(fmt.Sprintf("QSCInfo of %s not exists", tx.QSCName))
-	}
-
-	// QSC名称一致
-	if tx.QSCName != qscInfo.Name {
-		return errors.New("wrong QSCName")
+		return ErrQSCNotExists(DefaultCodeSpace, "")
 	}
 
 	// qscInfo banker存在
 	if qscInfo.Banker == nil {
-		return errors.New("Banker not exists")
+		return ErrBankerNotExists(DefaultCodeSpace, "")
+	}
+
+	// QSC名称一致
+	if tx.QSCName != qscInfo.Name {
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
 	// banker 地址一致
 	if !bytes.Equal(tx.Banker, qscInfo.Banker) {
-		return errors.New("wrong Banker address")
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -186,7 +178,7 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
 	banker := accountMapper.GetAccount(tx.Banker).(*account.QOSAccount)
-	banker.QSCs = banker.QSCs.Plus(types.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
+	banker.MustPlusQSCs(types.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
 	accountMapper.SetAccount(banker)
 
 	return
