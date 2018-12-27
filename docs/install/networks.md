@@ -1,5 +1,7 @@
 # Networks
 
+此文档介绍如何搭建自己的QOS网络，单节点或集群方式。
+
 ## Single-node
 * init
 ```bash
@@ -39,6 +41,8 @@ $ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,10000
 
 * config-root-ca
 
+root CA用于校验[QSC](../spec/txs/qsc.md)和[QCP](../spec/txs/qcp.md)，不存在相关业务时可不配置。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
+
 使用`qosd config-root-ca`初始化root CA公钥到配置文件.
 ```bash
 $ qosd add-genesis-validator --help
@@ -66,7 +70,7 @@ $ qosd config-root-ca root.pub
 
 * add-genesis-validator
 
-使用`qosd add-genesis-validator`初始化validator到配置文件中.
+使用`qosd add-genesis-validator`初始化validator到配置文件中，只有配置了validator才能正常打块。
 
 ```bash
 
@@ -127,6 +131,12 @@ RxPN0RYj5RrKJy5yR0ppOg=="
 $ qosd add-genesis-validator --name validatorName --owner qosInitAcc --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator." --home "$HOME/.qosd/"
 
 ```
+
+主要参数说明:
+- owner is account keyname or address store in your local kaystore, run `qoscli keys list` can find it.
+- name is your validator's name, you can name it as you like.
+- pubkey is the `value` part of validator's pubkey.
+- tokens means the voting power, LTE the QOS amount in your account. 
 
 * start
 ```bash
@@ -198,6 +208,6 @@ Successfully initialized 4 node directories
 启动前请确保按照[安装说明](installation.md)在四台机器上正确安装QOS。
 拷贝node0-3至不同机器，分别执行：
 ```bash
-$ qosd start --home <path_of_node> --with-tendermint
+$ qosd start --home <directory_for_config_and_data> --with-tendermint
 
 ```
