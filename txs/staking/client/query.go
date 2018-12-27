@@ -1,7 +1,6 @@
 package staking
 
 import (
-	"fmt"
 	"github.com/QOSGroup/qbase/client/context"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/store"
@@ -113,7 +112,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 				validators = append(validators, validator)
 			}
 
-			cPrint(cliCtx, validators)
+			cliCtx.PrintResult(validators)
 
 			return nil
 		},
@@ -135,12 +134,5 @@ func buildQueryOptions() client.ABCIQueryOptions {
 	return client.ABCIQueryOptions{
 		Height:  height,
 		Trusted: trust,
-	}
-}
-
-func cPrint(cliCtx context.CLIContext, validators []types.Validator) {
-	fmt.Println("validators: ")
-	for _, validator := range validators {
-		cliCtx.PrintResult(validator)
 	}
 }
