@@ -21,6 +21,9 @@ echo "export GO111MODULE=on" >> ~/.bash_profile
 ## Install QOS
 
 ### Build from source code
+
+>由于众所周知的网络原因，我们更推荐您[下载可执行版本](https://github.com/QOSGroup/qos/blob/master/docs/install/installation.md#download-runnable-files)
+
 ```
 mkdir -p $GOPATH/src/github.com/QOSGroup
 cd $GOPATH/src/github.com/QOSGroup
@@ -31,12 +34,13 @@ make install
 
 ### Download runnable files
 
-[Download](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
-
+根据您的系统，选择对应的[可执行文件](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
 
 运行以下指令：
 ```
 qosd version
+
 qoscli version
+
 ```
-确保一切正常。
+显示版本号与网页一致，表示已成功安装
