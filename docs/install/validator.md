@@ -1,8 +1,9 @@
 # Running a Validator Node
 
-Before setting up your validator node, make sure you've already run a full-node by this [guide](fullnode.md)
+Before setting up your validator node, make sure you've already run a [full-node](fullnode.md).
 
 Validators are responsible for committing new blocks to the blockchain through consensus.
+To read more about stake mechanism in QOS, go to the [staking doc](../client/validators/all_about_validators.md)
 
 ## Get Testnet Token 
 
@@ -70,12 +71,15 @@ $ qosd tendermint show-validator
 {"type":"tendermint/PubKeyEd25519","value":"4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="}
 ```
 
-The use the [validator commands](../client/validator.md) to create the validator: 
+Use [validator commands](../client/validator.md) to create the validator: 
 ```
-qoscli tx create-validator --owner owner --name name --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 10 --description "I am a validator."
+qoscli tx create-validator --owner Peter --name "Peter's node" --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 20000000 --description "I am a validator."
 ```
 
-To read more about stake mechanism in QOS, go to this [doc](../spec/staking.md)
+- `--owner` is account keyname or address store in your local kaystore, run `qoscli keys list` can find it.
+- `--name` is your validator's name, you can name it as you like.
+- `--pubkey` is the `value` part of validator's pubkey.
+- `--tokens` means the voting power, LTE the QOS amount in your account. 
 
 ### View Validator Info
 
@@ -85,7 +89,7 @@ View the validator's information with this command:
 qoscli query validator --owner <owner_address_of_validator>
 ```
 
-Mind the value of `status`, zero indicate your validator is active.
+Mind the value of `status`, zero indicates your validator is active.
 
 ### Confirm Your Validator is Running
 
@@ -100,6 +104,6 @@ You should also be able to see your power is above 0.
 
 ### Use QOS Explorer
 
-You can see your validator on the [Explorer](http://explorer.qoschain.info/dashboard) If your bonded token is in top 100. The `bech32` encoded `address` of you validator you can find in the `~/.qosd/config/priv_validator.json` file.
+You can see your validator on the [Explorer](http://explorer.qoschain.info/dashboard) If your bonded tokens is in top 100. 
 
 Also, you can see all the other information of the testnet on the explorer.
