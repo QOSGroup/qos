@@ -1,12 +1,8 @@
 # QOS验证人节点详解
 
-::: warning Note
-
-*随着QOS版本迭代，本文档亦在更新中*
-
-文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/qos-testnets)
-
-:::
+> *随着QOS版本迭代，本文档亦在更新中*
+>
+> 文中涉及参数（以$开头）的具体设置，可能与本文举例中的具体数字不同，测试网执行的参数可详见[测试网的genesis.json文件配置](https://github.com/QOSGroup/qos-testnets)
 
 ## QOS验证人的权利
 
@@ -137,3 +133,7 @@ qoscli tx active-validator --owner ownerName
 ```
 
 > 更多验证人操作详见[Validator命令行工具](../../client/qoscli.md#验证节点（validator）)
+
+## 测试网验证人奖励
+
+详见[QOS测试网验证完善激励纲要](./community_contribution_reward_cn.md)
