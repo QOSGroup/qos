@@ -1,6 +1,7 @@
 package staking
 
 import (
+	"encoding/hex"
 	"github.com/QOSGroup/qbase/client/context"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/store"
@@ -9,15 +10,71 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/rpc/client"
+	"strings"
+	"time"
 
 	"github.com/QOSGroup/qos/txs/staking"
 	"github.com/QOSGroup/qos/types"
 	go_amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
-	flagActive = "active"
+	flagActive   = "active"
+	activeDesc   = "active"
+	inactiveDesc = "inactive"
+
+	inactiveRevokeDesc        = "Revoked"
+	inactiveMissVoteBlockDesc = "Kicked"
+	inactiveMaxValidatorDesc  = "Replaced"
 )
+
+type validatorDisplayInfo struct {
+	Name            string         `json:"name"`
+	Owner           btypes.Address `json:"owner"`
+	ValidatorAddr   string         `json:"validatorAddress"`
+	ValidatorPubKey crypto.PubKey  `json:"validatorPubkey"`
+	BondTokens      uint64         `json:"bondTokens"` //不能超过int64最大值
+	Description     string         `json:"description"`
+
+	Status         string    `json:"status"`
+	InactiveDesc   string    `json:"InactiveDesc"`
+	InactiveTime   time.Time `json:"inactiveTime"`
+	InactiveHeight uint64    `json:"inactiveHeight"`
+
+	BondHeight uint64 `json:"bondHeight"`
+}
+
+func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
+	info := validatorDisplayInfo{
+		Name:            validator.Name,
+		Owner:           validator.Owner,
+		ValidatorPubKey: validator.ValidatorPubKey,
+		BondTokens:      validator.BondTokens,
+		Description:     validator.Description,
+		InactiveTime:    validator.InactiveTime,
+		InactiveHeight:  validator.InactiveHeight,
+		BondHeight:      validator.BondTokens,
+	}
+
+	if validator.Status == types.Active {
+		info.Status = activeDesc
+	} else {
+		info.Status = inactiveDesc
+	}
+
+	if validator.InactiveCode == types.Revoke {
+		info.InactiveDesc = inactiveRevokeDesc
+	} else if validator.InactiveCode == types.MissVoteBlock {
+		info.InactiveDesc = inactiveMissVoteBlockDesc
+	} else if validator.InactiveCode == types.MaxValidator {
+		info.InactiveDesc = inactiveMaxValidatorDesc
+	}
+
+	info.ValidatorAddr = strings.ToUpper(hex.EncodeToString(validator.ValidatorPubKey.Address()))
+
+	return info
+}
 
 func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
@@ -66,7 +123,7 @@ func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 			var validator types.Validator
 			cdc.UnmarshalBinaryBare(valueBz, &validator)
 
-			return cliCtx.PrintResult(validator)
+			return cliCtx.PrintResult(toValidatorDisplayInfo(validator))
 		},
 	}
 
@@ -102,14 +159,14 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 				return errors.New("response empty value")
 			}
 
-			var validators []types.Validator
+			var validators []validatorDisplayInfo
 
 			var vKVPair []store.KVPair
 			cdc.UnmarshalBinary(valueBz, &vKVPair)
 			for _, kv := range vKVPair {
 				var validator types.Validator
 				cdc.UnmarshalBinaryBare(kv.Value, &validator)
-				validators = append(validators, validator)
+				validators = append(validators, toValidatorDisplayInfo(validator))
 			}
 
 			cliCtx.PrintResult(validators)
