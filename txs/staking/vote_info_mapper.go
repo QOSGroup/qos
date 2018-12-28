@@ -31,6 +31,10 @@ func BuildValidatorVoteInfoKey(valAddress btypes.Address) []byte {
 	return append(validatorVoteInfoKey, valAddress...)
 }
 
+func BuildValidatorVoteInfoInWindowPrefixKey(valAddress btypes.Address) []byte {
+	return append(validatorVoteInfoInWindowKey, valAddress...)
+}
+
 func BuildValidatorVoteInfoInWindowKey(index uint64, valAddress btypes.Address) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, index)
