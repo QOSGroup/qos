@@ -136,4 +136,4 @@ qoscli tx revoke-validator --owner ownerName
 qoscli tx revoke-validator --owner ownerName
 ```
 
-> 更多验证人操作详见[Validator命令行工具](../../client/validator.md)
+> 更多验证人操作详见[Validator命令行工具](../validator.md)

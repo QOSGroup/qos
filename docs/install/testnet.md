@@ -1,19 +1,19 @@
 # 加入QOS测试网络
 
-QOS testnet is named after 12 constellations, we use Capricorn to start the first testnet named capricorn-1000 at *Dec 26, 2018*.
-The latest information of QOS testnet please see [qos-testnets](https://github.com/QOSGroup/qos-testnets).
+QOS测试网络以十二星座命名，我们在*2018年12月26日*启动第一个测试网络，以摩羯座命名：`capricorn-1000`。
+最新的测试网信息请查看[qos-testnets](https://github.com/QOSGroup/qos-testnets)。
 
-To join the QOS testnet, please follow the steps:
+按下面步骤，可加入我们的测试网络：
 
-### Install QOS on Your Server
+### 安装 QOS
 
-See [install guide](installation.md) to install QOS locally.
+参照[安装引导](http://docs.qoschain.info/qos/install/installation-testnet.html)在您的服务器安装QOS。
 
-### Run a Full Node
+### 启动完整节点
 
-See [start a full node](fullnode.md) to start a full node of the latest testnet.
+参照[启动完整节点](http://docs.qoschain.info/qos/install/fullnode.html)启动与测试网络版本一致的QOS节点。
 
 
-### Upgrade to Validator Node
+### 成为验证节点
 
-See [be a validator](validator.md) to upgrade your full node to validator node.
+参照[成为验证节点](http://docs.qoschain.info/qos/install/validator.html)将您的完整节点升级为测试网络验证节点。

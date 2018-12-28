@@ -1,54 +1,55 @@
-# Setup A Full-node
+# 启动完整节点
 
-Before setting up your validator node, make sure you already had QOS installed by following this [guide](installation.md).
+在启动完整节点前，请确保已按照[安装引导](installation.md)正确安装QOS。
 
-## Init Your Node
+## 初始化
 
-These instructions are for setting up a brand new full node from scratch.
-
-First, initialize the node and create the necessary config files:
+适用`qosd init`命令初始化节点、创建必要的配置文件。
+默认的配置和数据存储目录为 `$HOME/.qosd`，可以添加`--home`修改存储位置。
 
 ```bash
 $ qosd init --name <your_custom_moniker>
 ```
-The default directory for config and data is *$HOME/.qosd*, you can change it by adding `--home` flag. 
-
 ::: warning Note
-Only ASCII characters are supported for the `--name`. Using Unicode characters will render your node unreachable.
+`name`仅支持ASCII字符，使用Unicode字符将使节点无法访问
 :::
 
-You can edit `moniker` in the `~/.qosd/config/config.toml` file:
+执行完`qosd init`会在`$HOME/.qosd/config`下生成`genesis.json`、`config.toml`等配置文件。
 
-```toml
-# A custom human readable name for this node
-moniker = "<your_custom_moniker>"
-```
+## 配置运行网络
 
-Your full node has been initialized!
+不同QOS运行网络对应不同的配置，可访问[testnets repo](https://github.com/QOSGroup/qos-testnets)了解不同网络的运行配置。
+下面操作以测试网`capricorn-1000`为例。
 
-## Get Configuration Files
+### 替换`genesis.json`
 
-Replace your local `genesis.json`:
+默认路径`$HOME/.qosd/config/genesis.json`
+
+下载`capricorn-1000`对应[`genesis.json`文件](https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/capricorn-1000/genesis.json)替换本地文件。
+若没有更改默认存储位置，也可通过下面的命令执行替换操作：
 ```bash
-$ curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/capricorn-1000/genesis.json > ~/.qosd/config/genesis.json
+$ curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/capricorn-1000/genesis.json > $HOME/.qosd/config/genesis.json
 ```
 
-Edit the `config.toml`:
+### 编辑`config.toml`:
+
+默认路径`$HOME/.qosd/config/config.toml`
+
+修改`config.toml`，找到`seeds`配置项，添加seed节点：
 ```toml
 # Comma separated list of seed nodes to connect to
 seeds = "5d9fcba29ce9a066cdd6e4c45001567a4bd1dbf4@47.100.231.9:26656"
 ```
 
-Note we use the `capricorn-1000` directory, that may not be the latest. Search your version In the [testnets repo](https://github.com/QOSGroup/qos-testnets).
+## 启动
 
-## Run a Full Node
-
-Start the full node with start command:
+运行启动命令：
 
 ```bash
 $ qosd start --with-tendermint
 ```
 
+控制台开始打印启动日志，提示`This node is not a validator`说明节点不是验证节点，节点开始同步QOS网络区块信息。
 You can see the node is running, your node is not a validator, and your node is synchronizing blocks from the QOS testnet.
 ```bash
 Starting ABCI with Tendermint                module=main 
@@ -104,12 +105,11 @@ validatorVoteInfo                            module=main height=3 address1nfsgxj
 ...
 ```
 
-Check that everything is running smoothly:
+可运行下面命令检查节点运行状态：
 
 ```bash
 $ qoscli tendermint status
 ```
 
-If you see the catching_up is false, it means your node is fully synced with the network, otherwise your node is still downloading blocks. 
-
-If your node is fully synced, follow [be a validator](validator.md) guild to become a testnet validator.
+如果看到`catching_up`为`false`，说明节点已经同步完成，否则还在同步区块。
+同步完成后，可参照[成为验证节点](validator.md)引导成为对应网络验证节点。
