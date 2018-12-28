@@ -17,5 +17,6 @@ func QueryCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.GetCommands(
 		queryAllValidatorsCommand(cdc),
 		queryValidatorInfoCommand(cdc),
+		queryValidatorMissedVoteInfoCommand(cdc),
 	)
 }
