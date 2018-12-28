@@ -1,23 +1,29 @@
-# Running a Validator Node
+# 成为验证节点
 
-Before setting up your validator node, make sure you've already run a [full-node](fullnode.md).
-
-Validators are responsible for committing new blocks to the blockchain through consensus.
-To read more about stake mechanism in QOS, go to the [staking doc](../client/validators/all_about_validators.md)
-
-## Get Testnet Token 
-
-### Create Owner Account
-
-You need to get `qosd` and `qoscli` installed first. If you don't create an account before, follow the instructions below to create a new account.
-
+在成为验证节点前，请确保已[启动完整节点](fullnode.md)，同步到最新高度：
 ```bash
-$ qoscli keys add <NAME_OF_KEY>
+$ qoscli tendermint status
 ```
+其中`latest_block_height`为已同步高度，`catching_up`如果为`false`表示已同步到最新高度，否则请等待。可通过[区块链浏览器](http://explorer.qoschain.info/block/list)查看最新高度，及时了解同步进度。
 
-Then, you should set a password of at least 8 characters.
+成为验证节点前可查阅[QOS验证人详解](../client/validators/all_about_validators.md)和[QOS经济模型](../client/validators/eco_module.md)了解验证人的相关运行机制，然后执行**获取Token**和**成为验证节点**相关步骤成为验证节点。
 
-The output will look like the following:
+## 获取Token
+
+成为验证节点需要账户作为操作者，与节点绑定。如果还没有用于操作的账户，可通过下面步骤创建。
+同时成为验证人需要操作者持有一定量的Token，测试网络可通过[水龙头](http://explorer.qoschain.info/freecoin/get)免费获取。
+
+1. 创建操作账户
+
+可通过`qoscli keys add <name_of_key>`创建密钥保存在本地密钥库。`<name_of_key>`可自定义，仅作为本地密钥库存储名字。
+下面以创建Peter账户为例：
+```bash
+$ qoscli keys add Peter
+// 输入不少于8位的密码，请牢记密码信息
+Enter a passphrase for your key: 
+Repeat the passphrase: 
+```
+会输出如下信息：
 ```bash
 NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 Peter local   address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s  D+pHqEJVjQMiRzl5PbL8FraVZqWqxrxcTF7akcCIDfo=
@@ -26,84 +32,105 @@ It is the only way to recover your account if you ever forget your password.
 
 broom resource trash summer crop embrace stadium fish brief dolphin run decrease brief heart upgrade icon toe lift dawn regret dumb indoor drop glide
 ```
+其中`address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s`为QOS账户地址，
+`D+pHqEJVjQMiRzl5PbL8FraVZqWqxrxcTF7akcCIDfo=`为公钥信息，
+`broom resource trash summer crop embrace stadium fish brief dolphin run decrease brief heart upgrade icon toe lift dawn regret dumb indoor drop glide`为助记词，可用于账号恢复，***请牢记助记词***。
 
-You could see the address and public key of this account.
+更多密钥库相关操作执行请执行`qoscli keys --help`查阅。
 
-The seed phrase of this account will also be displayed. You could use these 24 phrases to recover this account in another server. The recover command is:
-```bash
-$ qoscli keys add <name_of_key> --recover
-```
+2. 获取QOS
 
-### Claim tokens
-
-You can always get some `QOS` by using the [Faucet](http://explorer.qoschain.info/freecoin/get). The faucet will send you some QOS every request, Please don't abuse it.
+测试网络的QOS可访问[水龙头](http://explorer.qoschain.info/freecoin/get)免费获取。
 
 ::: warning Note 
-QOS you got from [Faucet](http://explorer.qoschain.info/freecoin/get) only valuable in the QOS testnets.
+从水龙头获取的QOS仅可用于QOS测试网络适用
 :::
 
-You can use the following command to check the balance of you account.
+可通过下面的指令查询Peter账户信息：
+
+按*密钥库名字*：
 ```bash
-$ qoscli query account <name_of_key or address_of_account>
+$ qoscli query account Peter --indent
+```
+或*账户地址*：
+```bash
+$ qoscli query account address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s --indent
 ```
 
-Once you have created your own address, you can use this　account to stake as a validator. 
-
-
-## Create Validator
-
-### Confirm Your Validator is Synced
-
-Your validator is active if the following command returns anything:
-
+会看到类似如下信息：
 ```bash
-$ qoscli tendermint status
+{
+  "type": "qbase/account/QOSAccount",
+  "value": {
+    "base_account": {
+      "account_address": "address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s",
+      "public_key": {
+        "type": "tendermint/PubKeyEd25519",
+        "value": "D+pHqEJVjQMiRzl5PbL8FraVZqWqxrxcTF7akcCIDfo="
+      },
+      "nonce": "0"
+    },
+    "qos": "10000000",
+    "qscs": null
+  }
+}
 ```
+其中`qos`值代表持有的QOS量，大于0就可以按照接下来的操作成为验证节点。
 
-You should also be able to see `catching_up` is `false`. 
+## 成为验证节点
 
-You need to get the public key of your node before upgrade your node to a validator node, it can be used to create a new validator by staking tokens. 
+1. 执行创建命令
 
-You can find your validator's pubkey by running:
+创建验证节点需要**节点公钥**、**操作者账户地址**等信息，其中**节点公钥**可通过以下指令查看：
 
 ```bash
 $ qosd tendermint show-validator
 {"type":"tendermint/PubKeyEd25519","value":"4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="}
 ```
+`value`部分内容将用到后面的指令参数中。
 
-Use [validator commands](../client/validator.md) to create the validator: 
+使用 [validator commands](../client/validator.md)中的命令执行创建验证节点命令：
 ```
 qoscli tx create-validator --owner Peter --name "Peter's node" --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 20000000 --description "I am a validator."
 ```
+其中：
+- `--owner` 操作者密钥库名字或账户地址，如使用之前创建的`Peter`或`Peter`对应的地址`address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s`
+- `--name`  给验证节点起个名字，如`Peter's node`
+- `--pubkey` 通过`qosd tendermint show-validator`查询到的节点公钥信息中`value`部分内容
+- `--tokens` 将绑定到验证节点上的Token量，应小于等于操作者持有的QOS量
 
-- `--owner` is account keyname or address store in your local kaystore, run `qoscli keys list` can find it.
-- `--name` is your validator's name, you can name it as you like.
-- `--pubkey` is the `value` part of validator's pubkey.
-- `--tokens` means the voting power, LTE the QOS amount in your account. 
-
-### View Validator Info
-
-View the validator's information with this command:
-
+会输出出类似如下信息：
 ```bash
-qoscli query validator --owner <owner_address_of_validator>
+{"check_tx":{},"deliver_tx":{},"hash":"34A76D6D07D93FBE395DDC55E0596E4D312A02A9","height":"200"}
 ```
 
-Mind the value of `status`, zero indicates your validator is active.
+2. 查看节点信息
 
-### Confirm Your Validator is Running
-
-Your validator is active if the following command returns anything:
-
+成功执行创建操作，可通过`qoscli query validator --owner <owner_address_of_validator>`指令查询验证节点信息，其中`owner_address_of_validator`为操作者账户地址。
 ```bash
-$ qosd tendermint status
+qoscli query validator --owner address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s
 ```
+会输出出类似如下信息：
+```bash
+{
+  "name": "Peter's node",
+  "owner": "address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s",
+  "validatorPubkey": {
+    "type": "tendermint/PubKeyEd25519",
+    "value": "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo="
+  },
+  "bondTokens": "20000000",
+  "description": "",
+  "status": 0,
+  "inactiveCode": 0,
+  "inactiveTime": "0001-01-01T00:00:00Z",
+  "inactiveHeight": "0",
+  "bondHeight": "200"
+}
+```
+其中`status`为0说明已成功成为验证节点，将参与相关网络的打块和投票任务。
 
-You should also be able to see your power is above 0.
 
+### QOS区块链浏览器
 
-### Use QOS Explorer
-
-You can see your validator on the [Explorer](http://explorer.qoschain.info/dashboard) If your bonded tokens is in top 100. 
-
-Also, you can see all the other information of the testnet on the explorer.
+成为验证节点后，如果绑定的Token在对应网络中排在前100名，可通过[区块链浏览器](http://explorer.qoschain.info/validator/list)查看节点信息。

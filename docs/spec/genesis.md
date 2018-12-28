@@ -41,7 +41,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) a
 
 ## ca_pub_key
 
-Root [CA](../spec/ca.md) PubKey，用于联盟链签名认证等
+Root [CA](ca.md) PubKey，用于联盟链签名认证等
 
 > 可通过`qosd config-root-ca <path of root.pub>`配置。
 
