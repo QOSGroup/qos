@@ -28,13 +28,11 @@ cd $GOPATH/src/github.com/QOSGroup
 git clone https://github.com/QOSGroup/qos
 make install
 ```
-执行以上命令会安装qosd,qoscli到GOPATH/bin目录下
-
+执行以上命令会安装qosd, qoscli到GOPATH/bin目录下
 
 运行以下指令：
 ```
 qosd version
 qoscli version
 ```
-
 确保正确安装。
