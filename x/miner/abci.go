@@ -49,7 +49,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 	validatorMapper := staking.GetValidatorMapper(ctx)
 
 	totalVotePower := int64(0)
-	for _, val := range req.LastCommitInfo.Validators {
+	for _, val := range req.LastCommitInfo.Votes {
 		if val.SignedLastBlock {
 			totalVotePower += val.Validator.Power
 		}
@@ -62,7 +62,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 
 	actualAppliedQOSAccount := btypes.NewInt(0)
 
-	for _, val := range req.LastCommitInfo.Validators {
+	for _, val := range req.LastCommitInfo.Votes {
 		if val.SignedLastBlock {
 			//reward
 			addr := btypes.Address(val.Validator.Address)

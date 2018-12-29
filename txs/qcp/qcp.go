@@ -63,7 +63,7 @@ func (tx TxInitQCP) ValidateData(ctx context.Context) error {
 
 func (tx TxInitQCP) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 
 	subj := tx.QCPCA.CSR.Subj.(cert.QCPSubject)

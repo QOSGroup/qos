@@ -99,7 +99,7 @@ Example:
 
 			// validators
 			for i := 0; i < nValidators; i++ {
-				nodeDirName := cmn.Fmt("%s%d", nodeDirPrefix, i)
+				nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 				nodeDir := filepath.Join(outputDir, nodeDirName)
 				config.SetRoot(nodeDir)
 
@@ -133,7 +133,7 @@ Example:
 
 			// non-validators
 			for i := 0; i < nNonValidators; i++ {
-				nodeDir := filepath.Join(outputDir, cmn.Fmt("%s%d", nodeDirPrefix, i+nValidators))
+				nodeDir := filepath.Join(outputDir, fmt.Sprintf("%s%d", nodeDirPrefix, i+nValidators))
 				config.SetRoot(nodeDir)
 
 				err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm)
@@ -176,7 +176,7 @@ Example:
 
 			// Write genesis file.
 			for i := 0; i < nValidators+nNonValidators; i++ {
-				nodeDir := filepath.Join(outputDir, cmn.Fmt("%s%d", nodeDirPrefix, i))
+				nodeDir := filepath.Join(outputDir, fmt.Sprintf("%s%d", nodeDirPrefix, i))
 				if err := genDoc.SaveAs(filepath.Join(nodeDir, config.BaseConfig.Genesis)); err != nil {
 					_ = os.RemoveAll(outputDir)
 					return err
@@ -243,7 +243,7 @@ func hostnameOrIP(i int) string {
 func populatePersistentPeersInConfigAndWriteIt(config *cfg.Config) error {
 	persistentPeers := make([]string, nValidators+nNonValidators)
 	for i := 0; i < nValidators+nNonValidators; i++ {
-		nodeDir := filepath.Join(outputDir, cmn.Fmt("%s%d", nodeDirPrefix, i))
+		nodeDir := filepath.Join(outputDir, fmt.Sprintf("%s%d", nodeDirPrefix, i))
 		config.SetRoot(nodeDir)
 		nodeKey, err := p2p.LoadNodeKey(config.NodeKeyFile())
 		if err != nil {
@@ -254,7 +254,7 @@ func populatePersistentPeersInConfigAndWriteIt(config *cfg.Config) error {
 	persistentPeersList := strings.Join(persistentPeers, ",")
 
 	for i := 0; i < nValidators+nNonValidators; i++ {
-		nodeDir := filepath.Join(outputDir, cmn.Fmt("%s%d", nodeDirPrefix, i))
+		nodeDir := filepath.Join(outputDir, fmt.Sprintf("%s%d", nodeDirPrefix, i))
 		config.SetRoot(nodeDir)
 		config.P2P.PersistentPeers = persistentPeersList
 		config.P2P.AddrBookStrict = false
@@ -288,7 +288,7 @@ func initFilesWithConfig(config *cfg.Config) error {
 	genFile := config.GenesisFile()
 	if !cmn.FileExists(genFile) {
 		genDoc := ttypes.GenesisDoc{
-			ChainID:         cmn.Fmt("test-chain-%v", cmn.RandStr(6)),
+			ChainID:         fmt.Sprintf("test-chain-%v", cmn.RandStr(6)),
 			GenesisTime:     time.Now(),
 			ConsensusParams: ttypes.DefaultConsensusParams(),
 		}

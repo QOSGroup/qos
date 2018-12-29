@@ -251,7 +251,7 @@ func TestTxApproveCreate_Exec(t *testing.T) {
 	}
 	result, cross := tx.Exec(ctx)
 	require.Nil(t, cross)
-	require.Equal(t, result.Code, btypes.ABCICodeOK)
+	require.Equal(t, result.Code, btypes.CodeOK)
 
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	approve, exists := approveMapper.GetApprove(tx.From, tx.To)
@@ -293,7 +293,7 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 
 	result, cross := increaseTx.Exec(ctx)
 	require.Nil(t, cross)
-	require.Equal(t, result.Code, btypes.ABCICodeOK)
+	require.Equal(t, result.Code, btypes.CodeOK)
 
 	approve, exists := approveMapper.GetApprove(createTx.From, createTx.To)
 	require.True(t, exists)
@@ -339,7 +339,7 @@ func TestTxApproveDecrease_Exec(t *testing.T) {
 
 	result, cross := decreaseTx.Exec(ctx)
 	require.Nil(t, cross)
-	require.Equal(t, result.Code, btypes.ABCICodeOK)
+	require.Equal(t, result.Code, btypes.CodeOK)
 
 	approve, exists := approveMapper.GetApprove(createTx.From, createTx.To)
 	require.True(t, exists)
@@ -402,7 +402,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 
 	result, cross := useTx.Exec(ctx)
 	require.Nil(t, cross)
-	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
+	require.NotEqual(t, result.Code, btypes.CodeOK)
 
 	createTx.QOS = btypes.NewInt(1)
 	approveMapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
@@ -411,7 +411,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 
 	result, cross = useTx.Exec(ctx)
 	require.Nil(t, cross)
-	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
+	require.NotEqual(t, result.Code, btypes.CodeOK)
 
 	createTx.QOS = btypes.NewInt(100)
 	err = approveMapper.SaveApprove(createTx.Approve)
@@ -419,7 +419,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 
 	result, cross = useTx.Exec(ctx)
 	require.Nil(t, cross)
-	require.Equal(t, result.Code, btypes.ABCICodeOK)
+	require.Equal(t, result.Code, btypes.CodeOK)
 
 	approve, exists := approveMapper.GetApprove(useTx.From, useTx.To)
 	require.True(t, exists)
@@ -456,14 +456,14 @@ func TestTxApproveCancel_Exec(t *testing.T) {
 	}
 	result, cross := cancelTx.Exec(ctx)
 	require.Nil(t, cross)
-	require.NotEqual(t, result.Code, btypes.ABCICodeOK)
+	require.NotEqual(t, result.Code, btypes.CodeOK)
 
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	err := mapper.SaveApprove(createTx.Approve)
 	require.Nil(t, err)
 
 	result, _ = cancelTx.Exec(ctx)
-	require.Equal(t, result.Code, btypes.ABCICodeOK)
+	require.Equal(t, result.Code, btypes.CodeOK)
 
 }
 
