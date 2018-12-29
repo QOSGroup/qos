@@ -1,4 +1,12 @@
-## Validator Staking
+## 验证人详解
+
+[QOS验证人详解](../validators/all_about_validators.md)
+
+## 经济模型
+
+[QOS经济模型](../validators/eco_module.md)
+
+## 验证节点设计
 
 Validator状态图:
 
@@ -79,7 +87,7 @@ path: /store/validator/key
 |Index| Prefix Key | Key     | Value | 备注|
 |:--|:----       | :-------| :---- | :----|
 |a| []byte{0x01} | ValidatorAddress | Validator | 保存Validator信息|
-|b| []byte{0x02} | OwnerAddress-ValidatorAddress | 1 | Owner与Validator映射关系 |
+|b| []byte{0x02} | OwnerAddress | ValidatorAddress | Owner与Validator映射关系 |
 |c| []byte{0x03} | ValidatorInactiveTime-ValidatorAddress |InactiveTime| 处于inactive状态的Validator|
 |d| []byte{0x04} | VotePower-ValidatorAddress|1| 按VotePower排序的Validator地址,不包含`inactive`状态的Validator|
 

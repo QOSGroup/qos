@@ -6,7 +6,7 @@ $ qoscli tendermint status
 ```
 其中`latest_block_height`为已同步高度，`catching_up`如果为`false`表示已同步到最新高度，否则请等待。可通过[区块链浏览器](http://explorer.qoschain.info/block/list)查看最新高度，及时了解同步进度。
 
-成为验证节点前可查阅[QOS验证人详解](../client/validators/all_about_validators.md)和[QOS经济模型](../client/validators/eco_module.md)了解验证人的相关运行机制，然后执行**获取Token**和**成为验证节点**相关步骤成为验证节点。
+成为验证节点前可查阅[QOS验证人详解](../../spec/validators/all_about_validators.md)和[QOS经济模型](../../spec/validators/eco_module.md)了解验证人的相关运行机制，然后执行**获取Token**和**成为验证节点**相关步骤成为验证节点。
 
 ## 获取Token
 
@@ -43,18 +43,12 @@ broom resource trash summer crop embrace stadium fish brief dolphin run decrease
 测试网络的QOS可访问[水龙头](http://explorer.qoschain.info/freecoin/get)免费获取。
 
 ::: warning Note 
-从水龙头获取的QOS仅可用于QOS测试网络适用
+从水龙头获取的QOS仅可用于QOS测试网络使用
 :::
 
 可通过下面的指令查询Peter账户信息：
-
-按*密钥库名字*：
 ```bash
 $ qoscli query account Peter --indent
-```
-或*账户地址*：
-```bash
-$ qoscli query account address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s --indent
 ```
 
 会看到类似如下信息：
@@ -89,7 +83,7 @@ $ qosd tendermint show-validator
 ```
 `value`部分内容将用到后面的指令参数中。
 
-使用 [validator commands](../client/validator.md)中的命令执行创建验证节点命令：
+使用下面的命令执行创建验证节点：
 ```
 qoscli tx create-validator --owner Peter --name "Peter's node" --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 20000000 --description "I am a validator."
 ```

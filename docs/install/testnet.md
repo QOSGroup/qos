@@ -7,13 +7,13 @@ QOS测试网络以十二星座命名，我们在*2018年12月26日*启动第一�
 
 ### 安装 QOS
 
-参照[安装引导](http://docs.qoschain.info/qos/install/installation-testnet.html)在您的服务器安装QOS。
+参照[安装引导](http://docs.qoschain.info/qos/install/testnet/installation.html)在您的服务器安装QOS。
 
 ### 启动完整节点
 
-参照[启动完整节点](http://docs.qoschain.info/qos/install/fullnode.html)启动与测试网络版本一致的QOS节点。
+参照[启动完整节点](http://docs.qoschain.info/qos/install/testnet/fullnode.html)启动与测试网络版本一致的QOS节点。
 
 
 ### 成为验证节点
 
-参照[成为验证节点](http://docs.qoschain.info/qos/install/validator.html)将您的完整节点升级为测试网络验证节点。
+参照[成为验证节点](http://docs.qoschain.info/qos/install/testnet/validator.html)将您的完整节点升级为测试网络验证节点。

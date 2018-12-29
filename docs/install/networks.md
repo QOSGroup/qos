@@ -133,7 +133,7 @@ $ qosd add-genesis-validator --name validatorName --owner qosInitAcc --pubkey "P
 ```
 
 主要参数说明:
-- owner is account keyname or address store in your local kaystore, run `qoscli keys list` can find it.
+- owner is account keyname or address store in your local keystore, run `qoscli keys list` can find it.
 - name is your validator's name, you can name it as you like.
 - pubkey is the `value` part of validator's pubkey.
 - tokens means the voting power, LTE the QOS amount in your account. 
