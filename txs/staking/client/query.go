@@ -133,7 +133,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			var validators []validatorDisplayInfo
 
 			var vKVPair []store.KVPair
-			cdc.UnmarshalBinary(valueBz, &vKVPair)
+			cdc.UnmarshalBinaryLengthPrefixed(valueBz, &vKVPair)
 			for _, kv := range vKVPair {
 				var validator types.Validator
 				cdc.UnmarshalBinaryBare(kv.Value, &validator)
@@ -325,7 +325,7 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 	}
 
 	var vKVPair []store.KVPair
-	ctx.Codec.UnmarshalBinary(valueBz, &vKVPair)
+	ctx.Codec.UnmarshalBinaryLengthPrefixed(valueBz, &vKVPair)
 
 	for _, kv := range vKVPair {
 		k := kv.Key
@@ -383,7 +383,7 @@ func buildQueryOptions() client.ABCIQueryOptions {
 	trust := viper.GetBool(bctypes.FlagTrustNode)
 
 	return client.ABCIQueryOptions{
-		Height:  height,
-		Trusted: trust,
+		Height: height,
+		Prove:  trust,
 	}
 }

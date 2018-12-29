@@ -40,10 +40,24 @@ type Validator struct {
 	BondHeight uint64 `json:"bondHeight"`
 }
 
+func (val Validator) GetValidatorAddress() btypes.Address {
+	return btypes.Address(val.ValidatorPubKey.Address())
+}
+
 func (val Validator) ToABCIValidator() (abciVal abci.Validator) {
-	abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ValidatorPubKey)
+	// abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ValidatorPubKey)
 	abciVal.Power = int64(val.BondTokens)
 	abciVal.Address = val.ValidatorPubKey.Address()
+	return
+}
+
+func (val Validator) ToABCIValidatorUpdate(isRemoved bool) (abciVal abci.ValidatorUpdate) {
+	abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ValidatorPubKey)
+	if isRemoved {
+		abciVal.Power = int64(0)
+	} else {
+		abciVal.Power = int64(val.BondTokens)
+	}
 	return
 }
 

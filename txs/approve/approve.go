@@ -4,14 +4,15 @@ import (
 	"bytes"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
+
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/types"
-	"sort"
-	"strings"
 )
 
 // 授权 Common 结构
@@ -211,7 +212,7 @@ func (tx TxCreateApprove) ValidateData(ctx context.Context) error {
 
 func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
@@ -256,14 +257,14 @@ func (tx TxIncreaseApprove) ValidateData(ctx context.Context) error {
 
 func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 
 	// 校验授权信息
 	approve, exisit := mapper.GetApprove(tx.From, tx.To)
 	if !exisit {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeOK
 		return
 	}
 
@@ -301,18 +302,18 @@ func (tx TxDecreaseApprove) ValidateData(ctx context.Context) error {
 
 func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 
 	// 校验授权信息
 	approve, exisit := mapper.GetApprove(tx.From, tx.To)
 	if !exisit {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 
@@ -360,7 +361,7 @@ func (tx TxUseApprove) ValidateData(ctx context.Context) error {
 
 func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	from := accountMapper.GetAccount(tx.From).(*account.QOSAccount)
@@ -371,17 +372,17 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	// 校验授权信息
 	approve, exisit := approveMapper.GetApprove(tx.From, tx.To)
 	if !exisit {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 	if !approve.IsGTE(tx.QOS, tx.QSCs) {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 
 	// 校验授权用户状态
 	if tx.IsGT(from.QOS, from.QSCs) {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 
@@ -434,20 +435,20 @@ func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
 
 func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQcps *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 
 	// 授权是否存在
 	mapper := ctx.Mapper(GetApproveMapperStoreKey()).(*ApproveMapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 
 	err := mapper.DeleteApprove(tx.From, tx.To)
 	if err != nil {
-		result.Code = btypes.ABCICodeType(btypes.CodeInternal)
+		result.Code = btypes.CodeInternal
 		return
 	}
 
