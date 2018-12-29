@@ -78,7 +78,7 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 
 func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 
 	qscInfo := types.NewQSCInfoWithQSCCA(tx.QSCCA)
@@ -180,7 +180,7 @@ func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
 
 func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	result = btypes.Result{
-		Code: btypes.ABCICodeOK,
+		Code: btypes.CodeOK,
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)

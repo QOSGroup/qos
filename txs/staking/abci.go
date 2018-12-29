@@ -19,7 +19,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	votingWindowLen := uint64(mainMapper.GetStakeConfig().ValidatorVotingStatusLen)
 	minVotingCounter := uint64(mainMapper.GetStakeConfig().ValidatorVotingStatusLeast)
 
-	for _, signingValidator := range req.LastCommitInfo.Validators {
+	for _, signingValidator := range req.LastCommitInfo.Votes {
 		valAddr := btypes.Address(signingValidator.Validator.Address)
 		voted := signingValidator.SignedLastBlock
 		handleValidatorValidatorVoteInfo(ctx, valAddr, voted, votingWindowLen, minVotingCounter)
@@ -70,24 +70,26 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 	}
 }
 
-func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.Validator {
+func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
 	log := ctx.Logger()
 	validatorMapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
 
-	var currentValidators []abci.Validator
+	//获取当前的validator集合
+	var currentValidators []types.Validator
 	validatorMapper.Get(BuildCurrentValidatorAddressKey(), &currentValidators)
 
-	currentValidatorMap := make(map[string]abci.Validator)
-	for _, lastValidator := range currentValidators {
-		lastValidatorAddr := btypes.Address(lastValidator.Address).String()
-		currentValidatorMap[lastValidatorAddr] = lastValidator
+	currentValidatorMap := make(map[string]types.Validator)
+	for _, curValidator := range currentValidators {
+		curValidatorAddrString := curValidator.GetValidatorAddress().String()
+		currentValidatorMap[curValidatorAddrString] = curValidator
 	}
 
-	updateValidators := make([]abci.Validator, 0, len(currentValidatorMap))
+	//返回更新的validator
+	updateValidators := make([]abci.ValidatorUpdate, 0, len(currentValidatorMap))
 
 	i := uint64(0)
-	newValidatorsMap := make(map[string]abci.Validator)
-	newValidators := make([]abci.Validator, 0, len(currentValidators))
+	newValidatorsMap := make(map[string]types.Validator)
+	newValidators := make([]types.Validator, 0, len(currentValidators))
 
 	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
 	defer iterator.Close()
@@ -104,17 +106,15 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 		} else {
 			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
 				i++
-				abciValidator := validator.ToABCIValidator()
-				abciAddr := btypes.Address(abciValidator.Address).String()
-
 				//保存数据
-				newValidatorsMap[abciAddr] = abciValidator
-				newValidators = append(newValidators, abciValidator)
+				newValidatorAddressString := validator.GetValidatorAddress().String()
+				newValidatorsMap[newValidatorAddressString] = validator
+				newValidators = append(newValidators, validator)
 
 				//新增或修改
-				lastValidator, exsits := currentValidatorMap[abciAddr]
-				if !exsits || (abciValidator.Power != lastValidator.Power) {
-					updateValidators = append(updateValidators, abciValidator)
+				curValidator, exsits := currentValidatorMap[newValidatorAddressString]
+				if !exsits || (validator.BondTokens != curValidator.BondTokens) {
+					updateValidators = append(updateValidators, validator.ToABCIValidatorUpdate(false))
 				}
 			}
 		}
@@ -123,8 +123,8 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	//删除
 	for curValidatorAddr, curValidator := range currentValidatorMap {
 		if _, ok := newValidatorsMap[curValidatorAddr]; !ok {
-			curValidator.Power = 0
-			updateValidators = append(updateValidators, curValidator)
+			// curValidator.Power = 0
+			updateValidators = append(updateValidators, curValidator.ToABCIValidatorUpdate(true))
 		}
 	}
 
