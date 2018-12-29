@@ -91,7 +91,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validatorMapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
-	return btypes.Result{Code: btypes.ABCICodeOK}, nil
+	return btypes.Result{Code: btypes.CodeOK}, nil
 }
 
 func (tx *TxCreateValidator) GetSigner() []btypes.Address {
@@ -150,11 +150,11 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 	mapper.MakeValidatorInactive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.Revoke)
 
-	return btypes.Result{Code: btypes.ABCICodeOK}, nil
+	return btypes.Result{Code: btypes.CodeOK}, nil
 }
 
 func (tx *TxRevokeValidator) GetSigner() []btypes.Address {
@@ -209,7 +209,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 	mapper.MakeValidatorActive(validator.ValidatorPubKey.Address().Bytes())
 
@@ -217,7 +217,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	voteInfo := types.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
 	voteInfoMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 
-	return btypes.Result{Code: btypes.ABCICodeOK}, nil
+	return btypes.Result{Code: btypes.CodeOK}, nil
 }
 
 func (tx *TxActiveValidator) GetSigner() []btypes.Address {

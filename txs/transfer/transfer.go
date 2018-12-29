@@ -126,7 +126,7 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		accountMapper.SetAccount(acc)
 	}
 
-	return btypes.Result{Code: btypes.ABCICodeOK}, nil
+	return btypes.Result{Code: btypes.CodeOK}, nil
 }
 
 // 所有Senders

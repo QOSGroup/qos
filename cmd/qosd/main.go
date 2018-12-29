@@ -31,8 +31,7 @@ func main() {
 	// version cmd
 	rootCmd.AddCommand(version.VersionCmd)
 
-	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(),
-		server.ConstructAppCreator(newApp, "qos"))
+	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(), newApp)
 
 	rootCmd.AddCommand(qosdinit.ConfigRootCA(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
