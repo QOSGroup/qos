@@ -30,12 +30,7 @@ module.exports = {
                 collapsable: false,
                 children: [
                     ["/client/qoscli", "qoscli"],
-                    ["/client/account", "account"],
-                    ["/client/transfer", "transfer"],
-                    ["/client/approve", "approve"],
-                    ["/client/qsc", "qsc"],
-                    ["/client/qcp", "qcp"],
-                    ["/client/validator", "validator"],
+                    ["/client/qosd", "qosd"],
                 ]
             }
             ,
@@ -43,14 +38,14 @@ module.exports = {
                 title: "Spec",
                 collapsable: false,
                 children: [
+                    ["/spec/txs/staking", "Stake"],
                     ["/spec/account", "Account"],
                     ["/spec/genesis", "Genesis"],
-                    ["/spec/ca", "CA"],
                     ["/spec/txs/transfer", "Transfer"],
                     ["/spec/txs/approve", "Approve"],
                     ["/spec/txs/qsc", "QSC"],
                     ["/spec/txs/qcp", "QCP"],
-                    ["/client/validators/all_about_validators", "Stake"],
+                    ["/spec/ca", "CA"]
                 ]
             }
         ]
