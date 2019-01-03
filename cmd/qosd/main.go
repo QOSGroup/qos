@@ -31,11 +31,12 @@ func main() {
 	// version cmd
 	rootCmd.AddCommand(version.VersionCmd)
 
-	server.AddCommands(ctx, cdc, rootCmd, app.QOSAppInit(), newApp)
-
+	rootCmd.AddCommand(server.InitCmd(ctx, cdc, qosdinit.GenQOSGenesisDoc, types.DefaultNodeHome))
 	rootCmd.AddCommand(qosdinit.ConfigRootCA(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
+
+	server.AddCommands(ctx, cdc, rootCmd, newApp)
 
 	executor := cli.PrepareBaseCmd(rootCmd, "qos", types.DefaultNodeHome)
 

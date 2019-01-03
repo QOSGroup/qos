@@ -154,16 +154,9 @@ Example:
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
 
-			//JUST 占坑
-			validator := ttypes.GenesisValidator{}
-			validator.PubKey = ed25519.PubKeyEd25519{}
-			validator.Power = 1
-			validator.Name = "Use app_state.validators Instead"
-
 			// Generate genesis doc from generated validators
 			genDoc := &ttypes.GenesisDoc{
 				GenesisTime: time.Now(),
-				Validators:  []ttypes.GenesisValidator{validator},
 				AppState:    rawState,
 			}
 
