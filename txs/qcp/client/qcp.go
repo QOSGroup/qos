@@ -33,7 +33,7 @@ func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				var crt = cert.Certificate{}
-				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqcp), &crt)
+				err = cdc.UnmarshalJSON(common.MustReadFile(pathqcp), &crt)
 				if err != nil {
 					return nil, err
 				}

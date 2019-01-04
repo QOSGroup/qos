@@ -51,7 +51,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				var crt cert.Certificate
-				err = cdc.UnmarshalBinaryBare(common.MustReadFile(pathqsc), &crt)
+				err = cdc.UnmarshalJSON(common.MustReadFile(pathqsc), &crt)
 				if err != nil {
 					return nil, err
 				}
@@ -61,7 +61,6 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid crt file")
 				}
 
-				// TODO 统一 accounts 解析
 				var acs []*account.QOSAccount
 				if len(accountStr) > 0 {
 					accArrs := strings.Split(accountStr, ";")
