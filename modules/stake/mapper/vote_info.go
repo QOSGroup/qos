@@ -1,4 +1,4 @@
-package stake
+package mapper
 
 import (
 	"encoding/binary"
@@ -8,7 +8,7 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 
-	"github.com/QOSGroup/qos/types"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 
 	btypes "github.com/QOSGroup/qbase/types"
 )
@@ -67,18 +67,18 @@ func (mapper *VoteInfoMapper) Copy() mapper.IMapper {
 	return VoteInfoMapper
 }
 
-func (mapper *VoteInfoMapper) GetValidatorVoteInfo(valAddr btypes.Address) (VoteInfo types.ValidatorVoteInfo, exsits bool) {
+func (mapper *VoteInfoMapper) GetValidatorVoteInfo(valAddr btypes.Address) (VoteInfo staketypes.ValidatorVoteInfo, exsits bool) {
 	key := BuildValidatorVoteInfoKey(valAddr)
 	exsits = mapper.Get(key, &VoteInfo)
 	return
 }
 
-func (mapper *VoteInfoMapper) SetValidatorVoteInfo(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+func (mapper *VoteInfoMapper) SetValidatorVoteInfo(valAddr btypes.Address, info staketypes.ValidatorVoteInfo) {
 	key := BuildValidatorVoteInfoKey(valAddr)
 	mapper.Set(key, info)
 }
 
-func (mapper *VoteInfoMapper) ResetValidatorVoteInfo(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+func (mapper *VoteInfoMapper) ResetValidatorVoteInfo(valAddr btypes.Address, info staketypes.ValidatorVoteInfo) {
 	key := BuildValidatorVoteInfoKey(valAddr)
 	mapper.ClearValidatorVoteInfoInWindow(valAddr)
 	mapper.Del(key)

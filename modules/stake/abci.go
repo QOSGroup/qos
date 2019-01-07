@@ -4,10 +4,10 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/types"
-
 	qacc "github.com/QOSGroup/qos/account"
+	"github.com/QOSGroup/qos/mapper"
+	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -41,8 +41,8 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 
 func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 	log := ctx.Logger()
-	validatorMapper := GetValidatorMapper(ctx)
-	voteInfoMapper := GetVoteInfoMapper(ctx)
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
+	voteInfoMapper := stakemapper.GetVoteInfoMapper(ctx)
 	accountMapper := baseabci.GetAccountMapper(ctx)
 
 	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
@@ -72,13 +72,13 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
 
 func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
 	log := ctx.Logger()
-	validatorMapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	validatorMapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 
 	//获取当前的validator集合
-	var currentValidators []types.Validator
-	validatorMapper.Get(BuildCurrentValidatorAddressKey(), &currentValidators)
+	var currentValidators []staketypes.Validator
+	validatorMapper.Get(stakemapper.BuildCurrentValidatorAddressKey(), &currentValidators)
 
-	currentValidatorMap := make(map[string]types.Validator)
+	currentValidatorMap := make(map[string]staketypes.Validator)
 	for _, curValidator := range currentValidators {
 		curValidatorAddrString := curValidator.GetValidatorAddress().String()
 		currentValidatorMap[curValidatorAddrString] = curValidator
@@ -88,8 +88,8 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	updateValidators := make([]abci.ValidatorUpdate, 0, len(currentValidatorMap))
 
 	i := uint64(0)
-	newValidatorsMap := make(map[string]types.Validator)
-	newValidators := make([]types.Validator, 0, len(currentValidators))
+	newValidatorsMap := make(map[string]staketypes.Validator)
+	newValidators := make([]staketypes.Validator, 0, len(currentValidators))
 
 	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
 	defer iterator.Close()
@@ -101,7 +101,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
-			validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MaxValidator)
+			validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, staketypes.MaxValidator)
 
 		} else {
 			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
@@ -129,7 +129,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	}
 
 	//存储新的validator
-	validatorMapper.Set(BuildCurrentValidatorAddressKey(), newValidators)
+	validatorMapper.Set(stakemapper.BuildCurrentValidatorAddressKey(), newValidators)
 
 	log.Info("update Validators", "len", len(updateValidators))
 
@@ -140,8 +140,8 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 	log := ctx.Logger()
 	height := uint64(ctx.BlockHeight())
-	validatorMapper := GetValidatorMapper(ctx)
-	voteInfoMapper := GetVoteInfoMapper(ctx)
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
+	voteInfoMapper := stakemapper.GetVoteInfoMapper(ctx)
 
 	validator, exsits := validatorMapper.GetValidator(valAddr)
 	if !exsits {
@@ -157,7 +157,7 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 	voteInfo, exsits := voteInfoMapper.GetValidatorVoteInfo(valAddr)
 	if !exsits {
-		voteInfo = types.NewValidatorVoteInfo(height, 0, 0)
+		voteInfo = staketypes.NewValidatorVoteInfo(height, 0, 0)
 	}
 
 	index := voteInfo.IndexOffset % votingWindowLen
@@ -199,6 +199,6 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 //
 func blockValidator(ctx context.Context, valAddr btypes.Address) {
-	validatorMapper := GetValidatorMapper(ctx)
-	validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, types.MissVoteBlock)
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
+	validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, staketypes.MissVoteBlock)
 }

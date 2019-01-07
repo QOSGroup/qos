@@ -16,7 +16,8 @@ import (
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/modules/stake"
+	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 	"github.com/QOSGroup/qos/types"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
@@ -48,7 +49,7 @@ type validatorDisplayInfo struct {
 	BondHeight uint64 `json:"bondHeight"`
 }
 
-func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
+func toValidatorDisplayInfo(validator staketypes.Validator) validatorDisplayInfo {
 	info := validatorDisplayInfo{
 		Name:            validator.Name,
 		Owner:           validator.Owner,
@@ -60,17 +61,17 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 		BondHeight:      validator.BondTokens,
 	}
 
-	if validator.Status == types.Active {
+	if validator.Status == staketypes.Active {
 		info.Status = activeDesc
 	} else {
 		info.Status = inactiveDesc
 	}
 
-	if validator.InactiveCode == types.Revoke {
+	if validator.InactiveCode == staketypes.Revoke {
 		info.InactiveDesc = inactiveRevokeDesc
-	} else if validator.InactiveCode == types.MissVoteBlock {
+	} else if validator.InactiveCode == staketypes.MissVoteBlock {
 		info.InactiveDesc = inactiveMissVoteBlockDesc
-	} else if validator.InactiveCode == types.MaxValidator {
+	} else if validator.InactiveCode == staketypes.MaxValidator {
 		info.InactiveDesc = inactiveMaxValidatorDesc
 	}
 
@@ -119,7 +120,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			opts := buildQueryOptions()
 
 			subspace := "/store/validator/subspace"
-			result, err := node.ABCIQueryWithOptions(subspace, stake.BulidValidatorPrefixKey(), opts)
+			result, err := node.ABCIQueryWithOptions(subspace, stakemapper.BulidValidatorPrefixKey(), opts)
 
 			if err != nil {
 				return err
@@ -135,7 +136,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			var vKVPair []store.KVPair
 			cdc.UnmarshalBinaryLengthPrefixed(valueBz, &vKVPair)
 			for _, kv := range vKVPair {
-				var validator types.Validator
+				var validator staketypes.Validator
 				cdc.UnmarshalBinaryBare(kv.Value, &validator)
 				validators = append(validators, toValidatorDisplayInfo(validator))
 			}
@@ -277,26 +278,26 @@ func getStakeConfig(ctx context.CLIContext) (types.StakeConfig, error) {
 	return stakeConfig, nil
 }
 
-func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) (types.ValidatorVoteInfo, error) {
+func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) (staketypes.ValidatorVoteInfo, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
-		return types.ValidatorVoteInfo{}, err
+		return staketypes.ValidatorVoteInfo{}, err
 	}
 
-	path := string(stake.BuildVoteInfoStoreQueryPath())
-	key := stake.BuildValidatorVoteInfoKey(validatorAddr)
+	path := string(stakemapper.BuildVoteInfoStoreQueryPath())
+	key := stakemapper.BuildValidatorVoteInfoKey(validatorAddr)
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
 	if err != nil {
-		return types.ValidatorVoteInfo{}, err
+		return staketypes.ValidatorVoteInfo{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.ValidatorVoteInfo{}, errors.New("response empty value. validatorVoteInfo is empty")
+		return staketypes.ValidatorVoteInfo{}, errors.New("response empty value. validatorVoteInfo is empty")
 	}
 
-	var voteInfo types.ValidatorVoteInfo
+	var voteInfo staketypes.ValidatorVoteInfo
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &voteInfo)
 
 	return voteInfo, nil
@@ -311,8 +312,8 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 		return voteInWindowInfo, 0, err
 	}
 
-	storePath := "/" + strings.Join([]string{"store", stake.VoteInfoMapperName, "subspace"}, "/")
-	key := stake.BuildValidatorVoteInfoInWindowPrefixKey(validatorAddr)
+	storePath := "/" + strings.Join([]string{"store", stakemapper.VoteInfoMapperName, "subspace"}, "/")
+	key := stakemapper.BuildValidatorVoteInfoInWindowPrefixKey(validatorAddr)
 
 	result, err := node.ABCIQueryWithOptions(storePath, key, buildQueryOptions())
 	if err != nil {
@@ -338,38 +339,38 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 	return voteInWindowInfo, result.Response.Height, nil
 }
 
-func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (types.Validator, error) {
+func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (staketypes.Validator, error) {
 
 	node, err := ctx.GetNode()
 	if err != nil {
-		return types.Validator{}, err
+		return staketypes.Validator{}, err
 	}
 
-	result, err := node.ABCIQueryWithOptions(string(stake.BuildValidatorStoreQueryPath()), stake.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
+	result, err := node.ABCIQueryWithOptions(string(stakemapper.BuildValidatorStoreQueryPath()), stakemapper.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
 	if err != nil {
-		return types.Validator{}, err
+		return staketypes.Validator{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.Validator{}, errors.New("owner does't have validator")
+		return staketypes.Validator{}, errors.New("owner does't have validator")
 	}
 
 	var address btypes.Address
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &address)
 
-	key := stake.BuildValidatorKey(address)
-	result, err = node.ABCIQueryWithOptions(string(stake.BuildValidatorStoreQueryPath()), key, buildQueryOptions())
+	key := stakemapper.BuildValidatorKey(address)
+	result, err = node.ABCIQueryWithOptions(string(stakemapper.BuildValidatorStoreQueryPath()), key, buildQueryOptions())
 	if err != nil {
-		return types.Validator{}, err
+		return staketypes.Validator{}, err
 	}
 
 	valueBz = result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.Validator{}, errors.New("response empty value")
+		return staketypes.Validator{}, errors.New("response empty value")
 	}
 
-	var validator types.Validator
+	var validator staketypes.Validator
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &validator)
 	return validator, nil
 }

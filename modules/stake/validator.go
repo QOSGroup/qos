@@ -1,15 +1,14 @@
 package stake
 
 import (
-	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/types"
-	"github.com/pkg/errors"
+	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -34,38 +33,29 @@ func NewCreateValidatorTx(name string, owner btypes.Address, pubKey crypto.PubKe
 }
 
 func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
-	if len(tx.Name) == 0 {
-		return errors.New("Name is empty")
-	}
-
-	if tx.PubKey == nil {
-		return errors.New("PubKey is empty")
-	}
-
-	if len(tx.Owner) == 0 {
-		return errors.New("Owner is empty")
-	}
-
-	if tx.BondTokens <= 0 {
-		return errors.New("BondToken lte zero")
+	if len(tx.Name) == 0 ||
+		tx.PubKey == nil ||
+		len(tx.Owner) == 0 ||
+		tx.BondTokens <= 0 {
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	owner := accountMapper.GetAccount(tx.Owner)
 	if nil == owner {
-		return errors.New("Owner not exists")
+		return ErrOwnerNotExists(DefaultCodeSpace, "")
 	}
 	ownerAccount := owner.(*account.QOSAccount)
 	if !ownerAccount.EnoughOfQOS(btypes.NewInt(int64(tx.BondTokens))) {
-		return errors.New("Owner has no enough token")
+		return ErrOwnerNoEnoughToken(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	if mapper.Exists(tx.PubKey.Address().Bytes()) {
-		return errors.New("validator already exists")
+		return ErrValidatorExists(DefaultCodeSpace, "")
 	}
 	if mapper.ExistsWithOwner(tx.Owner) {
-		return fmt.Errorf("owner %s already bind a validator", tx.Owner)
+		return ErrOwnerHasValidator(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -79,16 +69,16 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	owner.MustMinusQOS(btypes.NewInt(int64(tx.BondTokens)))
 	accMapper.SetAccount(owner)
 
-	validator := types.Validator{
+	validator := staketypes.Validator{
 		Name:            tx.Name,
 		Owner:           tx.Owner,
 		ValidatorPubKey: tx.PubKey,
 		BondTokens:      tx.BondTokens,
 		Description:     tx.Description,
-		Status:          types.Active,
+		Status:          staketypes.Active,
 		BondHeight:      uint64(ctx.BlockHeight()),
 	}
-	validatorMapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	validatorMapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
@@ -131,28 +121,28 @@ func NewRevokeValidatorTx(owner btypes.Address) *TxRevokeValidator {
 func (tx *TxRevokeValidator) ValidateData(ctx context.Context) error {
 
 	if len(tx.Owner) == 0 {
-		return errors.New("Owner is empty")
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return errors.New("validator not exists")
+		return ErrValidatorNotExists(DefaultCodeSpace, "")
 	}
-	if validator.Status != types.Active {
-		return errors.New("validator not active")
+	if validator.Status != staketypes.Active {
+		return ErrValidatorIsInactive(DefaultCodeSpace, "")
 	}
 
 	return nil
 }
 
 func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
-	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
-	mapper.MakeValidatorInactive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.Revoke)
+	mapper.MakeValidatorInactive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), staketypes.Revoke)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
 }
@@ -190,31 +180,31 @@ func NewActiveValidatorTx(owner btypes.Address) *TxActiveValidator {
 func (tx *TxActiveValidator) ValidateData(ctx context.Context) error {
 
 	if len(tx.Owner) == 0 {
-		return errors.New("Owner is empty")
+		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return errors.New("validator not exists")
+		return ErrValidatorNotExists(DefaultCodeSpace, "")
 	}
-	if validator.Status == types.Active {
-		return errors.New("validator is active")
+	if validator.Status == staketypes.Active {
+		return ErrValidatorIsActive(DefaultCodeSpace, "")
 	}
 
 	return nil
 }
 
 func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
-	mapper := ctx.Mapper(ValidatorMapperName).(*ValidatorMapper)
+	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 	mapper.MakeValidatorActive(validator.ValidatorPubKey.Address().Bytes())
 
-	voteInfoMapper := ctx.Mapper(VoteInfoMapperName).(*VoteInfoMapper)
-	voteInfo := types.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
+	voteInfoMapper := ctx.Mapper(stakemapper.VoteInfoMapperName).(*stakemapper.VoteInfoMapper)
+	voteInfo := staketypes.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
 	voteInfoMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
