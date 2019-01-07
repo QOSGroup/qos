@@ -14,31 +14,33 @@ import (
 
 	qosacc "github.com/QOSGroup/qos/account"
 	qosmapper "github.com/QOSGroup/qos/mapper"
-	qostypes "github.com/QOSGroup/qos/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
+
+	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 )
 
 func TestValidatorMapper(t *testing.T) {
 
 	ctx := defaultContext()
-	validatorMapper := GetValidatorMapper(ctx)
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 
-	validator := qostypes.Validator{
+	validator := staketypes.Validator{
 		Name:            "test",
 		Owner:           btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
-		Status:          qostypes.Active,
+		Status:          staketypes.Active,
 		BondHeight:      1,
 	}
 
 	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-	key := BuildValidatorKey(valAddr)
+	key := stakemapper.BuildValidatorKey(valAddr)
 	validatorMapper.Set(key, validator)
 
 	v, exsits := validatorMapper.GetValidator(valAddr)
@@ -49,7 +51,7 @@ func TestValidatorMapper(t *testing.T) {
 	now := uint64(time.Now().UTC().Unix())
 	for i := uint64(0); i <= uint64(100); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(BuildInactiveValidatorKey(now+i, addr), i)
+		validatorMapper.Set(stakemapper.BuildInactiveValidatorKey(now+i, addr), i)
 	}
 
 	iter := validatorMapper.IteratorInactiveValidator(0, now+20)
@@ -67,7 +69,7 @@ func TestValidatorMapper(t *testing.T) {
 
 	for i := uint64(100); i <= uint64(200); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(BuildValidatorByVotePower(i, addr), 1)
+		validatorMapper.Set(stakemapper.BuildValidatorByVotePower(i, addr), 1)
 	}
 
 	descIter := validatorMapper.IteratorValidatrorByVoterPower(false)
@@ -100,10 +102,10 @@ func TestVoteInfoMapper(t *testing.T) {
 
 	ctx := defaultContext()
 
-	VoteInfoMapper := GetVoteInfoMapper(ctx)
+	VoteInfoMapper := stakemapper.GetVoteInfoMapper(ctx)
 
 	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	voteInfo := qostypes.NewValidatorVoteInfo(1, 1, 1)
+	voteInfo := staketypes.NewValidatorVoteInfo(1, 1, 1)
 
 	VoteInfoMapper.SetValidatorVoteInfo(addr, voteInfo)
 
@@ -142,13 +144,13 @@ func defaultContext() context.Context {
 	accountMapper := account.NewAccountMapper(cdc, qosacc.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper
 
-	validatorMapper := NewValidatorMapper()
+	validatorMapper := stakemapper.NewValidatorMapper()
 	validatorMapper.SetCodec(cdc)
-	mapperMap[ValidatorMapperName] = validatorMapper
+	mapperMap[stakemapper.ValidatorMapperName] = validatorMapper
 
-	signInfoMapper := NewVoteInfoMapper()
+	signInfoMapper := stakemapper.NewVoteInfoMapper()
 	signInfoMapper.SetCodec(cdc)
-	mapperMap[VoteInfoMapperName] = signInfoMapper
+	mapperMap[stakemapper.VoteInfoMapperName] = signInfoMapper
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)

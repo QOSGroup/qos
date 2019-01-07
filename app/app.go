@@ -12,6 +12,7 @@ import (
 	"github.com/QOSGroup/qos/modules/mint"
 	"github.com/QOSGroup/qos/modules/qsc"
 	"github.com/QOSGroup/qos/modules/stake"
+	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -67,10 +68,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(approve.NewApproveMapper())
 
 	// Staking Validator mapper
-	app.RegisterMapper(stake.NewValidatorMapper())
+	app.RegisterMapper(stakemapper.NewValidatorMapper())
 
 	// Staking mapper
-	app.RegisterMapper(stake.NewVoteInfoMapper())
+	app.RegisterMapper(stakemapper.NewVoteInfoMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -118,7 +119,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
 	if len(genesisState.Validators) > 0 {
-		validatorMapper := ctx.Mapper(stake.ValidatorMapperName).(*stake.ValidatorMapper)
+		validatorMapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 		for _, v := range genesisState.Validators {
 
 			if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {

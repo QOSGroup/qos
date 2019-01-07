@@ -1,4 +1,4 @@
-package stake
+package mapper
 
 import (
 	"encoding/binary"
@@ -8,9 +8,8 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
-	"github.com/QOSGroup/qos/types"
-
 	btypes "github.com/QOSGroup/qbase/types"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 )
 
 const (
@@ -108,33 +107,33 @@ func (mapper *ValidatorMapper) Copy() mapper.IMapper {
 	return validatorMapper
 }
 
-func (mapper *ValidatorMapper) CreateValidator(validator types.Validator) {
+func (mapper *ValidatorMapper) CreateValidator(validator staketypes.Validator) {
 	mapper.Set(BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
 	mapper.Set(BuildOwnerWithValidatorKey(validator.Owner), validator.ValidatorPubKey.Address().Bytes())
 	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), 1)
 }
 
 func (mapper *ValidatorMapper) Exists(valAddress btypes.Address) bool {
-	return mapper.Get(BuildValidatorKey(valAddress), &(types.Validator{}))
+	return mapper.Get(BuildValidatorKey(valAddress), &(staketypes.Validator{}))
 }
 
 func (mapper *ValidatorMapper) ExistsWithOwner(owner btypes.Address) bool {
 	return mapper.Get(BuildOwnerWithValidatorKey(owner), &(btypes.Address{}))
 }
 
-func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validator types.Validator, exsits bool) {
+func (mapper *ValidatorMapper) GetValidator(valAddress btypes.Address) (validator staketypes.Validator, exsits bool) {
 	validatorKey := BuildValidatorKey(valAddress)
 	exsits = mapper.Get(validatorKey, &validator)
 	return
 }
 
-func (mapper *ValidatorMapper) MakeValidatorInactive(valAddress btypes.Address, inactiveHeight uint64, inactiveTime time.Time, code types.InactiveCode) {
+func (mapper *ValidatorMapper) MakeValidatorInactive(valAddress btypes.Address, inactiveHeight uint64, inactiveTime time.Time, code staketypes.InactiveCode) {
 	validator, exsits := mapper.GetValidator(valAddress)
 	if !exsits {
 		return
 	}
 
-	validator.Status = types.Inactive
+	validator.Status = staketypes.Inactive
 	validator.InactiveCode = code
 	validator.InactiveHeight = inactiveHeight
 	validator.InactiveTime = inactiveTime.UTC()
@@ -147,7 +146,7 @@ func (mapper *ValidatorMapper) MakeValidatorInactive(valAddress btypes.Address, 
 	mapper.Del(validatorVotePowerKey)
 }
 
-func (mapper *ValidatorMapper) KickValidator(valAddress btypes.Address) (validator types.Validator, ok bool) {
+func (mapper *ValidatorMapper) KickValidator(valAddress btypes.Address) (validator staketypes.Validator, ok bool) {
 	validator, exsits := mapper.GetValidator(valAddress)
 	if !exsits {
 		return validator, false
@@ -190,14 +189,14 @@ func (mapper *ValidatorMapper) MakeValidatorActive(valAddress btypes.Address) {
 		return
 	}
 
-	validator.Status = types.Active
+	validator.Status = staketypes.Active
 
 	mapper.Set(BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
 	mapper.Del(BuildInactiveValidatorKey(uint64(validator.InactiveTime.UTC().Unix()), valAddress))
 	mapper.Set(BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()), 1)
 }
 
-func (mapper *ValidatorMapper) GetValidatorByOwner(owner btypes.Address) (validator types.Validator, exsits bool) {
+func (mapper *ValidatorMapper) GetValidatorByOwner(owner btypes.Address) (validator staketypes.Validator, exsits bool) {
 	var valAddress btypes.Address
 	exsits = mapper.Get(BuildOwnerWithValidatorKey(owner), &valAddress)
 	if !exsits {

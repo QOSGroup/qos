@@ -7,6 +7,7 @@ import (
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -84,12 +85,12 @@ example:
 			var cKey ed25519.PubKeyEd25519
 			copy(cKey[:], bz)
 
-			val := types.Validator{
+			val := staketypes.Validator{
 				Name:            name,
 				ValidatorPubKey: cKey,
 				Owner:           owner,
 				BondTokens:      uint64(tokens),
-				Status:          types.Active,
+				Status:          staketypes.Active,
 				BondHeight:      1,
 				Description:     desc,
 			}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/app"
+	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
@@ -76,7 +77,7 @@ Example:
 				config.BaseConfig.Moniker = moniker
 			}
 
-			genVals := make([]types.Validator, nValidators)
+			genVals := make([]staketypes.Validator, nValidators)
 
 			// accounts
 			genesisAccounts := make([]*account.QOSAccount, 0)
@@ -114,11 +115,11 @@ Example:
 				pvFile := filepath.Join(nodeDir, config.BaseConfig.PrivValidator)
 				pv := privval.LoadFilePV(pvFile)
 				owner := ed25519.GenPrivKey()
-				genVals[i] = types.Validator{
+				genVals[i] = staketypes.Validator{
 					Name:            nodeDirName,
 					ValidatorPubKey: pv.GetPubKey(),
 					Owner:           btypes.Address(owner.PubKey().Address()),
-					Status:          types.Active,
+					Status:          staketypes.Active,
 					BondTokens:      validatorBondTokens,
 					BondHeight:      1,
 				}
