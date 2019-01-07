@@ -7,7 +7,7 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/txs/approve"
+	"github.com/QOSGroup/qos/modules/approve"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"

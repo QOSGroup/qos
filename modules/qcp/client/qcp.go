@@ -7,7 +7,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/txs/qcp"
+	"github.com/QOSGroup/qos/modules/qcp"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"

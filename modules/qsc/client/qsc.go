@@ -11,7 +11,7 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/txs/qsc"
+	"github.com/QOSGroup/qos/modules/qsc"
 	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"

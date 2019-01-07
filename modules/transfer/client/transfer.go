@@ -6,7 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/txs/transfer"
+	"github.com/QOSGroup/qos/modules/transfer"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
