@@ -7,7 +7,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/txs/staking"
+	"github.com/QOSGroup/qos/modules/stake"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -64,7 +64,7 @@ example:
 				var cKey ed25519.PubKeyEd25519
 				copy(cKey[:], bz)
 
-				return staking.NewCreateValidatorTx(name, owner, cKey, tokens, desc), nil
+				return stake.NewCreateValidatorTx(name, owner, cKey, tokens, desc), nil
 			})
 
 		},
@@ -95,7 +95,7 @@ func RevokeValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return staking.NewRevokeValidatorTx(owner), nil
+				return stake.NewRevokeValidatorTx(owner), nil
 			})
 
 		},
@@ -119,7 +119,7 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return staking.NewActiveValidatorTx(owner), nil
+				return stake.NewActiveValidatorTx(owner), nil
 			})
 
 		},

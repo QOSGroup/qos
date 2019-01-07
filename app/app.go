@@ -8,10 +8,10 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
-	"github.com/QOSGroup/qos/txs/approve"
-	"github.com/QOSGroup/qos/txs/qsc"
-	"github.com/QOSGroup/qos/txs/staking"
-	"github.com/QOSGroup/qos/x/miner"
+	"github.com/QOSGroup/qos/modules/approve"
+	"github.com/QOSGroup/qos/modules/mint"
+	"github.com/QOSGroup/qos/modules/qsc"
+	"github.com/QOSGroup/qos/modules/stake"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -40,15 +40,15 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.SetInitChainer(app.initChainer)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-		miner.BeginBlocker(ctx, req)
-		staking.BeginBlocker(ctx, req)
+		mint.BeginBlocker(ctx, req)
+		stake.BeginBlocker(ctx, req)
 
 		return abci.ResponseBeginBlock{}
 	})
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-		return staking.EndBlocker(ctx)
+		return stake.EndBlocker(ctx)
 	})
 
 	// 账户mapper
@@ -67,10 +67,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(approve.NewApproveMapper())
 
 	// Staking Validator mapper
-	app.RegisterMapper(staking.NewValidatorMapper())
+	app.RegisterMapper(stake.NewValidatorMapper())
 
 	// Staking mapper
-	app.RegisterMapper(staking.NewVoteInfoMapper())
+	app.RegisterMapper(stake.NewVoteInfoMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()
@@ -118,7 +118,7 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 
 	// 保存Validators以及对应账户信息: validators信息从genesisState.Validators中获取
 	if len(genesisState.Validators) > 0 {
-		validatorMapper := ctx.Mapper(staking.ValidatorMapperName).(*staking.ValidatorMapper)
+		validatorMapper := ctx.Mapper(stake.ValidatorMapperName).(*stake.ValidatorMapper)
 		for _, v := range genesisState.Validators {
 
 			if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
@@ -146,6 +146,6 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 		}
 	}
 
-	res.Validators = staking.GetUpdatedValidators(ctx, uint64(genesisState.StakeConfig.MaxValidatorCnt))
+	res.Validators = stake.GetUpdatedValidators(ctx, uint64(genesisState.StakeConfig.MaxValidatorCnt))
 	return
 }

@@ -1,12 +1,12 @@
-package miner
+package mint
 
 import (
 	"fmt"
+	"github.com/QOSGroup/qos/modules/stake"
 
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/txs/staking"
 
 	qacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/mapper"
@@ -46,7 +46,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 
 	mainMapper := mapper.GetMainMapper(ctx)
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	validatorMapper := staking.GetValidatorMapper(ctx)
+	validatorMapper := stake.GetValidatorMapper(ctx)
 
 	totalVotePower := int64(0)
 	for _, val := range req.LastCommitInfo.Votes {

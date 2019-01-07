@@ -1,4 +1,4 @@
-package staking
+package stake
 
 import (
 	"github.com/QOSGroup/qbase/baseabci"

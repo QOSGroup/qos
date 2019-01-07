@@ -5,7 +5,7 @@ import (
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/txs"
+	"github.com/QOSGroup/qos/modules"
 	"github.com/tendermint/go-amino"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
@@ -27,7 +27,7 @@ func MakeCodec() *amino.Codec {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	txs.RegisterCodec(cdc)
+	modules.RegisterCodec(cdc)
 	account.RegisterCodec(cdc)
 	cert.RegisterCodec(cdc)
 }
