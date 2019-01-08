@@ -22,4 +22,4 @@ See the [install instructions](docs/install/installation.md).
 
 ### Quick Start
 
-[Getting started](docs/install/networks.md) with QOS
+[Getting started](docs/install/QUICKSTART.md) with QOS
