@@ -1,6 +1,10 @@
-# Networks
+# Quick Start
 
 此文档介绍如何搭建自己的QOS网络，单节点或集群方式。
+
+## Install
+
+目前给常见操作系统提供官方预编译安装包，点击这里[下载](/DOWNLOAD.md)。
 
 ## Single-node
 * init
