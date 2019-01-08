@@ -13,7 +13,6 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 
 	qosacc "github.com/QOSGroup/qos/account"
-	qosmapper "github.com/QOSGroup/qos/mapper"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -21,6 +20,7 @@ import (
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
+	mintmapper "github.com/QOSGroup/qos/modules/mint"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 )
@@ -138,8 +138,8 @@ func defaultContext() context.Context {
 
 	mapperMap := make(map[string]mapper.IMapper)
 
-	mainMapper := qosmapper.NewMainMapper()
-	mapperMap[qosmapper.BaseMapperName] = mainMapper
+	mainMapper := mintmapper.NewMintMapper()
+	mapperMap[mintmapper.MintMapperName] = mainMapper
 
 	accountMapper := account.NewAccountMapper(cdc, qosacc.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper

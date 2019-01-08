@@ -105,7 +105,7 @@ example:
 				return err
 			}
 
-			for _, v := range appState.Validators {
+			for _, v := range appState.StakeData.Validators {
 				if v.ValidatorPubKey.Equals(val.ValidatorPubKey) {
 					return errors.New("validator already exists")
 				}
@@ -114,7 +114,7 @@ example:
 				}
 			}
 
-			appState.Validators = append(appState.Validators, val)
+			appState.StakeData.Validators = append(appState.StakeData.Validators, val)
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage
 

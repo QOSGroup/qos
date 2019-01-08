@@ -5,7 +5,6 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	qacc "github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/mapper"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -14,10 +13,10 @@ import (
 //1. 统计validator投票信息, 将不活跃的validator转成Inactive状态
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
-	mainMapper := mapper.GetMainMapper(ctx)
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 
-	votingWindowLen := uint64(mainMapper.GetStakeConfig().ValidatorVotingStatusLen)
-	minVotingCounter := uint64(mainMapper.GetStakeConfig().ValidatorVotingStatusLeast)
+	votingWindowLen := uint64(validatorMapper.GetParams().ValidatorVotingStatusLen)
+	minVotingCounter := uint64(validatorMapper.GetParams().ValidatorVotingStatusLeast)
 
 	for _, signingValidator := range req.LastCommitInfo.Votes {
 		valAddr := btypes.Address(signingValidator.Validator.Address)
@@ -30,23 +29,23 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 //2. 统计新的validator
 func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 
-	mainMapper := mapper.GetMainMapper(ctx)
-	survivalSecs := mainMapper.GetStakeConfig().ValidatorSurvivalSecs
-	maxValidatorCount := uint64(mainMapper.GetStakeConfig().MaxValidatorCnt)
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
+	survivalSecs := validatorMapper.GetParams().ValidatorSurvivalSecs
+	maxValidatorCount := uint64(validatorMapper.GetParams().MaxValidatorCnt)
 
 	closeExpireInactiveValidator(ctx, survivalSecs)
 	res.ValidatorUpdates = GetUpdatedValidators(ctx, maxValidatorCount)
 	return
 }
 
-func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint64) {
+func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 	log := ctx.Logger()
 	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 	voteInfoMapper := stakemapper.GetVoteInfoMapper(ctx)
 	accountMapper := baseabci.GetAccountMapper(ctx)
 
 	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
-	lastCloseValidatorSec := blockTimeSec - survivalSecs
+	lastCloseValidatorSec := blockTimeSec - uint64(survivalSecs)
 
 	iterator := validatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
 	for ; iterator.Valid(); iterator.Next() {

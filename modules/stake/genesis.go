@@ -2,7 +2,10 @@ package stake
 
 import (
 	"fmt"
+	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
 )
@@ -31,17 +34,21 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 }
 
 func initValidators(ctx context.Context, validators []staketypes.Validator) {
-	mapper := ctx.Mapper(mapper.ValidatorMapperName).(*mapper.ValidatorMapper)
+	validatorMapper := ctx.Mapper(mapper.ValidatorMapperName).(*mapper.ValidatorMapper)
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	for _, v := range validators {
 
-		if mapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
+		if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
 			panic(fmt.Errorf("validator %s already exists", v.ValidatorPubKey.Address()))
 		}
-		if mapper.ExistsWithOwner(v.Owner) {
+		if validatorMapper.ExistsWithOwner(v.Owner) {
 			panic(fmt.Errorf("owner %s already bind a validator", v.Owner))
 		}
 
-		mapper.CreateValidator(v)
+		owner := accountMapper.GetAccount(v.Owner).(*account.QOSAccount)
+		owner.MustMinusQOS(types.NewInt(int64(v.BondTokens)))
+		accountMapper.SetAccount(owner)
+		validatorMapper.CreateValidator(v)
 	}
 }
 
@@ -50,8 +57,8 @@ func initParams(ctx context.Context, params staketypes.Params) {
 	mapper.SetParams(params)
 }
 
-func ValidateGenesis(data GenesisState) error {
-	err := validateValidators(data.Validators)
+func ValidateGenesis(genesisAccounts []*account.QOSAccount, data GenesisState) error {
+	err := validateValidators(genesisAccounts, data.Validators)
 	if err != nil {
 		return err
 	}
@@ -59,7 +66,7 @@ func ValidateGenesis(data GenesisState) error {
 	return nil
 }
 
-func validateValidators(validators []staketypes.Validator) (err error) {
+func validateValidators(genesisAccounts []*account.QOSAccount, validators []staketypes.Validator) (err error) {
 	addrMap := make(map[string]bool, len(validators))
 	for i := 0; i < len(validators); i++ {
 		val := validators[i]
@@ -71,6 +78,21 @@ func validateValidators(validators []staketypes.Validator) (err error) {
 			return fmt.Errorf("validator is bonded and jailed in genesis state: moniker %v, Owner %v", val.Description, val.Owner)
 		}
 		addrMap[strKey] = true
+
+		var ownerExists bool
+		for _, acc := range genesisAccounts {
+			if acc.AccountAddress.EqualsTo(val.Owner) {
+				ownerExists = true
+
+				if uint64(acc.QOS.Int64()) < val.BondTokens {
+					return fmt.Errorf("owner of %s no enough QOS", val.Name)
+				}
+			}
+		}
+
+		if !ownerExists {
+			return fmt.Errorf("owner of %s not exists", val.Name)
+		}
 	}
-	return
+	return nil
 }

@@ -9,6 +9,7 @@ import (
 	"github.com/QOSGroup/qos/account"
 	approvetype "github.com/QOSGroup/qos/modules/approve/types"
 	"github.com/QOSGroup/qos/modules/qsc"
+	qsctype "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -112,7 +113,7 @@ func defaultContext() context.Context {
 
 func saveQSCInfo(ctx context.Context, qscName string) {
 	qscMapper := ctx.Mapper(qsc.QSCMapperName).(*qsc.QSCMapper)
-	qscMapper.SaveQsc(&types.QSCInfo{
+	qscMapper.SaveQsc(&qsctype.QSCInfo{
 		Name: qscName,
 	})
 }

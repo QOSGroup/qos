@@ -6,7 +6,7 @@ import (
 )
 
 type GenesisState struct {
-	RootPubKey crypto.PubKey `json:'ca_root_pub'`
+	RootPubKey crypto.PubKey `json:"ca_root_pub_key"`
 }
 
 func NewGenesisState(pubKey crypto.PubKey) GenesisState {

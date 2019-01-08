@@ -28,16 +28,16 @@ const (
 type Validator struct {
 	Name            string         `json:"name"`
 	Owner           btypes.Address `json:"owner"`
-	ValidatorPubKey crypto.PubKey  `json:"validatorPubkey"`
-	BondTokens      uint64         `json:"bondTokens"` //不能超过int64最大值
+	ValidatorPubKey crypto.PubKey  `json:"pub_key"`
+	BondTokens      uint64         `json:"bond_tokens"` //不能超过int64最大值
 	Description     string         `json:"description"`
 
 	Status         int8         `json:"status"`
-	InactiveCode   InactiveCode `json:"inactiveCode"`
-	InactiveTime   time.Time    `json:"inactiveTime"`
-	InactiveHeight uint64       `json:"inactiveHeight"`
+	InactiveCode   InactiveCode `json:"inactive_code"`
+	InactiveTime   time.Time    `json:"inactive_time"`
+	InactiveHeight uint64       `json:"inactive_height"`
 
-	BondHeight uint64 `json:"bondHeight"`
+	BondHeight uint64 `json:"bond_height"`
 }
 
 func (val Validator) GetValidatorAddress() btypes.Address {

@@ -6,7 +6,7 @@ import (
 )
 
 type GenesisState struct {
-	Params minttypes.Params `json:"params"` // inflation params
+	Params minttypes.Params `json:"params"`
 }
 
 func NewGenesisState(params minttypes.Params) GenesisState {
@@ -16,9 +16,7 @@ func NewGenesisState(params minttypes.Params) GenesisState {
 }
 
 func DefaultGenesisState() GenesisState {
-	return GenesisState{
-		Params: minttypes.DefaultParams(),
-	}
+	return NewGenesisState(minttypes.DefaultParams())
 }
 
 func InitGenesis(ctx context.Context, data GenesisState) {
