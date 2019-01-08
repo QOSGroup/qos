@@ -2,6 +2,7 @@ package main
 
 import (
 	bcli "github.com/QOSGroup/qbase/client"
+	"github.com/QOSGroup/qbase/client/config"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/txs/approve/client"
@@ -28,6 +29,9 @@ func main() {
 	cdc := app.MakeCodec()
 
 	rootCmd.AddCommand(bctypes.LineBreak)
+
+	// config command
+	rootCmd.AddCommand(config.Cmd(types.DefaultCLIHome))
 
 	// query commands
 	queryCommands := bcli.QueryCommand(cdc)
