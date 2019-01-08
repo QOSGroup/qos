@@ -7,7 +7,6 @@ import (
 	"github.com/QOSGroup/qbase/qcp"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/mapper"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -39,8 +38,7 @@ func (tx TxInitQCP) ValidateData(ctx context.Context) error {
 	if subj.QCPChain == "" {
 		return ErrInvalidQCPCA(DefaultCodeSpace, "")
 	}
-	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
-	rootCA := baseMapper.GetRootCA()
+	rootCA := GetQCPRootCA(ctx)
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QCPCA) {
 		return ErrWrongQCPCA(DefaultCodeSpace, "")
 	}
