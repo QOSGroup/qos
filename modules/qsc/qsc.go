@@ -9,7 +9,6 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/mapper"
 	qsctypes "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -37,8 +36,8 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 		return ErrInvalidQSCCA(DefaultCodeSpace, "")
 	}
 
-	baseMapper := ctx.Mapper(mapper.BaseMapperName).(*mapper.MainMapper)
-	rootCA := baseMapper.GetRootCA()
+	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
+	rootCA := qscMapper.GetQSCRootCA()
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
 		return ErrWrongQSCCA(DefaultCodeSpace, "")
 	}
@@ -53,7 +52,6 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	}
 
 	// QSC不存在
-	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
 	if qscMapper.Exists(subj.Name) {
 		return ErrQSCExists(DefaultCodeSpace, "")
 	}

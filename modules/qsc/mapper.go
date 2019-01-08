@@ -4,11 +4,13 @@ import (
 	"fmt"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qos/modules/qsc/types"
+	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
 	QSCMapperName = "qsc"
 	QSCKey        = "qsc/[%s]"
+	QSCRootCAKey  = "rootca"
 )
 
 type QSCMapper struct {
@@ -47,4 +49,16 @@ func (mapper *QSCMapper) GetQsc(qscName string) (qscinfo *types.QSCInfo) {
 	}
 
 	return &info
+}
+
+// 保存CA
+func (mapper *QSCMapper) SetQSCRootCA(pubKey crypto.PubKey) {
+	mapper.BaseMapper.Set([]byte(QSCRootCAKey), pubKey)
+}
+
+// 获取CA
+func (mapper *QSCMapper) GetQSCRootCA() crypto.PubKey {
+	var pubKey crypto.PubKey
+	mapper.BaseMapper.Get([]byte(QSCRootCAKey), &pubKey)
+	return pubKey
 }
