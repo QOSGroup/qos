@@ -8,7 +8,6 @@ import (
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 
 	qacc "github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/mapper"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -16,11 +15,11 @@ import (
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	height := uint64(ctx.BlockHeight())
-	mainMapper := mapper.GetMainMapper(ctx)
+	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
 
-	toalQOSAmount := mainMapper.GetSPOConfig().TotalAmount
-	totalBlock := mainMapper.GetSPOConfig().TotalBlock
-	appliedQOSAmount := mainMapper.GetAppliedQOSAmount()
+	toalQOSAmount := mintMapper.GetParams().TotalAmount
+	totalBlock := mintMapper.GetParams().TotalBlock
+	appliedQOSAmount := mintMapper.GetAppliedQOSAmount()
 
 	if appliedQOSAmount >= toalQOSAmount {
 		return
@@ -43,7 +42,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 
 	logger := ctx.Logger()
 
-	mainMapper := mapper.GetMainMapper(ctx)
+	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 
@@ -84,7 +83,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 	}
 
 	logger.Info("mint reward", "predict", rewardPerBlock, "actual", actualAppliedQOSAccount.Int64())
-	mainMapper.AddAppliedQOSAmount(uint64(actualAppliedQOSAccount.Int64()))
+	mintMapper.AddAppliedQOSAmount(uint64(actualAppliedQOSAccount.Int64()))
 
 }
 

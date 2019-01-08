@@ -6,8 +6,9 @@ import (
 )
 
 const (
-	MintMapperName = "mint"
-	MintParamsKey  = "params"
+	MintMapperName      = "mint"
+	MintParamsKey       = "params"
+	AppliedQOSAmountKey = "appliedqos"
 )
 
 type MintMapper struct {
@@ -38,4 +39,26 @@ func (mapper *MintMapper) GetParams() minttypes.Params {
 	params := minttypes.Params{}
 	mapper.Get(BuildMintParamsKey(), &params)
 	return params
+}
+
+// 获取已分配QOS总数
+func (mapper *MintMapper) GetAppliedQOSAmount() (v uint64) {
+	exists := mapper.Get([]byte(AppliedQOSAmountKey), &v)
+	if !exists {
+		return 0
+	}
+
+	return v
+}
+
+// 设置 已分配 QOS amount
+func (mapper *MintMapper) SetAppliedQOSAmount(amount uint64) {
+	mapper.Set([]byte(AppliedQOSAmountKey), amount)
+}
+
+// 增加 已分配 QOS amount
+func (mapper *MintMapper) AddAppliedQOSAmount(amount uint64) {
+	mined := mapper.GetAppliedQOSAmount()
+	mined += amount
+	mapper.SetAppliedQOSAmount(mined)
 }

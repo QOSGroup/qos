@@ -15,10 +15,8 @@ import (
 	"time"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
-	"github.com/QOSGroup/qos/mapper"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
-	"github.com/QOSGroup/qos/types"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 )
@@ -253,26 +251,28 @@ func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) 
 	return voteSummaryDisplay, nil
 }
 
-func getStakeConfig(ctx context.CLIContext) (types.StakeConfig, error) {
+func getStakeConfig(ctx context.CLIContext) (staketypes.Params, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
-		return types.StakeConfig{}, err
+		return staketypes.Params{}, err
 	}
 
-	path := "/store/base/key"
-	key := []byte(mapper.StakeConfigKey)
+	path := "/store/stake/key"
+	key := []byte(stakemapper.BuildParamsKey())
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
 	if err != nil {
-		return types.StakeConfig{}, err
+		return staketypes.Params{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.StakeConfig{}, errors.New("response empty value. getStakeConfig is empty")
+		return staketypes.Params{}, errors.New("response empty value. getStakeConfig is empty")
 	}
 
-	var stakeConfig types.StakeConfig
+	var stakeConfig staketypes.Params
+	{
+	}
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &stakeConfig)
 
 	return stakeConfig, nil

@@ -2,6 +2,7 @@ package init
 
 import (
 	"fmt"
+	"github.com/pkg/errors"
 	"github.com/tendermint/tendermint/crypto"
 	"strings"
 
@@ -15,11 +16,16 @@ import (
 	"github.com/tendermint/tendermint/libs/common"
 )
 
+const (
+	flagQCP = "qcp"
+	flagQSC = "qsc"
+)
+
 func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "config-root-ca [root.pub]",
-		Short: "Config pubKey of root CA",
-		Args:  cobra.ExactArgs(1),
+		Use:   "config-root-ca",
+		Short: "Config pubKey of root CA for QCP and QSC",
+		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, args []string) error {
 
 			home := viper.GetString(cli.HomeFlag)
@@ -29,10 +35,26 @@ func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
 			}
 
-			var pubKey crypto.PubKey
-			err := cdc.UnmarshalJSON(common.MustReadFile(args[0]), &pubKey)
-			if err != nil {
-				return err
+			qcpFile := viper.GetString(flagQCP)
+			qscFile := viper.GetString(flagQSC)
+			if qcpFile == "" && qscFile == "" {
+				return errors.New("empty input")
+			}
+
+			var qcpPubKey crypto.PubKey
+			if qcpFile != "" {
+				err := cdc.UnmarshalJSON(common.MustReadFile(qcpFile), &qcpPubKey)
+				if err != nil {
+					return err
+				}
+			}
+
+			var qscPubKey crypto.PubKey
+			if qscFile != "" {
+				err := cdc.UnmarshalJSON(common.MustReadFile(qscFile), &qscPubKey)
+				if err != nil {
+					return err
+				}
 			}
 
 			genDoc, err := loadGenesisDoc(cdc, genFile)
@@ -45,7 +67,8 @@ func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			appState.CAPubKey = pubKey
+			appState.QSCData.RootPubKey = qcpPubKey
+			appState.QCPData.RootPubKey = qscPubKey
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage
@@ -64,6 +87,8 @@ func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "node's home directory")
+	cmd.Flags().String(flagQCP, "", "directory of QCP root.pub")
+	cmd.Flags().String(flagQSC, "", "directory of QSC root.pub")
 
 	return cmd
 }
