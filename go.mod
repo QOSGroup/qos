@@ -4,7 +4,7 @@ module github.com/QOSGroup/qos
 
 require (
 	github.com/QOSGroup/kepler v0.5.1-0.20190104094056-251fcf63614d
-	github.com/QOSGroup/qbase v0.0.10-0.20190108022410-0a0380ef6f98
+	github.com/QOSGroup/qbase v0.0.10
 	github.com/pkg/errors v0.8.0
 
 	github.com/spf13/cobra v0.0.3
