@@ -24,6 +24,9 @@ var (
 	validatorByVotePowerKey = []byte{0x04} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + ValidatorAddress
 
 	currentValidatorAddressKey = []byte("currentValidatorAddressKey")
+
+	// params
+	paramsKey = []byte("params")
 )
 
 func BuildValidatorStoreQueryPath() []byte {
@@ -83,6 +86,10 @@ func BuildValidatorByVotePower(votePower uint64, valAddress btypes.Address) []by
 	copy(bz[9:len(valAddress)+9], valAddress)
 
 	return bz
+}
+
+func BuildParamsKey() []byte {
+	return paramsKey
 }
 
 type ValidatorMapper struct {
@@ -204,4 +211,14 @@ func (mapper *ValidatorMapper) GetValidatorByOwner(owner btypes.Address) (valida
 	}
 
 	return mapper.GetValidator(valAddress)
+}
+
+func (mapper *ValidatorMapper) SetParams(params staketypes.Params) {
+	mapper.Set(BuildParamsKey(), params)
+}
+
+func (mapper *ValidatorMapper) GetParams() staketypes.Params {
+	params := staketypes.Params{}
+	mapper.Get(BuildParamsKey(), &params)
+	return params
 }
