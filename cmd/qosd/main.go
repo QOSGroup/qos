@@ -3,6 +3,7 @@ package main
 import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/cmd/qosd/export"
 	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	"github.com/QOSGroup/qos/cmd/qosd/testnet"
 	"github.com/QOSGroup/qos/types"
@@ -32,6 +33,7 @@ func main() {
 	rootCmd.AddCommand(version.VersionCmd)
 
 	rootCmd.AddCommand(server.InitCmd(ctx, cdc, qosdinit.GenQOSGenesisDoc, types.DefaultNodeHome))
+	rootCmd.AddCommand(export.ExportCmd(ctx, cdc))
 	rootCmd.AddCommand(qosdinit.ConfigRootCA(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))

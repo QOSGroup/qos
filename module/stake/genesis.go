@@ -11,7 +11,7 @@ import (
 )
 
 type GenesisState struct {
-	Params     staketypes.Params      `json:"params"` // inflation params
+	Params     staketypes.Params      `json:"params"`
 	Validators []staketypes.Validator `json:"validators"`
 }
 
@@ -72,10 +72,10 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []staket
 		val := validators[i]
 		strKey := string(val.ValidatorPubKey.Bytes())
 		if _, ok := addrMap[strKey]; ok {
-			return fmt.Errorf("duplicate validator in genesis state: moniker %v, Owner %v", val.Description, val.Owner)
+			return fmt.Errorf("duplicate validator in genesis state: Name %v, Owner %v", val.Name, val.Owner)
 		}
 		if val.Status != staketypes.Active {
-			return fmt.Errorf("validator is bonded and jailed in genesis state: moniker %v, Owner %v", val.Description, val.Owner)
+			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, Owner %v", val.Name, val.Owner)
 		}
 		addrMap[strKey] = true
 
@@ -95,4 +95,11 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []staket
 		}
 	}
 	return nil
+}
+
+func ExportGenesis(ctx context.Context) GenesisState {
+	validatorMapper := ctx.Mapper(mapper.ValidatorMapperName).(*mapper.ValidatorMapper)
+	validators := make([]staketypes.Validator, 0)
+	validatorMapper.Get(mapper.BuildCurrentValidatorAddressKey(), &validators)
+	return NewGenesisState(validatorMapper.GetParams(), validators)
 }
