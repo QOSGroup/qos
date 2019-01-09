@@ -21,6 +21,19 @@ type GenesisState struct {
 	QSCData   qsc.GenesisState    `json:"qsc"`
 }
 
+func NewGenesisState(accounts []*types.QOSAccount,
+	mintData mint.GenesisState,
+	stakeData stake.GenesisState,
+	qcpData qcp.GenesisState,
+	qscData qsc.GenesisState) GenesisState {
+	return GenesisState{
+		Accounts:  accounts,
+		MintData:  mintData,
+		StakeData: stakeData,
+		QCPData:   qcpData,
+		QSCData:   qscData,
+	}
+}
 func NewDefaultGenesisState() GenesisState {
 	return GenesisState{
 		MintData:  mint.DefaultGenesisState(),

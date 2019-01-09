@@ -27,6 +27,10 @@ func BuildQSCKey(qscName string) []byte {
 	return []byte(fmt.Sprintf(QSCKey, qscName))
 }
 
+func BuildQSCKeyPrefix() []byte {
+	return []byte("qsc/")
+}
+
 func (mapper *QSCMapper) Copy() mapper.IMapper {
 	qscMapper := &QSCMapper{}
 	qscMapper.BaseMapper = mapper.BaseMapper.Copy()
@@ -61,4 +65,16 @@ func (mapper *QSCMapper) GetQSCRootCA() crypto.PubKey {
 	var pubKey crypto.PubKey
 	mapper.BaseMapper.Get([]byte(QSCRootCAKey), &pubKey)
 	return pubKey
+}
+
+func (mapper *QSCMapper) GetQSCs() []types.QSCInfo {
+	qscs := make([]types.QSCInfo, 0)
+	mapper.Iterator(BuildQSCKeyPrefix(), func(bz []byte) (stop bool) {
+		qsc := types.QSCInfo{}
+		mapper.DecodeObject(bz, &qsc)
+		qscs = append(qscs, qsc)
+		return false
+	})
+
+	return qscs
 }

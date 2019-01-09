@@ -20,5 +20,13 @@ func DefaultGenesisState() GenesisState {
 }
 
 func InitGenesis(ctx context.Context, data GenesisState) {
-	ctx.Mapper(MintMapperName).(*MintMapper).SetParams(data.Params)
+	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
+	mintMapper.SetParams(data.Params)
+}
+
+func ExportGenesis(ctx context.Context) GenesisState {
+	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
+	return GenesisState{
+		mintMapper.GetParams(),
+	}
 }

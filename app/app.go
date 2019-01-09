@@ -1,11 +1,14 @@
 package app
 
 import (
+	"encoding/json"
+	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/mint"
 	mintmapper "github.com/QOSGroup/qos/module/mint"
+	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
@@ -94,4 +97,41 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	res.Validators = InitGenesis(ctx, genesisState)
 
 	return
+}
+
+func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage, err error) {
+
+	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
+
+	if forZeroHeight {
+		app.prepForZeroHeightGenesis(ctx)
+	}
+
+	accounts := []*types.QOSAccount{}
+	appendAccount := func(acc account.Account) (stop bool) {
+		accounts = append(accounts, acc.(*types.QOSAccount))
+		return false
+	}
+	ctx.Mapper(account.AccountMapperName).(*account.AccountMapper).IterateAccounts(appendAccount)
+
+	genState := NewGenesisState(
+		accounts,
+		mint.ExportGenesis(ctx),
+		stake.ExportGenesis(ctx),
+		qcp.ExportGenesis(ctx),
+		qsc.ExportGenesis(ctx),
+	)
+	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
+	if err != nil {
+		return nil, err
+	}
+
+	return appState, nil
+}
+
+// prepare for fresh start at zero height
+func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
+
+	// close all validators
+	stake.CloseAllValidators(ctx)
 }

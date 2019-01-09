@@ -162,8 +162,8 @@ Example:
 				Accounts:  genesisAccounts,
 				MintData:  mint.DefaultGenesisState(),
 				StakeData: stake.NewGenesisState(staketypes.DefaultParams(), genVals),
-				QCPData:   qcp.NewGenesisState(qcpPubKey),
-				QSCData:   qsc.NewGenesisState(qscPubKey),
+				QCPData:   qcp.NewGenesisState(qcpPubKey, nil),
+				QSCData:   qsc.NewGenesisState(qscPubKey, nil),
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
 

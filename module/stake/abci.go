@@ -201,3 +201,36 @@ func blockValidator(ctx context.Context, valAddr btypes.Address) {
 	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 	validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, staketypes.MissVoteBlock)
 }
+
+func closeActiveValidators(ctx context.Context) {
+	validatorMapper := stakemapper.GetValidatorMapper(ctx)
+	voteInfoMapper := stakemapper.GetVoteInfoMapper(ctx)
+	accountMapper := baseabci.GetAccountMapper(ctx)
+
+	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
+	defer iterator.Close()
+
+	var key []byte
+	for ; iterator.Valid(); iterator.Next() {
+		key = iterator.Key()
+		valAddress := btypes.Address(key[9:])
+		if validator, ok := validatorMapper.KickValidator(valAddress); ok {
+
+			voteInfoMapper.DelValidatorVoteInfo(valAddress)
+			voteInfoMapper.ClearValidatorVoteInfoInWindow(valAddress)
+
+			owner := accountMapper.GetAccount(validator.Owner)
+			if qosAcc, ok := owner.(*types.QOSAccount); ok {
+				qosAcc.MustPlusQOS(btypes.NewInt(int64(validator.BondTokens)))
+				accountMapper.SetAccount(qosAcc)
+			}
+
+			validatorMapper.Del(stakemapper.BuildValidatorByVotePower(validator.BondTokens, valAddress))
+		}
+	}
+}
+
+func CloseAllValidators(ctx context.Context) {
+	closeExpireInactiveValidator(ctx, 0)
+	closeActiveValidators(ctx)
+}
