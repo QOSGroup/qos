@@ -29,13 +29,12 @@ func NewApprove(from btypes.Address, to btypes.Address, qos btypes.BigInt, qscs 
 
 func (approve Approve) IsValid() (bool, error) {
 
-	if approve.From == nil || approve.To == nil || !approve.IsPositive() {
+	if len(approve.From) == 0 || len(approve.To) == 0 || !approve.IsPositive() {
 		return false, errors.New("From、To is nil or coins is not positive")
 	}
 
 	m := make(map[string]bool)
 	for _, val := range approve.QSCs {
-		// TODO uppercase ?
 		val.Name = strings.ToLower(strings.TrimSpace(val.Name))
 		// 不能包含QOS
 		if strings.ToLower(val.Name) == "qos" {
