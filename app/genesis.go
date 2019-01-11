@@ -4,21 +4,21 @@ import (
 	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/modules/mint"
 	"github.com/QOSGroup/qos/modules/qcp"
 	"github.com/QOSGroup/qos/modules/qsc"
 	"github.com/QOSGroup/qos/modules/stake"
+	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 // QOS初始状态
 type GenesisState struct {
-	Accounts  []*account.QOSAccount `json:"accounts"`
-	MintData  mint.GenesisState     `json:"mint"`
-	StakeData stake.GenesisState    `json:"stake"`
-	QCPData   qcp.GenesisState      `json:"qcp"`
-	QSCData   qsc.GenesisState      `json:"qsc"`
+	Accounts  []*types.QOSAccount `json:"accounts"`
+	MintData  mint.GenesisState   `json:"mint"`
+	StakeData stake.GenesisState  `json:"stake"`
+	QCPData   qcp.GenesisState    `json:"qcp"`
+	QSCData   qsc.GenesisState    `json:"qsc"`
 }
 
 func NewDefaultGenesisState() GenesisState {
@@ -51,7 +51,7 @@ func InitGenesis(ctx context.Context, state GenesisState) []abci.ValidatorUpdate
 	return stake.GetUpdatedValidators(ctx, uint64(state.StakeData.Params.MaxValidatorCnt))
 }
 
-func initAccounts(ctx context.Context, accounts []*account.QOSAccount) {
+func initAccounts(ctx context.Context, accounts []*types.QOSAccount) {
 	if len(accounts) == 0 {
 		return
 	}
@@ -67,7 +67,7 @@ func initAccounts(ctx context.Context, accounts []*account.QOSAccount) {
 	mintMapper.SetAppliedQOSAmount(appliedQOSAmount)
 }
 
-func validateAccounts(accs []*account.QOSAccount) error {
+func validateAccounts(accs []*types.QOSAccount) error {
 	addrMap := make(map[string]bool, len(accs))
 	for i := 0; i < len(accs); i++ {
 		acc := accs[i]

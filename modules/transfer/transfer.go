@@ -5,13 +5,13 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/modules/transfer/types"
+	transfertypes "github.com/QOSGroup/qos/modules/transfer/types"
+	"github.com/QOSGroup/qos/types"
 )
 
 type TxTransfer struct {
-	Senders   types.TransItems `json:"senders"`   // 发送集合
-	Receivers types.TransItems `json:"receivers"` // 接收集合
+	Senders   transfertypes.TransItems `json:"senders"`   // 发送集合
+	Receivers transfertypes.TransItems `json:"receivers"` // 接收集合
 }
 
 // 数据校验
@@ -33,7 +33,7 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 		if a == nil {
 			return ErrSenderAccountNotExists(DefaultCodeSpace, "")
 		}
-		acc := a.(*account.QOSAccount)
+		acc := a.(*types.QOSAccount)
 		if !acc.EnoughOf(sender.QOS, sender.QSCs) {
 			return ErrSenderAccountCoinsNotEnough(DefaultCodeSpace, "")
 		}
@@ -47,17 +47,17 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
 	for _, sender := range tx.Senders {
-		acc := accountMapper.GetAccount(sender.Address).(*account.QOSAccount)
+		acc := accountMapper.GetAccount(sender.Address).(*types.QOSAccount)
 		acc.MustMinus(sender.QOS, sender.QSCs)
 		accountMapper.SetAccount(acc)
 	}
 	for _, receiver := range tx.Receivers {
 		a := accountMapper.GetAccount(receiver.Address)
-		var acc *account.QOSAccount
+		var acc *types.QOSAccount
 		if a != nil {
-			acc = a.(*account.QOSAccount)
+			acc = a.(*types.QOSAccount)
 		} else {
-			acc = account.NewQOSAccountWithAddress(receiver.Address)
+			acc = types.NewQOSAccountWithAddress(receiver.Address)
 		}
 		acc.MustPlus(receiver.QOS, receiver.QSCs)
 		accountMapper.SetAccount(acc)

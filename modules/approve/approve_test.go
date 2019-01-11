@@ -6,7 +6,6 @@ import (
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
 	approvetype "github.com/QOSGroup/qos/modules/approve/types"
 	"github.com/QOSGroup/qos/modules/qsc"
 	qsctype "github.com/QOSGroup/qos/modules/qsc/types"
@@ -59,8 +58,8 @@ func TestValidateData(t *testing.T) {
 	require.NotNil(t, validateData(ctx, approve))
 }
 
-func genTestAccount(addr btypes.Address) *account.QOSAccount {
-	return &account.QOSAccount{
+func genTestAccount(addr btypes.Address) *types.QOSAccount {
+	return &types.QOSAccount{
 		BaseAccount: bacc.BaseAccount{
 			AccountAddress: addr,
 			Publickey:      nil,
@@ -91,7 +90,7 @@ func defaultContext() context.Context {
 	approveKey := approveMapper.GetStoreKey()
 	mapperMap[ApproveMapperName] = approveMapper
 
-	accountMapper := bacc.NewAccountMapper(nil, account.ProtoQOSAccount)
+	accountMapper := bacc.NewAccountMapper(nil, types.ProtoQOSAccount)
 	accountMapper.SetCodec(cdc)
 	acountKey := accountMapper.GetStoreKey()
 	mapperMap[bacc.AccountMapperName] = accountMapper

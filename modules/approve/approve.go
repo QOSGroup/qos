@@ -5,14 +5,14 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/modules/approve/types"
+	approvetypes "github.com/QOSGroup/qos/modules/approve/types"
 	"github.com/QOSGroup/qos/modules/qsc"
+	"github.com/QOSGroup/qos/types"
 )
 
 // 创建授权
 type TxCreateApprove struct {
-	types.Approve
+	approvetypes.Approve
 }
 
 func (tx TxCreateApprove) ValidateData(ctx context.Context) error {
@@ -39,12 +39,12 @@ func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, cross
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	fromAcc := accountMapper.GetAccount(tx.From)
 	if fromAcc == nil {
-		fromAcc = accountMapper.NewAccountWithAddress(tx.From).(*account.QOSAccount)
+		fromAcc = accountMapper.NewAccountWithAddress(tx.From).(*types.QOSAccount)
 		accountMapper.SetAccount(fromAcc)
 	}
 	toAcc := accountMapper.GetAccount(tx.To)
 	if toAcc == nil {
-		toAcc = accountMapper.NewAccountWithAddress(tx.To).(*account.QOSAccount)
+		toAcc = accountMapper.NewAccountWithAddress(tx.To).(*types.QOSAccount)
 		accountMapper.SetAccount(toAcc)
 	}
 
@@ -72,7 +72,7 @@ func (tx TxCreateApprove) GetGasPayer() btypes.Address {
 
 // 增加授权
 type TxIncreaseApprove struct {
-	types.Approve
+	approvetypes.Approve
 }
 
 func (tx TxIncreaseApprove) ValidateData(ctx context.Context) error {
@@ -123,7 +123,7 @@ func (tx TxIncreaseApprove) GetGasPayer() btypes.Address {
 
 // 减少授权
 type TxDecreaseApprove struct {
-	types.Approve
+	approvetypes.Approve
 }
 
 func (tx TxDecreaseApprove) ValidateData(ctx context.Context) error {
@@ -178,7 +178,7 @@ func (tx TxDecreaseApprove) GetGasPayer() btypes.Address {
 
 // 使用授权
 type TxUseApprove struct {
-	types.Approve
+	approvetypes.Approve
 }
 
 func (tx TxUseApprove) ValidateData(ctx context.Context) error {
@@ -203,7 +203,7 @@ func (tx TxUseApprove) ValidateData(ctx context.Context) error {
 	if iAcc == nil {
 		return ErrFromAccountNotExists(DefaultCodeSpace, "")
 	}
-	from := iAcc.(*account.QOSAccount)
+	from := iAcc.(*types.QOSAccount)
 	if tx.IsGT(from.QOS, from.QSCs) {
 		return ErrFromAccountCoinsNotEnough(DefaultCodeSpace, "")
 	}
@@ -217,8 +217,8 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	from := accountMapper.GetAccount(tx.From).(*account.QOSAccount)
-	to := accountMapper.GetAccount(tx.To).(*account.QOSAccount)
+	from := accountMapper.GetAccount(tx.From).(*types.QOSAccount)
+	to := accountMapper.GetAccount(tx.To).(*types.QOSAccount)
 
 	approveMapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	approve, _ := approveMapper.GetApprove(tx.From, tx.To)
@@ -308,7 +308,7 @@ func (tx TxCancelApprove) GetSignData() (ret []byte) {
 }
 
 // 基础数据校验
-func validateData(ctx context.Context, msg types.Approve) error {
+func validateData(ctx context.Context, msg approvetypes.Approve) error {
 	if valid, err := msg.IsValid(); !valid {
 		return ErrInvalidInput(DefaultCodeSpace, err.Error())
 	}

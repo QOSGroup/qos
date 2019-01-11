@@ -6,8 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
-
-	qacc "github.com/QOSGroup/qos/account"
+	"github.com/QOSGroup/qos/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -71,7 +70,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 			}
 
 			acc := accountMapper.GetAccount(validator.Owner)
-			if qosAcc, ok := acc.(*qacc.QOSAccount); ok {
+			if qosAcc, ok := acc.(*types.QOSAccount); ok {
 				rewardQos := calRewardQos(val.Validator.Power, totalVotePower, rewardPerBlock)
 				logger.Debug(fmt.Sprintf("address: %s add vote reward: %s", qosAcc.GetAddress().String(), rewardQos))
 				qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(rewardQos))

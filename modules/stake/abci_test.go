@@ -2,6 +2,7 @@ package stake
 
 import (
 	"encoding/binary"
+	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
@@ -11,8 +12,6 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
-
-	qosacc "github.com/QOSGroup/qos/account"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -141,7 +140,7 @@ func defaultContext() context.Context {
 	mainMapper := mintmapper.NewMintMapper()
 	mapperMap[mintmapper.MintMapperName] = mainMapper
 
-	accountMapper := account.NewAccountMapper(cdc, qosacc.ProtoQOSAccount)
+	accountMapper := account.NewAccountMapper(cdc, types.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper
 
 	validatorMapper := stakemapper.NewValidatorMapper()

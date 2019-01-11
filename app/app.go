@@ -3,13 +3,13 @@ package app
 import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
-	qosacc "github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/modules/approve"
 	"github.com/QOSGroup/qos/modules/mint"
 	mintmapper "github.com/QOSGroup/qos/modules/mint"
 	"github.com/QOSGroup/qos/modules/qsc"
 	"github.com/QOSGroup/qos/modules/stake"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
+	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -50,7 +50,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	})
 
 	// 账户mapper
-	app.RegisterAccountProto(qosacc.ProtoQOSAccount)
+	app.RegisterAccountProto(types.ProtoQOSAccount)
 
 	// QCP mapper
 	// qbase 默认已注入

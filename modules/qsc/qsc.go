@@ -8,7 +8,6 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
 	qsctypes "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
@@ -22,11 +21,11 @@ const (
 
 // create QSC
 type TxCreateQSC struct {
-	Creator     btypes.Address        `json:"creator"`     //QSC创建账户
-	Extrate     string                `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
-	QSCCA       *cert.Certificate     `json:"qsc_crt"`     //CA信息
-	Description string                `json:"description"` //描述信息
-	Accounts    []*account.QOSAccount `json:"accounts"`
+	Creator     btypes.Address      `json:"creator"`     //QSC创建账户
+	Extrate     string              `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
+	QSCCA       *cert.Certificate   `json:"qsc_crt"`     //CA信息
+	Description string              `json:"description"` //描述信息
+	Accounts    []*types.QOSAccount `json:"accounts"`
 }
 
 func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
@@ -103,7 +102,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 	}
 	for _, acc := range tx.Accounts {
 		if a := accountMapper.GetAccount(acc.AccountAddress); a != nil {
-			qosAccount := a.(*account.QOSAccount)
+			qosAccount := a.(*types.QOSAccount)
 			qosAccount.MustPlusQSCs(acc.QSCs)
 			accountMapper.SetAccount(qosAccount)
 		} else {
@@ -189,7 +188,7 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
-	banker := accountMapper.GetAccount(tx.Banker).(*account.QOSAccount)
+	banker := accountMapper.GetAccount(tx.Banker).(*types.QOSAccount)
 	banker.MustPlusQSCs(types.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
 	accountMapper.SetAccount(banker)
 

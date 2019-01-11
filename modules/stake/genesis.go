@@ -4,10 +4,10 @@ import (
 	"fmt"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
+	"github.com/QOSGroup/qos/types"
 )
 
 type GenesisState struct {
@@ -45,8 +45,8 @@ func initValidators(ctx context.Context, validators []staketypes.Validator) {
 			panic(fmt.Errorf("owner %s already bind a validator", v.Owner))
 		}
 
-		owner := accountMapper.GetAccount(v.Owner).(*account.QOSAccount)
-		owner.MustMinusQOS(types.NewInt(int64(v.BondTokens)))
+		owner := accountMapper.GetAccount(v.Owner).(*types.QOSAccount)
+		owner.MustMinusQOS(btypes.NewInt(int64(v.BondTokens)))
 		accountMapper.SetAccount(owner)
 		validatorMapper.CreateValidator(v)
 	}
@@ -57,7 +57,7 @@ func initParams(ctx context.Context, params staketypes.Params) {
 	mapper.SetParams(params)
 }
 
-func ValidateGenesis(genesisAccounts []*account.QOSAccount, data GenesisState) error {
+func ValidateGenesis(genesisAccounts []*types.QOSAccount, data GenesisState) error {
 	err := validateValidators(genesisAccounts, data.Validators)
 	if err != nil {
 		return err
@@ -66,7 +66,7 @@ func ValidateGenesis(genesisAccounts []*account.QOSAccount, data GenesisState) e
 	return nil
 }
 
-func validateValidators(genesisAccounts []*account.QOSAccount, validators []staketypes.Validator) (err error) {
+func validateValidators(genesisAccounts []*types.QOSAccount, validators []staketypes.Validator) (err error) {
 	addrMap := make(map[string]bool, len(validators))
 	for i := 0; i < len(validators); i++ {
 		val := validators[i]

@@ -1,4 +1,4 @@
-package account
+package types
 
 import (
 	"github.com/QOSGroup/qbase/account"
@@ -17,5 +17,5 @@ func init() {
 
 // 为包内定义结构注册codec
 func RegisterCodec(cdc *go_amino.Codec) {
-	cdc.RegisterConcrete(&QOSAccount{}, "qbase/account/QOSAccount", nil)
+	cdc.RegisterConcrete(&QOSAccount{}, "qos/types/QOSAccount", nil)
 }
