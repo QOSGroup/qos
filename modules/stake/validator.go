@@ -12,6 +12,11 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 )
 
+const (
+	MaxNameLen        = 300
+	MaxDescriptionLen = 1000
+)
+
 type TxCreateValidator struct {
 	Name        string
 	Owner       btypes.Address //操作者
@@ -34,9 +39,11 @@ func NewCreateValidatorTx(name string, owner btypes.Address, pubKey crypto.PubKe
 
 func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
 	if len(tx.Name) == 0 ||
+		len(tx.Name) > MaxNameLen ||
 		tx.PubKey == nil ||
+		len(tx.Description) > MaxDescriptionLen ||
 		len(tx.Owner) == 0 ||
-		tx.BondTokens <= 0 {
+		tx.BondTokens == 0 {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 

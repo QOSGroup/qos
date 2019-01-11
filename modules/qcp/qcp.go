@@ -17,6 +17,10 @@ type TxInitQCP struct {
 }
 
 func (tx TxInitQCP) ValidateData(ctx context.Context) error {
+	if len(tx.Creator) == 0 {
+		return ErrInvalidInput(DefaultCodeSpace, "")
+	}
+
 	// creator账户存在
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	creator := accountMapper.GetAccount(tx.Creator)

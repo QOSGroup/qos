@@ -12,6 +12,12 @@ import (
 	qsctypes "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
+	"strconv"
+)
+
+const (
+	MaxDescriptionLen = 1000
+	MaxQSCNameLen     = 8
 )
 
 // create QSC
@@ -24,6 +30,14 @@ type TxCreateQSC struct {
 }
 
 func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
+	if len(tx.Creator) == 0 || len(tx.Description) > MaxDescriptionLen {
+		return ErrInvalidInput(DefaultCodeSpace, "")
+	}
+
+	if _, err := strconv.ParseFloat(tx.Extrate, 64); err != nil {
+		return ErrInvalidInput(DefaultCodeSpace, "")
+	}
+
 	// CA校验
 	if tx.QSCCA == nil {
 		return ErrInvalidQSCCA(DefaultCodeSpace, "")
@@ -133,8 +147,8 @@ type TxIssueQSC struct {
 }
 
 func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
-	// QscName不能为空
-	if len(tx.QSCName) < 0 {
+	// QscName不能为空，且不能超过8个字符
+	if len(tx.QSCName) == 0 || len(tx.QSCName) > MaxQSCNameLen {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
