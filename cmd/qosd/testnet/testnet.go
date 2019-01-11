@@ -2,13 +2,13 @@ package testnet
 
 import (
 	"fmt"
-	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/modules/mint"
 	"github.com/QOSGroup/qos/modules/qcp"
 	"github.com/QOSGroup/qos/modules/qsc"
 	"github.com/QOSGroup/qos/modules/stake"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
+	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
@@ -82,10 +82,10 @@ Example:
 			}
 
 			// accounts
-			genesisAccounts := make([]*account.QOSAccount, 0)
+			genesisAccounts := make([]*types.QOSAccount, 0)
 			var err error
 			if accounts != "" {
-				genesisAccounts, err = account.ParseAccounts(accounts)
+				genesisAccounts, err = types.ParseAccounts(accounts)
 				if err != nil {
 					return err
 				}
@@ -136,7 +136,7 @@ Example:
 					BondHeight:      1,
 				}
 
-				genesisAccounts = append(genesisAccounts, account.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
+				genesisAccounts = append(genesisAccounts, types.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
 
 				// write private key of validator owner
 				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)

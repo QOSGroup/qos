@@ -6,9 +6,9 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
+	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -52,7 +52,7 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
 	if nil == owner {
 		return ErrOwnerNotExists(DefaultCodeSpace, "")
 	}
-	ownerAccount := owner.(*account.QOSAccount)
+	ownerAccount := owner.(*types.QOSAccount)
 	if !ownerAccount.EnoughOfQOS(btypes.NewInt(int64(tx.BondTokens))) {
 		return ErrOwnerNoEnoughToken(DefaultCodeSpace, "")
 	}
@@ -72,7 +72,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	accMapper := baseabci.GetAccountMapper(ctx)
 	// 扣除owner等量QOS
-	owner := accMapper.GetAccount(tx.Owner).(*account.QOSAccount)
+	owner := accMapper.GetAccount(tx.Owner).(*types.QOSAccount)
 	owner.MustMinusQOS(btypes.NewInt(int64(tx.BondTokens)))
 	accMapper.SetAccount(owner)
 

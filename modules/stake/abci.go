@@ -4,9 +4,9 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	qacc "github.com/QOSGroup/qos/account"
 	stakemapper "github.com/QOSGroup/qos/modules/stake/mapper"
 	staketypes "github.com/QOSGroup/qos/modules/stake/types"
+	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -60,7 +60,7 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 
 			//关闭validator后,归还绑定的token
 			owner := accountMapper.GetAccount(validator.Owner)
-			if qosAcc, ok := owner.(*qacc.QOSAccount); ok {
+			if qosAcc, ok := owner.(*types.QOSAccount); ok {
 				backQOS := btypes.NewInt(int64(validator.BondTokens))
 				qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(backQOS))
 				accountMapper.SetAccount(qosAcc)

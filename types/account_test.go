@@ -1,8 +1,7 @@
-package account
+package types
 
 import (
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
 )
@@ -115,10 +114,10 @@ func TestQOSAccount_MinusQOS(t *testing.T) {
 func TestQOSAccount_GetQSCs(t *testing.T) {
 	cases := []struct {
 		input1   *QOSAccount
-		expected types.QSCs
+		expected QSCs
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), nil), nil},
-		{NewQOSAccount(nil, btypes.ZeroInt(), types.QSCs{&types.QSC{"QSC", btypes.NewInt(1)}}), types.QSCs{&types.QSC{"QSC", btypes.NewInt(1)}}},
+		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs{&QSC{"QSC", btypes.NewInt(1)}}), QSCs{&QSC{"QSC", btypes.NewInt(1)}}},
 	}
 
 	for tcIndex, tc := range cases {
@@ -128,20 +127,20 @@ func TestQOSAccount_GetQSCs(t *testing.T) {
 }
 
 func TestQOSAccount_PlusQSC(t *testing.T) {
-	zero := types.QSC{"QSC", btypes.ZeroInt()}
-	one := types.QSC{"QSC", btypes.NewInt(1)}
-	negOne := types.QSC{"QSC", btypes.NewInt(-1)}
-	two := types.QSC{"QSC", btypes.NewInt(2)}
+	zero := QSC{"QSC", btypes.ZeroInt()}
+	one := QSC{"QSC", btypes.NewInt(1)}
+	negOne := QSC{"QSC", btypes.NewInt(-1)}
+	two := QSC{"QSC", btypes.NewInt(2)}
 
-	var emptyQSCs types.QSCs
-	zeroQSCs := types.QSCs{&zero}
-	oneQSCs := types.QSCs{&one}
-	twoQSCs := types.QSCs{&two}
+	var emptyQSCs QSCs
+	zeroQSCs := QSCs{&zero}
+	oneQSCs := QSCs{&one}
+	twoQSCs := QSCs{&two}
 
 	cases := []struct {
 		input1   *QOSAccount
-		input2   types.QSC
-		expected types.QSCs
+		input2   QSC
+		expected QSCs
 		correct  bool
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), emptyQSCs), one, oneQSCs, true},
@@ -160,18 +159,18 @@ func TestQOSAccount_PlusQSC(t *testing.T) {
 }
 
 func TestQOSAccount_MinusQSC(t *testing.T) {
-	zero := types.QSC{"QSC", btypes.ZeroInt()}
-	one := types.QSC{"QSC", btypes.NewInt(1)}
-	negOne := types.QSC{"QSC", btypes.NewInt(-1)}
+	zero := QSC{"QSC", btypes.ZeroInt()}
+	one := QSC{"QSC", btypes.NewInt(1)}
+	negOne := QSC{"QSC", btypes.NewInt(-1)}
 
-	var emptyQSCs types.QSCs
-	zeroQSCs := types.QSCs{&zero}
-	oneQSCs := types.QSCs{&one}
+	var emptyQSCs QSCs
+	zeroQSCs := QSCs{&zero}
+	oneQSCs := QSCs{&one}
 
 	cases := []struct {
 		input1   *QOSAccount
-		input2   types.QSC
-		expected types.QSCs
+		input2   QSC
+		expected QSCs
 		correct  bool
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), emptyQSCs), one, emptyQSCs, false},
@@ -196,18 +195,18 @@ func TestQOSAccount_MinusQSC(t *testing.T) {
 }
 
 func TestQOSAccount_EnoughOfQSC(t *testing.T) {
-	zero := types.QSC{"QSC", btypes.ZeroInt()}
-	one := types.QSC{"QSC", btypes.NewInt(1)}
-	negOne := types.QSC{"QSC", btypes.NewInt(-1)}
-	two := types.QSC{"QSC", btypes.NewInt(2)}
+	zero := QSC{"QSC", btypes.ZeroInt()}
+	one := QSC{"QSC", btypes.NewInt(1)}
+	negOne := QSC{"QSC", btypes.NewInt(-1)}
+	two := QSC{"QSC", btypes.NewInt(2)}
 
-	var emptyQSCs types.QSCs
-	zeroQSCs := types.QSCs{&zero}
-	oneQSCs := types.QSCs{&one}
+	var emptyQSCs QSCs
+	zeroQSCs := QSCs{&zero}
+	oneQSCs := QSCs{&one}
 
 	cases := []struct {
 		input1 *QOSAccount
-		input2 types.QSC
+		input2 QSC
 		enough bool
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), emptyQSCs), one, false},
@@ -228,25 +227,25 @@ func TestQOSAccount_EnoughOfQSC(t *testing.T) {
 }
 
 func TestQOSAccount_EnoughOfQSCs(t *testing.T) {
-	zeroQSC1 := types.QSC{"QSC1", btypes.ZeroInt()}
-	oneQSC1 := types.QSC{"QSC1", btypes.NewInt(1)}
-	twoQSC1 := types.QSC{"QSC1", btypes.NewInt(2)}
-	zeroQSC2 := types.QSC{"QSC2", btypes.ZeroInt()}
-	oneQSC2 := types.QSC{"QSC2", btypes.NewInt(1)}
-	twoQSC2 := types.QSC{"QSC2", btypes.NewInt(2)}
+	zeroQSC1 := QSC{"QSC1", btypes.ZeroInt()}
+	oneQSC1 := QSC{"QSC1", btypes.NewInt(1)}
+	twoQSC1 := QSC{"QSC1", btypes.NewInt(2)}
+	zeroQSC2 := QSC{"QSC2", btypes.ZeroInt()}
+	oneQSC2 := QSC{"QSC2", btypes.NewInt(1)}
+	twoQSC2 := QSC{"QSC2", btypes.NewInt(2)}
 
-	var emptyQSCs types.QSCs
-	zeroQSC1QSCs := types.QSCs{&zeroQSC1}
-	oneQSC1QSCs := types.QSCs{&oneQSC1}
-	twoQSC1QSCs := types.QSCs{&twoQSC1}
-	zeroQSC2QSCs := types.QSCs{&zeroQSC2}
-	oneQSC2QSCs := types.QSCs{&oneQSC2}
-	twoQSC2QSCs := types.QSCs{&twoQSC2}
-	QSCs := types.QSCs{&oneQSC1, &oneQSC2}
+	var emptyQSCs QSCs
+	zeroQSC1QSCs := QSCs{&zeroQSC1}
+	oneQSC1QSCs := QSCs{&oneQSC1}
+	twoQSC1QSCs := QSCs{&twoQSC1}
+	zeroQSC2QSCs := QSCs{&zeroQSC2}
+	oneQSC2QSCs := QSCs{&oneQSC2}
+	twoQSC2QSCs := QSCs{&twoQSC2}
+	qscs := QSCs{&oneQSC1, &oneQSC2}
 
 	cases := []struct {
 		input1 *QOSAccount
-		input2 types.QSCs
+		input2 QSCs
 		enough bool
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), emptyQSCs), oneQSC1QSCs, false},
@@ -265,13 +264,13 @@ func TestQOSAccount_EnoughOfQSCs(t *testing.T) {
 		{NewQOSAccount(nil, btypes.ZeroInt(), zeroQSC1QSCs), oneQSC2QSCs, false},
 		{NewQOSAccount(nil, btypes.ZeroInt(), oneQSC1QSCs), zeroQSC2QSCs, true},
 		{NewQOSAccount(nil, btypes.ZeroInt(), oneQSC1QSCs), oneQSC2QSCs, false},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), emptyQSCs, true},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), oneQSC1QSCs, true},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), zeroQSC1QSCs, true},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), twoQSC1QSCs, false},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), oneQSC2QSCs, true},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), zeroQSC2QSCs, true},
-		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs), twoQSC2QSCs, false},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), emptyQSCs, true},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), oneQSC1QSCs, true},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), zeroQSC1QSCs, true},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), twoQSC1QSCs, false},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), oneQSC2QSCs, true},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), zeroQSC2QSCs, true},
+		{NewQOSAccount(nil, btypes.ZeroInt(), qscs), twoQSC2QSCs, false},
 	}
 
 	for tcIndex, tc := range cases {
@@ -281,27 +280,27 @@ func TestQOSAccount_EnoughOfQSCs(t *testing.T) {
 }
 
 func TestQOSAccount_PlusQSCs(t *testing.T) {
-	zeroQSC1 := types.QSC{"QSC1", btypes.ZeroInt()}
-	oneQSC1 := types.QSC{"QSC1", btypes.NewInt(1)}
-	twoQSC1 := types.QSC{"QSC1", btypes.NewInt(2)}
-	negOneQSC1 := types.QSC{"QSC1", btypes.NewInt(-1)}
-	negTwoQSC1 := types.QSC{"QSC1", btypes.NewInt(-2)}
-	oneQSC2 := types.QSC{"QSC2", btypes.NewInt(1)}
-	twoQSC2 := types.QSC{"QSC2", btypes.NewInt(2)}
+	zeroQSC1 := QSC{"QSC1", btypes.ZeroInt()}
+	oneQSC1 := QSC{"QSC1", btypes.NewInt(1)}
+	twoQSC1 := QSC{"QSC1", btypes.NewInt(2)}
+	negOneQSC1 := QSC{"QSC1", btypes.NewInt(-1)}
+	negTwoQSC1 := QSC{"QSC1", btypes.NewInt(-2)}
+	oneQSC2 := QSC{"QSC2", btypes.NewInt(1)}
+	twoQSC2 := QSC{"QSC2", btypes.NewInt(2)}
 
-	QSCs1 := types.QSCs{&zeroQSC1}
-	QSCs2 := types.QSCs{&oneQSC1}
-	QSCs3 := types.QSCs{&oneQSC1, &oneQSC2}
-	QSCs4 := types.QSCs{&twoQSC1}
-	QSCs5 := types.QSCs{&twoQSC1, &oneQSC2}
-	QSCs6 := types.QSCs{&twoQSC1, &twoQSC2}
-	QSCs7 := types.QSCs{&negOneQSC1, &oneQSC2}
-	QSCs8 := types.QSCs{&negTwoQSC1, &oneQSC2}
+	QSCs1 := QSCs{&zeroQSC1}
+	QSCs2 := QSCs{&oneQSC1}
+	QSCs3 := QSCs{&oneQSC1, &oneQSC2}
+	QSCs4 := QSCs{&twoQSC1}
+	QSCs5 := QSCs{&twoQSC1, &oneQSC2}
+	QSCs6 := QSCs{&twoQSC1, &twoQSC2}
+	QSCs7 := QSCs{&negOneQSC1, &oneQSC2}
+	QSCs8 := QSCs{&negTwoQSC1, &oneQSC2}
 
 	cases := []struct {
 		input1  *QOSAccount
-		input2  types.QSCs
-		expect  types.QSCs
+		input2  QSCs
+		expect  QSCs
 		correct bool
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs1), QSCs1, QSCs1, true},
@@ -322,23 +321,23 @@ func TestQOSAccount_PlusQSCs(t *testing.T) {
 }
 
 func TestQOSAccount_MinusQSCs(t *testing.T) {
-	zeroQSC1 := types.QSC{"QSC1", btypes.ZeroInt()}
-	oneQSC1 := types.QSC{"QSC1", btypes.NewInt(1)}
-	twoQSC1 := types.QSC{"QSC1", btypes.NewInt(2)}
-	oneQSC2 := types.QSC{"QSC2", btypes.NewInt(1)}
-	twoQSC2 := types.QSC{"QSC2", btypes.NewInt(2)}
+	zeroQSC1 := QSC{"QSC1", btypes.ZeroInt()}
+	oneQSC1 := QSC{"QSC1", btypes.NewInt(1)}
+	twoQSC1 := QSC{"QSC1", btypes.NewInt(2)}
+	oneQSC2 := QSC{"QSC2", btypes.NewInt(1)}
+	twoQSC2 := QSC{"QSC2", btypes.NewInt(2)}
 
-	QSCs1 := types.QSCs{&zeroQSC1}
-	QSCs2 := types.QSCs{&oneQSC1}
-	QSCs3 := types.QSCs{&oneQSC1, &oneQSC2}
-	QSCs4 := types.QSCs{&twoQSC1}
-	QSCs5 := types.QSCs{&twoQSC1, &oneQSC2}
-	QSCs6 := types.QSCs{&twoQSC1, &twoQSC2}
+	QSCs1 := QSCs{&zeroQSC1}
+	QSCs2 := QSCs{&oneQSC1}
+	QSCs3 := QSCs{&oneQSC1, &oneQSC2}
+	QSCs4 := QSCs{&twoQSC1}
+	QSCs5 := QSCs{&twoQSC1, &oneQSC2}
+	QSCs6 := QSCs{&twoQSC1, &twoQSC2}
 
 	cases := []struct {
 		input1  *QOSAccount
-		input2  types.QSCs
-		expect  types.QSCs
+		input2  QSCs
+		expect  QSCs
 		correct bool
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), QSCs1), QSCs2, QSCs1, false},
@@ -363,13 +362,13 @@ func TestQOSAccount_Plus(t *testing.T) {
 	one := btypes.NewInt(1)
 	two := btypes.NewInt(2)
 	negOne := btypes.NewInt(-1)
-	oneQSCs := types.QSCs{&types.QSC{"QSC", one}}
-	twoQSCs := types.QSCs{&types.QSC{"QSC", two}}
-	negOneQSCs := types.QSCs{&types.QSC{"QSC", negOne}}
+	oneQSCs := QSCs{&QSC{"QSC", one}}
+	twoQSCs := QSCs{&QSC{"QSC", two}}
+	negOneQSCs := QSCs{&QSC{"QSC", negOne}}
 
 	type Item struct {
 		QOS  btypes.BigInt
-		QSCs types.QSCs
+		QSCs QSCs
 	}
 
 	item1 := Item{QOS: one}
@@ -406,7 +405,7 @@ func TestQOSAccount_Plus(t *testing.T) {
 
 type item struct {
 	QOS  btypes.BigInt
-	QSCs types.QSCs
+	QSCs QSCs
 }
 
 func (i item) Equals(iB item) bool {
@@ -425,9 +424,9 @@ func TestQOSAccount_Minus(t *testing.T) {
 	one := btypes.NewInt(1)
 	two := btypes.NewInt(2)
 	negOne := btypes.NewInt(-1)
-	oneQSCs := types.QSCs{&types.QSC{"QSC", one}}
-	twoQSCs := types.QSCs{&types.QSC{"QSC", two}}
-	negOneQSCs := types.QSCs{&types.QSC{"QSC", negOne}}
+	oneQSCs := QSCs{&QSC{"QSC", one}}
+	twoQSCs := QSCs{&QSC{"QSC", two}}
+	negOneQSCs := QSCs{&QSC{"QSC", negOne}}
 
 	item1 := item{QOS: one}
 	item2 := item{QSCs: oneQSCs}
@@ -465,13 +464,13 @@ func TestQOSAccount_RemoveQSC(t *testing.T) {
 	qstars := "QSC"
 	qstars1 := "QSTARS1"
 
-	emptyQSCs := types.QSCs{}
-	oneQSCs := types.QSCs{&types.QSC{"QSC", btypes.NewInt(1)}}
+	emptyQSCs := QSCs{}
+	oneQSCs := QSCs{&QSC{"QSC", btypes.NewInt(1)}}
 
 	cases := []struct {
 		input1   *QOSAccount
 		input2   string
-		expected types.QSCs
+		expected QSCs
 	}{
 		{NewQOSAccount(nil, btypes.ZeroInt(), emptyQSCs), qstars, emptyQSCs},
 		{NewQOSAccount(nil, btypes.ZeroInt(), oneQSCs), qstars, emptyQSCs},
@@ -492,10 +491,10 @@ func TestParseAccounts(t *testing.T) {
 
 	addr1, _ := btypes.GetAddrFromBech32(bech1)
 	addr2, _ := btypes.GetAddrFromBech32(bech2)
-	accs1 := []*QOSAccount{NewQOSAccount(addr1, btypes.NewInt(1), types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(2)}})}
+	accs1 := []*QOSAccount{NewQOSAccount(addr1, btypes.NewInt(1), QSCs{&QSC{"QSTARS", btypes.NewInt(2)}})}
 	accs2 := []*QOSAccount{
-		NewQOSAccount(addr1, btypes.NewInt(1), types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(2)}}),
-		NewQOSAccount(addr2, btypes.NewInt(1), types.QSCs{}),
+		NewQOSAccount(addr1, btypes.NewInt(1), QSCs{&QSC{"QSTARS", btypes.NewInt(2)}}),
+		NewQOSAccount(addr2, btypes.NewInt(1), QSCs{}),
 	}
 
 	cases := []struct {

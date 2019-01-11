@@ -1,18 +1,17 @@
-package account
+package types
 
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/account"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"strings"
 )
 
 type QOSAccount struct {
-	account.BaseAccount `json:"base_account"` // inherits BaseAccount
-	QOS                 btypes.BigInt         `json:"qos"`  // coins in public chain
-	QSCs                types.QSCs            `json:"qscs"` // varied QSCs
+	account.BaseAccount `json:"base_account"`       // inherits BaseAccount
+	QOS                 btypes.BigInt `json:"qos"`  // coins in public chain
+	QSCs                QSCs          `json:"qscs"` // varied QSCs
 }
 
 var _ account.Account = (*QOSAccount)(nil)
@@ -34,7 +33,7 @@ func NewQOSAccountWithAddress(addr btypes.Address) *QOSAccount {
 	}
 }
 
-func NewQOSAccount(addr btypes.Address, qos btypes.BigInt, qscs types.QSCs) *QOSAccount {
+func NewQOSAccount(addr btypes.Address, qos btypes.BigInt, qscs QSCs) *QOSAccount {
 	return &QOSAccount{
 		BaseAccount: account.BaseAccount{
 			AccountAddress: addr,
@@ -110,17 +109,17 @@ func (account *QOSAccount) MustMinusQOS(qos btypes.BigInt) {
 }
 
 // 返回指定币种币值
-func (account *QOSAccount) GetQSC(qscName string) (qsc types.QSC, exists bool) {
+func (account *QOSAccount) GetQSC(qscName string) (qsc QSC, exists bool) {
 	for _, q := range account.QSCs {
 		if q.GetName() == qscName {
 			return *q, true
 		}
 	}
-	return types.QSC{}, false
+	return QSC{}, false
 }
 
 // 设置币种币值
-func (account *QOSAccount) SetQSC(qsc types.QSC) error {
+func (account *QOSAccount) SetQSC(qsc QSC) error {
 	if qsc.Amount.LT(btypes.ZeroInt()) {
 		return errors.New("amount must gte zero")
 	}
@@ -137,7 +136,7 @@ func (account *QOSAccount) SetQSC(qsc types.QSC) error {
 }
 
 // 是否有足够QSC
-func (account *QOSAccount) EnoughOfQSC(qsc types.QSC) bool {
+func (account *QOSAccount) EnoughOfQSC(qsc QSC) bool {
 	for _, q := range account.QSCs {
 		if q.Name == qsc.Name && !q.Amount.LT(qsc.Amount) {
 			return true
@@ -152,7 +151,7 @@ func (account *QOSAccount) EnoughOfQSC(qsc types.QSC) bool {
 }
 
 // 增加QSC
-func (account *QOSAccount) PlusQSC(qsc types.QSC) error {
+func (account *QOSAccount) PlusQSC(qsc QSC) error {
 	if qsc.Amount.LT(btypes.ZeroInt()) {
 		return errors.New("amount must gte zero")
 	}
@@ -174,14 +173,14 @@ func (account *QOSAccount) PlusQSC(qsc types.QSC) error {
 	return nil
 }
 
-func (account *QOSAccount) MustPlusQSC(qsc types.QSC) {
+func (account *QOSAccount) MustPlusQSC(qsc QSC) {
 	if err := account.PlusQSC(qsc); err != nil {
 		panic(err)
 	}
 }
 
 // 减少QSC
-func (account *QOSAccount) MinusQSC(qsc types.QSC) error {
+func (account *QOSAccount) MinusQSC(qsc QSC) error {
 	if qsc.Amount.LT(btypes.ZeroInt()) {
 		return errors.New("amount must gte zero")
 	}
@@ -201,18 +200,18 @@ func (account *QOSAccount) MinusQSC(qsc types.QSC) error {
 	return fmt.Errorf("no %s in account", qsc.Name)
 }
 
-func (account *QOSAccount) MustMinusQSC(qsc types.QSC) {
+func (account *QOSAccount) MustMinusQSC(qsc QSC) {
 	if err := account.MinusQSC(qsc); err != nil {
 		panic(err)
 	}
 }
 
-func (account *QOSAccount) GetQSCs() types.QSCs {
+func (account *QOSAccount) GetQSCs() QSCs {
 	return account.QSCs
 }
 
 // 是否有足够QSCs
-func (account *QOSAccount) EnoughOfQSCs(qscs types.QSCs) bool {
+func (account *QOSAccount) EnoughOfQSCs(qscs QSCs) bool {
 	for _, qsc := range qscs {
 		if !account.EnoughOfQSC(*qsc) {
 			return false
@@ -223,7 +222,7 @@ func (account *QOSAccount) EnoughOfQSCs(qscs types.QSCs) bool {
 }
 
 // 增加QSCs
-func (account *QOSAccount) PlusQSCs(qscs types.QSCs) error {
+func (account *QOSAccount) PlusQSCs(qscs QSCs) error {
 	if qscs.IsZero() {
 		return nil
 	}
@@ -239,14 +238,14 @@ func (account *QOSAccount) PlusQSCs(qscs types.QSCs) error {
 	return nil
 }
 
-func (account *QOSAccount) MustPlusQSCs(qscs types.QSCs) {
+func (account *QOSAccount) MustPlusQSCs(qscs QSCs) {
 	if err := account.PlusQSCs(qscs); err != nil {
 		panic(err)
 	}
 }
 
 // 减少QSCs
-func (account *QOSAccount) MinusQSCs(qscs types.QSCs) error {
+func (account *QOSAccount) MinusQSCs(qscs QSCs) error {
 	if qscs.IsZero() {
 		return nil
 	}
@@ -262,14 +261,14 @@ func (account *QOSAccount) MinusQSCs(qscs types.QSCs) error {
 	return nil
 }
 
-func (account *QOSAccount) MustMinusQSCs(qscs types.QSCs) {
+func (account *QOSAccount) MustMinusQSCs(qscs QSCs) {
 	if err := account.MinusQSCs(qscs); err != nil {
 		panic(err)
 	}
 }
 
 // 增加QOS，QSCs
-func (account *QOSAccount) Plus(qos btypes.BigInt, qscs types.QSCs) error {
+func (account *QOSAccount) Plus(qos btypes.BigInt, qscs QSCs) error {
 	qos = qos.NilToZero()
 	if qos.LT(btypes.ZeroInt()) {
 		return errors.New("qos must gte zero")
@@ -295,14 +294,14 @@ func (account *QOSAccount) Plus(qos btypes.BigInt, qscs types.QSCs) error {
 	return nil
 }
 
-func (account *QOSAccount) MustPlus(qos btypes.BigInt, qscs types.QSCs) {
+func (account *QOSAccount) MustPlus(qos btypes.BigInt, qscs QSCs) {
 	if err := account.Plus(qos, qscs); err != nil {
 		panic(err)
 	}
 }
 
 // 减少QOS，QSCs
-func (account *QOSAccount) Minus(qos btypes.BigInt, qscs types.QSCs) error {
+func (account *QOSAccount) Minus(qos btypes.BigInt, qscs QSCs) error {
 	qos = qos.NilToZero()
 	if qos.LT(btypes.ZeroInt()) {
 		return errors.New("qos must gte zero")
@@ -331,13 +330,13 @@ func (account *QOSAccount) Minus(qos btypes.BigInt, qscs types.QSCs) error {
 	return nil
 }
 
-func (account *QOSAccount) MustMinus(qos btypes.BigInt, qscs types.QSCs) {
+func (account *QOSAccount) MustMinus(qos btypes.BigInt, qscs QSCs) {
 	if err := account.Minus(qos, qscs); err != nil {
 		panic(err)
 	}
 }
 
-func (account *QOSAccount) EnoughOf(qos btypes.BigInt, qscs types.QSCs) bool {
+func (account *QOSAccount) EnoughOf(qos btypes.BigInt, qscs QSCs) bool {
 
 	return account.EnoughOfQOS(qos) && account.EnoughOfQSCs(qscs)
 }
@@ -370,7 +369,7 @@ func ParseAccounts(str string) ([]*QOSAccount, error) {
 		if err != nil {
 			return nil, err
 		}
-		qos, qscs, err := types.ParseCoins(strings.Join(addrAndCoins[1:], ","))
+		qos, qscs, err := ParseCoins(strings.Join(addrAndCoins[1:], ","))
 		if err != nil {
 			return nil, err
 		}

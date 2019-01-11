@@ -2,7 +2,6 @@ package init
 
 import (
 	"fmt"
-	"github.com/QOSGroup/qos/account"
 	"strings"
 
 	"github.com/spf13/viper"
@@ -36,7 +35,7 @@ Example:
 				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
 			}
 
-			accounts, err := account.ParseAccounts(args[0])
+			accounts, err := types.ParseAccounts(args[0])
 
 			genDoc, err := loadGenesisDoc(cdc, genFile)
 			if err != nil {

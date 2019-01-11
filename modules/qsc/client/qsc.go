@@ -10,7 +10,6 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/account"
 	"github.com/QOSGroup/qos/modules/qsc"
 	qsctypes "github.com/QOSGroup/qos/modules/qsc/types"
 	"github.com/QOSGroup/qos/types"
@@ -62,7 +61,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid crt file")
 				}
 
-				var acs []*account.QOSAccount
+				var acs []*types.QOSAccount
 				if len(accountStr) > 0 {
 					accArrs := strings.Split(accountStr, ";")
 					for _, accArrStr := range accArrs {
@@ -75,7 +74,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 						if err != nil {
 							return nil, err
 						}
-						acc := account.QOSAccount{
+						acc := types.QOSAccount{
 							BaseAccount: bacc.BaseAccount{
 								info.GetAddress(),
 								nil,
