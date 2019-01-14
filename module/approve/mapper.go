@@ -52,3 +52,16 @@ func (mapper *ApproveMapper) DeleteApprove(from btypes.Address, to btypes.Addres
 	key := BuildApproveKey(from.String(), to.String())
 	mapper.BaseMapper.Del(key)
 }
+
+// 所有预授权
+func (mapper *ApproveMapper) GetApproves() []types.Approve {
+	approves := make([]types.Approve, 0)
+	mapper.Iterator([]byte("from:"), func(bz []byte) (stop bool) {
+		approve := types.Approve{}
+		mapper.DecodeObject(bz, &approve)
+		approves = append(approves, approve)
+		return false
+	})
+
+	return approves
+}
