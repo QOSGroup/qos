@@ -17,14 +17,14 @@ type TxTransfer struct {
 // 数据校验
 func (tx TxTransfer) ValidateData(ctx context.Context) error {
 	if valid, err := tx.Senders.IsValid(); !valid {
-		return ErrSenderAccountNotExists(DefaultCodeSpace, err.Error())
+		return ErrInvalidInput(DefaultCodeSpace, err.Error())
 	}
 	if valid, err := tx.Receivers.IsValid(); !valid {
-		return ErrSenderAccountNotExists(DefaultCodeSpace, err.Error())
+		return ErrInvalidInput(DefaultCodeSpace, err.Error())
 	}
 
 	if valid, err := tx.Senders.Match(tx.Receivers); !valid {
-		return ErrSenderAccountNotExists(DefaultCodeSpace, err.Error())
+		return ErrInvalidInput(DefaultCodeSpace, err.Error())
 	}
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
