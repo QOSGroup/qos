@@ -4,7 +4,7 @@ import (
 	"github.com/QOSGroup/kepler/cert"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
-	"github.com/QOSGroup/qos/modules"
+	"github.com/QOSGroup/qos/module"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	go_amino "github.com/tendermint/go-amino"
@@ -27,7 +27,7 @@ func MakeCodec() *amino.Codec {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	modules.RegisterCodec(cdc)
+	module.RegisterCodec(cdc)
 	types.RegisterCodec(cdc)
 	cert.RegisterCodec(cdc)
 }

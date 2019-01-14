@@ -7,7 +7,7 @@ import (
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
-	staketypes "github.com/QOSGroup/qos/modules/stake/types"
+	staketypes "github.com/QOSGroup/qos/module/stake/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
