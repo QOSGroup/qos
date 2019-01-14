@@ -120,6 +120,7 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 		stake.ExportGenesis(ctx),
 		qcp.ExportGenesis(ctx),
 		qsc.ExportGenesis(ctx),
+		approve.ExportGenesis(ctx),
 	)
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
