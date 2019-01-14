@@ -5,11 +5,36 @@
 ## Single-node
 * init
 ```bash
-$ qosd init --chain-id qos-test
+$ qosd init --moniker moniker --chain-id qos-test
 {
-  "chain_id": "qos-test",
-  "node_id": "1c3100c28a44f1facf45aa83e9aa3d8ff8ac6b1f",
-  "app_message": "null"
+ "moniker": "moniker",
+ "chain_id": "qos-test",
+ "node_id": "66853240dc1b26e6f6b35afcf008658823542076",
+ "gentxs_dir": "",
+ "app_message": {
+  "accounts": null,
+  "mint": {
+   "params": {
+    "total_amount": "10000000000",
+    "total_block": "6307200"
+   }
+  },
+  "stake": {
+   "params": {
+    "max_validator_cnt": 10,
+    "voting_status_len": 100,
+    "voting_status_least": 50,
+    "survival_secs": 600
+   },
+   "validators": null
+  },
+  "qcp": {
+   "ca_root_pub_key": null
+  },
+  "qsc": {
+   "ca_root_pub_key": null
+  }
+ }
 }
 ```
 注意init 可添加--home flag指定配置文件地址，默认在$HOME/.qosd
@@ -46,24 +71,24 @@ root CA用于校验[QSC](../spec/txs/qsc.md)和[QCP](../spec/txs/qcp.md)，不�
 使用`qosd config-root-ca`初始化root CA公钥到配置文件.
 ```bash
 $ qosd add-genesis-validator --help
-
-Config root CA
+Config pubKey of root CA for QCP and QSC
 
 Usage:
-  qosd config-root-ca [root.pub] [flags]
+  qosd config-root-ca [flags]
 
 Flags:
-  -h, --help   help for config-root-ca
+  -h, --help         help for config-root-ca
+      --qcp string   directory of QCP root.pub
+      --qsc string   directory of QSC root.pub
 
 Global Flags:
-      --home string        directory for config and data (default "$HOME/.qosd")
+      --home string        directory for config and data (default "/home/imuge/.qosd")
       --log_level string   Log level (default "main:info,state:info,*:error")
-      --trace              print out full stack trace on errors
-      
+      --trace              print out full stack trace on errors    
 ```
 设置roort CA
 ```bash
-$ qosd config-root-ca root.pub
+$ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 ```
 
 查看genesis.json内容，确认配置成功。
@@ -189,8 +214,9 @@ Global Flags:
 - chain-id            链ID
 - genesis-accounts    初始账户
 - hostname-prefix     hostName前缀
-- name                miniker
-- root-ca             CA公钥
+- miniker             miniker
+- qcp-root-ca         pubKey of root CA for QCP
+- qsc-root-ca         pubKey of root CA for QSC
 - starting-ip-address 起始IP地址
 
 假设第一台机器IP: 192.168.1.100

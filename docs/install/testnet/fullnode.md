@@ -8,7 +8,7 @@
 默认的配置和数据存储目录为 `$HOME/.qosd`，可以添加`--home`修改存储位置。
 
 ```bash
-$ qosd init --name <your_custom_moniker>
+$ qosd init --moniker <your_custom_moniker>
 ```
 ::: warning Note
 `name`仅支持ASCII字符，使用Unicode字符将使节点无法访问
