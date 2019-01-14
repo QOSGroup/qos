@@ -23,11 +23,11 @@
 
 ## 初始化
 
-`qosd init --name <your_custom_moniker> --chain-id <chain_id> --overwrite <overwrite>`
+`qosd init --moniker <your_custom_moniker> --chain-id <chain_id> --overwrite <overwrite>`
 
 参数说明:
 
-- `--name`      在P2P网络中的名称，与`config.toml`中`moniker`配置项对应，可后期修改
+- `--moniker`      在P2P网络中的名称，与`config.toml`中`moniker`配置项对应，可后期修改
 - `--chain-id`  链ID，链ID一致的节点才能组成同一个P2P网络
 - `--overwrite` 是否覆盖已存在初始文件
 
@@ -35,7 +35,7 @@
 
 执行：
 ```bash
-$ qosd init --name capricorn-1000
+$ qosd init --moniker capricorn-1000
 ```
 输出：
 ```bash
@@ -78,9 +78,9 @@ qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t
 
 ## 设置CA
 
-`qosd config-root-ca <root.pub>`
+`qosd config-root-ca --qcp <qcp_root.pub> --qsc <qsc_root.pub>`
 
-`<root.pub>`为根证书公钥文件路径
+`<qcp_root.pub>`、`<qsc_root.pub>`为根证书公钥文件路径
 
 设置Root CA公钥信息，用于[联盟币](qoscli.md#联盟币（qsc）)和[联盟链](qoscli.md#联盟链（qcp）)涉及到证书操作的校验。
 
