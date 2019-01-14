@@ -16,5 +16,7 @@ func NewGenesisState(pubKey crypto.PubKey) GenesisState {
 }
 
 func InitGenesis(ctx context.Context, data GenesisState) {
-	SetQCPRootCA(ctx, data.RootPubKey)
+	if data.RootPubKey != nil {
+		SetQCPRootCA(ctx, data.RootPubKey)
+	}
 }

@@ -16,5 +16,8 @@ func NewGenesisState(pubKey crypto.PubKey) GenesisState {
 }
 
 func InitGenesis(ctx context.Context, data GenesisState) {
-	ctx.Mapper(QSCMapperName).(*QSCMapper).SetQSCRootCA(data.RootPubKey)
+	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
+	if data.RootPubKey != nil {
+		qscMapper.SetQSCRootCA(data.RootPubKey)
+	}
 }
