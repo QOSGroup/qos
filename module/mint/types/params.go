@@ -1,19 +1,44 @@
 package types
 
+import "time"
+
 type Params struct {
-	TotalAmount uint64 `json:"total_amount"`
-	TotalBlock  uint64 `json:"total_block"`
+	Phrases []InflationPhrase `jason:"inflation_phrases"`
 }
 
-func NewParams(totalAmount uint64, totalBlock uint64) Params {
+type InflationPhrase struct {
+	EndTime       time.Time `jason:"endtime"`
+	TotalAmount   uint64    `json:"total_amount"`
+	AppliedAmount uint64    `json:"applied_amount"`
+}
 
-	return Params{
-		TotalAmount: totalAmount,
-		TotalBlock:  totalBlock,
-	}
+func NewParams(phrases []InflationPhrase) Params {
+	return Params{phrases}
 }
 
 func DefaultParams() Params {
-
-	return NewParams(100e8, 6307200)
+	return NewParams(
+		[]InflationPhrase{
+			InflationPhrase{
+				time.Date(2023,1,1,0,0,0,0,time.UTC),
+				2.5e8,
+				0,
+			},
+			InflationPhrase{
+				time.Date(2027,1,1,0,0,0,0,time.UTC),
+				12.75e8,
+				0,
+			},
+			InflationPhrase{
+				time.Date(2031,1,1,0,0,0,0,time.UTC),
+				6.375e8,
+				0,
+			},
+			InflationPhrase{
+				time.Date(2035,1,1,0,0,0,0,time.UTC),
+				3.185e8,
+				0,
+			},
+		},
+	)
 }

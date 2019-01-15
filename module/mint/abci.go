@@ -2,6 +2,7 @@ package mint
 
 import (
 	"fmt"
+	"time"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -16,9 +17,15 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	height := uint64(ctx.BlockHeight())
 	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
 
-	toalQOSAmount := mintMapper.GetParams().TotalAmount
-	totalBlock := mintMapper.GetParams().TotalBlock
-	appliedQOSAmount := mintMapper.GetAppliedQOSAmount()
+	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
+	if exist == false || currentInflationPhrase.TotalAmount == 0 {
+		return
+	}
+
+	toalQOSAmount := currentInflationPhrase.TotalAmount
+	totalBlock := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix()))/5
+	//totalBlock := mintMapper.GetParams().TotalBlock
+	appliedQOSAmount := currentInflationPhrase.AppliedAmount
 
 	if appliedQOSAmount >= toalQOSAmount {
 		return
