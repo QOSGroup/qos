@@ -25,6 +25,7 @@ type MintParams struct {
 
 type InflationPhrase struct {
 	EndTime       time.Time `json:"endtime"`
+
 	TotalAmount   uint64    `json:"total_amount"`
 	AppliedAmount uint64    `json:"applied_amount"`
 }

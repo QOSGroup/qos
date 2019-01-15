@@ -1,11 +1,30 @@
 package mapper
 
-import (
-	"github.com/QOSGroup/qbase/context"
+import(
+	"encoding/binary"
 	"github.com/QOSGroup/qbase/mapper"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qbase/context"
 	stake_types "github.com/QOSGroup/qos/module/eco/types"
 )
+
+func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte{
+	bz := append(stake_types.DelegationByDelValKey, delAdd...)
+	return append(bz, valAdd...)
+}
+
+func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []byte{
+	bz := append(stake_types.DelegationByDelValKey, valAdd...)
+	return append(bz, delAdd...)
+}
+
+func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte{
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(stake_types.DelegatorUnbondingQOSatHeightKey, heightBytes...)
+	return append(bz, delAdd...)
+}
 
 type DelegationMapper struct {
 	*mapper.BaseMapper
@@ -28,8 +47,9 @@ func (mapper *DelegationMapper) SetDelegationInfo(info stake_types.DelegationInf
 	mapper.Set(stake_types.BuildDelegationByValDelKey(info.ValidatorAddr, info.DelegatorAddr), nil)
 }
 
+
 func (mapper *DelegationMapper) GetDelegationInfo(delAddr btypes.Address, valAddr btypes.Address) (info stake_types.DelegationInfo, exist bool) {
-	exist = mapper.Get(stake_types.BuildDelegationByDelValKey(delAddr, valAddr), &info)
+	exist = mapper.Get(BuildDelegationByDelValKey(delAddr, valAddr), &info)
 	return
 }
 
@@ -76,11 +96,11 @@ func (mapper *DelegationMapper) ChangeDelegationInfoCompound(delAddr btypes.Addr
 }
 
 func (mapper *DelegationMapper) SetDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, amount uint64){
-	mapper.Set(stake_types.BuildUnbondingDelegationByHeightDelKey(height, delAddr), amount)
+	mapper.Set(BuildUnbondingDelegationByHeightDelKey(height, delAddr), amount)
 }
 
 func (mapper *DelegationMapper) GetDelegatorUnbondingQOSatHeight(height uint64, delAdd btypes.Address) (amount uint64, exist bool){
-	exist = mapper.Get(stake_types.BuildUnbondingDelegationByHeightDelKey(height, delAdd), &amount)
+	exist = mapper.Get(BuildUnbondingDelegationByHeightDelKey(height, delAdd), &amount)
 	return
 }
 

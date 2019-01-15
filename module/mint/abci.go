@@ -2,14 +2,13 @@ package mint
 
 import (
 	"fmt"
-
+	"time"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
-	"time"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -18,6 +17,7 @@ import (
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	height := uint64(ctx.BlockHeight())
 	mintMapper := ctx.Mapper(staketypes.MintMapperName).(*stakemapper.MintMapper)
+
 	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
 	if exist == false || currentInflationPhrase.TotalAmount == 0 {
 		return

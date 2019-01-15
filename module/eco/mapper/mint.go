@@ -7,7 +7,9 @@ import (
 	"time"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
+
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
+
 )
 
 type MintMapper struct {
@@ -36,6 +38,7 @@ func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, 
 	}
 	inflationPhraseKey := iter.Key()
 	endtimesecBytes := inflationPhraseKey[len(staketypes.BuildMintParamsKey()):]
+
 	var endtimesec uint64
 	binary.Read(bytes.NewBuffer(endtimesecBytes), binary.BigEndian, &endtimesec)
 
@@ -57,6 +60,7 @@ func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, 
 // 获取当前的Inflation Phrase
 func (mapper *MintMapper) GetCurrentInflationPhrase() (inflationPhrase staketypes.InflationPhrase, exist bool) {
 	inflationPhrase = staketypes.InflationPhrase{}
+
 	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(false)
 	if err == nil {
 		exist = mapper.Get(currentInflationPhraseKey, &inflationPhrase)
@@ -85,6 +89,7 @@ func (mapper *MintMapper) AddInflationPhrase(phrase staketypes.InflationPhrase) 
 	bz := make([]byte, keylen + 8)
 
 	copy(bz[0:keylen], staketypes.BuildMintParamsKey())
+
 	copy(bz[keylen:keylen+8], secBytes)
 
 	mapper.Set(bz, phrase)
@@ -105,11 +110,13 @@ func (mapper *MintMapper) GetMintParams() staketypes.MintParams {
 
 	for {
 		var inflationPhrase staketypes.InflationPhrase
+
 		mapper.DecodeObject(iter.Value(), &inflationPhrase)
 		phrases = append(phrases, inflationPhrase)
 		iter.Next()
 	}
 	return staketypes.MintParams{phrases}
+
 }
 
 // 获取已分配QOS总数
@@ -124,6 +131,7 @@ func (mapper *MintMapper) GetAppliedQOSAmount() (v uint64) {
 // 设置 已分配 QOS amount
 func (mapper *MintMapper) SetAppliedQOSAmount(amount uint64) {
 	inflationPhrase := staketypes.InflationPhrase{}
+
 	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(false)
 	if err == nil {
 		mapper.Get(currentInflationPhraseKey, &inflationPhrase)
