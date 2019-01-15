@@ -22,12 +22,12 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		return
 	}
 
-	toalQOSAmount := currentInflationPhrase.TotalAmount
+	totalQOSAmount := currentInflationPhrase.TotalAmount
 	totalBlock := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix()))/5
 	//totalBlock := mintMapper.GetParams().TotalBlock
 	appliedQOSAmount := currentInflationPhrase.AppliedAmount
 
-	if appliedQOSAmount >= toalQOSAmount {
+	if appliedQOSAmount >= totalQOSAmount {
 		return
 	}
 
@@ -36,7 +36,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	}
 
 	if ctx.BlockHeight() > 1 {
-		rewardPerBlock := (toalQOSAmount - appliedQOSAmount) / (totalBlock - height)
+		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / (totalBlock - height)
 		if rewardPerBlock > 0 {
 			rewardVoteValidator(ctx, req, rewardPerBlock)
 		}
