@@ -10,6 +10,12 @@ import (
 
 const (
 	ValidatorMapperName = "validator"
+
+	MintMapperName      = "mint"
+	MintParamsKey       = "mintparams"
+	AppliedQOSAmountKey = "appliedqos"
+
+	DelegationMapperName = "delegation"
 )
 
 var (
@@ -18,6 +24,10 @@ var (
 	validatorByOwnerKey     = []byte{0x02} // 保存Owner与Validator的映射关系. key: OwnerAddress, value : ValidatorAddress
 	validatorByInactiveKey  = []byte{0x03} // 保存处于`inactive`状态的Validator. key: ValidatorInactiveTime + ValidatorAddress
 	validatorByVotePowerKey = []byte{0x04} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + ValidatorAddress
+
+	DelegationByDelValKey            	= []byte{0x31}	// key: delegator add + validator owner add, value: delegationInfo
+	DelegationByValDelKey				= []byte{0x32}	// key: validator owner add + delegator add, value: nil
+	DelegatorUnbondingQOSatHeightKey 	= []byte{0x41}	// key: height + delegator add, value: the amount of qos going to be unbonded on this height
 
 	currentValidatorAddressKey = []byte("currentValidatorAddressKey")
 
@@ -95,3 +105,14 @@ func BuildValidatorByVotePower(votePower uint64, valAddress btypes.Address) []by
 func BuildStakeParamsKey() []byte {
 	return stakeParamsKey
 }
+
+
+func BuildMintParamsKey() []byte {
+	return []byte(MintParamsKey)
+}
+
+func BuildAppliedQOSAmountKey() []byte {
+	return []byte(AppliedQOSAmountKey)
+}
+
+

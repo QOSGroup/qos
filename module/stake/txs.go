@@ -234,3 +234,98 @@ func (tx *TxActiveValidator) GetSignData() (ret []byte) {
 
 	return
 }
+
+
+type TxCreateDelegation struct {
+	Delegator btypes.Address
+	Validator btypes.Address
+	Amount uint64
+	isCompound bool
+}
+
+var _ txs.ITx = (*TxCreateDelegation)(nil)
+
+func (tx *TxCreateDelegation) ValidateData(ctx context.Context) error {
+
+	if len(tx.Delegator) == 0 || len(tx.Validator) == 0{
+		return ErrInvalidInput(DefaultCodeSpace, "Validator and Delegator must be specified.")
+	}
+
+	// TODO: 是否应该在tx里做这种检查
+	if tx.Amount <= 0 {
+		return ErrInvalidInput(DefaultCodeSpace, "Delegation amount must be a positive integer.")
+	}
+
+	valMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	validator, exists := valMapper.GetValidatorByOwner(tx.Validator)
+	if !exists {
+		return ErrValidatorNotExists(DefaultCodeSpace, "")
+	}
+	if validator.Status == staketypes.Active {
+		return ErrValidatorIsActive(DefaultCodeSpace, "")
+	}
+	// TODO: block jailed validator
+
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	delAcc := accountMapper.GetAccount(tx.Delegator)
+	if nil == delAcc {
+		return ErrOwnerNotExists(DefaultCodeSpace, "Delegator's address doesn't exist.")
+	}
+	delegatorAccount := delAcc.(*types.QOSAccount)
+	if !delegatorAccount.EnoughOfQOS(btypes.NewInt(int64(tx.Amount))) {
+		return ErrOwnerNoEnoughToken(DefaultCodeSpace, "No enough QOS in delegator's account.")
+	}
+
+	valAcc := accountMapper.GetAccount(tx.Validator)
+	if nil == valAcc {
+		return ErrOwnerNotExists(DefaultCodeSpace, "Validator's address doesn't exist.")
+	}
+	return nil
+}
+
+func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	_, exists := mapper.GetValidatorByOwner(tx.Validator)
+	if !exists {
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+	}
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	delAcc := accountMapper.GetAccount(tx.Delegator)
+	if nil == delAcc {
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+	}
+	delegatorAccount := delAcc.(*types.QOSAccount)
+	if !delegatorAccount.EnoughOfQOS(btypes.NewInt(int64(tx.Amount))) {
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+	}
+
+	delMapper := stakemapper.GetDelegationMapper(ctx)
+	delegationInfo, exists := delMapper.GetDelegationInfo(tx.Validator, tx.Delegator)
+	if exists {
+		delegationInfo.Amount += tx.Amount
+		delegationInfo.IsCompound = tx.isCompound
+		delMapper.SetDelegationInfo(delegationInfo)
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
+	}
+	delegationInfo = staketypes.NewDelegationInfo(tx.Delegator, tx.Validator, tx.Amount, tx.isCompound)
+	delMapper.SetDelegationInfo(delegationInfo)
+
+	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
+}
+
+func (tx *TxCreateDelegation) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Delegator}
+}
+
+func (tx *TxCreateDelegation) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx *TxCreateDelegation) GetGasPayer() btypes.Address {
+	return btypes.Address(tx.Delegator)
+}
+
+func (tx *TxCreateDelegation) GetSignData() (ret []byte) {
+	ret = append(ret, tx.Delegator...)
+	return
+}

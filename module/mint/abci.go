@@ -2,11 +2,12 @@ package mint
 
 import (
 	"fmt"
-
+	"time"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -15,11 +16,17 @@ import (
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	height := uint64(ctx.BlockHeight())
-	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
+	mintMapper := ctx.Mapper(staketypes.MintMapperName).(*stakemapper.MintMapper)
 
-	toalQOSAmount := mintMapper.GetParams().TotalAmount
-	totalBlock := mintMapper.GetParams().TotalBlock
-	appliedQOSAmount := mintMapper.GetAppliedQOSAmount()
+	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
+	if exist == false || currentInflationPhrase.TotalAmount == 0 {
+		return
+	}
+
+	toalQOSAmount := currentInflationPhrase.TotalAmount
+	totalBlock := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix()))/5
+	//totalBlock := mintMapper.GetParams().TotalBlock
+	appliedQOSAmount := currentInflationPhrase.AppliedAmount
 
 	if appliedQOSAmount >= toalQOSAmount {
 		return
@@ -42,7 +49,7 @@ func rewardVoteValidator(ctx context.Context, req abci.RequestBeginBlock, reward
 
 	logger := ctx.Logger()
 
-	mintMapper := ctx.Mapper(MintMapperName).(*MintMapper)
+	mintMapper := ctx.Mapper(staketypes.MintMapperName).(*stakemapper.MintMapper)
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 
