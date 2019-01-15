@@ -19,7 +19,6 @@ import (
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
-	mintmapper "github.com/QOSGroup/qos/module/mint"
 	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
 )
@@ -137,8 +136,8 @@ func defaultContext() context.Context {
 
 	mapperMap := make(map[string]mapper.IMapper)
 
-	mainMapper := mintmapper.NewMintMapper()
-	mapperMap[mintmapper.MintMapperName] = mainMapper
+	mainMapper := stakemapper.NewMintMapper()
+	mapperMap[staketypes.MintMapperName] = mainMapper
 
 	accountMapper := account.NewAccountMapper(cdc, types.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper
