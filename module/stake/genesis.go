@@ -2,20 +2,21 @@ package stake
 
 import (
 	"fmt"
+
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/stake/mapper"
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	"github.com/QOSGroup/qos/module/eco/mapper"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 )
 
 type GenesisState struct {
-	Params     staketypes.Params      `json:"params"`
+	Params     staketypes.StakeParams `json:"params"`
 	Validators []staketypes.Validator `json:"validators"`
 }
 
-func NewGenesisState(params staketypes.Params, validators []staketypes.Validator) GenesisState {
+func NewGenesisState(params staketypes.StakeParams, validators []staketypes.Validator) GenesisState {
 	return GenesisState{
 		Params:     params,
 		Validators: validators,
@@ -24,7 +25,7 @@ func NewGenesisState(params staketypes.Params, validators []staketypes.Validator
 
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
-		Params: staketypes.DefaultParams(),
+		Params: staketypes.DefaultStakeParams(),
 	}
 }
 
@@ -34,7 +35,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 }
 
 func initValidators(ctx context.Context, validators []staketypes.Validator) {
-	validatorMapper := ctx.Mapper(mapper.ValidatorMapperName).(*mapper.ValidatorMapper)
+	validatorMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*mapper.ValidatorMapper)
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	for _, v := range validators {
 
@@ -52,8 +53,8 @@ func initValidators(ctx context.Context, validators []staketypes.Validator) {
 	}
 }
 
-func initParams(ctx context.Context, params staketypes.Params) {
-	mapper := ctx.Mapper(mapper.ValidatorMapperName).(*mapper.ValidatorMapper)
+func initParams(ctx context.Context, params staketypes.StakeParams) {
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*mapper.ValidatorMapper)
 	mapper.SetParams(params)
 }
 
@@ -98,8 +99,8 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []staket
 }
 
 func ExportGenesis(ctx context.Context) GenesisState {
-	validatorMapper := ctx.Mapper(mapper.ValidatorMapperName).(*mapper.ValidatorMapper)
+	validatorMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*mapper.ValidatorMapper)
 	validators := make([]staketypes.Validator, 0)
-	validatorMapper.Get(mapper.BuildCurrentValidatorAddressKey(), &validators)
+	validatorMapper.Get(staketypes.BuildCurrentValidatorAddressKey(), &validators)
 	return NewGenesisState(validatorMapper.GetParams(), validators)
 }

@@ -15,8 +15,8 @@ import (
 	"time"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
-	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 )
@@ -118,7 +118,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			opts := buildQueryOptions()
 
 			subspace := "/store/validator/subspace"
-			result, err := node.ABCIQueryWithOptions(subspace, stakemapper.BulidValidatorPrefixKey(), opts)
+			result, err := node.ABCIQueryWithOptions(subspace, staketypes.BulidValidatorPrefixKey(), opts)
 
 			if err != nil {
 				return err
@@ -251,26 +251,26 @@ func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) 
 	return voteSummaryDisplay, nil
 }
 
-func getStakeConfig(ctx context.CLIContext) (staketypes.Params, error) {
+func getStakeConfig(ctx context.CLIContext) (staketypes.StakeParams, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
-		return staketypes.Params{}, err
+		return staketypes.StakeParams{}, err
 	}
 
 	path := "/store/stake/key"
-	key := []byte(stakemapper.BuildParamsKey())
+	key := []byte(staketypes.BuildStakeParamsKey())
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
 	if err != nil {
-		return staketypes.Params{}, err
+		return staketypes.StakeParams{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return staketypes.Params{}, errors.New("response empty value. getStakeConfig is empty")
+		return staketypes.StakeParams{}, errors.New("response empty value. getStakeConfig is empty")
 	}
 
-	var stakeConfig staketypes.Params
+	var stakeConfig staketypes.StakeParams
 	{
 	}
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &stakeConfig)
@@ -346,7 +346,7 @@ func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (staketyp
 		return staketypes.Validator{}, err
 	}
 
-	result, err := node.ABCIQueryWithOptions(string(stakemapper.BuildValidatorStoreQueryPath()), stakemapper.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
+	result, err := node.ABCIQueryWithOptions(string(staketypes.BuildValidatorStoreQueryPath()), staketypes.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
 	if err != nil {
 		return staketypes.Validator{}, err
 	}
@@ -359,8 +359,8 @@ func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (staketyp
 	var address btypes.Address
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &address)
 
-	key := stakemapper.BuildValidatorKey(address)
-	result, err = node.ABCIQueryWithOptions(string(stakemapper.BuildValidatorStoreQueryPath()), key, buildQueryOptions())
+	key := staketypes.BuildValidatorKey(address)
+	result, err = node.ABCIQueryWithOptions(string(staketypes.BuildValidatorStoreQueryPath()), key, buildQueryOptions())
 	if err != nil {
 		return staketypes.Validator{}, err
 	}

@@ -7,7 +7,7 @@ import (
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
@@ -161,7 +161,7 @@ Example:
 			appState := app.GenesisState{
 				Accounts:  genesisAccounts,
 				MintData:  mint.DefaultGenesisState(),
-				StakeData: stake.NewGenesisState(staketypes.DefaultParams(), genVals),
+				StakeData: stake.NewGenesisState(staketypes.DefaultStakeParams(), genVals),
 				QCPData:   qcp.NewGenesisState(qcpPubKey, nil),
 				QSCData:   qsc.NewGenesisState(qscPubKey, nil),
 			}

@@ -20,8 +20,8 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 
 	mintmapper "github.com/QOSGroup/qos/module/mint"
-	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 )
 
 func TestValidatorMapper(t *testing.T) {
@@ -39,7 +39,7 @@ func TestValidatorMapper(t *testing.T) {
 	}
 
 	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-	key := stakemapper.BuildValidatorKey(valAddr)
+	key := staketypes.BuildValidatorKey(valAddr)
 	validatorMapper.Set(key, validator)
 
 	v, exsits := validatorMapper.GetValidator(valAddr)
@@ -50,7 +50,7 @@ func TestValidatorMapper(t *testing.T) {
 	now := uint64(time.Now().UTC().Unix())
 	for i := uint64(0); i <= uint64(100); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(stakemapper.BuildInactiveValidatorKey(now+i, addr), i)
+		validatorMapper.Set(staketypes.BuildInactiveValidatorKey(now+i, addr), i)
 	}
 
 	iter := validatorMapper.IteratorInactiveValidator(0, now+20)
@@ -68,7 +68,7 @@ func TestValidatorMapper(t *testing.T) {
 
 	for i := uint64(100); i <= uint64(200); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(stakemapper.BuildValidatorByVotePower(i, addr), 1)
+		validatorMapper.Set(staketypes.BuildValidatorByVotePower(i, addr), 1)
 	}
 
 	descIter := validatorMapper.IteratorValidatrorByVoterPower(false)
@@ -145,7 +145,7 @@ func defaultContext() context.Context {
 
 	validatorMapper := stakemapper.NewValidatorMapper()
 	validatorMapper.SetCodec(cdc)
-	mapperMap[stakemapper.ValidatorMapperName] = validatorMapper
+	mapperMap[staketypes.ValidatorMapperName] = validatorMapper
 
 	signInfoMapper := stakemapper.NewVoteInfoMapper()
 	signInfoMapper.SetCodec(cdc)

@@ -2,10 +2,11 @@ package mint
 
 import (
 	"fmt"
+
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
+	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"

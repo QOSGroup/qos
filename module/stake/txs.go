@@ -6,8 +6,8 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
 )
@@ -57,7 +57,7 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
 		return ErrOwnerNoEnoughToken(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	if mapper.Exists(tx.PubKey.Address().Bytes()) {
 		return ErrValidatorExists(DefaultCodeSpace, "")
 	}
@@ -85,7 +85,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		Status:          staketypes.Active,
 		BondHeight:      uint64(ctx.BlockHeight()),
 	}
-	validatorMapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	validatorMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
@@ -131,7 +131,7 @@ func (tx *TxRevokeValidator) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return ErrValidatorNotExists(DefaultCodeSpace, "")
@@ -144,7 +144,7 @@ func (tx *TxRevokeValidator) ValidateData(ctx context.Context) error {
 }
 
 func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
-	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal}, nil
@@ -190,7 +190,7 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return ErrValidatorNotExists(DefaultCodeSpace, "")
@@ -203,7 +203,7 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) error {
 }
 
 func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
-	mapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal}, nil
