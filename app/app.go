@@ -11,7 +11,7 @@ import (
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
-	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
+	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"

@@ -8,7 +8,7 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 
 	btypes "github.com/QOSGroup/qbase/types"
 )

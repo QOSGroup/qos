@@ -4,8 +4,8 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	stakemapper "github.com/QOSGroup/qos/module/stake/mapper"
-	staketypes "github.com/QOSGroup/qos/module/stake/types"
+	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -71,11 +71,11 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 
 func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
 	log := ctx.Logger()
-	validatorMapper := ctx.Mapper(stakemapper.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	validatorMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 
 	//获取当前的validator集合
 	var currentValidators []staketypes.Validator
-	validatorMapper.Get(stakemapper.BuildCurrentValidatorAddressKey(), &currentValidators)
+	validatorMapper.Get(staketypes.BuildCurrentValidatorAddressKey(), &currentValidators)
 
 	currentValidatorMap := make(map[string]staketypes.Validator)
 	for _, curValidator := range currentValidators {
@@ -128,7 +128,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	}
 
 	//存储新的validator
-	validatorMapper.Set(stakemapper.BuildCurrentValidatorAddressKey(), newValidators)
+	validatorMapper.Set(staketypes.BuildCurrentValidatorAddressKey(), newValidators)
 
 	log.Info("update Validators", "len", len(updateValidators))
 
@@ -225,7 +225,7 @@ func closeActiveValidators(ctx context.Context) {
 				accountMapper.SetAccount(qosAcc)
 			}
 
-			validatorMapper.Del(stakemapper.BuildValidatorByVotePower(validator.BondTokens, valAddress))
+			validatorMapper.Del(staketypes.BuildValidatorByVotePower(validator.BondTokens, valAddress))
 		}
 	}
 }
