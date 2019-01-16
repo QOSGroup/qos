@@ -8,6 +8,7 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	minttypes "github.com/QOSGroup/qos/module/eco/types"
+
 )
 
 type MintMapper struct {
@@ -79,23 +80,13 @@ func (mapper *MintMapper) AddInflationPhrase(phrase minttypes.InflationPhrase) {
 	mapper.Set(bz, phrase)
 }
 
-// 设置SPOConfig
-// key:		SPOConfigKey+endtime
+
+// 设置Params
+// key:		MintParamsKey+endtime
 // value: 	InflationPhrase
 func (mapper *MintMapper) SetMintParams(config minttypes.MintParams) {
 	for _, inflation_phrase := range config.Phrases {
-		endsec := uint64(inflation_phrase.EndTime.UTC().Unix())
-
-		secBytes := make([]byte, 8)
-		binary.BigEndian.PutUint64(secBytes, endsec)
-
-		keylen := len([]byte(minttypes.MintParamsKey))
-		bz := make([]byte, keylen + 8)
-
-		copy(bz[0:keylen], []byte(minttypes.MintParamsKey))
-		copy(bz[keylen:keylen+8], secBytes)
-
-		mapper.Set(bz, inflation_phrase)
+		mapper.AddInflationPhrase(inflation_phrase)
 	}
 }
 
