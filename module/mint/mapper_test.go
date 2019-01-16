@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/stretchr/testify/require"
 	"testing"
+	"time"
 
 	minttypes "github.com/QOSGroup/qos/module/mint/types"
 	bmapper "github.com/QOSGroup/qbase/mapper"
@@ -30,6 +31,25 @@ func TestSaveParams(t *testing.T) {
 
 	mintMapper.AddAppliedQOSAmount(1999)
 	require.Equal(t, mintMapper.GetAppliedQOSAmount(), uint64(1999))
+
+	now := time.Now()
+	mintMapper.AddInflationPhrase(minttypes.InflationPhrase{
+		now, //插入当前时间
+		1000,
+		0,
+	},)
+
+	mintMapper.AddInflationPhrase(minttypes.InflationPhrase{
+		now.Add(time.Minute*10), //插入十分钟后的时间
+		2000,
+		0,
+	},)
+
+	currentInflationPhrase, exist = mintMapper.GetCurrentInflationPhrase()
+	require.True(t, exist)
+
+	fmt.Println(currentInflationPhrase.EndTime)
+	require.Equal(t, currentInflationPhrase.TotalAmount, uint64(2000))
 }
 
 func defaultContext() context.Context {
