@@ -19,7 +19,6 @@ type StakeParams struct {
 	ValidatorSurvivalSecs      uint32 `json:"survival_secs"`
 }
 
-
 type MintParams struct {
 	Phrases []InflationPhrase `jason:"inflation_phrases"`
 }
@@ -29,7 +28,6 @@ type InflationPhrase struct {
 	TotalAmount   uint64    `json:"total_amount"`
 	AppliedAmount uint64    `json:"applied_amount"`
 }
-
 
 func DefaultDistributionParams() DistributionParams {
 	return DistributionParams{
@@ -51,7 +49,6 @@ func DefaultStakeParams() StakeParams {
 
 	return NewStakeParams(10, 100, 50, 600)
 }
-
 
 func NewMintParams(phrases []InflationPhrase) MintParams {
 	return MintParams{phrases}
