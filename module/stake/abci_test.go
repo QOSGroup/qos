@@ -18,7 +18,6 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
-
 	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
 )

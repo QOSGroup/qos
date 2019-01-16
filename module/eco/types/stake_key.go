@@ -106,7 +106,6 @@ func BuildStakeParamsKey() []byte {
 	return stakeParamsKey
 }
 
-
 func BuildMintParamsKey() []byte {
 	return []byte(MintParamsKey)
 }
@@ -114,5 +113,3 @@ func BuildMintParamsKey() []byte {
 func BuildAppliedQOSAmountKey() []byte {
 	return []byte(AppliedQOSAmountKey)
 }
-
-
