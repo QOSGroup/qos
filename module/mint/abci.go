@@ -2,6 +2,7 @@ package mint
 
 import (
 	"fmt"
+
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
