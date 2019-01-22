@@ -13,12 +13,9 @@ const (
 
 	MintMapperName      = "mint"
 	MintParamsKey       = "mintparams"
-	AppliedQOSAmountKey = "appliedqos"
 
 	DelegationMapperName = "delegation"
 
-	MintMapperName      = "mint"
-	MintParamsKey       = "mintparams"
 )
 
 var (
@@ -111,10 +108,6 @@ func BuildStakeParamsKey() []byte {
 
 func BuildMintParamsKey() []byte {
 	return []byte(MintParamsKey)
-}
-
-func BuildAppliedQOSAmountKey() []byte {
-	return []byte(AppliedQOSAmountKey)
 }
 
 func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte{
