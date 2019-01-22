@@ -1,8 +1,8 @@
 package types
 
 import (
-	qtypes "github.com/QOSGroup/qos/types"
 	"time"
+	qtypes "github.com/QOSGroup/qos/types"
 )
 
 type DistributionParams struct {
