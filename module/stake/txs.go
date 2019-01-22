@@ -287,6 +287,8 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	delegationInfo = staketypes.NewDelegationInfo(tx.Delegator, tx.Validator, tx.Amount, tx.isCompound)
 	delMapper.SetDelegationInfo(delegationInfo)
 
+	// TODO: 增加dist信息
+
 	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
 }
 
