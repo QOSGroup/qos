@@ -37,7 +37,7 @@ func NewCreateValidatorTx(name string, owner btypes.Address, pubKey crypto.PubKe
 	}
 }
 
-func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
+func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 	if len(tx.Name) == 0 ||
 		len(tx.Name) > MaxNameLen ||
 		tx.PubKey == nil ||
@@ -47,14 +47,9 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	owner := accountMapper.GetAccount(tx.Owner)
-	if nil == owner {
-		return ErrOwnerNotExists(DefaultCodeSpace, "")
-	}
-	ownerAccount := owner.(*types.QOSAccount)
-	if !ownerAccount.EnoughOfQOS(btypes.NewInt(int64(tx.BondTokens))) {
-		return ErrOwnerNoEnoughToken(DefaultCodeSpace, "")
+	err = validateQOSAccount(ctx, tx.Owner, tx.BondTokens)
+	if nil != err {
+		return err
 	}
 
 	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
@@ -125,19 +120,14 @@ func NewRevokeValidatorTx(owner btypes.Address) *TxRevokeValidator {
 	}
 }
 
-func (tx *TxRevokeValidator) ValidateData(ctx context.Context) error {
-
+func (tx *TxRevokeValidator) ValidateData(ctx context.Context) (err error) {
 	if len(tx.Owner) == 0 {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
-	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
-	if !exists {
-		return ErrValidatorNotExists(DefaultCodeSpace, "")
-	}
-	if validator.Status != staketypes.Active {
-		return ErrValidatorIsInactive(DefaultCodeSpace, "")
+	err = validateValidator(ctx, tx.Owner, true, staketypes.Inactive, true)
+	if nil != err {
+		return err
 	}
 
 	return nil
@@ -184,19 +174,15 @@ func NewActiveValidatorTx(owner btypes.Address) *TxActiveValidator {
 	}
 }
 
-func (tx *TxActiveValidator) ValidateData(ctx context.Context) error {
+func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 
 	if len(tx.Owner) == 0 {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
-	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
-	if !exists {
-		return ErrValidatorNotExists(DefaultCodeSpace, "")
-	}
-	if validator.Status == staketypes.Active {
-		return ErrValidatorIsActive(DefaultCodeSpace, "")
+	err = validateValidator(ctx, tx.Owner, true, staketypes.Active, true)
+	if nil != err {
+		return err
 	}
 
 	return nil
@@ -245,7 +231,7 @@ type TxCreateDelegation struct {
 
 var _ txs.ITx = (*TxCreateDelegation)(nil)
 
-func (tx *TxCreateDelegation) ValidateData(ctx context.Context) error {
+func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 
 	if len(tx.Delegator) == 0 || len(tx.Validator) == 0{
 		return ErrInvalidInput(DefaultCodeSpace, "Validator and Delegator must be specified.")
@@ -256,30 +242,21 @@ func (tx *TxCreateDelegation) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput(DefaultCodeSpace, "Delegation amount must be a positive integer.")
 	}
 
-	valMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
-	validator, exists := valMapper.GetValidatorByOwner(tx.Validator)
-	if !exists {
-		return ErrValidatorNotExists(DefaultCodeSpace, "")
-	}
-	if validator.Status == staketypes.Active {
-		return ErrValidatorIsActive(DefaultCodeSpace, "")
-	}
-	// TODO: block jailed validator
-
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	delAcc := accountMapper.GetAccount(tx.Delegator)
-	if nil == delAcc {
-		return ErrOwnerNotExists(DefaultCodeSpace, "Delegator's address doesn't exist.")
-	}
-	delegatorAccount := delAcc.(*types.QOSAccount)
-	if !delegatorAccount.EnoughOfQOS(btypes.NewInt(int64(tx.Amount))) {
-		return ErrOwnerNoEnoughToken(DefaultCodeSpace, "No enough QOS in delegator's account.")
+	err = validateValidator(ctx, tx.Validator, true, staketypes.Active, true)
+	if nil != err {
+		return err
 	}
 
-	valAcc := accountMapper.GetAccount(tx.Validator)
-	if nil == valAcc {
-		return ErrOwnerNotExists(DefaultCodeSpace, "Validator's address doesn't exist.")
+	err = validateQOSAccount(ctx, tx.Delegator, tx.Amount)
+	if nil != err {
+		return err
 	}
+
+	err = validateQOSAccount(ctx, tx.Validator, 0)
+	if nil != err {
+		return err
+	}
+
 	return nil
 }
 
@@ -310,6 +287,8 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	delegationInfo = staketypes.NewDelegationInfo(tx.Delegator, tx.Validator, tx.Amount, tx.isCompound)
 	delMapper.SetDelegationInfo(delegationInfo)
 
+	// TODO: 增加dist信息
+
 	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
 }
 
@@ -328,4 +307,115 @@ func (tx *TxCreateDelegation) GetGasPayer() btypes.Address {
 func (tx *TxCreateDelegation) GetSignData() (ret []byte) {
 	ret = append(ret, tx.Delegator...)
 	return
+}
+
+type TxModifyCompound struct {
+	Delegator btypes.Address
+	Validator btypes.Address
+	isCompound bool
+}
+
+var _ txs.ITx = (*TxModifyCompound)(nil)
+
+func (tx *TxModifyCompound) ValidateData(ctx context.Context) (err error) {
+
+	if len(tx.Delegator) == 0 || len(tx.Validator) == 0{
+		return ErrInvalidInput(DefaultCodeSpace, "Validator and Delegator must be specified.")
+	}
+
+	// TODO:是否允许validator为inactive/jailed时修改
+	err = validateValidator(ctx, tx.Validator, true, staketypes.Active, true)
+	if nil != err {
+		return err
+	}
+
+	err = validateQOSAccount(ctx, tx.Delegator, 0)
+	if nil != err {
+		return err
+	}
+
+	err = validateQOSAccount(ctx, tx.Validator, 0)
+	if nil != err {
+		return err
+	}
+
+	return nil
+}
+
+func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	_, exists := mapper.GetValidatorByOwner(tx.Validator)
+	if !exists {
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+	}
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	delAcc := accountMapper.GetAccount(tx.Delegator)
+	if nil == delAcc {
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+	}
+
+	delMapper := stakemapper.GetDelegationMapper(ctx)
+	delegationInfo, exists := delMapper.GetDelegationInfo(tx.Validator, tx.Delegator)
+	if exists && delegationInfo.IsCompound != tx.isCompound{
+		delegationInfo.IsCompound = tx.isCompound
+		delMapper.SetDelegationInfo(delegationInfo)
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
+	}
+
+	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+}
+
+func (tx *TxModifyCompound) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Delegator}
+}
+
+func (tx *TxModifyCompound) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx *TxModifyCompound) GetGasPayer() btypes.Address {
+	return btypes.Address(tx.Delegator)
+}
+
+func (tx *TxModifyCompound) GetSignData() (ret []byte) {
+	ret = append(ret, tx.Delegator...)
+	return
+}
+
+
+func validateQOSAccount(ctx context.Context, addr btypes.Address, toPay uint64) error {
+	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	acc := accountMapper.GetAccount(addr)
+	if nil == acc {
+		return ErrOwnerNotExists(DefaultCodeSpace, "Account doesn't exist: "+addr.String()+
+			", note that only accounts with balances are valid.")
+	}
+
+	if toPay != uint64(nil) && toPay > 0 {
+		qosAccount := acc.(*types.QOSAccount)
+		if !qosAccount.EnoughOfQOS(btypes.NewInt(int64(toPay))) {
+			return ErrOwnerNoEnoughToken(DefaultCodeSpace, "No enough QOS in account: " + addr.String())
+		}
+	}
+	return nil
+}
+
+func validateValidator(ctx context.Context, valAddr btypes.Address, checkActive bool, expectingActiveCode int8, checkJail bool) (err error){
+	valMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
+	validator, exists := valMapper.GetValidatorByOwner(valAddr)
+	if !exists {
+		return ErrValidatorNotExists(DefaultCodeSpace, valAddr.String() + " is not a validator.")
+	}
+	if checkActive {
+		if expectingActiveCode == staketypes.Inactive && validator.Status == staketypes.Active {
+			return ErrValidatorIsActive(DefaultCodeSpace, "Validator " + valAddr.String() + " is active")
+		}
+		if expectingActiveCode ==  staketypes.Active && validator.Status == staketypes.Inactive {
+			return ErrValidatorIsActive(DefaultCodeSpace, "Validator " + valAddr.String() + " is inactive")
+		}
+	}
+	if checkJail {
+		// TODO: block jailed validator
+	}
+	return nil
 }
