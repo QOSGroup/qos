@@ -127,3 +127,21 @@ func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address
 	bz := append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
 	return append(bz, delAdd...)
 }
+
+func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte{
+	bz := append(DelegationByDelValKey, delAdd...)
+	return append(bz, valAdd...)
+}
+
+func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []byte{
+	bz := append(DelegationByDelValKey, valAdd...)
+	return append(bz, delAdd...)
+}
+
+func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte{
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
+	return append(bz, delAdd...)
+}
