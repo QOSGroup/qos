@@ -30,22 +30,22 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	}
 
 	totalQOSAmount := currentInflationPhrase.TotalAmount
-	totalBlock := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix()))/blockTimeAvg
+	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix()))/blockTimeAvg
 	//totalBlock := mintMapper.GetParams().TotalBlock
 	appliedQOSAmount := currentInflationPhrase.AppliedAmount
 
 	if appliedQOSAmount >= totalQOSAmount {
 		return
 	}
-
-	if height >= totalBlock {
+	if blocks <= 0 {
 		return
 	}
 
 	if ctx.BlockHeight() > 1 {
-		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / (totalBlock - height)
+		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
 		if rewardPerBlock > 0 {
-			rewardVoteValidator(ctx, req, rewardPerBlock)
+			distributionMapper := ctx.Mapper(staketypes.DistributionMapperName).(*stakemapper.DistributionMapper)
+			distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
 		}
 	}
 }
