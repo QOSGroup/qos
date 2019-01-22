@@ -123,7 +123,7 @@ func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []
 }
 
 func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []byte{
-	bz := append(DelegationByDelValKey, valAdd...)
+	bz := append(DelegationByValDelKey, valAdd...)
 	return append(bz, delAdd...)
 }
 
