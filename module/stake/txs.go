@@ -88,7 +88,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validatorMapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
 }
 
 func (tx *TxCreateValidator) GetSigner() []btypes.Address {
@@ -147,11 +147,11 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return btypes.Result{Code: btypes.CodeInternal}, nil
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
 	}
 	mapper.MakeValidatorInactive(validator.ValidatorPubKey.Address().Bytes(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), staketypes.Revoke)
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
 }
 
 func (tx *TxRevokeValidator) GetSigner() []btypes.Address {
@@ -206,7 +206,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper := ctx.Mapper(staketypes.ValidatorMapperName).(*stakemapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return btypes.Result{Code: btypes.CodeInternal}, nil
+		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
 	}
 	mapper.MakeValidatorActive(validator.ValidatorPubKey.Address().Bytes())
 
@@ -214,7 +214,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	voteInfo := staketypes.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
 	voteInfoMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
 }
 
 func (tx *TxActiveValidator) GetSigner() []btypes.Address {
