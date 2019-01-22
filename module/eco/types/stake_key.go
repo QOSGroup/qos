@@ -16,6 +16,9 @@ const (
 	AppliedQOSAmountKey = "appliedqos"
 
 	DelegationMapperName = "delegation"
+
+	MintMapperName      = "mint"
+	MintParamsKey       = "params"
 )
 
 var (

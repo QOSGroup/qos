@@ -22,7 +22,7 @@ func TestSaveParams(t *testing.T) {
 	params := minttypes.DefaultMintParams()
 	mintMapper := defaultMintContext().Mapper(minttypes.MintMapperName).(*MintMapper)
 
-	mintMapper.SetMintParams(params)
+	mintMapper.SetParams(params)
 
 	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
 	require.True(t, exist)
