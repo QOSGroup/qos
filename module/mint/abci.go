@@ -44,11 +44,11 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	if ctx.BlockHeight() > 1 {
 		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
-
 		if rewardPerBlock > 0 {
 			//distributionMapper := ctx.Mapper(DistributionMapperName).(*DistributionMapper)
 			//distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
 			rewardVoteValidator(ctx, req, rewardPerBlock)
+
 		}
 	}
 }
