@@ -30,12 +30,12 @@ func (mapper *MintMapper) Copy() mapper.IMapper {
 // 获取当前Inflation Phrase的键值
 func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, error) {
 	// 使用KVStorePrefixIterator，当前应该是key最小的也就是第一个
-	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), []byte(staketypes.MintParamsKey))
+	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), staketypes.BuildMintParamsKey())
 	if !iter.Valid() {
 		return nil, errors.New("No more coins to come, sad!")
 	}
 	inflationPhraseKey := iter.Key()
-	endtimesecBytes := inflationPhraseKey[len([]byte(staketypes.MintParamsKey)):]
+	endtimesecBytes := inflationPhraseKey[len(staketypes.BuildMintParamsKey()):]
 	var endtimesec uint64
 	binary.Read(bytes.NewBuffer(endtimesecBytes), binary.BigEndian, &endtimesec)
 
@@ -81,10 +81,10 @@ func (mapper *MintMapper) AddInflationPhrase(phrase staketypes.InflationPhrase) 
 	secBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(secBytes, endsec)
 
-	keylen := len([]byte(staketypes.MintParamsKey))
+	keylen := len(staketypes.BuildMintParamsKey())
 	bz := make([]byte, keylen + 8)
 
-	copy(bz[0:keylen], []byte(staketypes.MintParamsKey))
+	copy(bz[0:keylen], staketypes.BuildMintParamsKey())
 	copy(bz[keylen:keylen+8], secBytes)
 
 	mapper.Set(bz, phrase)
@@ -101,7 +101,7 @@ func (mapper *MintMapper) SetMintParams(config staketypes.MintParams) {
 
 func (mapper *MintMapper) GetMintParams() staketypes.MintParams {
 	var phrases []staketypes.InflationPhrase
-	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), []byte(staketypes.MintParamsKey))
+	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), staketypes.BuildMintParamsKey())
 
 	for {
 		var inflationPhrase staketypes.InflationPhrase
