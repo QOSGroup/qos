@@ -7,10 +7,7 @@ import (
 	"time"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
-
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
-
-
 )
 
 type MintMapper struct {
@@ -34,6 +31,7 @@ func (mapper *MintMapper) Copy() mapper.IMapper {
 func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, error) {
 	// 使用KVStorePrefixIterator，当前应该是key最小的也就是第一个
 	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), staketypes.BuildMintParamsKey())
+
 	if !iter.Valid() {
 		return nil, errors.New("No more coins to come, sad!")
 	}
