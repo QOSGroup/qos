@@ -110,6 +110,7 @@ func BuildMintParamsKey() []byte {
 	return []byte(MintParamsKey)
 }
 
+
 func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []byte{
 	bz := append(DelegationByValDelKey, valAdd...)
 	return append(bz, delAdd...)
