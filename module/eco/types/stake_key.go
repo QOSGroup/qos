@@ -18,7 +18,7 @@ const (
 	DelegationMapperName = "delegation"
 
 	MintMapperName      = "mint"
-	MintParamsKey       = "params"
+	MintParamsKey       = "mintparams"
 )
 
 var (
