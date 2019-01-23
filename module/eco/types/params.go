@@ -20,11 +20,11 @@ type StakeParams struct {
 }
 
 type MintParams struct {
-	Phrases []InflationPhrase `jason:"inflation_phrases"`
+	Phrases []InflationPhrase `json:"inflation_phrases"`
 }
 
 type InflationPhrase struct {
-	EndTime       time.Time `jason:"endtime"`
+	EndTime       time.Time `json:"endtime"`
 	TotalAmount   uint64    `json:"total_amount"`
 	AppliedAmount uint64    `json:"applied_amount"`
 }
