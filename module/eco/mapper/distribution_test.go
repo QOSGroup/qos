@@ -96,3 +96,51 @@ func TestDistributionMapper_GetPreDistributionQOS(t *testing.T) {
 	require.Equal(t, btypes.NewInt(30), a)
 
 }
+
+func TestDistributionMapper_ClearValidatorPeriodSummaryInfo(t *testing.T) {
+
+	mapper := getDistributionMapper()
+	pubkey := ed25519.GenPrivKey().PubKey()
+	addr := btypes.Address(pubkey.Address())
+
+	validator := types.Validator{
+		ValidatorPubKey: pubkey,
+		BondTokens:      uint64(200),
+	}
+
+	mapper.InitValidatorPeriodSummaryInfo(addr)
+	mapper.incrementValidatorPeriod(validator)
+	mapper.incrementValidatorPeriod(validator)
+	mapper.incrementValidatorPeriod(validator)
+	mapper.incrementValidatorPeriod(validator)
+
+	exsits := mapper.GetStore().Has(types.BuildValidatorCurrentPeriodSummaryKey(addr))
+	require.Equal(t, true, exsits)
+
+	for i := uint64(0); i <= 4; i++ {
+		exsits = mapper.GetStore().Has(types.BuildValidatorHistoryPeriodSummaryKey(addr, uint64(i)))
+		require.Equal(t, true, exsits)
+	}
+
+	mapper.DeleteValidatorPeriodSummaryInfo(addr)
+
+	exsits = mapper.GetStore().Has(types.BuildValidatorCurrentPeriodSummaryKey(addr))
+	require.Equal(t, false, exsits)
+
+	for i := uint64(0); i <= 4; i++ {
+		exsits = mapper.GetStore().Has(types.BuildValidatorHistoryPeriodSummaryKey(addr, uint64(i)))
+		require.Equal(t, false, exsits)
+	}
+
+}
+
+func TestDistributionMapper_calculateRewardsBetweenPeriod(t *testing.T) {
+	mapper := getDistributionMapper()
+
+	pubkey := ed25519.GenPrivKey().PubKey()
+	addr := btypes.Address(pubkey.Address())
+
+	a := mapper.calculateRewardsBetweenPeriod(addr, uint64(10), uint64(100), uint64(0))
+	require.Equal(t, btypes.ZeroInt(), a)
+
+}

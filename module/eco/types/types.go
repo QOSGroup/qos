@@ -8,6 +8,7 @@ const (
 	AddrLen = 20
 )
 
+//DelegatorEarningsStartInfo delegator计算收益信息
 type DelegatorEarningsStartInfo struct {
 	PreviousPeriod       uint64        `json:"previous_period"`
 	BondToken            uint64        `json:"bond_token"`
@@ -15,6 +16,7 @@ type DelegatorEarningsStartInfo struct {
 	HistoricalRewardFees btypes.BigInt `json:"historical_rewards"`
 }
 
+//ValidatorCurrentPeriodSummary validator当前周期收益信息
 type ValidatorCurrentPeriodSummary struct {
 	Fees   btypes.BigInt `json:"fees"`
 	Period uint64        `json:"period"`

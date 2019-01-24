@@ -2,8 +2,8 @@ package mint
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	minttypes "github.com/QOSGroup/qos/module/eco/types"
 	mintmapper "github.com/QOSGroup/qos/module/eco/mapper"
+	minttypes "github.com/QOSGroup/qos/module/eco/types"
 )
 
 type GenesisState struct {

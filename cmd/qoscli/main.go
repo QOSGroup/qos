@@ -49,7 +49,9 @@ func main() {
 	txsCommands.AddCommand(bctypes.LineBreak)
 	txsCommands.AddCommand(approve.TxCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(staking.TxCommands(cdc)...)
+	txsCommands.AddCommand(staking.TxValidatorCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(staking.TxDelegationCommands(cdc)...)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),

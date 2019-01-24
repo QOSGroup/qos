@@ -31,7 +31,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	}
 
 	totalQOSAmount := currentInflationPhrase.TotalAmount
-	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix()))/blockTimeAvg
+	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix())) / blockTimeAvg
 	//totalBlock := mintMapper.GetParams().TotalBlock
 	appliedQOSAmount := currentInflationPhrase.AppliedAmount
 

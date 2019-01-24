@@ -67,10 +67,18 @@ func GetDelegatorEarningStartInfoAddr(key []byte) (valAddr, deleAddr btypes.Addr
 	return btypes.Address(key[1 : 1+AddrLen]), btypes.Address(key[1+AddrLen:])
 }
 
+func GetDelegatorEarningsStartInfoPrefixKey() []byte {
+	return delegatorEarningsStartInfoPrefixKey
+}
+
 func BuildValidatorHistoryPeriodSummaryKey(validatorAddr btypes.Address, period uint64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, period)
 	return append(append(validatorHistoryPeriodSummaryPrefixKey, validatorAddr...), b...)
+}
+
+func GetValidatorHistoryPeriodSummaryPrefixKey() []byte {
+	return validatorHistoryPeriodSummaryPrefixKey
 }
 
 func GetValidatorHistoryPeriodSummaryAddrPeriod(key []byte) (valAddr btypes.Address, period uint64) {

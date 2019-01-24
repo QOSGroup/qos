@@ -6,11 +6,21 @@ import (
 	"github.com/tendermint/go-amino"
 )
 
-func TxCommands(cdc *amino.Codec) []*cobra.Command {
+func TxValidatorCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.PostCommands(
 		CreateValidatorCmd(cdc),
 		RevokeValidatorCmd(cdc),
-		ActiveValidatorCmd(cdc))
+		ActiveValidatorCmd(cdc),
+	)
+}
+
+func TxDelegationCommands(cdc *amino.Codec) []*cobra.Command {
+	return bctypes.PostCommands(
+		CreateDelegationCommand(cdc),
+		CreateModifyCompoundCommand(cdc),
+		CreateUnbondDelegationCommand(cdc),
+		CreateReDelegationCommand(cdc),
+	)
 }
 
 func QueryCommands(cdc *amino.Codec) []*cobra.Command {

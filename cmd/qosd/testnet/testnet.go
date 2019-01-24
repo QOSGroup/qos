@@ -3,11 +3,11 @@ package testnet
 import (
 	"fmt"
 	"github.com/QOSGroup/qos/app"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
