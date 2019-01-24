@@ -17,9 +17,9 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestValidatorMapper(t *testing.T) {

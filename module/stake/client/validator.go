@@ -21,12 +21,13 @@ const (
 	flagPubKey      = "pubkey"
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
+	flagCompound    = "compound"
 )
 
 func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-validator",
-		Short: "Create validator",
+		Short: "create new validator initialized with a self-delegation to it",
 		Long: `
 pubkey is a tendermint validator pubkey. the public key of the validator used in
 Tendermint consensus.
@@ -64,7 +65,8 @@ example:
 				var cKey ed25519.PubKeyEd25519
 				copy(cKey[:], bz)
 
-				return stake.NewCreateValidatorTx(name, owner, cKey, tokens, desc), nil
+				isCompound := viper.GetBool(flagCompound)
+				return stake.NewCreateValidatorTx(name, owner, cKey, tokens, isCompound, desc), nil
 			})
 
 		},
@@ -74,6 +76,7 @@ example:
 	cmd.Flags().String(flagOwner, "", "keystore name or account address")
 	cmd.Flags().String(flagPubKey, "", "tendermint consensus validator public key")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
+	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagDescription, "", "description")
 
 	cmd.MarkFlagRequired(flagName)

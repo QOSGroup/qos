@@ -4,10 +4,10 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
-	"time"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
+	"time"
 )
 
 type MintMapper struct {
@@ -42,8 +42,8 @@ func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, 
 	nowsec := uint64(time.Now().UTC().Unix())
 
 	// 当前时间已经超过endtime，需要进入下一phrase
-	if (nowsec >= endtimesec) {
-		if (newPhrase) {
+	if nowsec >= endtimesec {
+		if newPhrase {
 			// 排除设置错误，为啥会刚删过又删？
 			return nil, errors.New("Removing Inflation Plans too frequently")
 		}
@@ -82,7 +82,7 @@ func (mapper *MintMapper) AddInflationPhrase(phrase staketypes.InflationPhrase) 
 	binary.BigEndian.PutUint64(secBytes, endsec)
 
 	keylen := len(staketypes.BuildMintParamsKey())
-	bz := make([]byte, keylen + 8)
+	bz := make([]byte, keylen+8)
 
 	copy(bz[0:keylen], staketypes.BuildMintParamsKey())
 	copy(bz[keylen:keylen+8], secBytes)

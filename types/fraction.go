@@ -67,8 +67,13 @@ func (frac Fraction) Sub(f1 Fraction) Fraction {
 }
 
 func (frac Fraction) GCD() Fraction {
+	if frac.Numer.Equal(btypes.ZeroInt()) || frac.Denomin.Equal(btypes.ZeroInt()) {
+		return ZeroFraction()
+	}
+
 	n := new(big.Int).Abs(frac.Numer.BigInt())
 	d := new(big.Int).Abs(frac.Denomin.BigInt())
+
 	gcd := new(big.Int).GCD(nil, nil, n, d)
 
 	numer := new(big.Int).Div(n, gcd)

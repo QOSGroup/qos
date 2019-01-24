@@ -9,13 +9,11 @@ import (
 )
 
 const (
-	ValidatorMapperName = "validator"
-
-	MintMapperName      = "mint"
-	MintParamsKey       = "mintparams"
-
+	ValidatorMapperName  = "validator"
 	DelegationMapperName = "delegation"
+	MintMapperName       = "mint"
 
+	MintParamsKey = "mintparams"
 )
 
 var (
@@ -25,9 +23,9 @@ var (
 	validatorByInactiveKey  = []byte{0x03} // 保存处于`inactive`状态的Validator. key: ValidatorInactiveTime + ValidatorAddress
 	validatorByVotePowerKey = []byte{0x04} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + ValidatorAddress
 
-	DelegationByDelValKey            	= []byte{0x31}	// key: delegator add + validator owner add, value: delegationInfo
-	DelegationByValDelKey				= []byte{0x32}	// key: validator owner add + delegator add, value: nil
-	DelegatorUnbondingQOSatHeightKey 	= []byte{0x41}	// key: height + delegator add, value: the amount of qos going to be unbonded on this height
+	DelegationByDelValKey            = []byte{0x31} // key: delegator add + validator owner add, value: delegationInfo
+	DelegationByValDelKey            = []byte{0x32} // key: validator owner add + delegator add, value: nil
+	DelegatorUnbondingQOSatHeightKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
 
 	currentValidatorAddressKey = []byte("currentValidatorAddressKey")
 
@@ -110,17 +108,17 @@ func BuildMintParamsKey() []byte {
 	return []byte(MintParamsKey)
 }
 
-func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte{
+func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte {
 	bz := append(DelegationByDelValKey, delAdd...)
 	return append(bz, valAdd...)
 }
 
-func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []byte{
+func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []byte {
 	bz := append(DelegationByValDelKey, valAdd...)
 	return append(bz, delAdd...)
 }
 
-func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte{
+func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte {
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, height)
 

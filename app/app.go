@@ -6,12 +6,11 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/approve"
+	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/module/mint"
-	mintmapper "github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
-	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
@@ -65,13 +64,19 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(approve.NewApproveMapper())
 
 	// Staking Validator mapper
-	app.RegisterMapper(stakemapper.NewValidatorMapper())
+	app.RegisterMapper(ecomapper.NewValidatorMapper())
 
 	// Staking mapper
-	app.RegisterMapper(stakemapper.NewVoteInfoMapper())
+	app.RegisterMapper(ecomapper.NewVoteInfoMapper())
 
 	// Mint mapper
-	app.RegisterMapper(mintmapper.NewMintMapper())
+	app.RegisterMapper(ecomapper.NewMintMapper())
+
+	//distributionMapper
+	app.RegisterMapper(ecomapper.NewDistributionMapper())
+
+	//delegationMapper
+	app.RegisterMapper(ecomapper.NewDelegationMapper())
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()

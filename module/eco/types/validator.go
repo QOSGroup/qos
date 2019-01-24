@@ -20,9 +20,9 @@ const (
 	Inactive
 
 	//Inactive Code
-	Revoke InactiveCode = iota
-	MissVoteBlock
-	MaxValidator
+	Revoke        InactiveCode = iota // 2
+	MissVoteBlock                     // 3
+	MaxValidator                      // 4
 )
 
 type Validator struct {

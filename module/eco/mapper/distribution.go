@@ -5,6 +5,7 @@ import (
 
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
+	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco/types"
 	qtypes "github.com/QOSGroup/qos/types"
@@ -14,13 +15,29 @@ func BuildDistributionStoreQueryPath() []byte {
 	return []byte(fmt.Sprintf("/store/%s/key", types.DistributionMapperName))
 }
 
-func (mapper *DistributionMapper) InitValidatorPeriodSummaryInfo(valAddr btypes.Address) {
+func (mapper *DistributionMapper) InitValidatorPeriodSummaryInfo(valAddr btypes.Address) types.ValidatorCurrentPeriodSummary {
 	//初始化validator历史收益,当前周期汇总收益.
 	mapper.Set(types.BuildValidatorHistoryPeriodSummaryKey(valAddr, uint64(0)), qtypes.ZeroFraction())
-	mapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), types.ValidatorCurrentPeriodSummary{
+	current := types.ValidatorCurrentPeriodSummary{
 		Period: 1,
 		Fees:   btypes.ZeroInt(),
-	})
+	}
+	mapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), current)
+	return current
+}
+
+//清空validator相关的收益汇总信息
+func (mapper *DistributionMapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.Address) {
+	periodPrifixKey := append(types.GetValidatorHistoryPeriodSummaryPrefixKey(), valAddr...)
+	iter := store.KVStorePrefixIterator(mapper.GetStore(), periodPrifixKey)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
+	}
+
+	k := types.BuildValidatorCurrentPeriodSummaryKey(valAddr)
+	mapper.Del(k)
 }
 
 func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
@@ -28,16 +45,34 @@ func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btyp
 	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
 	params := mapper.GetParams()
 
-	mapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr), types.DelegatorEarningsStartInfo{
+	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
+
+	startInfo := types.DelegatorEarningsStartInfo{
 		PreviousPeriod:       vcps.Period - 1,
 		BondToken:            bondTokens,
 		StartingHeight:       currHeight,
 		HistoricalRewardFees: btypes.ZeroInt(),
-	})
+	}
+
+	//delegator unbond全部后,又重新delegate
+	var info types.DelegatorEarningsStartInfo
+	exsits := mapper.Get(key, &info)
+	if exsits { //保留delegator历史收益,不计算阶段内收益
+		startInfo.HistoricalRewardFees = startInfo.HistoricalRewardFees.Add(info.HistoricalRewardFees)
+	}
+
+	mapper.Set(key, startInfo)
 
 	//发放收益高度
 	incomeHeight := currHeight + params.DelegatorsIncomePeriodHeight
-	mapper.Set(types.BuildDelegatorPeriodIncomeKey(valAddr, deleAddr, incomeHeight), struct{}{})
+	mapper.Set(types.BuildDelegatorPeriodIncomeKey(valAddr, deleAddr, incomeHeight), true)
+}
+
+//删除delegator收益信息
+//todo: 发放收益高度信息没有删除
+func (mapper *DistributionMapper) DeleteDelegatorIncomeInfo(valAddr, deleAddr btypes.Address) {
+	k := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
+	mapper.Del(k)
 }
 
 //增加validator的周期
@@ -46,11 +81,13 @@ func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btyp
 func (mapper *DistributionMapper) incrementValidatorPeriod(validator types.Validator) uint64 {
 	valAddr := validator.GetValidatorAddress()
 	//初始化delegaotr starting , 发放收益信息
-	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
+	vcps, exsits := mapper.GetValidatorCurrentPeriodSummary(valAddr)
+	if !exsits {
+		vcps = mapper.InitValidatorPeriodSummaryInfo(valAddr)
+	}
 
 	var currentFraction qtypes.Fraction
-	//TODO: validator inactive时处理
-	if !validator.IsActive() || validator.BondTokens == uint64(0) {
+	if validator.BondTokens == uint64(0) {
 		communityFee := mapper.GetCommunityFeePool()
 		communityFee = communityFee.Add(vcps.Fees)
 		mapper.Set(types.BuildCommunityFeePoolKey(), communityFee)
@@ -121,6 +158,10 @@ func (mapper *DistributionMapper) CalculateDelegatorPeriodRewards(valAddr, deleA
 func (mapper *DistributionMapper) calculateRewardsBetweenPeriod(valAddr btypes.Address, startPeriod, endPeriod, bondTokens uint64) btypes.BigInt {
 
 	if startPeriod > endPeriod {
+		return btypes.ZeroInt()
+	}
+
+	if bondTokens == uint64(0) {
 		return btypes.ZeroInt()
 	}
 

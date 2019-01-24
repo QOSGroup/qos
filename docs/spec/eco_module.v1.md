@@ -90,7 +90,8 @@ path: /store/delegator/key
 |Index| Prefix Key | Key     | Value | 备注|
 |:--|:----       | :-------| :---- | :----|
 |a| []byte{0x31} | DelegatorAddress-ValidatorAddress |DelegationInfo| delegator信息|
-|b| []byte{0x41} | BlockHeight+Delegator|QOS|delegator在指定高度解绑的QOS数量,在此高度将QOS返回至delegator|
+|b| []byte{0x32} | ValidatorAddress-DelegatorAddress | struct{}{}| validator与delegator映射|
+|c| []byte{0x41} | BlockHeight+Delegator|QOS|delegator在指定高度解绑的QOS数量,在此高度将QOS返回至delegator|
 
 
 #### Fee分配
