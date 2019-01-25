@@ -10,10 +10,11 @@ const (
 
 //DelegatorEarningsStartInfo delegator计算收益信息
 type DelegatorEarningsStartInfo struct {
-	PreviousPeriod       uint64        `json:"previous_period"`
-	BondToken            uint64        `json:"bond_token"`
-	StartingHeight       uint64        `json:"starting_height"`
-	HistoricalRewardFees btypes.BigInt `json:"historical_rewards"`
+	PreviousPeriod        uint64        `json:"previous_period"`
+	BondToken             uint64        `json:"bond_token"`
+	CurrentStartingHeight uint64        `json:"starting_height"`
+	FirstDelegateHeight   uint64        `json:"first_delegate_height"`
+	HistoricalRewardFees  btypes.BigInt `json:"historical_rewards"`
 }
 
 //ValidatorCurrentPeriodSummary validator当前周期收益信息

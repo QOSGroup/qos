@@ -44,44 +44,7 @@ func (mapper *DelegationMapper) DelDelegationInfo(delAddr btypes.Address, valAdd
 	mapper.Del(stake_types.BuildDelegationByValDelKey(valAddr, delAddr))
 }
 
-func (mapper *DelegationMapper) AddQOStoDelegationInfo(delAddr btypes.Address, valAddr btypes.Address, add_amount uint64) (amount uint64, exist bool) {
-	delegationInfo, exist := mapper.GetDelegationInfo(delAddr, valAddr)
-	if exist {
-		delegationInfo.Amount += add_amount
-		mapper.SetDelegationInfo(delegationInfo)
-		amount = delegationInfo.Amount
-	}
-	// if the delegation doesn't exist, return (nil, false) and do nothing
-	return
-}
-
-func (mapper *DelegationMapper) ReduceQOSfromDelegationInfo(delAddr btypes.Address, valAddr btypes.Address, reduce_amount uint64) (amount uint64, exist bool) {
-	delegationInfo, exist := mapper.GetDelegationInfo(delAddr, valAddr)
-	if exist {
-		if delegationInfo.Amount > reduce_amount {
-			delegationInfo.Amount -= reduce_amount
-			mapper.SetDelegationInfo(delegationInfo)
-			amount = delegationInfo.Amount
-		}
-		if delegationInfo.Amount == reduce_amount {
-			mapper.DelDelegationInfo(delAddr, valAddr)
-			amount = 0
-		}
-	}
-	// if the delegation doesn't exist, return (nil, false) and do nothing
-	return
-}
-
-func (mapper *DelegationMapper) ChangeDelegationInfoCompound(delAddr btypes.Address, valAddr btypes.Address, isCompound bool) (exist bool) {
-	delegationInfo, exist := mapper.GetDelegationInfo(delAddr, valAddr)
-	if exist {
-		delegationInfo.IsCompound = isCompound
-		mapper.SetDelegationInfo(delegationInfo)
-	}
-	return
-}
-
-func (mapper *DelegationMapper) SetDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, amount uint64) {
+func (mapper *DelegationMapper) setDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, amount uint64) {
 	mapper.Set(stake_types.BuildUnbondingDelegationByHeightDelKey(height, delAddr), amount)
 }
 
@@ -95,16 +58,9 @@ func (mapper *DelegationMapper) AddDelegatorUnbondingQOSatHeight(height uint64, 
 	if exist {
 		add_amount += amount
 	}
-	mapper.SetDelegatorUnbondingQOSatHeight(height, delAddr, add_amount)
+	mapper.setDelegatorUnbondingQOSatHeight(height, delAddr, add_amount)
 }
 
 func (mapper *DelegationMapper) RemoveDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address) {
 	mapper.Del(stake_types.BuildUnbondingDelegationByHeightDelKey(height, delAddr))
-}
-
-func (mapper *DelegationMapper) CreateDelegation(delAddr btypes.Address, valAddr btypes.Address, amount uint64, isCompound bool) (info stake_types.DelegationInfo) {
-	info = stake_types.NewDelegationInfo(delAddr, valAddr, amount, isCompound)
-	//TODO：append to existing delegationInfo
-	mapper.SetDelegationInfo(info)
-	return
 }
