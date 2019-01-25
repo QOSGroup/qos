@@ -48,7 +48,7 @@ type TxDelegate struct {
 
 ```
 
-unbond后,对应的validator将会增加一个周期,unbond金额将在`unbond周期`之后返还至delegator账户.
+unbond后,对应的validator将会增加一个计费点,unbond金额将在`unbond周期`之后返还至delegator账户.
 unbond操作立即生效, 先统计出当前收益,并追加到下次收益发放总额中.
 
 下次收益发放时, 发放金额为 x + y

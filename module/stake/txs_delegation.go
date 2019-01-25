@@ -1,6 +1,8 @@
 package stake
 
 import (
+	"errors"
+
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -10,10 +12,10 @@ import (
 )
 
 type TxCreateDelegation struct {
-	Delegator      btypes.Address
-	ValidatorOwner btypes.Address
-	Amount         uint64
-	IsCompound     bool
+	Delegator      btypes.Address //委托人
+	ValidatorOwner btypes.Address //验证者Owner
+	Amount         uint64         //委托QOS数量
+	IsCompound     bool           // 定期收益是否复投
 }
 
 var _ txs.ITx = (*TxCreateDelegation)(nil)
@@ -29,18 +31,15 @@ func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 		return ErrInvalidInput(DefaultCodeSpace, "Delegation amount must be a positive integer.")
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorOwner, true, staketypes.Active, true)
-	if nil != err {
+	if _, err := validateValidator(ctx, tx.ValidatorOwner, true, staketypes.Active, true); err != nil {
 		return err
 	}
 
-	err = validateQOSAccount(ctx, tx.Delegator, tx.Amount)
-	if nil != err {
+	if err := validateQOSAccount(ctx, tx.Delegator, tx.Amount); err != nil {
 		return err
 	}
 
-	err = validateQOSAccount(ctx, tx.ValidatorOwner, 0)
-	if nil != err {
+	if err := validateQOSAccount(ctx, tx.ValidatorOwner, 0); err != nil {
 		return err
 	}
 
@@ -48,56 +47,17 @@ func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 }
 
 //创建或新增委托
-//0. delegator账户扣减QOS
-//1. validator增加周期 , 计算周期段内delegator收益,并更新收益信息
-//2. 更新delegation信息
-//3. 更新validator的bondTokens
 func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	e := eco.GetEco(ctx)
 
-	currentHeight := uint64(ctx.BlockHeight())
-	ecoMapper := mapper.GetEcoMapper(ctx)
-
-	validator, exists := ecoMapper.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
+	validator, exists := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: "validator not exsits"}, nil
 	}
 
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-	delegatorAddr := tx.Delegator
-
-	//0. delegator账户扣减QOS, amount:qos = 1:1
-	decrQOS := btypes.NewInt(int64(tx.Amount))
-	err := eco.DecrAccountQOS(ctx, delegatorAddr, decrQOS)
-	if err != nil {
+	if err := e.DelegateValidator(validator, tx.Delegator, tx.Amount, tx.IsCompound, true); err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
-
-	//获取delegation信息,若delegation信息不存在,则初始化degelator收益信息
-	delegatedAmount := uint64(0)
-	info, exsits := ecoMapper.DelegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
-	if !exsits {
-		ecoMapper.DistributionMapper.InitDelegatorIncomeInfo(valAddr, delegatorAddr, uint64(0), currentHeight)
-		info = staketypes.NewDelegationInfo(delegatorAddr, valAddr, uint64(0), false)
-	} else {
-		delegatedAmount = info.Amount
-	}
-
-	updatedAmount := delegatedAmount + tx.Amount
-	//1. validator增加周期 , 计算周期段内delegator收益,并更新收益信息
-	err = ecoMapper.DistributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, updatedAmount, currentHeight)
-	if err != nil {
-		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
-	}
-
-	//2. 更新delegation信息
-	info.Amount = updatedAmount
-	info.IsCompound = tx.IsCompound
-	ecoMapper.DelegationMapper.SetDelegationInfo(info)
-
-	//3. 更新validator的bondTokens, amount:token = 1:1
-	validatorAddToken := tx.Amount
-	updatedValidatorTokens := validator.BondTokens + validatorAddToken
-	ecoMapper.ValidatorMapper.ChangeValidatorBondTokens(validator, updatedValidatorTokens)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
 }
@@ -142,16 +102,13 @@ func (tx *TxModifyCompound) ValidateData(ctx context.Context) (err error) {
 		return err
 	}
 
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-
-	delegationMapper := mapper.GetDelegationMapper(ctx)
-	info, exsits := delegationMapper.GetDelegationInfo(tx.Delegator, valAddr)
-	if !exsits {
-		return ErrInvalidInput(DefaultCodeSpace, "delegator not delegate the owner's validator")
+	info, err := validateDelegator(ctx, validator.GetValidatorAddress(), tx.Delegator, false, 0)
+	if err != nil {
+		return err
 	}
 
 	if info.IsCompound == tx.IsCompound {
-		return ErrInvalidInput(DefaultCodeSpace, "delegator's compound not changed")
+		return ErrInvalidInput(DefaultCodeSpace, "delegator's compound not change")
 	}
 
 	return nil
@@ -161,29 +118,29 @@ func (tx *TxModifyCompound) ValidateData(ctx context.Context) (err error) {
 func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 
 	currentHeight := uint64(ctx.BlockHeight())
-	ecoMapper := mapper.GetEcoMapper(ctx)
+	e := eco.GetEco(ctx)
 
-	validator, exists := ecoMapper.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
+	validator, exists := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: "validator not exsits"}, nil
 	}
 
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
+	valAddr := validator.GetValidatorAddress()
 	delegatorAddr := tx.Delegator
-	info, exsits := ecoMapper.DelegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
+	info, exsits := e.DelegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
 	if !exsits {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: "delegator not delegate the owner's validator"}, nil
 	}
 
 	//1. 计算delegator收益
-	err := ecoMapper.DistributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, currentHeight)
+	err := e.DistributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, currentHeight)
 	if err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
 	//2. 修改delegation信息
 	info.IsCompound = tx.IsCompound
-	ecoMapper.DelegationMapper.SetDelegationInfo(info)
+	e.DelegationMapper.SetDelegationInfo(info)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
 }
@@ -211,79 +168,52 @@ type TxUnbondDelegation struct {
 	Delegator      btypes.Address
 	ValidatorOwner btypes.Address
 	UnbondAmount   uint64
+	IsUnbondAll    bool
 }
 
 var _ txs.ITx = (*TxUnbondDelegation)(nil)
 
 func (tx *TxUnbondDelegation) ValidateData(ctx context.Context) error {
 
+	if !tx.IsUnbondAll && tx.UnbondAmount == 0 {
+		return errors.New("unbond QOS amount is zero")
+	}
+
 	validator, err := validateValidator(ctx, tx.ValidatorOwner, false, staketypes.Active, true)
 	if nil != err {
 		return err
-	}
-
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-	delegationMapper := mapper.GetDelegationMapper(ctx)
-
-	delegationInfo, exsits := delegationMapper.GetDelegationInfo(tx.Delegator, valAddr)
-	if !exsits {
-		return ErrInvalidInput(DefaultCodeSpace, "delegator not delegate the owner's validator")
-	}
-
-	if delegationInfo.Amount < tx.UnbondAmount {
-		return ErrInvalidInput(DefaultCodeSpace, "delegator does't have enough amount to unbond")
 	}
 
 	if validator.BondTokens < tx.UnbondAmount {
 		return ErrInvalidInput(DefaultCodeSpace, "validator does't have enough tokens")
 	}
 
+	isCheckAmount := !tx.IsUnbondAll
+	checkAmount := uint64(0)
+
+	if !tx.IsUnbondAll {
+		checkAmount = tx.UnbondAmount
+	}
+
+	if _, err = validateDelegator(ctx, validator.GetValidatorAddress(), tx.Delegator, isCheckAmount, checkAmount); err != nil {
+		return err
+	}
+
 	return nil
 }
 
 //unbond delegator tokens
-//1. 计算当前delegator收益
-//2. 更新delegation信息,若全部unbond 则删除对于的delegation信息
-//3. 增加unbond信息
-//4. 更新validator bondTokens信息
 func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	e := eco.GetEco(ctx)
 
-	currentHeight := uint64(ctx.BlockHeight())
-	ecoMapper := mapper.GetEcoMapper(ctx)
-
-	validator, exists := ecoMapper.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
+	validator, exists := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: "validator not exsits"}, nil
 	}
 
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-	delegatorAddr := tx.Delegator
-
-	info, _ := ecoMapper.DelegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
-
-	//1. 计算当前delegator收益
-	updatedTokens := info.Amount - tx.UnbondAmount
-	err := ecoMapper.DistributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, updatedTokens, currentHeight)
-	if err != nil {
+	if err := e.UnbondValidator(validator, tx.Delegator, tx.IsUnbondAll, tx.UnbondAmount, false); err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
-
-	//2. 更新delegation信息
-	info.Amount = info.Amount - tx.UnbondAmount
-	ecoMapper.DelegationMapper.SetDelegationInfo(info)
-	if info.Amount == uint64(0) { //全部unbond,删除delegation info
-		ecoMapper.DelegationMapper.DelDelegationInfo(delegatorAddr, valAddr)
-	}
-
-	//3. 增加unbond信息
-	stakeParams := ecoMapper.ValidatorMapper.GetParams()
-	unbondHeight := uint64(stakeParams.DelegatorUnbondDistributeHeight) + currentHeight
-	ecoMapper.DelegationMapper.AddDelegatorUnbondingQOSatHeight(unbondHeight, delegatorAddr, tx.UnbondAmount)
-
-	//4. 更新validator的bondTokens, amount:token = 1:1
-	validatorMinusToken := tx.UnbondAmount
-	updatedValidatorTokens := validator.BondTokens - validatorMinusToken
-	ecoMapper.ValidatorMapper.ChangeValidatorBondTokens(validator, updatedValidatorTokens)
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
 }
@@ -312,23 +242,70 @@ type TxCreateReDelegation struct {
 	FromValidatorOwner btypes.Address
 	ToValidatorOwner   btypes.Address
 	Amount             uint64
+	IsRedelegateAll    bool
 	IsCompound         bool
 }
 
 var _ txs.ITx = (*TxCreateReDelegation)(nil)
 
 func (tx *TxCreateReDelegation) ValidateData(ctx context.Context) error {
+
+	if !tx.IsRedelegateAll && tx.Amount == 0 {
+		return errors.New("redelegate QOS amount is zero")
+	}
+
 	//1. 校验fromValidator是否存在
+	validator, err := validateValidator(ctx, tx.FromValidatorOwner, false, 0, true)
+	if err != nil {
+		return err
+	}
+
 	//2. 校验toValidator是否存在 且 状态为active
+	_, err = validateValidator(ctx, tx.ToValidatorOwner, true, staketypes.Active, true)
+	if err != nil {
+		return err
+	}
+
 	//3. 校验当前用户是否委托了fromValidator
-	//4. 校验用户委托的amount是否大于amount
+	_, err = validateDelegator(ctx, validator.GetValidatorAddress(), tx.Delegator, true, tx.Amount)
+	if err != nil {
+		return err
+	}
 
 	return nil
 }
 
 //delegate from one to another
 func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
-	panic("not implemented")
+	e := eco.GetEco(ctx)
+
+	fromValidator, exists := e.ValidatorMapper.GetValidatorByOwner(tx.FromValidatorOwner)
+	if !exists {
+		return btypes.Result{Code: btypes.CodeInternal, Codespace: "fromValidator not exsits"}, nil
+	}
+
+	toValidator, exists := e.ValidatorMapper.GetValidatorByOwner(tx.ToValidatorOwner)
+	if !exists {
+		return btypes.Result{Code: btypes.CodeInternal, Codespace: "toValidator not exsits"}, nil
+	}
+
+	info, _ := e.DelegationMapper.GetDelegationInfo(tx.Delegator, fromValidator.GetValidatorAddress())
+
+	reDelegateAmount := tx.Amount
+	if tx.IsRedelegateAll {
+		reDelegateAmount = info.Amount
+	}
+
+	if err := e.UnbondValidator(fromValidator, tx.Delegator, false, reDelegateAmount, true); err != nil {
+		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
+	}
+
+	if err := e.DelegateValidator(toValidator, tx.Delegator, reDelegateAmount, tx.IsCompound, false); err != nil {
+		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
+	}
+
+	return btypes.Result{Code: btypes.CodeOK}, nil
+
 }
 
 func (tx *TxCreateReDelegation) GetSigner() []btypes.Address {
@@ -350,4 +327,21 @@ func (tx *TxCreateReDelegation) GetSignData() (ret []byte) {
 	ret = append(ret, btypes.Int2Byte(int64(tx.Amount))...)
 	ret = append(ret, btypes.Bool2Byte(tx.IsCompound)...)
 	return
+}
+
+func validateDelegator(ctx context.Context, valAddr, deleAddr btypes.Address, checkAmount bool, maxAmount uint64) (staketypes.DelegationInfo, error) {
+
+	delegationMapper := mapper.GetDelegationMapper(ctx)
+	info, exsits := delegationMapper.GetDelegationInfo(deleAddr, valAddr)
+	if !exsits {
+		return info, ErrInvalidInput(DefaultCodeSpace, "delegator not delegate the owner's validator")
+	}
+
+	if checkAmount {
+		if info.Amount < maxAmount {
+			return info, ErrInvalidInput(DefaultCodeSpace, "delegator does't have enough amount of QOS")
+		}
+	}
+
+	return info, nil
 }

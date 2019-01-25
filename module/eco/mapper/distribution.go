@@ -40,6 +40,9 @@ func (mapper *DistributionMapper) DeleteValidatorPeriodSummaryInfo(valAddr btype
 	mapper.Del(k)
 }
 
+//首次Delegate:
+//1. first delegate
+//2. unbond all , then delegate
 func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
 	//初始化delegaotr starting , 发放收益信息
 	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
@@ -48,10 +51,11 @@ func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btyp
 	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 
 	startInfo := types.DelegatorEarningsStartInfo{
-		PreviousPeriod:       vcps.Period - 1,
-		BondToken:            bondTokens,
-		StartingHeight:       currHeight,
-		HistoricalRewardFees: btypes.ZeroInt(),
+		PreviousPeriod:        vcps.Period - 1,
+		BondToken:             bondTokens,
+		CurrentStartingHeight: currHeight,
+		FirstDelegateHeight:   currHeight,
+		HistoricalRewardFees:  btypes.ZeroInt(),
 	}
 
 	//delegator unbond全部后,又重新delegate
@@ -59,13 +63,17 @@ func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btyp
 	exsits := mapper.Get(key, &info)
 	if exsits { //保留delegator历史收益,不计算阶段内收益
 		startInfo.HistoricalRewardFees = startInfo.HistoricalRewardFees.Add(info.HistoricalRewardFees)
+		startInfo.FirstDelegateHeight = info.FirstDelegateHeight
 	}
 
 	mapper.Set(key, startInfo)
 
 	//发放收益高度
-	incomeHeight := currHeight + params.DelegatorsIncomePeriodHeight
-	mapper.Set(types.BuildDelegatorPeriodIncomeKey(valAddr, deleAddr, incomeHeight), true)
+	if !exsits {
+		incomeHeight := currHeight + params.DelegatorsIncomePeriodHeight
+		mapper.Set(types.BuildDelegatorPeriodIncomeKey(valAddr, deleAddr, incomeHeight), true)
+	}
+
 }
 
 //删除delegator收益信息
@@ -78,7 +86,7 @@ func (mapper *DistributionMapper) DeleteDelegatorIncomeInfo(valAddr, deleAddr bt
 //增加validator的周期
 //1. 保存历史周期
 //2. 更新当前周期,返回上一周期数值
-func (mapper *DistributionMapper) incrementValidatorPeriod(validator types.Validator) uint64 {
+func (mapper *DistributionMapper) IncrementValidatorPeriod(validator types.Validator) uint64 {
 	valAddr := validator.GetValidatorAddress()
 	//初始化delegaotr starting , 发放收益信息
 	vcps, exsits := mapper.GetValidatorCurrentPeriodSummary(valAddr)
@@ -123,12 +131,13 @@ func (mapper *DistributionMapper) ModifyDelegatorTokens(validator types.Validato
 		return fmt.Errorf("DelegatorEarningStartInfo not exsist. deleAddr: %s, valAddr: %s ", deleAddr, valAddr)
 	}
 
-	endPeriod := mapper.incrementValidatorPeriod(validator)
-	rewards := mapper.calculateRewardsBetweenPeriod(valAddr, info.PreviousPeriod, endPeriod, info.BondToken)
+	endPeriod := mapper.IncrementValidatorPeriod(validator)
+	rewards := mapper.CalculateRewardsBetweenPeriod(valAddr, info.PreviousPeriod, endPeriod, info.BondToken)
 
 	//修改delegator start信息: 该阶段的delegator收益到周期后再发放
+	//firstDelegateHeight不变
 	info.BondToken = updatedToken
-	info.StartingHeight = blockHeight
+	info.CurrentStartingHeight = blockHeight
 	info.PreviousPeriod = endPeriod
 	info.HistoricalRewardFees = info.HistoricalRewardFees.Add(rewards)
 
@@ -143,10 +152,10 @@ func (mapper *DistributionMapper) CalculateDelegatorPeriodRewards(valAddr, deleA
 		return btypes.BigInt{}, fmt.Errorf("DelegatorEarningStartInfo not exsist. deleAddr: %s, valAddr: %s ", deleAddr, valAddr)
 	}
 
-	rewards := mapper.calculateRewardsBetweenPeriod(valAddr, info.PreviousPeriod, endPeriod, info.BondToken)
+	rewards := mapper.CalculateRewardsBetweenPeriod(valAddr, info.PreviousPeriod, endPeriod, info.BondToken)
 	historicalRewards := info.HistoricalRewardFees
 	//清空delegator start中的汇总信息
-	info.StartingHeight = blockHeight
+	info.CurrentStartingHeight = blockHeight
 	info.PreviousPeriod = endPeriod
 	info.HistoricalRewardFees = btypes.ZeroInt()
 	mapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr), info)
@@ -155,7 +164,7 @@ func (mapper *DistributionMapper) CalculateDelegatorPeriodRewards(valAddr, deleA
 }
 
 //计算bondTokens在validator的两个周期内的收益
-func (mapper *DistributionMapper) calculateRewardsBetweenPeriod(valAddr btypes.Address, startPeriod, endPeriod, bondTokens uint64) btypes.BigInt {
+func (mapper *DistributionMapper) CalculateRewardsBetweenPeriod(valAddr btypes.Address, startPeriod, endPeriod, bondTokens uint64) btypes.BigInt {
 
 	if startPeriod > endPeriod {
 		return btypes.ZeroInt()

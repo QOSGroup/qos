@@ -109,10 +109,10 @@ func TestDistributionMapper_ClearValidatorPeriodSummaryInfo(t *testing.T) {
 	}
 
 	mapper.InitValidatorPeriodSummaryInfo(addr)
-	mapper.incrementValidatorPeriod(validator)
-	mapper.incrementValidatorPeriod(validator)
-	mapper.incrementValidatorPeriod(validator)
-	mapper.incrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
 
 	exsits := mapper.GetStore().Has(types.BuildValidatorCurrentPeriodSummaryKey(addr))
 	require.Equal(t, true, exsits)
@@ -140,7 +140,7 @@ func TestDistributionMapper_calculateRewardsBetweenPeriod(t *testing.T) {
 	pubkey := ed25519.GenPrivKey().PubKey()
 	addr := btypes.Address(pubkey.Address())
 
-	a := mapper.calculateRewardsBetweenPeriod(addr, uint64(10), uint64(100), uint64(0))
+	a := mapper.CalculateRewardsBetweenPeriod(addr, uint64(10), uint64(100), uint64(0))
 	require.Equal(t, btypes.ZeroInt(), a)
 
 }

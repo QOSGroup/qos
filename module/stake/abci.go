@@ -4,6 +4,7 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/eco"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
@@ -40,19 +41,17 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 
 func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 	log := ctx.Logger()
-
-	height := uint64(ctx.BlockHeight())
-	ecoMapper := ecomapper.GetEcoMapper(ctx)
+	e := eco.GetEco(ctx)
 
 	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
 	lastCloseValidatorSec := blockTimeSec - uint64(survivalSecs)
 
-	iterator := ecoMapper.ValidatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
+	iterator := e.ValidatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
 		valAddress := btypes.Address(key[9:])
 		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
-		ecoMapper.RemoveValidator(valAddress, height)
+		e.RemoveValidator(valAddress)
 	}
 }
 
