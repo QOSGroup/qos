@@ -33,6 +33,7 @@ func TestValidatorMapper(t *testing.T) {
 		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
 		Status:          staketypes.Active,
+		MinPeriod:       0,
 		BondHeight:      1,
 	}
 

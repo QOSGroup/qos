@@ -145,6 +145,31 @@ func (mapper *DistributionMapper) ModifyDelegatorTokens(validator types.Validato
 	return nil
 }
 
+func (mapper *DistributionMapper) GetMinValidatorPeriodFromDelegators(valAddr btypes.Address) uint64 {
+	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
+
+	vcps, exsits := mapper.GetValidatorCurrentPeriodSummary(valAddr)
+	if !exsits {
+		return uint64(0)
+	}
+
+	minPeriod := vcps.Period - 1
+
+	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		var info types.DelegatorEarningsStartInfo
+		mapper.BaseMapper.DecodeObject(iter.Value(), &info)
+
+		if info.PreviousPeriod < minPeriod {
+			minPeriod = info.PreviousPeriod
+		}
+	}
+
+	return minPeriod
+}
+
 //计算delegator在截止周期前的收益
 func (mapper *DistributionMapper) CalculateDelegatorPeriodRewards(valAddr, deleAddr btypes.Address, endPeriod, blockHeight uint64) (btypes.BigInt, error) {
 	info, exsits := mapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
@@ -227,6 +252,10 @@ func (mapper *DistributionMapper) GetCommunityFeePool() btypes.BigInt {
 	return communityFeePool
 }
 
+func (mapper *DistributionMapper) SetCommunityFeePool(communityFee btypes.BigInt) {
+	mapper.Set(types.BuildCommunityFeePoolKey(), communityFee)
+}
+
 func (mapper *DistributionMapper) GetValidatorHistoryPeriodSummary(valAddr btypes.Address, period uint64) (frac qtypes.Fraction) {
 	key := types.BuildValidatorHistoryPeriodSummaryKey(valAddr, period)
 	exsits := mapper.Get(key, &frac)
@@ -240,6 +269,11 @@ func (mapper *DistributionMapper) GetDelegatorEarningStartInfo(valAddr, deleAddr
 	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 	exsits = mapper.Get(key, &info)
 	return
+}
+
+func (mapper *DistributionMapper) DelDelegatorEarningStartInfo(valAddr, deleAddr btypes.Address) {
+	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
+	mapper.Del(key)
 }
 
 func (mapper *DistributionMapper) GetPreDistributionQOS() btypes.BigInt {

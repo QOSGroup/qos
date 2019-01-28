@@ -37,6 +37,7 @@ type Validator struct {
 	InactiveTime   time.Time    `json:"inactive_time"`
 	InactiveHeight uint64       `json:"inactive_height"`
 
+	MinPeriod  uint64 `json:"min_period"`
 	BondHeight uint64 `json:"bond_height"`
 }
 

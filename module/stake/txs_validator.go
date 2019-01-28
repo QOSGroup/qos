@@ -1,6 +1,8 @@
 package stake
 
 import (
+	"fmt"
+
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
@@ -19,10 +21,10 @@ const (
 
 type TxCreateValidator struct {
 	Name        string
-	Owner       btypes.Address //操作者, 作为self delegator
+	Owner       btypes.Address //操作者, self delegator
 	PubKey      crypto.PubKey  //validator公钥
 	BondTokens  uint64         //绑定Token数量
-	IsCompound  bool
+	IsCompound  bool           //周期收益是否复投
 	Description string
 }
 
@@ -54,7 +56,7 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 		return err
 	}
 
-	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
+	mapper := ecomapper.GetValidatorMapper(ctx)
 	if mapper.Exists(tx.PubKey.Address().Bytes()) {
 		return ErrValidatorExists(DefaultCodeSpace, "")
 	}
@@ -79,6 +81,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		BondTokens:      tx.BondTokens,
 		Description:     tx.Description,
 		Status:          ecotypes.Active,
+		MinPeriod:       uint64(0),
 		BondHeight:      uint64(ctx.BlockHeight()),
 	}
 
@@ -118,6 +121,7 @@ func (tx *TxCreateValidator) GetSignData() (ret []byte) {
 	ret = append(ret, tx.Owner...)
 	ret = append(ret, tx.PubKey.Bytes()...)
 	ret = append(ret, btypes.Int2Byte(int64(tx.BondTokens))...)
+	ret = append(ret, btypes.Bool2Byte(tx.IsCompound)...)
 	ret = append(ret, tx.Description...)
 
 	return
@@ -202,18 +206,9 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 		return ErrInvalidInput(DefaultCodeSpace, "")
 	}
 
-	validator, err := validateValidator(ctx, tx.Owner, true, ecotypes.Inactive, true)
+	_, err = validateValidator(ctx, tx.Owner, true, ecotypes.Inactive, true)
 	if nil != err {
 		return err
-	}
-
-	//处于inactive状态的validator,当前汇总收益应该为0
-	valAddr := validator.GetValidatorAddress()
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	vcps, _ := distributionMapper.GetValidatorCurrentPeriodSummary(valAddr)
-
-	if vcps.Fees.NilToZero().GT(btypes.ZeroInt()) {
-		return ErrCodeValidatorInactiveIncome(DefaultCodeSpace, "")
 	}
 
 	return nil
@@ -275,18 +270,15 @@ func validateQOSAccount(ctx context.Context, addr btypes.Address, toPay uint64) 
 	return nil
 }
 
-func validateValidator(ctx context.Context, ownerAddr btypes.Address, checkActive bool, expectingActiveCode int8, checkJail bool) (validator ecotypes.Validator, err error) {
+func validateValidator(ctx context.Context, ownerAddr btypes.Address, checkStatus bool, expectedStatus int8, checkJail bool) (validator ecotypes.Validator, err error) {
 	valMapper := ecomapper.GetValidatorMapper(ctx)
 	validator, exists := valMapper.GetValidatorByOwner(ownerAddr)
 	if !exists {
 		return validator, ErrValidatorNotExists(DefaultCodeSpace, ownerAddr.String()+" does't have validator.")
 	}
-	if checkActive {
-		if expectingActiveCode == ecotypes.Inactive && validator.Status == ecotypes.Active {
-			return validator, ErrValidatorIsActive(DefaultCodeSpace, "Owner's Validator "+ownerAddr.String()+" is active")
-		}
-		if expectingActiveCode == ecotypes.Active && validator.Status == ecotypes.Inactive {
-			return validator, ErrValidatorIsActive(DefaultCodeSpace, "Owner's Validator "+ownerAddr.String()+" is inactive")
+	if checkStatus {
+		if validator.Status != expectedStatus {
+			return validator, fmt.Errorf("validator status not match. except: %d, actual:%d", expectedStatus, validator.Status)
 		}
 	}
 	if checkJail {

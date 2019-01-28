@@ -39,4 +39,9 @@ func TestKey(t *testing.T) {
 	require.Equal(t, height, h)
 	require.Equal(t, valAddr, vAddr)
 	require.Equal(t, deleAddr, dAddr)
+
+	skey = BuildUnbondingDelegationByHeightDelKey(height, deleAddr)
+	h, dAddr = GetUnbondingDelegationHeightAddress(skey)
+	require.Equal(t, height, h)
+	require.Equal(t, deleAddr, dAddr)
 }
