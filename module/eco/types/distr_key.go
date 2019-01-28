@@ -83,7 +83,7 @@ func GetValidatorHistoryPeriodSummaryPrefixKey() []byte {
 
 func GetValidatorHistoryPeriodSummaryAddrPeriod(key []byte) (valAddr btypes.Address, period uint64) {
 	if len(key) != (1 + 8 + AddrLen) {
-		panic("invalid ValidatorHistoryPeriodSummaryKey lenght")
+		panic("invalid ValidatorHistoryPeriodSummaryKey length")
 	}
 
 	valAddr = btypes.Address(key[1 : 1+AddrLen])
@@ -98,7 +98,7 @@ func BuildValidatorCurrentPeriodSummaryKey(validatorAddr btypes.Address) []byte 
 
 func GetValidatorCurrentPeriodSummaryAddr(key []byte) btypes.Address {
 	if len(key) != (1 + AddrLen) {
-		panic("invalid ValidatorCurrentPeriodSummaryKey lenght")
+		panic("invalid ValidatorCurrentPeriodSummaryKey length")
 	}
 	return btypes.Address(key[1:])
 }
@@ -109,9 +109,15 @@ func BuildDelegatorPeriodIncomeKey(validatorAddr, delegatorAddress btypes.Addres
 	return append(append(append(delegatorPeriodIncomePrefixKey, b...), validatorAddr...), delegatorAddress...)
 }
 
+func BuildDelegatorPeriodIncomePrefixKey(height uint64) []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, height)
+	return append(delegatorPeriodIncomePrefixKey, b...)
+}
+
 func GetDelegatorPeriodIncomeHeightAddr(key []byte) (valAddr btypes.Address, deleAddr btypes.Address, height uint64) {
 	if len(key) != (1 + 8 + 2*AddrLen) {
-		panic("invalid DelegatorsPeriodIncomeKey lenght")
+		panic("invalid DelegatorsPeriodIncomeKey length")
 	}
 
 	b := key[1:9]

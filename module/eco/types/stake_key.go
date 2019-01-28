@@ -125,3 +125,21 @@ func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address
 	bz := append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
 	return append(bz, delAdd...)
 }
+
+func BuildUnbondingDelegationByHeightPrefix(height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	return append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
+}
+
+func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid UnbondingDelegationByHeightDelKey length")
+	}
+
+	height = binary.BigEndian.Uint64(key[1:9])
+	deleAddr = btypes.Address(key[9:])
+	return
+}
