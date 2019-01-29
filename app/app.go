@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/approve"
+	"github.com/QOSGroup/qos/module/distribution"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
@@ -39,15 +40,28 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// 设置 InitChainer
 	app.SetInitChainer(app.initChainer)
 
-	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-		mint.BeginBlocker(ctx, req)
-		stake.BeginBlocker(ctx, req)
+	// abci:
+	// begin blocker:
+	// 1. validator奖励分配(distribution)
+	// 2. 不活跃validator置为inactive(stake)
+	// 3. 计算本块挖出的QOS数量(mint)
+	// end blocker:
+	// 1. delegator收益发放: 计算下一发放周期(distribution)
+	// 2. unbond QOS 返还 (stake)
+	// 3. validator period 旧数据删除(distribution) //TODO
+	// 4. close inactive  validator(stake),统计新的validator (stake)
 
+	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+		distribution.BeginBlocker(ctx, req)
+		stake.BeginBlocker(ctx, req)
+		mint.BeginBlocker(ctx, req)
 		return abci.ResponseBeginBlock{}
 	})
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		distribution.EndBlocker(ctx, req)
+		stake.EndBlockerByReturnUnbondTokens(ctx)
 		return stake.EndBlocker(ctx)
 	})
 

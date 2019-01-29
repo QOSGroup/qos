@@ -79,7 +79,7 @@ func distributeEarningByValidator(e eco.Eco, valAddr btypes.Address, delegators 
 	//0. 获取validator
 	validator, exsits := e.ValidatorMapper.GetValidator(valAddr)
 	if !exsits {
-		log.Debug("distribute validator not exsits", "validator", valAddr)
+		log.Debug("distribute validator not exsits", "validator", valAddr.String())
 		//validator不存在时, 获取delegator当前收益信息, 将收益直接返还账户中,并删除当前delegator信息
 		for _, deleAddr := range delegators {
 			if info, _exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, deleAddr); _exsits {
@@ -117,11 +117,11 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 	valAddr := validator.GetValidatorAddress()
 
 	log := e.Context.Logger()
-	log.Debug("distribute delegator earning", "delegator", deleAddr, "validator", valAddr, "endPeriod", endPeriod, "height", blockHeight)
+	log.Debug("distribute delegator earning", "delegator", deleAddr.String(), "validator", valAddr.String(), "endPeriod", endPeriod, "height", blockHeight)
 
 	rewards, err := e.DistributionMapper.CalculateDelegatorPeriodRewards(valAddr, deleAddr, endPeriod, blockHeight)
 	if err != nil {
-		log.Error("distribute delegator earning error", "delegator", deleAddr, "error", err)
+		log.Error("distribute delegator earning error", "delegator", deleAddr.String(), "error", err.Error())
 		return 0
 	}
 
@@ -189,7 +189,7 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 		log.Error("proposer validator not exsits", "proposer", proposerAddr)
 	} else {
 		if info, exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(proposerAddr, proposerValidater.Owner); exsits {
-			log.Debug("reward proposer", "proposer", proposerAddr, "owner", proposerValidater.Owner, "rewards", proposerRewards)
+			log.Debug("reward proposer", "proposer", proposerAddr.String(), "owner", proposerValidater.Owner.String(), "rewards", proposerRewards)
 			info.HistoricalRewardFees = info.HistoricalRewardFees.Add(proposerRewards)
 			remainQOS = remainQOS.Sub(proposerRewards)
 			e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), info)
@@ -201,7 +201,7 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 	divNum := votePercent.Denomin.Mul(btypes.NewInt(int64(totalPower)))
 	for _, vote := range votes {
 		rewards := totalAmount.Mul(votePercent.Numer).Mul(btypes.NewInt(vote.Validator.Power)).Div(divNum)
-		log.Debug("reward validator vote", "validator", vote.Validator.Address, "power", vote.Validator.Power, "rewards", rewards)
+		log.Debug("reward validator vote", "validator", btypes.Address(vote.Validator.Address).String(), "power", vote.Validator.Power, "rewards", rewards)
 		remainQOS = remainQOS.Sub(rewards)
 		rewardToValidator(e, vote.Validator.Address, rewards, params.CommunityRewardRate)
 	}
@@ -222,7 +222,7 @@ func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt,
 
 	validator, exsits := e.ValidatorMapper.GetValidator(valAddr)
 	if !exsits {
-		log.Error("reward validator vote, validator not exsits", "validator", valAddr)
+		log.Error("reward validator vote, validator not exsits", "validator", valAddr.String())
 		return
 	}
 
@@ -230,13 +230,13 @@ func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt,
 	if info, exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, validator.Owner); exsits {
 		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(communityReward)
 		e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Owner), info)
-		log.Debug("reward validator vote", "validator", valAddr, "communityReward", communityReward)
+		log.Debug("reward validator vote", "validator", valAddr.String(), "communityReward", communityReward)
 	}
 
 	//delegator 共同收益
 	if vcps, exsits := e.DistributionMapper.GetValidatorCurrentPeriodSummary(valAddr); exsits {
 		vcps.Fees = vcps.Fees.Add(shareReward)
 		e.DistributionMapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), vcps)
-		log.Debug("reward validator vote", "validator", valAddr, "shareReward", shareReward)
+		log.Debug("reward validator vote", "validator", valAddr.String(), "shareReward", shareReward)
 	}
 }

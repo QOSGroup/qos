@@ -4,10 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"time"
+
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
-	"time"
 )
 
 type MintMapper struct {
@@ -138,4 +139,13 @@ func (mapper *MintMapper) AddAppliedQOSAmount(amount uint64) {
 	mined := mapper.GetAppliedQOSAmount()
 	mined += amount
 	mapper.SetAppliedQOSAmount(mined)
+}
+
+func (mapper *MintMapper) SetFirstBlockTime(t int64) {
+	mapper.Set(staketypes.BuildFirstBlockTimeKey(), t)
+}
+
+func (mapper *MintMapper) GetFirstBlockTime() (t int64) {
+	mapper.Get(staketypes.BuildFirstBlockTimeKey(), &t)
+	return
 }
