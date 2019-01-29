@@ -161,7 +161,7 @@ Example:
 			appState := app.GenesisState{
 				Accounts:  genesisAccounts,
 				MintData:  mint.DefaultGenesisState(),
-				StakeData: stake.NewGenesisState(staketypes.DefaultStakeParams(), genVals),
+				StakeData: stake.NewGenesisState(staketypes.DefaultStakeParams(), genVals, nil, nil, nil, nil, nil),
 				QCPData:   qcp.NewGenesisState(qcpPubKey, nil),
 				QSCData:   qsc.NewGenesisState(qscPubKey, nil),
 			}

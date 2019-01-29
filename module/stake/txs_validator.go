@@ -225,7 +225,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	delegatorAddr := tx.Owner
 	mapper.MakeValidatorActive(valAddr)
 
-	voteInfoMapper := ctx.Mapper(ecomapper.VoteInfoMapperName).(*ecomapper.VoteInfoMapper)
+	voteInfoMapper := ecomapper.GetVoteInfoMapper(ctx)
 	voteInfo := ecotypes.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
 	voteInfoMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 

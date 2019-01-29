@@ -148,7 +148,7 @@ func defaultContext() context.Context {
 
 	signInfoMapper := stakemapper.NewVoteInfoMapper()
 	signInfoMapper.SetCodec(cdc)
-	mapperMap[stakemapper.VoteInfoMapperName] = signInfoMapper
+	mapperMap[staketypes.VoteInfoMapperName] = signInfoMapper
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)

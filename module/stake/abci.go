@@ -85,7 +85,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 
 	//获取当前的validator集合
 	var currentValidators []ecotypes.Validator
-	validatorMapper.Get(ecotypes.BuildCurrentValidatorAddressKey(), &currentValidators)
+	validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
 
 	currentValidatorMap := make(map[string]ecotypes.Validator)
 	for _, curValidator := range currentValidators {
@@ -139,7 +139,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	}
 
 	//存储新的validator
-	validatorMapper.Set(ecotypes.BuildCurrentValidatorAddressKey(), newValidators)
+	validatorMapper.Set(ecotypes.BuildCurrentValidatorsAddressKey(), newValidators)
 
 	log.Info("update Validators", "len", len(updateValidators))
 
