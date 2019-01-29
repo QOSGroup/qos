@@ -31,6 +31,8 @@ var (
 
 	// params
 	stakeParamsKey = []byte("stake_params")
+
+	firstBlockTimeKey = []byte("first_block_time")
 )
 
 func BuildValidatorStoreQueryPath() []byte {
@@ -47,6 +49,10 @@ func BuildValidatorKey(valAddress btypes.Address) []byte {
 
 func BulidValidatorPrefixKey() []byte {
 	return validatorKey
+}
+
+func BuildFirstBlockTimeKey() []byte {
+	return firstBlockTimeKey
 }
 
 func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
