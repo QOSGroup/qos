@@ -149,3 +149,17 @@ func (mapper *ValidatorMapper) GetParams() ecotypes.StakeParams {
 	mapper.Get(ecotypes.BuildStakeParamsKey(), &params)
 	return params
 }
+
+//-------------------------genesis export
+
+func (mapper *ValidatorMapper) IterateValidators(fn func(ecotypes.Validator)) {
+
+	iter := store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.BulidValidatorPrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		var validator ecotypes.Validator
+		mapper.DecodeObject(iter.Value(), &validator)
+		fn(validator)
+	}
+}

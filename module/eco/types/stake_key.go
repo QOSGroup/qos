@@ -10,6 +10,7 @@ import (
 
 const (
 	ValidatorMapperName  = "validator"
+	VoteInfoMapperName   = "voteInfo"
 	DelegationMapperName = "delegation"
 )
 
@@ -20,11 +21,15 @@ var (
 	validatorByInactiveKey  = []byte{0x03} // 保存处于`inactive`状态的Validator. key: ValidatorInactiveTime + ValidatorAddress
 	validatorByVotePowerKey = []byte{0x04} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + ValidatorAddress
 
+	//keys see docs/spec/staking.md
+	validatorVoteInfoKey         = []byte{0x01} // 保存Validator在窗口的统计信息
+	validatorVoteInfoInWindowKey = []byte{0x02} // 保存Validator在指定窗口签名信息
+
 	DelegationByDelValKey            = []byte{0x31} // key: delegator add + validator owner add, value: delegationInfo
 	DelegationByValDelKey            = []byte{0x32} // key: validator owner add + delegator add, value: nil
 	DelegatorUnbondingQOSatHeightKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
 
-	currentValidatorAddressKey = []byte("currentValidatorAddressKey")
+	currentValidatorsAddressKey = []byte("currentValidatorsAddressKey")
 
 	// params
 	stakeParamsKey = []byte("stake_params")
@@ -34,8 +39,8 @@ func BuildValidatorStoreQueryPath() []byte {
 	return []byte(fmt.Sprintf("/store/%s/key", ValidatorMapperName))
 }
 
-func BuildCurrentValidatorAddressKey() []byte {
-	return currentValidatorAddressKey
+func BuildCurrentValidatorsAddressKey() []byte {
+	return currentValidatorsAddressKey
 }
 
 func BuildValidatorKey(valAddress btypes.Address) []byte {
@@ -81,6 +86,14 @@ func GetValidatorByInactiveKey() []byte {
 
 func GetValidatorByVotePowerKey() []byte {
 	return validatorByVotePowerKey
+}
+
+func GetValidatorVoteInfoInWindowKey() []byte {
+	return validatorVoteInfoInWindowKey
+}
+
+func GetValidatorVoteInfoKey() []byte {
+	return validatorVoteInfoKey
 }
 
 func BuildValidatorByVotePower(votePower uint64, valAddress btypes.Address) []byte {
@@ -135,4 +148,36 @@ func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr bt
 	height = binary.BigEndian.Uint64(key[1:9])
 	deleAddr = btypes.Address(key[9:])
 	return
+}
+
+func BuildVoteInfoStoreQueryPath() []byte {
+	return []byte(fmt.Sprintf("/store/%s/key", VoteInfoMapperName))
+}
+
+func BuildValidatorVoteInfoKey(valAddress btypes.Address) []byte {
+	return append(validatorVoteInfoKey, valAddress...)
+}
+
+func BuildValidatorVoteInfoInWindowPrefixKey(valAddress btypes.Address) []byte {
+	return append(validatorVoteInfoInWindowKey, valAddress...)
+}
+
+func GetValidatorVoteInfoAddr(key []byte) btypes.Address {
+	return btypes.Address(key[1:])
+}
+
+func BuildValidatorVoteInfoInWindowKey(index uint64, valAddress btypes.Address) []byte {
+	b := make([]byte, 8)
+	binary.LittleEndian.PutUint64(b, index)
+
+	bz := append(validatorVoteInfoInWindowKey, valAddress...)
+	bz = append(bz, b...)
+
+	return bz
+}
+
+func GetValidatorVoteInfoInWindowIndexAddr(key []byte) (uint64, btypes.Address) {
+	addr := btypes.Address(key[1 : AddrLen+1])
+	index := binary.LittleEndian.Uint64(key[AddrLen+1:])
+	return index, addr
 }
