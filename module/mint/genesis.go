@@ -7,7 +7,8 @@ import (
 )
 
 type GenesisState struct {
-	Params minttypes.MintParams `json:"params"`
+	Params         minttypes.MintParams `json:"params"`
+	FirstBlockTime int64                `json:"first_block_time"` //UTC().UNIX()
 }
 
 func NewGenesisState(params minttypes.MintParams) GenesisState {
@@ -23,11 +24,20 @@ func DefaultGenesisState() GenesisState {
 func InitGenesis(ctx context.Context, data GenesisState) {
 	mintMapper := ctx.Mapper(minttypes.MintMapperName).(*mintmapper.MintMapper)
 	mintMapper.SetMintParams(data.Params)
+
+	if data.FirstBlockTime > 0 {
+		mintMapper.SetFirstBlockTime(data.FirstBlockTime)
+	}
+
 }
 
 func ExportGenesis(ctx context.Context) GenesisState {
 	mintMapper := ctx.Mapper(minttypes.MintMapperName).(*mintmapper.MintMapper)
+
+	firstBlockTime := mintMapper.GetFirstBlockTime()
+
 	return GenesisState{
-		mintMapper.GetMintParams(),
+		Params:         mintMapper.GetMintParams(),
+		FirstBlockTime: firstBlockTime,
 	}
 }
