@@ -11,7 +11,9 @@ import (
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-//beginblocker根据Vote信息进行QOS分配
+//TODO: 分配时的精度问题
+
+//beginblocker根据Vote信息进行QOS分配: mint+tx fee
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	totalPower, signedTotalPower := int64(0), int64(0)
@@ -25,13 +27,12 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	distributionMapper := mapper.GetDistributionMapper(ctx)
 
 	if ctx.BlockHeight() > 1 {
-		var previousProposer btypes.Address
-		distributionMapper.Get(types.BuildLastProposerKey(), &previousProposer)
+		previousProposer := distributionMapper.GetLastBlockProposer()
 		allocateQOS(ctx, uint64(signedTotalPower), uint64(totalPower), previousProposer, req.LastCommitInfo.GetVotes())
 	}
 
 	consAddr := btypes.Address(req.Header.ProposerAddress)
-	distributionMapper.Set(types.BuildLastProposerKey(), consAddr)
+	distributionMapper.SetLastBlockProposer(consAddr)
 }
 
 //endblocker对delegator的收益进行发放,并决定是否有下一次收益

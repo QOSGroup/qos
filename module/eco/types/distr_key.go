@@ -22,18 +22,18 @@ var (
 	//value: bigint
 	blockDistributionKey = []byte{0x04}
 
-	//delegator计算收益的起始信息,key = prefix+validatorAddr+delegatorAddr
+	//delegator收益计算信息,key = prefix+validatorAddr+delegatorAddr
 	//value: delegatorEarningsStartInfo
 	delegatorEarningsStartInfoPrefixKey = []byte{0x12}
-	//validator历史周期汇总收益,key = prefix + validatorAddr + period
+	//validator历史计费点汇总收益,key = prefix + validatorAddr + period
 	//value: bigint
 	validatorHistoryPeriodSummaryPrefixKey = []byte{0x13}
-	//validator当前周期收益信息,key = prefix + validatorAddr
+	//validator当前计费点收益信息,key = prefix + validatorAddr
 	//value: bigint
 	validatorCurrentPeriodSummaryPrefixKey = []byte{0x14}
 
-	//delegators周期发放收益信息: key = prefix + blockheight + validatorAddress+delegatorAddress
-	//value: struct{}{}
+	//delegators某高度下是否发放收益信息: key = prefix + blockheight + validatorAddress+delegatorAddress
+	//value: true
 	delegatorPeriodIncomePrefixKey = []byte{0x31}
 
 	distributeParamsKey = []byte("distr_params")
@@ -55,6 +55,22 @@ func BuildBlockDistributionKey() []byte {
 	return blockDistributionKey
 }
 
+func GetValidatorCurrentPeriodSummaryPrefixKey() []byte {
+	return validatorCurrentPeriodSummaryPrefixKey
+}
+
+func GetValidatorHistoryPeriodSummaryPrefixKey() []byte {
+	return validatorHistoryPeriodSummaryPrefixKey
+}
+
+func GetDelegatorEarningsStartInfoPrefixKey() []byte {
+	return delegatorEarningsStartInfoPrefixKey
+}
+
+func GetDelegatorPeriodIncomePrefixKey() []byte {
+	return delegatorPeriodIncomePrefixKey
+}
+
 func BuildDelegatorEarningStartInfoKey(validatorAddr btypes.Address, delegatorAddress btypes.Address) []byte {
 	return append(append(delegatorEarningsStartInfoPrefixKey, validatorAddr...), delegatorAddress...)
 }
@@ -67,18 +83,10 @@ func GetDelegatorEarningStartInfoAddr(key []byte) (valAddr, deleAddr btypes.Addr
 	return btypes.Address(key[1 : 1+AddrLen]), btypes.Address(key[1+AddrLen:])
 }
 
-func GetDelegatorEarningsStartInfoPrefixKey() []byte {
-	return delegatorEarningsStartInfoPrefixKey
-}
-
 func BuildValidatorHistoryPeriodSummaryKey(validatorAddr btypes.Address, period uint64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, period)
 	return append(append(validatorHistoryPeriodSummaryPrefixKey, validatorAddr...), b...)
-}
-
-func GetValidatorHistoryPeriodSummaryPrefixKey() []byte {
-	return validatorHistoryPeriodSummaryPrefixKey
 }
 
 func GetValidatorHistoryPeriodSummaryAddrPeriod(key []byte) (valAddr btypes.Address, period uint64) {

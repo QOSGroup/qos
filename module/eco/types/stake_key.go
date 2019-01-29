@@ -11,9 +11,6 @@ import (
 const (
 	ValidatorMapperName  = "validator"
 	DelegationMapperName = "delegation"
-	MintMapperName       = "mint"
-
-	MintParamsKey = "mintparams"
 )
 
 var (
@@ -31,8 +28,6 @@ var (
 
 	// params
 	stakeParamsKey = []byte("stake_params")
-
-	firstBlockTimeKey = []byte("first_block_time")
 )
 
 func BuildValidatorStoreQueryPath() []byte {
@@ -49,10 +44,6 @@ func BuildValidatorKey(valAddress btypes.Address) []byte {
 
 func BulidValidatorPrefixKey() []byte {
 	return validatorKey
-}
-
-func BuildFirstBlockTimeKey() []byte {
-	return firstBlockTimeKey
 }
 
 func BuildOwnerWithValidatorKey(ownerAddress btypes.Address) []byte {
@@ -108,10 +99,6 @@ func BuildValidatorByVotePower(votePower uint64, valAddress btypes.Address) []by
 
 func BuildStakeParamsKey() []byte {
 	return stakeParamsKey
-}
-
-func BuildMintParamsKey() []byte {
-	return []byte(MintParamsKey)
 }
 
 func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte {

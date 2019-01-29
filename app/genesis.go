@@ -5,6 +5,7 @@ import (
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/approve"
+	"github.com/QOSGroup/qos/module/distribution"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/mint"
@@ -17,12 +18,13 @@ import (
 
 // QOS初始状态
 type GenesisState struct {
-	Accounts    []*types.QOSAccount  `json:"accounts"`
-	MintData    mint.GenesisState    `json:"mint"`
-	StakeData   stake.GenesisState   `json:"stake"`
-	QCPData     qcp.GenesisState     `json:"qcp"`
-	QSCData     qsc.GenesisState     `json:"qsc"`
-	ApproveData approve.GenesisState `json:"approve"`
+	Accounts         []*types.QOSAccount       `json:"accounts"`
+	MintData         mint.GenesisState         `json:"mint"`
+	StakeData        stake.GenesisState        `json:"stake"`
+	QCPData          qcp.GenesisState          `json:"qcp"`
+	QSCData          qsc.GenesisState          `json:"qsc"`
+	ApproveData      approve.GenesisState      `json:"approve"`
+	DistributionData distribution.GenesisState `json:"distribution"`
 }
 
 func NewGenesisState(accounts []*types.QOSAccount,
@@ -30,20 +32,24 @@ func NewGenesisState(accounts []*types.QOSAccount,
 	stakeData stake.GenesisState,
 	qcpData qcp.GenesisState,
 	qscData qsc.GenesisState,
-	approveData approve.GenesisState) GenesisState {
+	approveData approve.GenesisState,
+	distributionData distribution.GenesisState,
+) GenesisState {
 	return GenesisState{
-		Accounts:    accounts,
-		MintData:    mintData,
-		StakeData:   stakeData,
-		QCPData:     qcpData,
-		QSCData:     qscData,
-		ApproveData: approveData,
+		Accounts:         accounts,
+		MintData:         mintData,
+		StakeData:        stakeData,
+		QCPData:          qcpData,
+		QSCData:          qscData,
+		ApproveData:      approveData,
+		DistributionData: distributionData,
 	}
 }
 func NewDefaultGenesisState() GenesisState {
 	return GenesisState{
-		MintData:  mint.DefaultGenesisState(),
-		StakeData: stake.DefaultGenesisState(),
+		MintData:         mint.DefaultGenesisState(),
+		StakeData:        stake.DefaultGenesisState(),
+		DistributionData: distribution.DefaultGenesisState(),
 	}
 }
 
@@ -67,6 +73,7 @@ func InitGenesis(ctx context.Context, state GenesisState) []abci.ValidatorUpdate
 	qcp.InitGenesis(ctx, state.QCPData)
 	qsc.InitGenesis(ctx, state.QSCData)
 	approve.InitGenesis(ctx, state.ApproveData)
+	distribution.InitGenesis(ctx, state.DistributionData)
 
 	return stake.GetUpdatedValidators(ctx, uint64(state.StakeData.Params.MaxValidatorCnt))
 }
