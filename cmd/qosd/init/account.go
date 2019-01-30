@@ -56,6 +56,9 @@ Example:
 			}
 
 			appState.Accounts = append(appState.Accounts, accounts...)
+			for _, acc := range accounts {
+				appState.MintData.AppliedQOSAmount = appState.MintData.AppliedQOSAmount + uint64(acc.QOS.Int64())
+			}
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage

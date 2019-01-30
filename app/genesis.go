@@ -6,8 +6,6 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
-	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
-	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -82,16 +80,10 @@ func initAccounts(ctx context.Context, accounts []*types.QOSAccount) {
 	if len(accounts) == 0 {
 		return
 	}
-	var appliedQOSAmount uint64
-
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	mintMapper := ctx.Mapper(ecotypes.MintMapperName).(*ecomapper.MintMapper)
 	for _, acc := range accounts {
 		accountMapper.SetAccount(acc)
-		appliedQOSAmount += uint64(acc.QOS.Int64())
 	}
-
-	mintMapper.SetAppliedQOSAmount(appliedQOSAmount)
 }
 
 func validateAccounts(accs []*types.QOSAccount) error {
