@@ -1,8 +1,6 @@
 package mint
 
 import (
-	"time"
-
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
@@ -21,8 +19,9 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		return
 	}
 
+	currentBlockTime := ctx.BlockHeader().Time.UTC().Unix()
 	if height == uint64(1) {
-		mintMapper.SetFirstBlockTime(ctx.BlockHeader().Time.UTC().Unix())
+		mintMapper.SetFirstBlockTime(currentBlockTime)
 	}
 
 	// for the first block, assuming average block time is 5s
@@ -30,13 +29,13 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	if height > 1 {
 		firstBlockTime := mintMapper.GetFirstBlockTime()
 		//average block time = (last block time - first block time) / (last height - 1)
-		blockTimeAvg = uint64(ctx.BlockHeader().Time.UTC().Unix()-firstBlockTime) / (height - 1)
+		blockTimeAvg = uint64(currentBlockTime-firstBlockTime) / (height - 1)
 	}
 
 	totalQOSAmount := currentInflationPhrase.TotalAmount
-	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(time.Now().UTC().Unix())) / blockTimeAvg
+	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(currentBlockTime)) / blockTimeAvg
 	//totalBlock := mintMapper.GetParams().TotalBlock
-	appliedQOSAmount := currentInflationPhrase.AppliedAmount
+	appliedQOSAmount := mintMapper.GetAppliedQOSAmount()
 
 	if appliedQOSAmount >= totalQOSAmount {
 		return

@@ -9,6 +9,7 @@ import (
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/module/distribution"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -173,22 +174,22 @@ func addValidator(appState *app.GenesisState, validator ecotypes.Validator, isCo
 
 	//stake:
 	appState.StakeData.Validators = append(appState.StakeData.Validators, validator)
-	appState.StakeData.DelegatorsInfo = append(appState.StakeData.DelegatorsInfo, ecotypes.DelegationInfo{
-		DelegatorAddr: validator.Owner,
-		ValidatorAddr: validator.GetValidatorAddress(),
-		Amount:        validator.BondTokens,
-		IsCompound:    isCompound,
+	appState.StakeData.DelegatorsInfo = append(appState.StakeData.DelegatorsInfo, stake.DelegationInfoState{
+		DelegatorAddr:   validator.Owner,
+		ValidatorPubKey: validator.ValidatorPubKey,
+		Amount:          validator.BondTokens,
+		IsCompound:      isCompound,
 	})
 
 	//distribution
 	appState.DistributionData.ValidatorHistoryPeriods = append(appState.DistributionData.ValidatorHistoryPeriods, distribution.ValidatorHistoryPeriodState{
-		ValAddress: validator.GetValidatorAddress(),
-		Period:     uint64(0),
-		Summary:    types.ZeroFraction(),
+		ValidatorPubKey: validator.ValidatorPubKey,
+		Period:          uint64(0),
+		Summary:         types.ZeroFraction(),
 	})
 
 	appState.DistributionData.ValidatorCurrentPeriods = append(appState.DistributionData.ValidatorCurrentPeriods, distribution.ValidatorCurrentPeriodState{
-		ValAddress: validator.GetValidatorAddress(),
+		ValidatorPubKey: validator.ValidatorPubKey,
 		CurrentPeriodSummary: ecotypes.ValidatorCurrentPeriodSummary{
 			Fees:   btypes.ZeroInt(),
 			Period: uint64(1),
@@ -196,8 +197,8 @@ func addValidator(appState *app.GenesisState, validator ecotypes.Validator, isCo
 	})
 
 	appState.DistributionData.DelegatorEarningInfos = append(appState.DistributionData.DelegatorEarningInfos, distribution.DelegatorEarningStartState{
-		ValAddress:  validator.GetValidatorAddress(),
-		DeleAddress: validator.Owner,
+		ValidatorPubKey: validator.ValidatorPubKey,
+		DeleAddress:     validator.Owner,
 		DelegatorEarningsStartInfo: ecotypes.DelegatorEarningsStartInfo{
 			PreviousPeriod:        uint64(0),
 			BondToken:             validator.BondTokens,
@@ -209,9 +210,9 @@ func addValidator(appState *app.GenesisState, validator ecotypes.Validator, isCo
 
 	incomeHeight := appState.DistributionData.Params.DelegatorsIncomePeriodHeight + uint64(1)
 	appState.DistributionData.DelegatorIncomeHeights = append(appState.DistributionData.DelegatorIncomeHeights, distribution.DelegatorIncomeHeightState{
-		ValAddress:  validator.GetValidatorAddress(),
-		DeleAddress: validator.Owner,
-		Height:      incomeHeight,
+		ValidatorPubKey: validator.ValidatorPubKey,
+		DeleAddress:     validator.Owner,
+		Height:          incomeHeight,
 	})
 
 }

@@ -55,7 +55,7 @@ func toValidatorDisplayInfo(validator ecotypes.Validator) validatorDisplayInfo {
 		Description:     validator.Description,
 		InactiveTime:    validator.InactiveTime,
 		InactiveHeight:  validator.InactiveHeight,
-		BondHeight:      validator.BondTokens,
+		BondHeight:      validator.BondHeight,
 	}
 
 	if validator.Status == ecotypes.Active {

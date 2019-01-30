@@ -1,11 +1,14 @@
 package distribution
 
 import (
+	"fmt"
+
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/module/eco/types"
 	qtypes "github.com/QOSGroup/qos/types"
+	"github.com/tendermint/tendermint/crypto"
 )
 
 type GenesisState struct {
@@ -63,22 +66,22 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	distributionMapper.SetParams(data.Params)
 
 	for _, validatorHistoryPeriodState := range data.ValidatorHistoryPeriods {
-		key := types.BuildValidatorHistoryPeriodSummaryKey(validatorHistoryPeriodState.ValAddress, validatorHistoryPeriodState.Period)
+		key := types.BuildValidatorHistoryPeriodSummaryKey(btypes.Address(validatorHistoryPeriodState.ValidatorPubKey.Address()), validatorHistoryPeriodState.Period)
 		distributionMapper.Set(key, validatorHistoryPeriodState.Summary)
 	}
 
 	for _, validatorCurrentPeriodState := range data.ValidatorCurrentPeriods {
-		key := types.BuildValidatorCurrentPeriodSummaryKey(validatorCurrentPeriodState.ValAddress)
+		key := types.BuildValidatorCurrentPeriodSummaryKey(btypes.Address(validatorCurrentPeriodState.ValidatorPubKey.Address()))
 		distributionMapper.Set(key, validatorCurrentPeriodState.CurrentPeriodSummary)
 	}
 
 	for _, delegatorEarningInfoState := range data.DelegatorEarningInfos {
-		key := types.BuildDelegatorEarningStartInfoKey(delegatorEarningInfoState.ValAddress, delegatorEarningInfoState.DeleAddress)
+		key := types.BuildDelegatorEarningStartInfoKey(btypes.Address(delegatorEarningInfoState.ValidatorPubKey.Address()), delegatorEarningInfoState.DeleAddress)
 		distributionMapper.Set(key, delegatorEarningInfoState.DelegatorEarningsStartInfo)
 	}
 
 	for _, delegatorIncomeHeightState := range data.DelegatorIncomeHeights {
-		key := types.BuildDelegatorPeriodIncomeKey(delegatorIncomeHeightState.ValAddress, delegatorIncomeHeightState.DeleAddress, delegatorIncomeHeightState.Height)
+		key := types.BuildDelegatorPeriodIncomeKey(btypes.Address(delegatorIncomeHeightState.ValidatorPubKey.Address()), delegatorIncomeHeightState.DeleAddress, delegatorIncomeHeightState.Height)
 		distributionMapper.Set(key, true)
 	}
 
@@ -87,6 +90,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 func ExportGenesis(ctx context.Context) GenesisState {
 
 	distributionMapper := mapper.GetDistributionMapper(ctx)
+	validatorMapper := mapper.GetValidatorMapper(ctx)
 
 	feePool := distributionMapper.GetCommunityFeePool()
 	lastBlockProposer := distributionMapper.GetLastBlockProposer()
@@ -95,18 +99,30 @@ func ExportGenesis(ctx context.Context) GenesisState {
 
 	var validatorHistoryPeriods []ValidatorHistoryPeriodState
 	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.Address, period uint64, frac qtypes.Fraction) {
+
+		validator, exsits := validatorMapper.GetValidator(valAddr)
+		if !exsits {
+			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		}
+
 		vhps := ValidatorHistoryPeriodState{
-			ValAddress: valAddr,
-			Period:     period,
-			Summary:    frac,
+			ValidatorPubKey: validator.ValidatorPubKey,
+			Period:          period,
+			Summary:         frac,
 		}
 		validatorHistoryPeriods = append(validatorHistoryPeriods, vhps)
 	})
 
 	var validatorCurrentPeriods []ValidatorCurrentPeriodState
 	distributionMapper.IteratorValidatorsCurrentPeriod(func(valAddr btypes.Address, vcps types.ValidatorCurrentPeriodSummary) {
+
+		validator, exsits := validatorMapper.GetValidator(valAddr)
+		if !exsits {
+			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		}
+
 		vcpsState := ValidatorCurrentPeriodState{
-			ValAddress:           valAddr,
+			ValidatorPubKey:      validator.ValidatorPubKey,
 			CurrentPeriodSummary: vcps,
 		}
 		validatorCurrentPeriods = append(validatorCurrentPeriods, vcpsState)
@@ -114,8 +130,14 @@ func ExportGenesis(ctx context.Context) GenesisState {
 
 	var delegatorEarningInfos []DelegatorEarningStartState
 	distributionMapper.IteratorDelegatorsEarningStartInfo(func(valAddr btypes.Address, deleAddr btypes.Address, desi types.DelegatorEarningsStartInfo) {
+
+		validator, exsits := validatorMapper.GetValidator(valAddr)
+		if !exsits {
+			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		}
+
 		dess := DelegatorEarningStartState{
-			ValAddress:                 valAddr,
+			ValidatorPubKey:            validator.ValidatorPubKey,
 			DeleAddress:                deleAddr,
 			DelegatorEarningsStartInfo: desi,
 		}
@@ -124,10 +146,16 @@ func ExportGenesis(ctx context.Context) GenesisState {
 
 	var delegatorIncomeHeights []DelegatorIncomeHeightState
 	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.Address, deleAddr btypes.Address, height uint64) {
+
+		validator, exsits := validatorMapper.GetValidator(valAddr)
+		if !exsits {
+			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		}
+
 		dihs := DelegatorIncomeHeightState{
-			ValAddress:  valAddr,
-			DeleAddress: deleAddr,
-			Height:      height,
+			ValidatorPubKey: validator.ValidatorPubKey,
+			DeleAddress:     deleAddr,
+			Height:          height,
 		}
 		delegatorIncomeHeights = append(delegatorIncomeHeights, dihs)
 	})
@@ -144,24 +172,24 @@ func ExportGenesis(ctx context.Context) GenesisState {
 }
 
 type ValidatorHistoryPeriodState struct {
-	ValAddress btypes.Address  `json:"validator_address"`
-	Period     uint64          `json:"period"`
-	Summary    qtypes.Fraction `json:"summary"`
+	ValidatorPubKey crypto.PubKey   `json:"validator_pubkey"`
+	Period          uint64          `json:"period"`
+	Summary         qtypes.Fraction `json:"summary"`
 }
 
 type ValidatorCurrentPeriodState struct {
-	ValAddress           btypes.Address                      `json:"validator_address"`
+	ValidatorPubKey      crypto.PubKey                       `json:"validator_pub_key"`
 	CurrentPeriodSummary types.ValidatorCurrentPeriodSummary `json:"current_period_summary"`
 }
 
 type DelegatorEarningStartState struct {
-	ValAddress                 btypes.Address                   `json:"validator_address"`
+	ValidatorPubKey            crypto.PubKey                    `json:"validator_pub_key"`
 	DeleAddress                btypes.Address                   `json:"delegator_address"`
 	DelegatorEarningsStartInfo types.DelegatorEarningsStartInfo `json:"earning_start_info"`
 }
 
 type DelegatorIncomeHeightState struct {
-	ValAddress  btypes.Address `json:"validator_address"`
-	DeleAddress btypes.Address `json:"delegator_address"`
-	Height      uint64         `json:"height"`
+	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
+	DeleAddress     btypes.Address `json:"delegator_address"`
+	Height          uint64         `json:"height"`
 }
