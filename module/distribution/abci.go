@@ -28,7 +28,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	if ctx.BlockHeight() > 1 {
 		previousProposer := distributionMapper.GetLastBlockProposer()
-		allocateQOS(ctx, uint64(signedTotalPower), uint64(totalPower), previousProposer, req.LastCommitInfo.GetVotes())
+		allocateQOS(ctx, signedTotalPower, totalPower, previousProposer, req.LastCommitInfo.GetVotes())
 	}
 
 	consAddr := btypes.Address(req.Header.ProposerAddress)
@@ -171,7 +171,7 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 //        * 平分金额Fee由validator,delegator根据各自绑定的stake平均分配
 // 4.  validator的proposer奖励,佣金奖励 均按周期发放
 //
-func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, proposerAddr btypes.Address, votes []abci.VoteInfo) {
+func allocateQOS(ctx context.Context, signedTotalPower, totalPower int64, proposerAddr btypes.Address, votes []abci.VoteInfo) {
 
 	e := eco.GetEco(ctx)
 	log := ctx.Logger()
@@ -183,9 +183,9 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 	remainQOS := totalAmount
 	e.DistributionMapper.ClearPreDistributionQOS()
 
-	log.Debug("total reward", "reward", totalAmount, "height", ctx.BlockHeight())
+	log.Debug("total rewards", "total rewards", totalAmount, "height", ctx.BlockHeight())
 	//proposer奖励,直接归属proposer
-	proposerRewards := totalAmount.Mul(params.ProposerRewardRate.Numer).Div(params.ProposerRewardRate.Denomin)
+	proposerRewards := params.ProposerRewardRate.MultiBigInt(totalAmount)
 	proposerValidater, exsits := e.ValidatorMapper.GetValidator(proposerAddr)
 	if !exsits {
 		log.Error("proposer validator not exsits", "proposer", proposerAddr)
@@ -200,9 +200,9 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 
 	//vote奖励
 	votePercent := qtypes.OneFraction().Sub(params.ProposerRewardRate).Sub(params.CommunityRewardRate)
-	divNum := votePercent.Denomin.Mul(btypes.NewInt(int64(totalPower)))
 	for _, vote := range votes {
-		rewards := totalAmount.Mul(votePercent.Numer).Mul(btypes.NewInt(vote.Validator.Power)).Div(divNum)
+		votePowerFrac := qtypes.NewFraction(vote.Validator.Power, totalPower)
+		rewards := votePowerFrac.Mul(votePercent).MultiBigInt(totalAmount)
 		log.Debug("reward validator", "validator", btypes.Address(vote.Validator.Address).String(), "power", vote.Validator.Power, "total rewards", rewards)
 		remainQOS = remainQOS.Sub(rewards)
 		rewardToValidator(e, vote.Validator.Address, rewards, params.ValidatorCommissionRate)
@@ -219,7 +219,7 @@ func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt,
 
 	log := e.Context.Logger()
 
-	commissionReward := rewards.Mul(commissionRate.Numer).Div(commissionRate.Denomin)
+	commissionReward := commissionRate.MultiBigInt(rewards)
 	sharedReward := rewards.Sub(commissionReward)
 
 	validator, exsits := e.ValidatorMapper.GetValidator(valAddr)
