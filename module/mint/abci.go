@@ -5,8 +5,7 @@ import (
 
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
+	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
@@ -16,7 +15,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	log := ctx.Logger()
 	height := uint64(ctx.BlockHeight())
 
-	mintMapper := ctx.Mapper(staketypes.MintMapperName).(*stakemapper.MintMapper)
+	mintMapper := ecomapper.GetMintMapper(ctx)
 	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
 	if exist == false || currentInflationPhrase.TotalAmount == 0 {
 		return
@@ -49,8 +48,9 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	if ctx.BlockHeight() > 1 {
 		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
 		if rewardPerBlock > 0 {
+			mintMapper.AddAppliedQOSAmount(rewardPerBlock)
 			log.Debug("block mint", "height", height, "mint", rewardPerBlock)
-			distributionMapper := stakemapper.GetDistributionMapper(ctx)
+			distributionMapper := ecomapper.GetDistributionMapper(ctx)
 			distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
 		}
 	}

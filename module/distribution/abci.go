@@ -39,7 +39,6 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 	height := uint64(req.Height)
-
 	e := eco.GetEco(ctx)
 
 	prefixKey := types.BuildDelegatorPeriodIncomePrefixKey(height)
@@ -109,6 +108,7 @@ func distributeEarningByValidator(e eco.Eco, valAddr btypes.Address, delegators 
 	if addCompoundTokens > 0 {
 		//更新validator bondTokens
 		updatedTokens := validator.BondTokens + addCompoundTokens
+		log.Debug("validator incr tokens", "validator", valAddr.String(), "addCompoundTokens", addCompoundTokens, "updatedTokens", updatedTokens)
 		e.ValidatorMapper.ChangeValidatorBondTokens(validator, updatedTokens)
 	}
 }
@@ -143,14 +143,14 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 
 	//非复投,收益直接分配到delegator账户中
 	if !delegationInfo.IsCompound {
-		log.Debug("delegation is not compound. rewards to account", "rewards", rewards)
+		log.Debug("delegation is not compound. rewards to delegator account", "rewards", rewards)
 		eco.IncrAccountQOS(e.Context, deleAddr, rewards.NilToZero())
 		return 0
 	}
 
 	//复投
 	addTokens := uint64(rewards.Int64())
-	log.Debug("delegation is compound. rewards to tokens", "addTokens", addTokens)
+	log.Debug("delegation is compound. rewards to delegation tokens", "addTokens", addTokens)
 
 	//更新delegation委托信息,更新delegate当前收益信息
 	info, _ := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
@@ -183,6 +183,7 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 	remainQOS := totalAmount
 	e.DistributionMapper.ClearPreDistributionQOS()
 
+	log.Debug("total reward", "reward", totalAmount, "height", ctx.BlockHeight())
 	//proposer奖励,直接归属proposer
 	proposerRewards := totalAmount.Mul(params.ProposerRewardRate.Numer).Div(params.ProposerRewardRate.Denomin)
 	proposerValidater, exsits := e.ValidatorMapper.GetValidator(proposerAddr)
@@ -202,9 +203,9 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 	divNum := votePercent.Denomin.Mul(btypes.NewInt(int64(totalPower)))
 	for _, vote := range votes {
 		rewards := totalAmount.Mul(votePercent.Numer).Mul(btypes.NewInt(vote.Validator.Power)).Div(divNum)
-		log.Debug("reward validator vote", "validator", btypes.Address(vote.Validator.Address).String(), "power", vote.Validator.Power, "rewards", rewards)
+		log.Debug("reward validator", "validator", btypes.Address(vote.Validator.Address).String(), "power", vote.Validator.Power, "total rewards", rewards)
 		remainQOS = remainQOS.Sub(rewards)
-		rewardToValidator(e, vote.Validator.Address, rewards, params.CommunityRewardRate)
+		rewardToValidator(e, vote.Validator.Address, rewards, params.ValidatorCommissionRate)
 	}
 
 	//社区奖励
@@ -214,30 +215,30 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower uint64, propo
 	e.DistributionMapper.SetCommunityFeePool(communityFeePool)
 }
 
-func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt, communityRate qtypes.Fraction) {
+func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt, commissionRate qtypes.Fraction) {
 
 	log := e.Context.Logger()
 
-	communityReward := rewards.Mul(communityRate.Numer).Div(communityRate.Denomin)
-	shareReward := rewards.Sub(communityReward)
+	commissionReward := rewards.Mul(commissionRate.Numer).Div(commissionRate.Denomin)
+	sharedReward := rewards.Sub(commissionReward)
 
 	validator, exsits := e.ValidatorMapper.GetValidator(valAddr)
 	if !exsits {
-		log.Error("reward validator vote, validator not exsits", "validator", valAddr.String())
+		log.Error("reward validator, validator not exsits", "validator", valAddr.String())
 		return
 	}
 
 	//validator 佣金收益
 	if info, exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, validator.Owner); exsits {
-		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(communityReward)
+		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(commissionReward)
 		e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Owner), info)
-		log.Debug("reward validator vote", "validator", valAddr.String(), "communityReward", communityReward)
+		log.Debug("reward validator commission", "validator", valAddr.String(), "commissionReward", commissionReward)
 	}
 
 	//delegator 共同收益
 	if vcps, exsits := e.DistributionMapper.GetValidatorCurrentPeriodSummary(valAddr); exsits {
-		vcps.Fees = vcps.Fees.Add(shareReward)
+		vcps.Fees = vcps.Fees.Add(sharedReward)
 		e.DistributionMapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), vcps)
-		log.Debug("reward validator vote", "validator", valAddr.String(), "shareReward", shareReward)
+		log.Debug("reward validator shared", "validator", valAddr.String(), "sharedReward", sharedReward)
 	}
 }

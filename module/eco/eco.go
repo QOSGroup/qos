@@ -61,7 +61,7 @@ func (e Eco) RemoveValidator(valAddr btypes.Address) error {
 		delegationMapper.DelDelegationInfo(deleAddr, valAddr)
 
 		//unbond height
-		unbondHeight := uint64(stakeParams.DelegatorUnbondDistributeHeight) + height
+		unbondHeight := uint64(stakeParams.DelegatorUnbondReturnHeight) + height
 		delegationMapper.AddDelegatorUnbondingQOSatHeight(unbondHeight, deleAddr, unbondToken)
 	}
 
@@ -154,7 +154,7 @@ func (e Eco) UnbondValidator(validator types.Validator, delegatorAddr btypes.Add
 	if !isRedelegate {
 		//3. 增加unbond信息
 		stakeParams := validatorMapper.GetParams()
-		unbondHeight := uint64(stakeParams.DelegatorUnbondDistributeHeight) + height
+		unbondHeight := uint64(stakeParams.DelegatorUnbondReturnHeight) + height
 		delegationMapper.AddDelegatorUnbondingQOSatHeight(unbondHeight, delegatorAddr, unbondAmount)
 	}
 

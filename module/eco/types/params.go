@@ -14,11 +14,11 @@ type DistributionParams struct {
 }
 
 type StakeParams struct {
-	MaxValidatorCnt                 uint32 `json:"max_validator_cnt"`
-	ValidatorVotingStatusLen        uint32 `json:"voting_status_len"`
-	ValidatorVotingStatusLeast      uint32 `json:"voting_status_least"`
-	ValidatorSurvivalSecs           uint32 `json:"survival_secs"`
-	DelegatorUnbondDistributeHeight uint32 `json:"unbond_distribute_height"`
+	MaxValidatorCnt             uint32 `json:"max_validator_cnt"`
+	ValidatorVotingStatusLen    uint32 `json:"voting_status_len"`
+	ValidatorVotingStatusLeast  uint32 `json:"voting_status_least"`
+	ValidatorSurvivalSecs       uint32 `json:"survival_secs"`
+	DelegatorUnbondReturnHeight uint32 `json:"unbond_return_height"`
 }
 
 type MintParams struct {
@@ -40,14 +40,14 @@ func DefaultDistributionParams() DistributionParams {
 	}
 }
 
-func NewStakeParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs, delegatorUnbondDistributeHeight uint32) StakeParams {
+func NewStakeParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs, delegatorUnbondReturnHeight uint32) StakeParams {
 
 	return StakeParams{
-		MaxValidatorCnt:                 maxValidatorCnt,
-		ValidatorVotingStatusLen:        validatorVotingStatusLen,
-		ValidatorVotingStatusLeast:      validatorVotingStatusLeast,
-		ValidatorSurvivalSecs:           validatorSurvivalSecs,
-		DelegatorUnbondDistributeHeight: delegatorUnbondDistributeHeight,
+		MaxValidatorCnt:             maxValidatorCnt,
+		ValidatorVotingStatusLen:    validatorVotingStatusLen,
+		ValidatorVotingStatusLeast:  validatorVotingStatusLeast,
+		ValidatorSurvivalSecs:       validatorSurvivalSecs,
+		DelegatorUnbondReturnHeight: delegatorUnbondReturnHeight,
 	}
 }
 
