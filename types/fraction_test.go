@@ -8,19 +8,17 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 )
 
-func TestFraction_GCD(t *testing.T) {
+func TestFraction(t *testing.T) {
 
 	t1 := NewFraction(int64(1), int64(3))
 	t2 := NewFraction(int64(2), int64(3))
 
 	t1 = t1.Add(t2)
 	fmt.Println(t1)
-	fmt.Println(t1.GCD())
 
 	t3 := NewFraction(int64(21323), int64(324234234))
 	t1 = t2.Add(t3)
 	fmt.Println(t1)
-	fmt.Println(t1.GCD())
 
 	a := btypes.NewInt(int64(2134234))
 	b := btypes.NewInt(int64(4564564564))

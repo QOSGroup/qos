@@ -113,15 +113,12 @@ func (mapper *DistributionMapper) IncrementValidatorPeriod(validator types.Valid
 
 		currentFraction = qtypes.ZeroFraction()
 	} else {
-		currentFraction = qtypes.Fraction{
-			Numer:   vcps.Fees,
-			Denomin: btypes.NewInt(int64(validator.BondTokens)),
-		}
+		currentFraction = qtypes.NewFractionFromBigInt(vcps.Fees, btypes.NewInt(int64(validator.BondTokens)))
 	}
 
 	historySummaryFrac := mapper.GetValidatorHistoryPeriodSummary(valAddr, vcps.Period-1)
 	//保存当前计费点历史汇总数据
-	mapper.Set(types.BuildValidatorHistoryPeriodSummaryKey(valAddr, vcps.Period), historySummaryFrac.Add(currentFraction).GCD())
+	mapper.Set(types.BuildValidatorHistoryPeriodSummaryKey(valAddr, vcps.Period), historySummaryFrac.Add(currentFraction))
 
 	//增加当前计费点,更新数据
 	newPeriod := vcps.Period + 1
