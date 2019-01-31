@@ -11,6 +11,7 @@ type DistributionParams struct {
 	CommunityRewardRate          qtypes.Fraction `json:"community_reward_rate"`
 	ValidatorCommissionRate      qtypes.Fraction `json:"validator_commission_rate"`
 	DelegatorsIncomePeriodHeight uint64          `json:"delegator_income_period_height"`
+	GasPerUnitCost               uint64          `json:"gas_per_unit_cost"` // how much gas = 1 QOS
 }
 
 type StakeParams struct {
@@ -37,6 +38,7 @@ func DefaultDistributionParams() DistributionParams {
 		CommunityRewardRate:          qtypes.NewFraction(int64(1), int64(100)), // 1%
 		ValidatorCommissionRate:      qtypes.NewFraction(int64(1), int64(100)), // 1%
 		DelegatorsIncomePeriodHeight: uint64(10),
+		GasPerUnitCost:               uint64(10),
 	}
 }
 
