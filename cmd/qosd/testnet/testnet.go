@@ -2,7 +2,9 @@ package testnet
 
 import (
 	"fmt"
+	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	qosinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	"github.com/QOSGroup/qos/module/distribution"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/mint"
@@ -32,6 +34,7 @@ import (
 var (
 	chainId string
 	moniker string
+	compound bool
 
 	nValidators    int
 	nNonValidators int
@@ -108,6 +111,15 @@ Example:
 				}
 			}
 
+			appState := app.GenesisState{
+				Accounts:         genesisAccounts,
+				MintData:         mint.DefaultGenesisState(),
+				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), nil, nil, nil, nil, nil, nil),
+				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
+				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
+				DistributionData: distribution.DefaultGenesisState(),
+			}
+
 			// validators
 			genVals := make([]staketypes.Validator, nValidators)
 			for i := 0; i < nValidators; i++ {
@@ -138,6 +150,8 @@ Example:
 				}
 
 				genesisAccounts = append(genesisAccounts, types.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
+				appState.Accounts = genesisAccounts
+				qosinit.AddValidator(&appState, genVals[i], compound)
 
 				// write private key of validator owner
 				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
@@ -159,14 +173,6 @@ Example:
 				initFilesWithConfig(config)
 			}
 
-			appState := app.GenesisState{
-				Accounts:         genesisAccounts,
-				MintData:         mint.DefaultGenesisState(),
-				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), genVals, nil, nil, nil, nil, nil),
-				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
-				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
-				DistributionData: distribution.DefaultGenesisState(),
-			}
 			rawState, _ := cdc.MarshalJSON(appState)
 
 			genDoc := &ttypes.GenesisDoc{
@@ -184,7 +190,7 @@ Example:
 			// Write genesis file.
 			for i := 0; i < nValidators+nNonValidators; i++ {
 				nodeDir := filepath.Join(outputDir, fmt.Sprintf("%s%d", nodeDirPrefix, i))
-				if err := genDoc.SaveAs(filepath.Join(nodeDir, config.BaseConfig.Genesis)); err != nil {
+				if err := server.SaveGenDoc(filepath.Join(nodeDir, config.BaseConfig.Genesis), *genDoc); err != nil {
 					_ = os.RemoveAll(outputDir)
 					return err
 				}
@@ -226,6 +232,7 @@ Example:
 	cmd.Flags().StringVar(&qscRootCA, "qcp-root-ca", "", "Config pubKey of root CA for QSC")
 	cmd.Flags().StringVar(&chainId, "chain-id", "", "Chain ID")
 	cmd.Flags().StringVar(&moniker, "moniker", "", "Moniker")
+	cmd.Flags().BoolVar(&compound, "compound", true, "whether the validator's income is calculated as compound interest, default: true")
 
 	return cmd
 }
