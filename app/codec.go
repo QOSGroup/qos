@@ -27,7 +27,17 @@ func MakeCodec() *amino.Codec {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
+	noPaincRegisterInterface(cdc)
 	module.RegisterCodec(cdc)
 	types.RegisterCodec(cdc)
 	cert.RegisterCodec(cdc)
+}
+
+func noPaincRegisterInterface(cdc *go_amino.Codec) {
+	defer func() {
+		if r := recover(); r != nil {
+			//nothing
+		}
+	}()
+	cdc.RegisterInterface((*interface{})(nil), nil)
 }

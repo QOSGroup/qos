@@ -66,10 +66,39 @@ func (mapper *DelegationMapper) RemoveDelegatorUnbondingQOSatHeight(height uint6
 	mapper.Del(ecotypes.BuildUnbondingDelegationByHeightDelKey(height, delAddr))
 }
 
+func (mapper *DelegationMapper) IterateDelegationsValDeleAddr(valAddr btypes.Address, fn func(btypes.Address, btypes.Address)) {
+
+	var prefixKey []byte
+
+	if valAddr.Empty() {
+		prefixKey = ecotypes.DelegationByValDelKey
+	} else {
+		prefixKey = append(ecotypes.DelegationByValDelKey, valAddr...)
+	}
+
+	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		k := iter.Key()
+		_, deleAddr := ecotypes.GetDelegationValDelKeyAddress(k)
+		fn(valAddr, deleAddr)
+	}
+}
+
 //------------------------------genesisi export
 
-func (mapper *DelegationMapper) IterateDelegationsInfo(fn func(ecotypes.DelegationInfo)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.DelegationByDelValKey)
+func (mapper *DelegationMapper) IterateDelegationsInfo(deleAddr btypes.Address, fn func(ecotypes.DelegationInfo)) {
+
+	var prefixKey []byte
+
+	if deleAddr.Empty() {
+		prefixKey = ecotypes.DelegationByDelValKey
+	} else {
+		prefixKey = append(ecotypes.DelegationByDelValKey, deleAddr...)
+	}
+
+	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var info ecotypes.DelegationInfo

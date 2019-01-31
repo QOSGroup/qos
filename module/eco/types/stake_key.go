@@ -12,6 +12,13 @@ const (
 	ValidatorMapperName  = "validator"
 	VoteInfoMapperName   = "voteInfo"
 	DelegationMapperName = "delegation"
+
+	//------query-------
+	Stake       = "stake"
+	Delegation  = "delegation"
+	Delegations = "delegations"
+	Owner       = "owner"
+	Delegator   = "delegator"
 )
 
 var (
@@ -124,6 +131,16 @@ func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []
 	return append(bz, delAdd...)
 }
 
+func GetDelegationValDelKeyAddress(key []byte) (valAddr btypes.Address, deleAddr btypes.Address) {
+	if len(key) != 1+2*AddrLen {
+		panic("invalid DelegationValDelKey length")
+	}
+
+	valAddr = key[1 : 1+AddrLen]
+	deleAddr = key[1+AddrLen:]
+	return
+}
+
 func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte {
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, height)
@@ -180,4 +197,18 @@ func GetValidatorVoteInfoInWindowIndexAddr(key []byte) (uint64, btypes.Address) 
 	addr := btypes.Address(key[1 : AddrLen+1])
 	index := binary.LittleEndian.Uint64(key[AddrLen+1:])
 	return index, addr
+}
+
+//-------------------------query path
+
+func BuildGetDelegationCustomQueryPath(deleAddr, owner btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", Stake, Delegation, deleAddr.String(), owner.String())
+}
+
+func BuildQueryDelegationsByOwnerCustomQueryPath(owner btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", Stake, Delegations, Owner, owner.String())
+}
+
+func BuildQueryDelegationsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", Stake, Delegations, Delegator, deleAddr.String())
 }

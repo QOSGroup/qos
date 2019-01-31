@@ -7,6 +7,7 @@ import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/stake"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -98,6 +99,64 @@ func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagOwner, "", "validator's owner address")
 	cmd.MarkFlagRequired(flagOwner)
+
+	return cmd
+}
+
+func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "delegation",
+		Short: "Query delegation info",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			var owner btypes.Address
+			var delegator btypes.Address
+
+			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner); err == nil {
+				owner = o
+			}
+
+			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDelegator); err == nil {
+				delegator = d
+			}
+
+			if owner.Empty() && delegator.Empty() {
+				return errors.New("miss --owner or --delegator flag")
+			}
+
+			var path string
+			resultIsArray := true
+			if !owner.Empty() && !delegator.Empty() {
+				path = ecotypes.BuildGetDelegationCustomQueryPath(delegator, owner)
+				resultIsArray = false
+			} else if !owner.Empty() {
+				path = ecotypes.BuildQueryDelegationsByOwnerCustomQueryPath(owner)
+			} else if !delegator.Empty() {
+				path = ecotypes.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
+			}
+
+			res, err := cliCtx.Query(path, []byte(""))
+			if err != nil {
+				return err
+			}
+
+			if resultIsArray {
+				var result []stake.DelegationQueryResult
+				cliCtx.Codec.UnmarshalJSON(res, &result)
+				return cliCtx.PrintResult(result)
+			} else {
+				var result stake.DelegationQueryResult
+				cliCtx.Codec.UnmarshalJSON(res, &result)
+				return cliCtx.PrintResult(result)
+			}
+		},
+	}
+
+	cmd.Flags().String(flagOwner, "", "validator's owner address")
+	cmd.Flags().String(flagDelegator, "", "delegator address")
 
 	return cmd
 }
