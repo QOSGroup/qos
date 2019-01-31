@@ -41,7 +41,7 @@ $ cd qos
 不同的QOS测试网络运行的qos代码可能不一样，编译前请切换到正确的qos代码版本。
 按照[QOS测试网络](https://github.com/QOSGroup/qos-testnets)说明切换到正确代码版本，以测试网`capricorn-1000`版本要求为例：
 ```bash
-$ git chekcout v0.0.3
+$ git checkout v0.0.3
 $ make install
 ```
 执行以上命令会安装`qosd`,`qoscli`到GOPATH/bin目录下，中国大陆用户可能需要**科学上网**才能编译成功。
