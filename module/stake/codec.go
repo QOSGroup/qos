@@ -22,5 +22,4 @@ func RegisterCodec(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&TxModifyCompound{}, "qos/txs/TxModifyCompound", nil)
 	cdc.RegisterConcrete(&TxUnbondDelegation{}, "qos/txs/TxUnbondDelegation", nil)
 	cdc.RegisterConcrete(&TxCreateReDelegation{}, "qos/txs/TxCreateReDelegation", nil)
-
 }

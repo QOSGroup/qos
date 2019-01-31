@@ -5,9 +5,11 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
+	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -91,6 +93,19 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	//delegationMapper
 	app.RegisterMapper(ecomapper.NewDelegationMapper())
+
+	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
+
+		if len(route) == 0 {
+			return nil, btypes.ErrInternal("miss custom subquery path")
+		}
+
+		if route[0] == ecotypes.Stake {
+			return stake.Query(ctx, route[1:], req)
+		}
+
+		return nil, nil
+	})
 
 	// Mount stores and load the latest state.
 	err := app.LoadLatestVersion()

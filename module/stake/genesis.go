@@ -195,7 +195,7 @@ func ExportGenesis(ctx context.Context) GenesisState {
 	})
 
 	var delegatorsInfo []DelegationInfoState
-	delegationMapper.IterateDelegationsInfo(func(info ecotypes.DelegationInfo) {
+	delegationMapper.IterateDelegationsInfo(btypes.Address{}, func(info ecotypes.DelegationInfo) {
 
 		validator, exsits := validatorMapper.GetValidator(info.ValidatorAddr)
 		if !exsits {
