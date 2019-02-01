@@ -14,12 +14,17 @@ import (
 )
 
 /*
- query path:
-	/delegation/xxx/xxxx: 根据delegator和owner查询委托信息(first: delegator)
-	/delegations/owner/xxx: 查询owner下的所有委托信息
-	/delegations/delegator/xxx: 查询delegator的所有委托信息
 
-  xxx为bech32 address
+custom path:
+/custom/stake/$query path
+
+ query path:
+	/delegation/:delegatorAddr/:ownerAddr : 根据delegator和owner查询委托信息(first: delegator)
+	/delegations/owner/:ownerAddr : 查询owner下的所有委托信息
+	/delegations/delegator/:delegatorAddr : 查询delegator的所有委托信息
+
+return:
+  json字节数组
 */
 
 func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {

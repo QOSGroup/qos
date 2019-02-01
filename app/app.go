@@ -104,6 +104,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 			return stake.Query(ctx, route[1:], req)
 		}
 
+		if route[0] == ecotypes.Distribution {
+			return distribution.Query(ctx, route[1:], req)
+		}
+
 		return nil, nil
 	})
 
