@@ -193,9 +193,14 @@ func (mapper *DistributionMapper) CalculateDelegatorPeriodRewards(valAddr, deleA
 	info.CurrentStartingHeight = blockHeight
 	info.PreviousPeriod = endPeriod
 	info.HistoricalRewardFees = btypes.ZeroInt()
+
+	totalRewards := historicalRewards.Add(rewards)
+	info.LastIncomeCalHeight = blockHeight
+	info.LastIncomeCalFees = totalRewards
+
 	mapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr), info)
 
-	return historicalRewards.Add(rewards), nil
+	return totalRewards, nil
 }
 
 //计算bondTokens在validator的两个计费点区间的收益

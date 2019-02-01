@@ -19,6 +19,10 @@ const (
 	Delegations = "delegations"
 	Owner       = "owner"
 	Delegator   = "delegator"
+
+	Distribution        = "distribution"
+	ValidatorPeriodInfo = "validatorPeriodInfo"
+	DelegatorIncomeInfo = "delegatorIncomeInfo"
 )
 
 var (
@@ -211,4 +215,12 @@ func BuildQueryDelegationsByOwnerCustomQueryPath(owner btypes.Address) string {
 
 func BuildQueryDelegationsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
 	return fmt.Sprintf("custom/%s/%s/%s/%s", Stake, Delegations, Delegator, deleAddr.String())
+}
+
+func BuildQueryValidatorPeriodInfoCustomQueryPath(owner btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s", Distribution, ValidatorPeriodInfo, owner.String())
+}
+
+func BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, owner btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", Distribution, DelegatorIncomeInfo, delegator.String(), owner.String())
 }
