@@ -2,7 +2,6 @@ package mint
 
 import (
 	"github.com/QOSGroup/qbase/context"
-
 	mintmapper "github.com/QOSGroup/qos/module/eco/mapper"
 	minttypes "github.com/QOSGroup/qos/module/eco/types"
 )

@@ -153,7 +153,6 @@ func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address
 	return append(bz, delAdd...)
 }
 
-
 func BuildUnbondingDelegationByHeightPrefix(height uint64) []byte {
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, height)

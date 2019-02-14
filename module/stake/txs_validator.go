@@ -101,7 +101,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
-	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
+	return btypes.Result{Code: btypes.CodeOK}, nil
 }
 
 func (tx *TxCreateValidator) GetSigner() []btypes.Address {
@@ -156,7 +156,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 
 	valAddr := validator.GetValidatorAddress()
@@ -167,7 +167,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, uint64(0), uint64(ctx.BlockHeight()))
 
-	return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeOK)}, nil
+	return btypes.Result{Code: btypes.CodeOK}, nil
 }
 
 func (tx *TxRevokeValidator) GetSigner() []btypes.Address {
@@ -218,7 +218,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
-		return btypes.Result{Code: btypes.ABCICodeType(btypes.CodeInternal)}, nil
+		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 
 	valAddr := validator.GetValidatorAddress()
@@ -284,6 +284,5 @@ func validateValidator(ctx context.Context, ownerAddr btypes.Address, checkStatu
 	if checkJail {
 		// TODO: block jailed validator
 	}
-
 	return validator, nil
 }
