@@ -1,14 +1,11 @@
 package types
 
 import (
-	"math/big"
-
 	btypes "github.com/QOSGroup/qbase/types"
 )
 
 type Fraction struct {
-	Numer   btypes.BigInt `json:"numer"`
-	Denomin btypes.BigInt `json:"denomin"`
+	Value Dec `json:"value"`
 }
 
 func NewFraction(numer, denomin int64) Fraction {
@@ -17,76 +14,62 @@ func NewFraction(numer, denomin int64) Fraction {
 	}
 
 	return Fraction{
-		Numer:   btypes.NewInt(numer),
-		Denomin: btypes.NewInt(denomin),
+		Value: NewDec(numer).Quo(NewDec(denomin)),
+	}
+}
+
+func NewFractionFromBigInt(numer, denomin btypes.BigInt) Fraction {
+	if denomin.NilToZero().IsZero() {
+		panic("Denomin cannot be zero")
+	}
+	return Fraction{
+		Value: NewDecFromInt(numer).Quo(NewDecFromInt(denomin)),
 	}
 }
 
 func ZeroFraction() Fraction {
-	return NewFraction(int64(0), int64(1))
+	return Fraction{
+		Value: ZeroDec(),
+	}
 }
 
 func OneFraction() Fraction {
-	return NewFraction(int64(1), int64(1))
+	return Fraction{
+		Value: OneDec(),
+	}
 }
 
 func (frac Fraction) Add(f1 Fraction) Fraction {
-	numer := btypes.BigInt{}
-	denomin := btypes.BigInt{}
-	if frac.Denomin.Equal(f1.Denomin) {
-		denomin = frac.Denomin
-		numer = frac.Numer.Add(f1.Numer)
-	} else {
-		denomin = frac.Denomin.Mul(f1.Denomin)
-		numer = (frac.Numer.Mul(f1.Denomin)).Add(frac.Denomin.Mul(f1.Numer))
-	}
+
+	value := frac.Value.Add(f1.Value)
 
 	return Fraction{
-		Numer:   numer,
-		Denomin: denomin,
+		Value: value,
 	}
 }
 
 func (frac Fraction) Sub(f1 Fraction) Fraction {
-
-	numer := btypes.BigInt{}
-	denomin := btypes.BigInt{}
-
-	if frac.Denomin.Equal(f1.Denomin) {
-		denomin = frac.Denomin
-		numer = frac.Numer.Sub(f1.Numer)
-	} else {
-		denomin = frac.Denomin.Mul(f1.Denomin)
-		numer = (frac.Numer.Mul(f1.Denomin)).Sub(frac.Denomin.Mul(f1.Numer))
-	}
-
+	value := frac.Value.Sub(f1.Value)
 	return Fraction{
-		Numer:   numer,
-		Denomin: denomin,
+		Value: value,
 	}
 }
 
-func (frac Fraction) GCD() Fraction {
-	n := new(big.Int).Abs(frac.Numer.BigInt())
-	d := new(big.Int).Abs(frac.Denomin.BigInt())
-	gcd := new(big.Int).GCD(nil, nil, n, d)
-
-	numer := new(big.Int).Div(n, gcd)
-	denomin := new(big.Int).Div(d, gcd)
-
+func (frac Fraction) Mul(f1 Fraction) Fraction {
+	value := frac.Value.Mul(f1.Value)
 	return Fraction{
-		Numer:   btypes.NewIntFromBigInt(numer),
-		Denomin: btypes.NewIntFromBigInt(denomin),
+		Value: value,
 	}
 }
 
 func (frac Fraction) MultiInt64(t int64) btypes.BigInt {
-	return frac.Numer.Mul(btypes.NewInt(t)).Div(frac.Denomin)
+	return frac.Value.MulInt(btypes.NewInt(t)).TruncateInt()
+}
+
+func (frac Fraction) MultiBigInt(t btypes.BigInt) btypes.BigInt {
+	return frac.Value.MulInt(t).TruncateInt()
 }
 
 func (frac Fraction) Equal(f1 Fraction) bool {
-	frac = frac.GCD()
-	f1 = f1.GCD()
-
-	return frac.Numer.Equal(f1.Numer) && frac.Denomin.Equal(f1.Denomin)
+	return frac.Value.Equal(f1.Value)
 }

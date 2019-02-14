@@ -17,9 +17,9 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	"github.com/tendermint/tendermint/crypto/ed25519"
 	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestValidatorMapper(t *testing.T) {
@@ -33,6 +33,7 @@ func TestValidatorMapper(t *testing.T) {
 		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
 		Status:          staketypes.Active,
+		MinPeriod:       0,
 		BondHeight:      1,
 	}
 
@@ -147,7 +148,7 @@ func defaultContext() context.Context {
 
 	signInfoMapper := stakemapper.NewVoteInfoMapper()
 	signInfoMapper.SetCodec(cdc)
-	mapperMap[stakemapper.VoteInfoMapperName] = signInfoMapper
+	mapperMap[staketypes.VoteInfoMapperName] = signInfoMapper
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)

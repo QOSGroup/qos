@@ -14,7 +14,10 @@ func IncrAccountQOS(ctx context.Context, addr btypes.Address, amount btypes.BigI
 
 	acc := accountMapper.GetAccount(addr)
 	if qosAcc, ok := acc.(*qtypes.QOSAccount); ok {
-		qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(amount))
+		err := qosAcc.SetQOS(qosAcc.GetQOS().NilToZero().Add(amount))
+		if err != nil {
+			return err
+		}
 		accountMapper.SetAccount(acc)
 		return nil
 	}
@@ -32,7 +35,10 @@ func DecrAccountQOS(ctx context.Context, addr btypes.Address, amount btypes.BigI
 			return fmt.Errorf("addr: %s has not much OQS to decrease. expect: %d , actual: %d", addr, amount, current)
 		}
 
-		qosAcc.SetQOS(current.Sub(amount))
+		err := qosAcc.SetQOS(current.Sub(amount))
+		if err != nil {
+			return err
+		}
 		accountMapper.SetAccount(acc)
 		return nil
 	}

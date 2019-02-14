@@ -3,11 +3,12 @@ package testnet
 import (
 	"fmt"
 	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/module/distribution"
+	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
@@ -159,11 +160,12 @@ Example:
 			}
 
 			appState := app.GenesisState{
-				Accounts:  genesisAccounts,
-				MintData:  mint.DefaultGenesisState(),
-				StakeData: stake.NewGenesisState(staketypes.DefaultStakeParams(), genVals),
-				QCPData:   qcp.NewGenesisState(qcpPubKey, nil),
-				QSCData:   qsc.NewGenesisState(qscPubKey, nil),
+				Accounts:         genesisAccounts,
+				MintData:         mint.DefaultGenesisState(),
+				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), genVals, nil, nil, nil, nil, nil),
+				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
+				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
+				DistributionData: distribution.DefaultGenesisState(),
 			}
 			rawState, _ := cdc.MarshalJSON(appState)
 

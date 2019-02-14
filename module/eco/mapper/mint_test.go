@@ -6,13 +6,13 @@ import (
 	"testing"
 	"time"
 
-	minttypes "github.com/QOSGroup/qos/module/eco/types"
-	bmapper "github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/store"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/QOSGroup/qbase/baseabci"
+	"github.com/QOSGroup/qbase/context"
+	bmapper "github.com/QOSGroup/qbase/mapper"
+	"github.com/QOSGroup/qbase/store"
+	minttypes "github.com/QOSGroup/qos/module/eco/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 )
 
@@ -37,13 +37,13 @@ func TestSaveParams(t *testing.T) {
 		now, //插入当前时间
 		1000,
 		0,
-	},)
+	})
 
 	mintMapper.AddInflationPhrase(minttypes.InflationPhrase{
-		now.Add(time.Minute*10), //插入十分钟后的时间
+		now.Add(time.Minute * 10), //插入十分钟后的时间
 		2000,
 		0,
-	},)
+	})
 
 	currentInflationPhrase, exist = mintMapper.GetCurrentInflationPhrase()
 	require.True(t, exist)

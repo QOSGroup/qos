@@ -18,4 +18,6 @@ func init() {
 // 为包内定义结构注册codec
 func RegisterCodec(cdc *go_amino.Codec) {
 	cdc.RegisterConcrete(&QOSAccount{}, "qos/types/QOSAccount", nil)
+	cdc.RegisterConcrete(&Fraction{}, "qos/types/Fraction", nil)
+	cdc.RegisterConcrete(&Dec{}, "qos/types/Dec", nil)
 }

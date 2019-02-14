@@ -48,7 +48,7 @@ type TxDelegate struct {
 
 ```
 
-unbond后,对应的validator将会增加一个周期,unbond金额将在`unbond周期`之后返还至delegator账户.
+unbond后,对应的validator将会增加一个计费点,unbond金额将在`unbond周期`之后返还至delegator账户.
 unbond操作立即生效, 先统计出当前收益,并追加到下次收益发放总额中.
 
 下次收益发放时, 发放金额为 x + y
@@ -90,7 +90,8 @@ path: /store/delegator/key
 |Index| Prefix Key | Key     | Value | 备注|
 |:--|:----       | :-------| :---- | :----|
 |a| []byte{0x31} | DelegatorAddress-ValidatorAddress |DelegationInfo| delegator信息|
-|b| []byte{0x41} | BlockHeight+Delegator|QOS|delegator在指定高度解绑的QOS数量,在此高度将QOS返回至delegator|
+|b| []byte{0x32} | ValidatorAddress-DelegatorAddress | struct{}{}| validator与delegator映射|
+|c| []byte{0x41} | BlockHeight+Delegator|QOS|delegator在指定高度解绑的QOS数量,在此高度将QOS返回至delegator|
 
 
 #### Fee分配

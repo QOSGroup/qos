@@ -2,6 +2,7 @@ package types
 
 import (
 	"time"
+
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
@@ -13,10 +14,11 @@ type DistributionParams struct {
 }
 
 type StakeParams struct {
-	MaxValidatorCnt            uint32 `json:"max_validator_cnt"`
-	ValidatorVotingStatusLen   uint32 `json:"voting_status_len"`
-	ValidatorVotingStatusLeast uint32 `json:"voting_status_least"`
-	ValidatorSurvivalSecs      uint32 `json:"survival_secs"`
+	MaxValidatorCnt             uint32 `json:"max_validator_cnt"`
+	ValidatorVotingStatusLen    uint32 `json:"voting_status_len"`
+	ValidatorVotingStatusLeast  uint32 `json:"voting_status_least"`
+	ValidatorSurvivalSecs       uint32 `json:"survival_secs"`
+	DelegatorUnbondReturnHeight uint32 `json:"unbond_return_height"`
 }
 
 type MintParams struct {
@@ -25,30 +27,32 @@ type MintParams struct {
 
 type InflationPhrase struct {
 	EndTime       time.Time `json:"endtime"`
-
 	TotalAmount   uint64    `json:"total_amount"`
 	AppliedAmount uint64    `json:"applied_amount"`
 }
 
 func DefaultDistributionParams() DistributionParams {
 	return DistributionParams{
-		//todo
+		ProposerRewardRate:           qtypes.NewFraction(int64(4), int64(100)), // 4%
+		CommunityRewardRate:          qtypes.NewFraction(int64(1), int64(100)), // 1%
+		ValidatorCommissionRate:      qtypes.NewFraction(int64(1), int64(100)), // 1%
+		DelegatorsIncomePeriodHeight: uint64(10),
 	}
 }
 
-func NewStakeParams(maxValidatorCnt uint32, validatorVotingStatusLen uint32, validatorVotingStatusLeast uint32, validatorSurvivalSecs uint32) StakeParams {
+func NewStakeParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs, delegatorUnbondReturnHeight uint32) StakeParams {
 
 	return StakeParams{
-		MaxValidatorCnt:            maxValidatorCnt,
-		ValidatorVotingStatusLen:   validatorVotingStatusLen,
-		ValidatorVotingStatusLeast: validatorVotingStatusLeast,
-		ValidatorSurvivalSecs:      validatorSurvivalSecs,
+		MaxValidatorCnt:             maxValidatorCnt,
+		ValidatorVotingStatusLen:    validatorVotingStatusLen,
+		ValidatorVotingStatusLeast:  validatorVotingStatusLeast,
+		ValidatorSurvivalSecs:       validatorSurvivalSecs,
+		DelegatorUnbondReturnHeight: delegatorUnbondReturnHeight,
 	}
 }
 
 func DefaultStakeParams() StakeParams {
-
-	return NewStakeParams(10, 100, 50, 600)
+	return NewStakeParams(10, 100, 50, 600, 10)
 }
 
 func NewMintParams(phrases []InflationPhrase) MintParams {

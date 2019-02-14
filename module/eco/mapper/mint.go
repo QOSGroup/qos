@@ -5,9 +5,11 @@ import (
 	"encoding/binary"
 	"errors"
 	"time"
+
+	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
+	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 )
 
 type MintMapper struct {
@@ -17,8 +19,12 @@ type MintMapper struct {
 func NewMintMapper() *MintMapper {
 	var qscMapper = MintMapper{}
 
-	qscMapper.BaseMapper = mapper.NewBaseMapper(nil, staketypes.MintMapperName)
+	qscMapper.BaseMapper = mapper.NewBaseMapper(nil, ecotypes.MintMapperName)
 	return &qscMapper
+}
+
+func GetMintMapper(ctx context.Context) *MintMapper {
+	return ctx.Mapper(ecotypes.MintMapperName).(*MintMapper)
 }
 
 func (mapper *MintMapper) Copy() mapper.IMapper {
@@ -30,22 +36,20 @@ func (mapper *MintMapper) Copy() mapper.IMapper {
 // 获取当前Inflation Phrase的键值
 func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, error) {
 	// 使用KVStorePrefixIterator，当前应该是key最小的也就是第一个
-	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), staketypes.BuildMintParamsKey())
-
+	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
 	if !iter.Valid() {
 		return nil, errors.New("No more coins to come, sad!")
 	}
 	inflationPhraseKey := iter.Key()
-	endtimesecBytes := inflationPhraseKey[len(staketypes.BuildMintParamsKey()):]
-
+	endtimesecBytes := inflationPhraseKey[len(ecotypes.BuildMintParamsKey()):]
 	var endtimesec uint64
 	binary.Read(bytes.NewBuffer(endtimesecBytes), binary.BigEndian, &endtimesec)
 
 	nowsec := uint64(time.Now().UTC().Unix())
 
 	// 当前时间已经超过endtime，需要进入下一phrase
-	if (nowsec >= endtimesec) {
-		if (newPhrase) {
+	if nowsec >= endtimesec {
+		if newPhrase {
 			// 排除设置错误，为啥会刚删过又删？
 			return nil, errors.New("Removing Inflation Plans too frequently")
 		}
@@ -57,9 +61,8 @@ func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, 
 }
 
 // 获取当前的Inflation Phrase
-func (mapper *MintMapper) GetCurrentInflationPhrase() (inflationPhrase staketypes.InflationPhrase, exist bool) {
-	inflationPhrase = staketypes.InflationPhrase{}
-
+func (mapper *MintMapper) GetCurrentInflationPhrase() (inflationPhrase ecotypes.InflationPhrase, exist bool) {
+	inflationPhrase = ecotypes.InflationPhrase{}
 	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(false)
 	if err == nil {
 		exist = mapper.Get(currentInflationPhraseKey, &inflationPhrase)
@@ -71,24 +74,23 @@ func (mapper *MintMapper) GetCurrentInflationPhrase() (inflationPhrase staketype
 // 设置Params
 // key:		MintParamsKey+endtime
 // value: 	InflationPhrase
-func (mapper *MintMapper) SetParams(config staketypes.MintParams) {
+func (mapper *MintMapper) SetParams(config ecotypes.MintParams) {
 	for _, inflation_phrase := range config.Phrases {
 		mapper.AddInflationPhrase(inflation_phrase)
 	}
 }
 
-func (mapper *MintMapper) AddInflationPhrase(phrase staketypes.InflationPhrase) {
+func (mapper *MintMapper) AddInflationPhrase(phrase ecotypes.InflationPhrase) {
 
 	endsec := uint64(phrase.EndTime.UTC().Unix())
 
 	secBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(secBytes, endsec)
 
-	keylen := len(staketypes.BuildMintParamsKey())
-	bz := make([]byte, keylen + 8)
+	keylen := len(ecotypes.BuildMintParamsKey())
+	bz := make([]byte, keylen+8)
 
-	copy(bz[0:keylen], staketypes.BuildMintParamsKey())
-
+	copy(bz[0:keylen], ecotypes.BuildMintParamsKey())
 	copy(bz[keylen:keylen+8], secBytes)
 
 	mapper.Set(bz, phrase)
@@ -97,25 +99,24 @@ func (mapper *MintMapper) AddInflationPhrase(phrase staketypes.InflationPhrase) 
 // 设置Params
 // key:		MintParamsKey+endtime
 // value: 	InflationPhrase
-func (mapper *MintMapper) SetMintParams(config staketypes.MintParams) {
+func (mapper *MintMapper) SetMintParams(config ecotypes.MintParams) {
 	for _, inflation_phrase := range config.Phrases {
 		mapper.AddInflationPhrase(inflation_phrase)
 	}
 }
 
-func (mapper *MintMapper) GetMintParams() staketypes.MintParams {
-	var phrases []staketypes.InflationPhrase
-	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), staketypes.BuildMintParamsKey())
+func (mapper *MintMapper) GetMintParams() ecotypes.MintParams {
+	var phrases []ecotypes.InflationPhrase
+	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
 
 	for {
-		var inflationPhrase staketypes.InflationPhrase
-
+		var inflationPhrase ecotypes.InflationPhrase
 		mapper.DecodeObject(iter.Value(), &inflationPhrase)
 		phrases = append(phrases, inflationPhrase)
 		iter.Next()
 	}
-	return staketypes.MintParams{phrases}
 
+	return ecotypes.MintParams{phrases}
 }
 
 // 获取已分配QOS总数
@@ -129,8 +130,7 @@ func (mapper *MintMapper) GetAppliedQOSAmount() (v uint64) {
 
 // 设置 已分配 QOS amount
 func (mapper *MintMapper) SetAppliedQOSAmount(amount uint64) {
-	inflationPhrase := staketypes.InflationPhrase{}
-
+	inflationPhrase := ecotypes.InflationPhrase{}
 	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(false)
 	if err == nil {
 		mapper.Get(currentInflationPhraseKey, &inflationPhrase)
@@ -145,4 +145,13 @@ func (mapper *MintMapper) AddAppliedQOSAmount(amount uint64) {
 	mined := mapper.GetAppliedQOSAmount()
 	mined += amount
 	mapper.SetAppliedQOSAmount(mined)
+}
+
+func (mapper *MintMapper) SetFirstBlockTime(t int64) {
+	mapper.Set(ecotypes.BuildFirstBlockTimeKey(), t)
+}
+
+func (mapper *MintMapper) GetFirstBlockTime() (t int64) {
+	mapper.Get(ecotypes.BuildFirstBlockTimeKey(), &t)
+	return
 }

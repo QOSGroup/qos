@@ -20,9 +20,9 @@ const (
 	Inactive
 
 	//Inactive Code
-	Revoke InactiveCode = iota
-	MissVoteBlock
-	MaxValidator
+	Revoke        InactiveCode = iota // 2
+	MissVoteBlock                     // 3
+	MaxValidator                      // 4
 )
 
 type Validator struct {
@@ -37,6 +37,7 @@ type Validator struct {
 	InactiveTime   time.Time    `json:"inactive_time"`
 	InactiveHeight uint64       `json:"inactive_height"`
 
+	MinPeriod  uint64 `json:"min_period"`
 	BondHeight uint64 `json:"bond_height"`
 }
 
