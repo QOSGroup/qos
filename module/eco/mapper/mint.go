@@ -115,6 +115,7 @@ func (mapper *MintMapper) GetMintParams() ecotypes.MintParams {
 		phrases = append(phrases, inflationPhrase)
 		iter.Next()
 	}
+
 	return ecotypes.MintParams{phrases}
 }
 
