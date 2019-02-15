@@ -117,7 +117,7 @@ example:
 				}
 			}
 
-			addValidator(&appState, val, viper.GetBool(flagCompound))
+			AddValidator(&appState, val, viper.GetBool(flagCompound))
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage
@@ -152,7 +152,7 @@ example:
 	return cmd
 }
 
-func addValidator(appState *app.GenesisState, validator ecotypes.Validator, isCompound bool) {
+func AddValidator(appState *app.GenesisState, validator ecotypes.Validator, isCompound bool) {
 	accIndex := -1
 	var acc *types.QOSAccount
 

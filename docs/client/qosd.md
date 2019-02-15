@@ -7,6 +7,7 @@
 * `add-genesis-validator` [设置验证节点](#设置验证节点) 
 * `config-root-ca`        [设置CA](#设置ca) 
 * `start`                 [启动](#启动) 
+* `export        `        [状态导出](#状态导出) 
 * `testnet`               [初始化测试网络](#初始化测试网络) 
 * `unsafe-reset-all`      [重置](#重置) 
 * `tendermint`            [Tendermint](#tendermint) 
@@ -114,9 +115,24 @@ qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t
 启动QOS网络
 
 ```bash
-$ qosd start --with-tendermint
+$ qosd start
 ```
 启动QOS网络，并启动tendermint，如果正确[配置Validator](#设置验证节点)会看到打块信息。
+
+## 状态导出
+
+`qosd export --height <block_height> --for-zero-height <export_state_to_start_at_height_zero>`
+
+主要参数：
+
+- `--height`            指定导出区块高度
+- `--for-zero-height`   是否导出状态从0高度重新启动网络
+
+导出区块高度为4的状态数据：
+```bash
+qosd export --height 4
+```
+//TODO imuge
 
 ## 初始化测试网络
 

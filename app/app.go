@@ -2,6 +2,7 @@ package app
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
@@ -41,6 +42,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	// 设置 InitChainer
 	app.SetInitChainer(app.initChainer)
+
+	// 设置gas处理逻辑
+	app.SetGasHandler(app.gasHandler)
 
 	// abci:
 	// begin blocker:
@@ -174,4 +178,27 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
 	// close all validators
 	stake.CloseAllValidators(ctx)
+}
+
+// gas
+func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
+	distributionMapper := ecomapper.GetDistributionMapper(ctx)
+	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams().GasPerUnitCost))
+
+	if gasFeeUsed.GT(btypes.ZeroInt()) {
+		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+		account := accountMapper.GetAccount(payer).(*types.QOSAccount)
+
+		if !account.EnoughOfQOS(gasFeeUsed) {
+			log := fmt.Sprintf("%s no enough coins to pay the gas after this tx done", payer)
+			return btypes.ErrInternal(log)
+		}
+
+		account.MustMinusQOS(gasFeeUsed)
+		accountMapper.SetAccount(account)
+
+		distributionMapper.AddPreDistributionQOS(gasFeeUsed)
+	}
+
+	return nil
 }
