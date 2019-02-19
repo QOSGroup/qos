@@ -105,7 +105,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(flagCreator, "", "name or address of creator")
-	cmd.Flags().String(flagExtrate, "1:280.0000", "extrate: qos:qscxxx")
+	cmd.Flags().String(flagExtrate, "1", "extrate: qos:qscxxx")
 	cmd.Flags().String(flagPathqsc, "", "path of CA(qsc)")
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(flagAccounts, "", "init accounts, eg: address1,100;address2,100")

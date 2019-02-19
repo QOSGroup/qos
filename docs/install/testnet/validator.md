@@ -81,7 +81,6 @@ $ qoscli query account Peter --indent
 $ qosd tendermint show-validator
 "4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="
 ```
-`value`部分内容将用到后面的指令参数中。
 
 使用下面的命令执行创建验证节点：
 ```

@@ -159,11 +159,11 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 	genState := NewGenesisState(
 		accounts,
 		mint.ExportGenesis(ctx),
-		stake.ExportGenesis(ctx),
+		stake.ExportGenesis(ctx, forZeroHeight),
 		qcp.ExportGenesis(ctx),
 		qsc.ExportGenesis(ctx),
 		approve.ExportGenesis(ctx),
-		distribution.ExportGenesis(ctx),
+		distribution.ExportGenesis(ctx, forZeroHeight),
 	)
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
@@ -176,8 +176,13 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 // prepare for fresh start at zero height
 func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
-	// close all validators
-	stake.CloseAllValidators(ctx)
+	// close inactive validators
+	stake.CloseExpireInactiveValidator(ctx, 0)
+
+	// return unbond tokens
+	stake.ReturnAllUnbondTokens(ctx)
+
+	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }
 
 // gas
@@ -195,6 +200,7 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 		}
 
 		account.MustMinusQOS(gasFeeUsed)
+		app.Logger.Info(fmt.Sprintf("cost %d QOS from %s for gas", gasFeeUsed.Int64(), payer))
 		accountMapper.SetAccount(account)
 
 		distributionMapper.AddPreDistributionQOS(gasFeeUsed)

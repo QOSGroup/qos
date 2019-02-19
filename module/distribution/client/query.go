@@ -1,13 +1,14 @@
 package distribution
 
 import (
+	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/distribution"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/spf13/cobra"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 )
 
 const (
@@ -81,5 +82,27 @@ func queryDelegatorIncomeInfoCommand(cdc *amino.Codec) *cobra.Command {
 
 	cmd.MarkFlagRequired(flagDelegator)
 	cmd.MarkFlagRequired(flagOwner)
+	return cmd
+}
+
+func queryCommunityFeePoolCommand(cdc *amino.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "community-fee-pool",
+		Short: "Query community fee pool",
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			res, err := cliCtx.Query(fmt.Sprintf("/store/%s/key", ecotypes.DistributionMapperName), ecotypes.BuildCommunityFeePoolKey())
+			if err != nil {
+				return err
+			}
+
+			var result btypes.BigInt
+			cdc.MustUnmarshalBinaryBare(res, &result)
+			return cliCtx.PrintResult(result)
+		},
+	}
+
 	return cmd
 }

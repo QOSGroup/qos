@@ -1,14 +1,12 @@
 package stake
 
 import (
-	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
-	"github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -35,9 +33,34 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 	survivalSecs := validatorMapper.GetParams().ValidatorSurvivalSecs
 	maxValidatorCount := uint64(validatorMapper.GetParams().MaxValidatorCnt)
 
-	closeExpireInactiveValidator(ctx, survivalSecs)
+	CloseExpireInactiveValidator(ctx, survivalSecs)
 	res.ValidatorUpdates = GetUpdatedValidators(ctx, maxValidatorCount)
 	return
+}
+
+func ReturnAllUnbondTokens(ctx context.Context) {
+	height := uint64(ctx.BlockHeight())
+	e := eco.GetEco(ctx)
+	maxHeight := uint64(e.ValidatorMapper.GetParams().DelegatorUnbondReturnHeight) + height
+	for h := height; h <= maxHeight; h ++ {
+		prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(h)
+
+		iter := store.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
+		defer iter.Close()
+
+		for ; iter.Valid(); iter.Next() {
+			k := iter.Key()
+			e.DelegationMapper.Del(k)
+
+			var amount uint64
+			e.DelegationMapper.BaseMapper.DecodeObject(iter.Value(), &amount)
+
+			_, deleAddr := ecotypes.GetUnbondingDelegationHeightAddress(k)
+			returnQOSAmount := amount
+
+			eco.IncrAccountQOS(ctx, deleAddr, btypes.NewInt(int64(returnQOSAmount)))
+		}
+	}
 }
 
 //unbond的token返还至delegator账户中
@@ -63,7 +86,7 @@ func EndBlockerByReturnUnbondTokens(ctx context.Context) {
 	}
 }
 
-func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
+func CloseExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 	log := ctx.Logger()
 	e := eco.GetEco(ctx)
 
@@ -216,37 +239,4 @@ func blockValidator(ctx context.Context, validator ecotypes.Validator, code ecot
 	//更新validator对应的delegator的token数量
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	distributionMapper.ModifyDelegatorTokens(validator, validator.Owner, uint64(0), uint64(ctx.BlockHeight()))
-}
-
-func closeActiveValidators(ctx context.Context) {
-	validatorMapper := ecomapper.GetValidatorMapper(ctx)
-	voteInfoMapper := ecomapper.GetVoteInfoMapper(ctx)
-	accountMapper := baseabci.GetAccountMapper(ctx)
-
-	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
-	defer iterator.Close()
-
-	var key []byte
-	for ; iterator.Valid(); iterator.Next() {
-		key = iterator.Key()
-		valAddress := btypes.Address(key[9:])
-		if validator, ok := validatorMapper.KickValidator(valAddress); ok {
-
-			voteInfoMapper.DelValidatorVoteInfo(valAddress)
-			voteInfoMapper.ClearValidatorVoteInfoInWindow(valAddress)
-
-			owner := accountMapper.GetAccount(validator.Owner)
-			if qosAcc, ok := owner.(*types.QOSAccount); ok {
-				qosAcc.MustPlusQOS(btypes.NewInt(int64(validator.BondTokens)))
-				accountMapper.SetAccount(qosAcc)
-			}
-
-			validatorMapper.Del(ecotypes.BuildValidatorByVotePower(validator.BondTokens, valAddress))
-		}
-	}
-}
-
-func CloseAllValidators(ctx context.Context) {
-	closeExpireInactiveValidator(ctx, 0)
-	closeActiveValidators(ctx)
 }
