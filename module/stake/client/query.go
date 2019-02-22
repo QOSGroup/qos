@@ -80,11 +80,12 @@ func toValidatorDisplayInfo(validator ecotypes.Validator) validatorDisplayInfo {
 
 func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator",
+		Use:   "validator [validator-owner]",
 		Short: "Query validator's info",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			ownerAddress, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner)
+			ownerAddress, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
@@ -96,9 +97,6 @@ func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 			return cliCtx.PrintResult(toValidatorDisplayInfo(validator))
 		},
 	}
-
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.MarkFlagRequired(flagOwner)
 
 	return cmd
 }
@@ -123,40 +121,87 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 				delegator = d
 			}
 
-			if owner.Empty() && delegator.Empty() {
-				return errors.New("miss --owner or --delegator flag")
-			}
-
-			var path string
-			resultIsArray := true
-			if !owner.Empty() && !delegator.Empty() {
-				path = ecotypes.BuildGetDelegationCustomQueryPath(delegator, owner)
-				resultIsArray = false
-			} else if !owner.Empty() {
-				path = ecotypes.BuildQueryDelegationsByOwnerCustomQueryPath(owner)
-			} else if !delegator.Empty() {
-				path = ecotypes.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
-			}
+			var path = ecotypes.BuildGetDelegationCustomQueryPath(delegator, owner)
 
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
 			}
 
-			if resultIsArray {
-				var result []stake.DelegationQueryResult
-				cliCtx.Codec.UnmarshalJSON(res, &result)
-				return cliCtx.PrintResult(result)
-			} else {
-				var result stake.DelegationQueryResult
-				cliCtx.Codec.UnmarshalJSON(res, &result)
-				return cliCtx.PrintResult(result)
-			}
+			var result stake.DelegationQueryResult
+			cliCtx.Codec.UnmarshalJSON(res, &result)
+			return cliCtx.PrintResult(result)
 		},
 	}
 
 	cmd.Flags().String(flagOwner, "", "validator's owner address")
 	cmd.Flags().String(flagDelegator, "", "delegator address")
+	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagDelegator)
+
+	return cmd
+}
+
+func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "delegations-to [validator-owner]",
+		Short: "Query all delegations made to one validator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			var owner btypes.Address
+
+			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
+				owner = o
+			}
+
+			var path = ecotypes.BuildQueryDelegationsByOwnerCustomQueryPath(owner)
+
+			res, err := cliCtx.Query(path, []byte(""))
+			if err != nil {
+				return err
+			}
+
+			var result []stake.DelegationQueryResult
+			cliCtx.Codec.UnmarshalJSON(res, &result)
+			return cliCtx.PrintResult(result)
+		},
+	}
+
+	return cmd
+}
+
+func queryDelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "delegations [delegator]",
+		Short: "Query all delegations made by one delegator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			var delegator btypes.Address
+
+			if d, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
+				delegator = d
+			}
+
+			var path = ecotypes.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
+
+			res, err := cliCtx.Query(path, []byte(""))
+			if err != nil {
+				return err
+			}
+
+			var result []stake.DelegationQueryResult
+			cliCtx.Codec.UnmarshalJSON(res, &result)
+			return cliCtx.PrintResult(result)
+		},
+	}
 
 	return cmd
 }
@@ -212,10 +257,11 @@ func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "validator-miss-vote",
 		Short: "Query validator miss vote info in the nearest voting window",
+		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			ownerAddress, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner)
+			ownerAddress, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
@@ -229,9 +275,6 @@ func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 			return nil
 		},
 	}
-
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.MarkFlagRequired(flagOwner)
 
 	return cmd
 }

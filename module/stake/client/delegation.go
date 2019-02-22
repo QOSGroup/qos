@@ -139,7 +139,6 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 
 	cmd.MarkFlagRequired(flagDelegator)
 	cmd.MarkFlagRequired(flagOwner)
-	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd
 }
@@ -152,7 +151,8 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
 
 				tokens := viper.GetInt64(flagBondTokens)
-				if tokens <= 0 {
+				all := viper.GetBool(flagAll)
+				if tokens <= 0 && !all {
 					return nil, errors.New("unbond QOS amount must gt 0")
 				}
 
@@ -177,7 +177,7 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					ToValidatorOwner:   toValidatorOwner,
 					Amount:             uint64(tokens),
 					IsCompound:         viper.GetBool(flagCompound),
-					IsRedelegateAll:    viper.GetBool(flagAll),
+					IsRedelegateAll:    all,
 				}, nil
 			})
 		},
@@ -193,7 +193,6 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagDelegator)
 	cmd.MarkFlagRequired(flagFromValidatorOwner)
 	cmd.MarkFlagRequired(flagToValidatorOwner)
-	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd
 }

@@ -29,5 +29,7 @@ func QueryCommands(cdc *amino.Codec) []*cobra.Command {
 		queryValidatorInfoCommand(cdc),
 		queryValidatorMissedVoteInfoCommand(cdc),
 		queryDelegationInfoCommand(cdc),
+		queryDelegationsCommand(cdc),
+		queryDelegationsToCommand(cdc),
 	)
 }

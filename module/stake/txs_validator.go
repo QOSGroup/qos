@@ -160,12 +160,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	}
 
 	valAddr := validator.GetValidatorAddress()
-	delegatorAddr := tx.Owner
 	mapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.Revoke)
-
-	//更新owner对应的delegator的token数量
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, uint64(0), uint64(ctx.BlockHeight()))
 
 	return btypes.Result{Code: btypes.CodeOK}, nil
 }

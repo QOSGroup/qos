@@ -1,8 +1,6 @@
 package distribution
 
 import (
-	"fmt"
-
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco/mapper"
@@ -87,7 +85,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 
 }
 
-func ExportGenesis(ctx context.Context) GenesisState {
+func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
 
 	distributionMapper := mapper.GetDistributionMapper(ctx)
 	validatorMapper := mapper.GetValidatorMapper(ctx)
@@ -101,63 +99,64 @@ func ExportGenesis(ctx context.Context) GenesisState {
 	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.Address, period uint64, frac qtypes.Fraction) {
 
 		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if !exsits {
-			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		if exsits {
+			vhps := ValidatorHistoryPeriodState{
+				ValidatorPubKey: validator.ValidatorPubKey,
+				Period:          period,
+				Summary:         frac,
+			}
+			validatorHistoryPeriods = append(validatorHistoryPeriods, vhps)
 		}
-
-		vhps := ValidatorHistoryPeriodState{
-			ValidatorPubKey: validator.ValidatorPubKey,
-			Period:          period,
-			Summary:         frac,
-		}
-		validatorHistoryPeriods = append(validatorHistoryPeriods, vhps)
 	})
 
 	var validatorCurrentPeriods []ValidatorCurrentPeriodState
 	distributionMapper.IteratorValidatorsCurrentPeriod(func(valAddr btypes.Address, vcps types.ValidatorCurrentPeriodSummary) {
 
 		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if !exsits {
-			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		if exsits {
+			vcpsState := ValidatorCurrentPeriodState{
+				ValidatorPubKey:      validator.ValidatorPubKey,
+				CurrentPeriodSummary: vcps,
+			}
+			validatorCurrentPeriods = append(validatorCurrentPeriods, vcpsState)
 		}
-
-		vcpsState := ValidatorCurrentPeriodState{
-			ValidatorPubKey:      validator.ValidatorPubKey,
-			CurrentPeriodSummary: vcps,
-		}
-		validatorCurrentPeriods = append(validatorCurrentPeriods, vcpsState)
 	})
 
 	var delegatorEarningInfos []DelegatorEarningStartState
 	distributionMapper.IteratorDelegatorsEarningStartInfo(func(valAddr btypes.Address, deleAddr btypes.Address, desi types.DelegatorEarningsStartInfo) {
 
 		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if !exsits {
-			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		if exsits {
+			dess := DelegatorEarningStartState{
+				ValidatorPubKey:            validator.ValidatorPubKey,
+				DeleAddress:                deleAddr,
+				DelegatorEarningsStartInfo: desi,
+			}
+			if forZeroHeight {
+				dess.DelegatorEarningsStartInfo.CurrentStartingHeight = 1
+				dess.DelegatorEarningsStartInfo.FirstDelegateHeight = 1
+				dess.DelegatorEarningsStartInfo.LastIncomeCalHeight = 0
+				dess.DelegatorEarningsStartInfo.LastIncomeCalFees = btypes.NewInt(0)
+			}
+			delegatorEarningInfos = append(delegatorEarningInfos, dess)
 		}
-
-		dess := DelegatorEarningStartState{
-			ValidatorPubKey:            validator.ValidatorPubKey,
-			DeleAddress:                deleAddr,
-			DelegatorEarningsStartInfo: desi,
-		}
-		delegatorEarningInfos = append(delegatorEarningInfos, dess)
 	})
 
 	var delegatorIncomeHeights []DelegatorIncomeHeightState
 	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.Address, deleAddr btypes.Address, height uint64) {
 
 		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if !exsits {
-			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		if exsits {
+			dihs := DelegatorIncomeHeightState{
+				ValidatorPubKey: validator.ValidatorPubKey,
+				DeleAddress:     deleAddr,
+				Height:          height,
+			}
+			if forZeroHeight {
+				dihs.Height = height - uint64(ctx.BlockHeight())
+			}
+			delegatorIncomeHeights = append(delegatorIncomeHeights, dihs)
 		}
-
-		dihs := DelegatorIncomeHeightState{
-			ValidatorPubKey: validator.ValidatorPubKey,
-			DeleAddress:     deleAddr,
-			Height:          height,
-		}
-		delegatorIncomeHeights = append(delegatorIncomeHeights, dihs)
 	})
 
 	return NewGenesisState(feePool,

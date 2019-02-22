@@ -109,11 +109,10 @@ func (mapper *MintMapper) GetMintParams() ecotypes.MintParams {
 	var phrases []ecotypes.InflationPhrase
 	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
 
-	for {
+	for ; iter.Valid(); iter.Next() {
 		var inflationPhrase ecotypes.InflationPhrase
 		mapper.DecodeObject(iter.Value(), &inflationPhrase)
 		phrases = append(phrases, inflationPhrase)
-		iter.Next()
 	}
 
 	return ecotypes.MintParams{phrases}

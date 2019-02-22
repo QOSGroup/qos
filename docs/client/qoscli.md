@@ -135,7 +135,10 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query validator`              [验证节点查询](#查询验证节点)
 * `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
 * `qoscli query validator-period`       [验证节点窗口信息](#验证节点窗口信息)
+* `qoscli query community-fee-pool`     [社区收益池](#社区收益池)
 * `qoscli query delegation`             [委托查询](#委托查询)
+* `qoscli query delegations-to`         [验证节点委托列表](#验证节点委托列表)
+* `qoscli query delegations`            [代理用户委托列表](#代理用户委托列表)
 * `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
 
 查询的具体指令将在各自模块进行介绍。
@@ -497,6 +500,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 * `qoscli query validator`              [查询验证节点](#查询验证节点)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
 * `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
+* `qoscli query community-fee-pool`     [社区收益池](#社区收益池)
 * `qoscli tx revoke-validator`          [撤消验证节点](#撤销验证节点)
 * `qoscli tx active-validator`          [激活验证节点](#激活验证节点)
 
@@ -527,12 +531,14 @@ $ qoscli tx create-validator --name "Arya's node" --owner Arya --pubkey VOn2rPx+
 
 #### 查询验证节点
 
-`qoscli query validator --owner <account_address>`
+`qoscli query validator [validator-owner]`
+
+`validator-owner`为账户地址或本地秘钥库名字
 
 可根据操作者查找与其绑定的验证节点信息。
 
 ```bash
-$ qoscli query validator --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --indent
+$ qoscli query validator address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --indent
 ```
 
 执行结果：
@@ -585,13 +591,13 @@ validators:
 
 #### 查询验证节点漏块信息
 
-`qoscli query validator-miss-vote --owner  <key_name_or_account_address>`
+`qoscli query validator-miss-vote [validator-owner]`
 
-`key_name_or_account_address`为操作者账户地址或密钥库中密钥名字
+`validator-owner`为操作者账户地址或密钥库中密钥名字
 
 查询`Arya`的节点漏块信息：
 ```bash
-$ qoscli query validator-miss-vote --owner Arya
+$ qoscli query validator-miss-vote Arya
 ```
 
 执行结果：
@@ -625,6 +631,19 @@ $ qoscli query validator-period --owner Arya
     "value": "1177.934327765593760252"
   }
 }
+```
+
+#### 社区收益池
+`qoscli query community-fee-pool`
+
+查询社区收益：
+```bash
+$ qoscli query community-fee-pool
+```
+
+执行结果：
+```bash
+123456
 ```
 
 #### 撤销验证节点
@@ -663,10 +682,14 @@ $ qoscli tx active-validator --owner Arya
 
 执行成功，`Arya`的节点将继续参与投票、打块等共识职能，并获得挖矿奖励。
 
+
+
 ### 委托（delegate）
 
 * `qoscli tx delegate`              [委托](#委托)
 * `qoscli query delegation`         [委托查询](#委托查询)
+* `qoscli query delegations-to`     [验证节点委托列表](#验证节点委托列表)
+* `qoscli query delegations`        [代理用户委托列表](#代理用户委托列表)
 * `qoscli query delegator-income`   [委托收益查询](#委托收益查询)
 * `qoscli tx modify-compound`       [修改收益复投方式](#修改收益复投方式)
 * `qoscli tx unbond`                [解除委托](#解除委托)
@@ -685,7 +708,7 @@ $ qoscli tx active-validator --owner Arya
 
 `Sansa`将自己的100个QOS代理给`Arya`创建的验证节点：
 ```bash
-$ qoscli tx delegate --owner Arya --delegetor Sansa --tokens 100
+$ qoscli tx delegate --owner Arya --delegator Sansa --tokens 100
 ```
 
 #### 委托查询
@@ -699,7 +722,7 @@ $ qoscli tx delegate --owner Arya --delegetor Sansa --tokens 100
 
 `Sansa`在`Arya`上的代理信息：
 ```bash
-$ qoscli query delegation --owner Arya --delegetor Sansa
+$ qoscli query delegation --owner Arya --delegator Sansa
 ```
 
 查询结果：
@@ -716,6 +739,65 @@ $ qoscli query delegation --owner Arya --delegetor Sansa
 }
 ```
 
+#### 验证节点委托列表
+
+`qoscli query delegations-to [validator-owner]`
+
+主要参数：
+
+- `validator-owner`     代理验证节点操作账户地址或密钥库中密钥名字
+
+`Arya`验证节点上的所有代理信息：
+```bash
+$ qoscli query delegations-to Arya
+```
+
+查询结果示例：
+```bash
+[
+  {
+    "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
+    "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "validator_pub_key": {
+      "type": "tendermint/PubKeyEd25519",
+      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+    },
+    "delegate_amount": "100",
+    "is_compound": false
+  }
+  ...
+]
+```
+
+#### 代理用户委托列表
+
+`qoscli query delegations [delegator]`
+
+主要参数：
+
+- `delegator`     被代理账户地址或秘钥库中秘钥名字
+
+`Sansa`的所有代理信息：
+```bash
+$ qoscli query delegations Sansa
+```
+
+查询结果：
+```bash
+[
+  {
+    "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
+    "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "validator_pub_key": {
+      "type": "tendermint/PubKeyEd25519",
+      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+    },
+    "delegate_amount": "100",
+    "is_compound": false
+  }
+]
+```
+
 #### 委托收益查询
 
 `qoscli query delegator-income --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address`
@@ -727,7 +809,7 @@ $ qoscli query delegation --owner Arya --delegetor Sansa
 
 `Sansa`查询代理给`Arya`的收益信息：
 ```bash
-$ qoscli query delegator-income --owner Arya --delegetor Sansa
+$ qoscli query delegator-income --owner Arya --delegator Sansa
 ```
 
 查询结果：
@@ -760,7 +842,7 @@ $ qoscli query delegator-income --owner Arya --delegetor Sansa
 
 `Sansa`将收益设置为复投方式：
 ```bash
-$ qoscli tx modify-compound --owner Arya --delegetor Sansa --compound true
+$ qoscli tx modify-compound --owner Arya --delegator Sansa --compound
 ```
 
 #### 解除委托
@@ -776,12 +858,12 @@ $ qoscli tx modify-compound --owner Arya --delegetor Sansa --compound true
 
 `Sansa`解除代理给`Arya`的50个QOS：
 ```bash
-$ qoscli tx unbond --owner Arya --delegetor Sansa --tokens 50
+$ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
 ```
 
 #### 变更委托验证节点
 
-`qoscli tx redelegate --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
+`qoscli tx redelegate --from-owner <validator_key_name_or_account_address> --to-owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
 
 主要参数：
 
@@ -794,7 +876,7 @@ $ qoscli tx unbond --owner Arya --delegetor Sansa --tokens 50
 
 `Sansa`将代理给`Arya`的10个QOS转移到`John`操作的验证节点上：
 ```bash
-$ qoscli tx redelegate --from-owner Arya --to-owner John --delegetor Sansa --tokens 10
+$ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tokens 10
 ```
 
 ## tendermint

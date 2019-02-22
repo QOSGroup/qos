@@ -132,7 +132,6 @@ $ qosd start
 ```bash
 qosd export --height 4
 ```
-//TODO imuge
 
 ## 初始化测试网络
 

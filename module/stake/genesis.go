@@ -134,10 +134,6 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []ecotyp
 		for _, acc := range genesisAccounts {
 			if acc.AccountAddress.EqualsTo(val.Owner) {
 				ownerExists = true
-
-				if uint64(acc.QOS.Int64()) < val.BondTokens {
-					return fmt.Errorf("owner of %s no enough QOS", val.Name)
-				}
 			}
 		}
 
@@ -148,19 +144,24 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []ecotyp
 	return nil
 }
 
-func ExportGenesis(ctx context.Context) GenesisState {
+func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
 
 	validatorMapper := mapper.GetValidatorMapper(ctx)
 	voteMapper := mapper.GetVoteInfoMapper(ctx)
 	delegationMapper := mapper.GetDelegationMapper(ctx)
 
 	var currentValidators []ecotypes.Validator
-	validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
+	if !forZeroHeight {
+		validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
+	}
 
 	params := validatorMapper.GetParams()
 
 	var validators []ecotypes.Validator
 	validatorMapper.IterateValidators(func(validator ecotypes.Validator) {
+		if forZeroHeight {
+			validator.BondHeight = 1
+		}
 		validators = append(validators, validator)
 	})
 
@@ -168,30 +169,26 @@ func ExportGenesis(ctx context.Context) GenesisState {
 	voteMapper.IterateVoteInfos(func(valAddr btypes.Address, info ecotypes.ValidatorVoteInfo) {
 
 		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if !exsits {
-			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		if exsits {
+			vvis := ValidatorVoteInfoState{
+				ValidatorPubKey: validator.ValidatorPubKey,
+				VoteInfo:        info,
+			}
+			validatorsVoteInfo = append(validatorsVoteInfo, vvis)
 		}
-
-		vvis := ValidatorVoteInfoState{
-			ValidatorPubKey: validator.ValidatorPubKey,
-			VoteInfo:        info,
-		}
-		validatorsVoteInfo = append(validatorsVoteInfo, vvis)
 	})
 
 	var validatorsVoteInWindow []ValidatorVoteInWindowInfoState
 	voteMapper.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.Address, vote bool) {
 
 		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if !exsits {
-			panic(fmt.Sprintf("validator:%s not exsits", valAddr.String()))
+		if exsits {
+			validatorsVoteInWindow = append(validatorsVoteInWindow, ValidatorVoteInWindowInfoState{
+				ValidatorPubKey: validator.ValidatorPubKey,
+				Index:           index,
+				Vote:            vote,
+			})
 		}
-
-		validatorsVoteInWindow = append(validatorsVoteInWindow, ValidatorVoteInWindowInfoState{
-			ValidatorPubKey: validator.ValidatorPubKey,
-			Index:           index,
-			Vote:            vote,
-		})
 	})
 
 	var delegatorsInfo []DelegationInfoState
