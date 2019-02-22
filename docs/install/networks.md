@@ -4,22 +4,48 @@
 
 ## Single-node
 * init
+
+参照[初始化](../client/qosd.md#初始化) 执行：
 ```bash
-$ qosd init --chain-id qos-test
+$ qosd init --moniker moniker --chain-id qos-test
 {
-  "chain_id": "qos-test",
-  "node_id": "1c3100c28a44f1facf45aa83e9aa3d8ff8ac6b1f",
-  "app_message": "null"
+ "moniker": "moniker",
+ "chain_id": "qos-test",
+ "node_id": "66853240dc1b26e6f6b35afcf008658823542076",
+ "gentxs_dir": "",
+ "app_message": {
+  "accounts": null,
+  "mint": {
+   "params": {
+    "total_amount": "10000000000",
+    "total_block": "6307200"
+   }
+  },
+  "stake": {
+   "params": {
+    "max_validator_cnt": 10,
+    "voting_status_len": 100,
+    "voting_status_least": 50,
+    "survival_secs": 600
+   },
+   "validators": null
+  },
+  "qcp": {
+   "ca_root_pub_key": null
+  },
+  "qsc": {
+   "ca_root_pub_key": null
+  }
+ }
 }
 ```
-注意init 可添加--home flag指定配置文件地址，默认在$HOME/.qosd
-`init`操作后,通过执行`qosd add-genesis-validator`添加validator
+默认在$HOME/.qosd目录下生成配置文件。
 
 * add-genesis-accounts
 
 使用`qosd add-genesis-accounts`初始化account账户到配置文件中.
 
-> 使用`qoscli keys add `创建account账户
+> 使用`qoscli keys add `创建account公私钥和地址信息
 
 ```bash
 
@@ -33,114 +59,55 @@ NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
 
 ```
+更多本地秘钥库相关指令参照[qoscli keys](../client/qoscli.md#密钥（keys）)
 
-初始化账户
+参照[设置账户](../client/qosd.md#设置账户) 初始化账户信息：
 ```bash
 $ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos
 ```
 
 * config-root-ca
 
-root CA用于校验[QSC](../spec/txs/qsc.md)和[QCP](../spec/txs/qcp.md)，不存在相关业务时可不配置。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
+root CA用于校验[QSC](../spec/txs/qsc.md)和[QCP](../spec/txs/qcp.md)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
 
-使用`qosd config-root-ca`初始化root CA公钥到配置文件.
+使用`qosd config-root-ca`初始化root CA公钥到配置文件。
+
 ```bash
-$ qosd add-genesis-validator --help
-
-Config root CA
-
-Usage:
-  qosd config-root-ca [root.pub] [flags]
-
-Flags:
-  -h, --help   help for config-root-ca
-
-Global Flags:
-      --home string        directory for config and data (default "$HOME/.qosd")
-      --log_level string   Log level (default "main:info,state:info,*:error")
-      --trace              print out full stack trace on errors
-      
+$ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 ```
-设置roort CA
-```bash
-$ qosd config-root-ca root.pub
-```
+
+更多操作说明查看[设置CA](../client/qosd.md#设置ca) 
 
 查看genesis.json内容，确认配置成功。
 
 * add-genesis-validator
 
-使用`qosd add-genesis-validator`初始化validator到配置文件中，只有配置了validator才能正常打块。
+使用`qosd add-genesis-validator`初始化validator到配置文件中，只有配置了validator才能正常运行QOS网络。
 
+查看validator pubkey:
 ```bash
-
-$ qosd add-genesis-validator --help
-
-pubkey is a tendermint validator pubkey. the public key of the validator used in
-Tendermint consensus.
-
-home node's home directory.
-
-owner is account address.
-
-ex: pubkey: {"type":"tendermint/PubKeyEd25519","value":"VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="}
-
-example:
-
-         qoscli add-genesis-validator --home "/.qosd/" --name validatorName --owner address1vdp54s5za8tl4dmf9dcldfzn62y66m40ursfsa --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
-
-Usage:
-  qosd add-genesis-validator [flags]
-
-Flags:
-      --description string   description
-  -h, --help                 help for add-genesis-validator
-      --name string          name for validator
-      --owner string         account address
-      --pubkey string        tendermint consensus validator public key
-      --tokens int           bond tokens amount
-
-Global Flags:
-      --home string        directory for config and data (default "$HOME//.qosd")
-      --log_level string   Log level (default "main:info,state:info,*:error")
-      --trace              print out full stack trace on errors
-```    
-
-查看priv_validator.json
-```bash
-$ cat  $HOME/.qosd/config/priv_validator.json
-{                                                                             
-  "address": "CBB6D9DF3C19A897AEED6E387992106C0B16DF51",                      
-  "pub_key": {                                                                
-    "type": "tendermint/PubKeyEd25519",                                       
-    "value": "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo="                   
-  },                                                                          
-  "last_height": "0",                                                         
-  "last_round": "0",                                                          
-  "last_step": 0,                                                             
-  "priv_key": {                                                               
-    "type": "tendermint/PrivKeyEd25519",                                      
-    "value": "jISQomswckTLAS2QzN0HNMrIhsrfibgIlFDIWrVLZs48nnwvg65mnbSinHZiGcyG
-RxPN0RYj5RrKJy5yR0ppOg=="                                                     
-  }                                                                           
-}                                                                             
+$ qosd tendermint show-validator   
+"PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo="                                            
 ```
 
 使用上面的初始化账户地址作为owner
 ```bash
-$ qosd add-genesis-validator --name validatorName --owner qosInitAcc --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator." --home "$HOME/.qosd/"
-
+$ qosd add-genesis-validator --name validatorName --owner address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator."
 ```
 
 主要参数说明:
-- owner is account keyname or address store in your local keystore, run `qoscli keys list` can find it.
-- name is your validator's name, you can name it as you like.
-- pubkey is the `value` part of validator's pubkey.
-- tokens means the voting power, LTE the QOS amount in your account. 
+- `--owner`         操作者账户地址
+- `--name`          验证节点名字
+- `--pubkey`        验证节点公钥，可通过执行`qosd tendermint show-validator`查看
+- `--tokens`        绑定tokens，不能大于操作者持有QOS数量
+- `--description`   备注
+- `--compound`      收益复投方式，默认false，即收益不复投
+
+更多操作说明参照[设置验证节点](../client/qosd.md#设置验证节点)
 
 * start
 ```bash
-$ qosd start --with-tendermint
+$ qosd start --log_level debug
 ```
 如果一切正常，会看到控制台输出打块信息
 
@@ -159,23 +126,25 @@ Optionally, it will fill in persistent_peers list in config file using either ho
 
 Example:
 
-        qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars
+	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars
 
 Usage:
   qosd testnet [flags]
 
 Flags:
       --chain-id string              Chain ID
+      --compound                     whether the validator's income is calculated as compound interest, default: true (default true)
       --genesis-accounts string      Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
   -h, --help                         help for testnet
       --hostname-prefix string       Hostname prefix (node results in persistent peers list ID0@node0:26656, ID1@node1:26656, ...) (default "node")
-      --name string               Moniker
+      --moniker string               Moniker
       --n int                        Number of non-validators to initialize the testnet with
       --node-dir-prefix string       Prefix the directory name for each node with (node results in node0, node1, ...) (default "node")
       --o string                     Directory to store initialization data for the testnet (default "./mytestnet")
       --p2p-port int                 P2P Port (default 26656)
       --populate-persistent-peers    Update config of each node with the list of persistent peers build using either hostname-prefix or starting-ip-address (default true)
-      --root-ca string               Config pubKey of root CA
+      --qcp-root-ca string           Config pubKey of root CA for QSC
+      --qsc-root-ca string           Config pubKey of root CA for QCP
       --starting-ip-address string   Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:26656, ID1@192.168.0.2:26656, ...)
       --v int                        Number of validators to initialize the testnet with (default 4)
 
@@ -183,14 +152,17 @@ Global Flags:
       --home string        directory for config and data (default "$HOME/.qosd")
       --log_level string   Log level (default "main:info,state:info,*:error")
       --trace              print out full stack trace on errors
+
 ```
 
 主要参数说明：
 - chain-id            链ID
 - genesis-accounts    初始账户
 - hostname-prefix     hostName前缀
-- name                miniker
-- root-ca             CA公钥
+- miniker             miniker
+- qcp-root-ca         pubKey of root CA for QCP
+- qsc-root-ca         pubKey of root CA for QSC
+- compound            收益复投方式，默认true，即收益参与复投
 - starting-ip-address 起始IP地址
 
 假设第一台机器IP: 192.168.1.100
@@ -208,6 +180,6 @@ Successfully initialized 4 node directories
 启动前请确保按照[安装说明](installation.md)在四台机器上正确安装QOS。
 拷贝node0-3至不同机器，分别执行：
 ```bash
-$ qosd start --home <directory_for_config_and_data> --with-tendermint
+$ qosd start --home <directory_for_config_and_data>
 
 ```

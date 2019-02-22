@@ -7,6 +7,9 @@ import (
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/module/distribution"
+	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -24,6 +27,7 @@ const (
 	flagPubKey      = "pubkey"
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
+	flagCompound    = "compound"
 )
 
 func AddGenesisValidator(cdc *amino.Codec) *cobra.Command {
@@ -84,12 +88,12 @@ example:
 			var cKey ed25519.PubKeyEd25519
 			copy(cKey[:], bz)
 
-			val := types.Validator{
+			val := ecotypes.Validator{
 				Name:            name,
 				ValidatorPubKey: cKey,
 				Owner:           owner,
 				BondTokens:      uint64(tokens),
-				Status:          types.Active,
+				Status:          ecotypes.Active,
 				BondHeight:      1,
 				Description:     desc,
 			}
@@ -104,7 +108,7 @@ example:
 				return err
 			}
 
-			for _, v := range appState.Validators {
+			for _, v := range appState.StakeData.Validators {
 				if v.ValidatorPubKey.Equals(val.ValidatorPubKey) {
 					return errors.New("validator already exists")
 				}
@@ -113,7 +117,8 @@ example:
 				}
 			}
 
-			appState.Validators = append(appState.Validators, val)
+			AddValidator(&appState, val, viper.GetBool(flagCompound))
+
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage
 
@@ -137,6 +142,7 @@ example:
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "node's home directory")
+	cmd.Flags().Bool(flagCompound, false, "whether the income is calculated as compound interest")
 
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagOwner)
@@ -144,4 +150,69 @@ example:
 	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd
+}
+
+func AddValidator(appState *app.GenesisState, validator ecotypes.Validator, isCompound bool) {
+	accIndex := -1
+	var acc *types.QOSAccount
+
+	for i, qosAcc := range appState.Accounts {
+		if qosAcc.GetAddress().EqualsTo(validator.Owner) {
+			accIndex = i
+			acc = qosAcc
+			break
+		}
+	}
+
+	if accIndex == -1 {
+		panic(fmt.Sprintf("owner: %s not exsits", validator.Owner.String()))
+	}
+
+	//owner账户扣减
+	minusQOS := btypes.NewInt(int64(validator.BondTokens))
+	acc.MustMinusQOS(minusQOS)
+
+	//stake:
+	appState.StakeData.Validators = append(appState.StakeData.Validators, validator)
+	appState.StakeData.DelegatorsInfo = append(appState.StakeData.DelegatorsInfo, stake.DelegationInfoState{
+		DelegatorAddr:   validator.Owner,
+		ValidatorPubKey: validator.ValidatorPubKey,
+		Amount:          validator.BondTokens,
+		IsCompound:      isCompound,
+	})
+
+	//distribution
+	appState.DistributionData.ValidatorHistoryPeriods = append(appState.DistributionData.ValidatorHistoryPeriods, distribution.ValidatorHistoryPeriodState{
+		ValidatorPubKey: validator.ValidatorPubKey,
+		Period:          uint64(0),
+		Summary:         types.ZeroFraction(),
+	})
+
+	appState.DistributionData.ValidatorCurrentPeriods = append(appState.DistributionData.ValidatorCurrentPeriods, distribution.ValidatorCurrentPeriodState{
+		ValidatorPubKey: validator.ValidatorPubKey,
+		CurrentPeriodSummary: ecotypes.ValidatorCurrentPeriodSummary{
+			Fees:   btypes.ZeroInt(),
+			Period: uint64(1),
+		},
+	})
+
+	appState.DistributionData.DelegatorEarningInfos = append(appState.DistributionData.DelegatorEarningInfos, distribution.DelegatorEarningStartState{
+		ValidatorPubKey: validator.ValidatorPubKey,
+		DeleAddress:     validator.Owner,
+		DelegatorEarningsStartInfo: ecotypes.DelegatorEarningsStartInfo{
+			PreviousPeriod:        uint64(0),
+			BondToken:             validator.BondTokens,
+			CurrentStartingHeight: uint64(1),
+			FirstDelegateHeight:   uint64(1),
+			HistoricalRewardFees:  btypes.ZeroInt(),
+		},
+	})
+
+	incomeHeight := appState.DistributionData.Params.DelegatorsIncomePeriodHeight + uint64(1)
+	appState.DistributionData.DelegatorIncomeHeights = append(appState.DistributionData.DelegatorIncomeHeights, distribution.DelegatorIncomeHeightState{
+		ValidatorPubKey: validator.ValidatorPubKey,
+		DeleAddress:     validator.Owner,
+		Height:          incomeHeight,
+	})
+
 }

@@ -1,6 +1,10 @@
 # QSC
 
+创建联盟币，发放（增发）联盟币。
+
 ## Struct
+
+### TxCreateQSC
 ```go
 // create QSC
 type TxCreateQSC struct {
@@ -10,7 +14,20 @@ type TxCreateQSC struct {
 	Description string                `json:"description"` //描述信息
 	Accounts    []*account.QOSAccount `json:"accounts"`
 }
+```
 
+字段说明：
+- Creator QSC创建账户，需要在对应网络中存在
+- Extrate qos汇率
+- QSC CA 证书申请参照[QSC证书](../ca.md#QSC)
+- Description 备注信息
+- Accounts 接收联盟币的账户币值信息
+
+> QSCCA中若不存在Banker公钥信息将无法执行`TxIssueQSC`，联盟币仅可通过执行`TxCreateQSC`时提供初始分配账户。
+
+### TxIssueQSC
+
+```go
 // issue QSC
 type TxIssueQSC struct {
 	QSCName string         `json:"qsc_name"` //币名
@@ -18,6 +35,11 @@ type TxIssueQSC struct {
 	Banker  btypes.Address `json:"banker"`   //banker地址
 }
 ```
+
+字段说明：
+- QSCName 联盟币名称，与`TxCreateQSC`中QSCCA所提供信息一致
+- Amount 币值
+- Banker Banker账户，用于接收联盟币，与`TxCreateQSC`中QSCCA所提供信息一致
 
 ## Store
 ```go

@@ -79,19 +79,19 @@ $ qoscli query account Peter --indent
 
 ```bash
 $ qosd tendermint show-validator
-{"type":"tendermint/PubKeyEd25519","value":"4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="}
+"4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="
 ```
-`value`部分内容将用到后面的指令参数中。
 
 使用下面的命令执行创建验证节点：
 ```
-qoscli tx create-validator --owner Peter --name "Peter's node" --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 20000000 --description "I am a validator."
+qoscli tx create-validator --owner Peter --name "Peter's node" --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 20000000 --description "hi, my eth address: xxxxxx"
 ```
 其中：
 - `--owner` 操作者密钥库名字或账户地址，如使用之前创建的`Peter`或`Peter`对应的地址`address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s`
 - `--name`  给验证节点起个名字，如`Peter's node`
-- `--pubkey` 通过`qosd tendermint show-validator`查询到的节点公钥信息中`value`部分内容
+- `--pubkey` 可通过`qosd tendermint show-validator`查询
 - `--tokens` 将绑定到验证节点上的Token量，应小于等于操作者持有的QOS量
+- `--description` 备注信息，可放置**以太坊地址**，方便接收QOS奖励
 
 会输出出类似如下信息：
 ```bash

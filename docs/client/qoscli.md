@@ -125,14 +125,21 @@ qoscli keys import Arya --file Arya.pri
 
 ## 查询（query）
 
-* `qoscli query account`        [账户查询](#账户（account）)
-* `qoscli query store`          [存储查询](#存储（store）)
-* `qoscli query consensus`      共识参数查询
-* `qoscli query approve`        [预授权](#查询预授权)
-* `qoscli query qcp`            [跨链相关信息查询](#查询联盟链)
-* `qoscli query qsc`            [联盟币信息查询](#查询联盟币)
-* `qoscli query validators`     [验证节点列表](#验证节点列表)
-* `qoscli query validator`      [验证节点查询](#查询验证节点)
+* `qoscli query account`                [账户查询](#账户（account）)
+* `qoscli query store`                  [存储查询](#存储（store）)
+* `qoscli query consensus`              共识参数查询
+* `qoscli query approve`                [预授权](#查询预授权)
+* `qoscli query qcp`                    [跨链相关信息查询](#查询联盟链)
+* `qoscli query qsc`                    [联盟币信息查询](#查询联盟币)
+* `qoscli query validators`             [验证节点列表](#验证节点列表)
+* `qoscli query validator`              [验证节点查询](#查询验证节点)
+* `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
+* `qoscli query validator-period`       [验证节点窗口信息](#验证节点窗口信息)
+* `qoscli query community-fee-pool`     [社区收益池](#社区收益池)
+* `qoscli query delegation`             [委托查询](#委托查询)
+* `qoscli query delegations-to`         [验证节点委托列表](#验证节点委托列表)
+* `qoscli query delegations`            [代理用户委托列表](#代理用户委托列表)
+* `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
 
 查询的具体指令将在各自模块进行介绍。
 
@@ -220,9 +227,13 @@ QOS支持以下几种交易类型：
 * `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
 * `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
 * `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
-* `create-validator`           [成为验证节点](#成为验证节点)
-* `revoke-validator`           [撤销验证节点](#撤销验证节点)
-* `active-validator`           [激活验证节点](#激活验证节点)
+* `qoscli tx create-validator` [成为验证节点](#成为验证节点)
+* `qoscli tx revoke-validator` [撤销验证节点](#撤销验证节点)
+* `qoscli tx active-validator` [激活验证节点](#激活验证节点)
+* `qoscli tx delegate`         [委托](#委托)
+* `qoscli tx modify-compound`  [修改收益复投方式](#修改收益复投方式)
+* `qoscli tx unbond`           [解除委托](#解除委托)
+* `qoscli tx redelegate`       [变更委托验证节点](#变更委托验证节点)
 
 分为**转账**、**预授权**、**联盟币**、**联盟链**、**验证节点**五大类。
 
@@ -485,11 +496,13 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 验证节点相关概念和机制请参阅[验证人详解](../spec/validators/all_about_validators.md)和[QOS经济模型](../spec/validators/eco_module.md)。验证节点包含以下子命令：
 
-* `qoscli tx create-validator`  [成为验证节点](#成为验证节点)
-* `qoscli query validator`      [查询验证节点](#查询验证节点)
-* `qoscli query validators`     [验证节点列表](#验证节点列表)
-* `qoscli tx revoke-validator`  [撤消验证节点](#撤销验证节点)
-* `qoscli tx active-validator`  [激活验证节点](#激活验证节点)
+* `qoscli tx create-validator`          [成为验证节点](#成为验证节点)
+* `qoscli query validator`              [查询验证节点](#查询验证节点)
+* `qoscli query validators`             [验证节点列表](#验证节点列表)
+* `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
+* `qoscli query community-fee-pool`     [社区收益池](#社区收益池)
+* `qoscli tx revoke-validator`          [撤消验证节点](#撤销验证节点)
+* `qoscli tx active-validator`          [激活验证节点](#激活验证节点)
 
 #### 成为验证节点
 
@@ -501,6 +514,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 - `--name`          验证节点名字
 - `--pubkey`        验证节点公钥，取`$HOME/.qosd/config/priv_validator.json`中`pub_key`内`value`部分
 - `--tokens`        绑定tokens，不能大于操作者持有QOS数量
+- `--compound`      是否收益复投
 - `--description`   备注
 
 `Arya`初始化了一个[全节点](../install/testnet/fullnode.md)，`pubkey`为`VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=`，可通过下面指令成为验证节点：
@@ -517,12 +531,14 @@ $ qoscli tx create-validator --name "Arya's node" --owner Arya --pubkey VOn2rPx+
 
 #### 查询验证节点
 
-`qoscli query validator --owner <account_address>`
+`qoscli query validator [validator-owner]`
+
+`validator-owner`为账户地址或本地秘钥库名字
 
 可根据操作者查找与其绑定的验证节点信息。
 
 ```bash
-$ qoscli query validator --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --indent
+$ qoscli query validator address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --indent
 ```
 
 执行结果：
@@ -573,6 +589,63 @@ validators:
 }
 ```
 
+#### 查询验证节点漏块信息
+
+`qoscli query validator-miss-vote [validator-owner]`
+
+`validator-owner`为操作者账户地址或密钥库中密钥名字
+
+查询`Arya`的节点漏块信息：
+```bash
+$ qoscli query validator-miss-vote Arya
+```
+
+执行结果：
+```bash
+{"startHeight":"258","endHeight":"387","missCount":0,"voteDetail":[]}
+```
+
+#### 验证节点窗口信息
+`qoscli query validator-period --owner  <key_name_or_account_address>`
+
+`key_name_or_account_address`为操作者账户地址或密钥库中密钥名字
+
+查询`Arya`的节点漏块信息：
+```bash
+$ qoscli query validator-period --owner Arya
+```
+
+执行结果：
+```bash
+{
+  "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "validator_pub_key": {
+    "type": "tendermint/PubKeyEd25519",
+    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+  },
+  "fees": "0",
+  "current_tokens": "4782741",
+  "current_period": "15",
+  "last_period": "14",
+  "last_period_fraction": {
+    "value": "1177.934327765593760252"
+  }
+}
+```
+
+#### 社区收益池
+`qoscli query community-fee-pool`
+
+查询社区收益：
+```bash
+$ qoscli query community-fee-pool
+```
+
+执行结果：
+```bash
+123456
+```
+
 #### 撤销验证节点
 
 `qoscli tx revoke-validator --owner <key_name_or_account_address>`
@@ -609,6 +682,202 @@ $ qoscli tx active-validator --owner Arya
 
 执行成功，`Arya`的节点将继续参与投票、打块等共识职能，并获得挖矿奖励。
 
+
+
+### 委托（delegate）
+
+* `qoscli tx delegate`              [委托](#委托)
+* `qoscli query delegation`         [委托查询](#委托查询)
+* `qoscli query delegations-to`     [验证节点委托列表](#验证节点委托列表)
+* `qoscli query delegations`        [代理用户委托列表](#代理用户委托列表)
+* `qoscli query delegator-income`   [委托收益查询](#委托收益查询)
+* `qoscli tx modify-compound`       [修改收益复投方式](#修改收益复投方式)
+* `qoscli tx unbond`                [解除委托](#解除委托)
+* `qoscli tx redelegate`            [变更委托验证节点](#变更委托验证节点)
+
+#### 委托
+
+`qoscli tx delegate --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --compound <compound_or_not>`
+
+主要参数：
+
+- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
+- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--tokens`        绑定tokens，不能大于`delegator`持有QOS数量
+- `--compound`      收益是否复投，默认`false`
+
+`Sansa`将自己的100个QOS代理给`Arya`创建的验证节点：
+```bash
+$ qoscli tx delegate --owner Arya --delegator Sansa --tokens 100
+```
+
+#### 委托查询
+
+`qoscli query delegation --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address>`
+
+主要参数：
+
+- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
+- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+
+`Sansa`在`Arya`上的代理信息：
+```bash
+$ qoscli query delegation --owner Arya --delegator Sansa
+```
+
+查询结果：
+```bash
+{
+  "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
+  "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "validator_pub_key": {
+    "type": "tendermint/PubKeyEd25519",
+    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+  },
+  "delegate_amount": "100",
+  "is_compound": false
+}
+```
+
+#### 验证节点委托列表
+
+`qoscli query delegations-to [validator-owner]`
+
+主要参数：
+
+- `validator-owner`     代理验证节点操作账户地址或密钥库中密钥名字
+
+`Arya`验证节点上的所有代理信息：
+```bash
+$ qoscli query delegations-to Arya
+```
+
+查询结果示例：
+```bash
+[
+  {
+    "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
+    "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "validator_pub_key": {
+      "type": "tendermint/PubKeyEd25519",
+      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+    },
+    "delegate_amount": "100",
+    "is_compound": false
+  }
+  ...
+]
+```
+
+#### 代理用户委托列表
+
+`qoscli query delegations [delegator]`
+
+主要参数：
+
+- `delegator`     被代理账户地址或秘钥库中秘钥名字
+
+`Sansa`的所有代理信息：
+```bash
+$ qoscli query delegations Sansa
+```
+
+查询结果：
+```bash
+[
+  {
+    "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
+    "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "validator_pub_key": {
+      "type": "tendermint/PubKeyEd25519",
+      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+    },
+    "delegate_amount": "100",
+    "is_compound": false
+  }
+]
+```
+
+#### 委托收益查询
+
+`qoscli query delegator-income --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address`
+
+主要参数：
+
+- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
+- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+
+`Sansa`查询代理给`Arya`的收益信息：
+```bash
+$ qoscli query delegator-income --owner Arya --delegator Sansa
+```
+
+查询结果：
+```bash
+{
+  "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "validator_pub_key": {
+    "type": "tendermint/PubKeyEd25519",
+    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+  },
+  "previous_validaotr_period": "1",
+  "bond_token": "100",
+  "earns_starting_height": "101",
+  "first_delegate_height": "1",
+  "historical_rewards": "0",
+  "last_income_calHeight": "101",
+  "last_income_calFees": "0"
+}
+```
+
+#### 修改收益复投方式
+
+`qoscli tx modify-compound --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --compound <compound_or_not>`
+
+主要参数：
+
+- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
+- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--compound`      收益是否复投，默认`false`
+
+`Sansa`将收益设置为复投方式：
+```bash
+$ qoscli tx modify-compound --owner Arya --delegator Sansa --compound
+```
+
+#### 解除委托
+
+`qoscli tx unbond --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
+
+主要参数：
+
+- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
+- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--tokens`        解绑tokens，不能大于目前代理的QOS数量
+- `--all`           是否取消全部QOS代理，默认false
+
+`Sansa`解除代理给`Arya`的50个QOS：
+```bash
+$ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
+```
+
+#### 变更委托验证节点
+
+`qoscli tx redelegate --from-owner <validator_key_name_or_account_address> --to-owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
+
+主要参数：
+
+- `--from-owner`    代理验证节点操作账户地址或密钥库中密钥名字
+- `--to-owner`      新的代理验证节点操作账户地址或密钥库中密钥名字
+- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--tokens`        解绑并代理给新代理的tokens，不能大于目前代理的QOS数量
+- `--compound`      新代理收益是否复投，默认`false`
+- `--all`           是否从`from-owner`完全解绑，全部代理给`to-owner`，默认false
+
+`Sansa`将代理给`Arya`的10个QOS转移到`John`操作的验证节点上：
+```bash
+$ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tokens 10
+```
 
 ## tendermint
 

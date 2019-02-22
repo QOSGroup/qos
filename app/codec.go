@@ -4,8 +4,8 @@ import (
 	"github.com/QOSGroup/kepler/cert"
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
-	"github.com/QOSGroup/qos/account"
-	"github.com/QOSGroup/qos/txs"
+	"github.com/QOSGroup/qos/module"
+	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
@@ -27,7 +27,17 @@ func MakeCodec() *amino.Codec {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	txs.RegisterCodec(cdc)
-	account.RegisterCodec(cdc)
+	noPaincRegisterInterface(cdc)
+	module.RegisterCodec(cdc)
+	types.RegisterCodec(cdc)
 	cert.RegisterCodec(cdc)
+}
+
+func noPaincRegisterInterface(cdc *go_amino.Codec) {
+	defer func() {
+		if r := recover(); r != nil {
+			//nothing
+		}
+	}()
+	cdc.RegisterInterface((*interface{})(nil), nil)
 }

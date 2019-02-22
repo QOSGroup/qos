@@ -7,6 +7,7 @@
 * `add-genesis-validator` [设置验证节点](#设置验证节点) 
 * `config-root-ca`        [设置CA](#设置ca) 
 * `start`                 [启动](#启动) 
+* `export        `        [状态导出](#状态导出) 
 * `testnet`               [初始化测试网络](#初始化测试网络) 
 * `unsafe-reset-all`      [重置](#重置) 
 * `tendermint`            [Tendermint](#tendermint) 
@@ -23,11 +24,11 @@
 
 ## 初始化
 
-`qosd init --name <your_custom_moniker> --chain-id <chain_id> --overwrite <overwrite>`
+`qosd init --moniker <your_custom_moniker> --chain-id <chain_id> --overwrite <overwrite>`
 
 参数说明:
 
-- `--name`      在P2P网络中的名称，与`config.toml`中`moniker`配置项对应，可后期修改
+- `--moniker`      在P2P网络中的名称，与`config.toml`中`moniker`配置项对应，可后期修改
 - `--chain-id`  链ID，链ID一致的节点才能组成同一个P2P网络
 - `--overwrite` 是否覆盖已存在初始文件
 
@@ -35,7 +36,7 @@
 
 执行：
 ```bash
-$ qosd init --name capricorn-1000
+$ qosd init --moniker capricorn-1000
 ```
 输出：
 ```bash
@@ -78,9 +79,9 @@ qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t
 
 ## 设置CA
 
-`qosd config-root-ca <root.pub>`
+`qosd config-root-ca --qcp <qcp_root.pub> --qsc <qsc_root.pub>`
 
-`<root.pub>`为根证书公钥文件路径
+`<qcp_root.pub>`、`<qsc_root.pub>`为根证书公钥文件路径
 
 设置Root CA公钥信息，用于[联盟币](qoscli.md#联盟币（qsc）)和[联盟链](qoscli.md#联盟链（qcp）)涉及到证书操作的校验。
 
@@ -114,9 +115,23 @@ qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t
 启动QOS网络
 
 ```bash
-$ qosd start --with-tendermint
+$ qosd start
 ```
 启动QOS网络，并启动tendermint，如果正确[配置Validator](#设置验证节点)会看到打块信息。
+
+## 状态导出
+
+`qosd export --height <block_height> --for-zero-height <export_state_to_start_at_height_zero>`
+
+主要参数：
+
+- `--height`            指定导出区块高度
+- `--for-zero-height`   是否导出状态从0高度重新启动网络
+
+导出区块高度为4的状态数据：
+```bash
+qosd export --height 4
+```
 
 ## 初始化测试网络
 

@@ -8,7 +8,7 @@
 默认的配置和数据存储目录为 `$HOME/.qosd`，可以添加`--home`修改存储位置。
 
 ```bash
-$ qosd init --name <your_custom_moniker>
+$ qosd init --moniker <your_custom_moniker>
 ```
 ::: warning Note
 `name`仅支持ASCII字符，使用Unicode字符将使节点无法访问
@@ -46,7 +46,7 @@ seeds = "5d9fcba29ce9a066cdd6e4c45001567a4bd1dbf4@47.100.231.9:26656"
 运行启动命令：
 
 ```bash
-$ qosd start --with-tendermint
+$ qosd start --log_level debug
 ```
 
 控制台开始打印启动日志，提示`This node is not a validator`说明节点不是验证节点，节点开始同步QOS网络区块信息。
