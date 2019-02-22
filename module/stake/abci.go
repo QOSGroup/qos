@@ -42,7 +42,7 @@ func ReturnAllUnbondTokens(ctx context.Context) {
 	height := uint64(ctx.BlockHeight())
 	e := eco.GetEco(ctx)
 	maxHeight := uint64(e.ValidatorMapper.GetParams().DelegatorUnbondReturnHeight) + height
-	for h := height; h <= maxHeight; h ++ {
+	for h := height; h <= maxHeight; h++ {
 		prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(h)
 
 		iter := store.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
