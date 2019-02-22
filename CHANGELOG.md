@@ -1,4 +1,26 @@
 # Changelog
+## v0.0.4
+2019.02.22
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**FEATURES**
+* [economic] 增加[公链经济模型](https://github.com/QOSGroup/qos/blob/master/docs/spec/validators/eco_module.md)
+* [export] 增加公链数据导入导出
+* [gas] 公链增加交易GAS的支持
+
+**IMPROVEMENTS**
+* [module] 重构模块代码
+* [docs] 完善经济模型及验证人相关文档
+* [client] 完善相关client command命令
+
+**BREAKING CHANGES**
+* [economic] 挖矿分配机制修改
+* [kepler] 修改kepler版本依赖
+* [validator] 验证人机制修改,详见[公链经济模型](https://github.com/QOSGroup/qos/blob/master/docs/spec/validators/eco_module.md)
+
 
 ## v0.0.3
 2018.12.24
