@@ -358,7 +358,7 @@ func getStakeConfig(ctx context.CLIContext) (ecotypes.StakeParams, error) {
 		return ecotypes.StakeParams{}, err
 	}
 
-	path := "/store/stake/key"
+	path := "/store/validator/key"
 	key := []byte(ecotypes.BuildStakeParamsKey())
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
