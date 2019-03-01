@@ -98,8 +98,6 @@ QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证�
 
 - owner 验证人节点所有者，对应keybase中的用户名
 
-- pubkey 验证人节点公钥(ed25519)，位于priv_validator.json文件中或使用"qosd tendermint show-validator"命令查看
-
 - tokens 初始化自绑定的Token数量
 
 - description 描述信息，可选
@@ -107,7 +105,7 @@ QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证�
 命令格式：
 
 ```bash
-qoscli tx create-validator --name validatorName --owner ownerName --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 20000000
+qoscli tx create-validator --name validatorName --owner ownerName --tokens 20000000
 ```
 
 ### revoke-validator

@@ -75,21 +75,16 @@ $ qoscli query account Peter --indent
 
 1. 执行创建命令
 
-创建验证节点需要**节点公钥**、**操作者账户地址**等信息，其中**节点公钥**可通过以下指令查看：
-
-```bash
-$ qosd tendermint show-validator
-"4X3GGmx2/D9UrQ9nKeB86zr+3SfI+QF4GI8t0QKS7CE="
-```
+创建验证节点需要**节点公钥**、**操作者账户地址**等信息
 
 使用下面的命令执行创建验证节点：
 ```
-qoscli tx create-validator --owner Peter --name "Peter's node" --pubkey PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo= --tokens 20000000 --description "hi, my eth address: xxxxxx"
+qoscli tx create-validator --owner Peter --name "Peter's node" --tokens 20000000 --description "hi, my eth address: xxxxxx"
 ```
 其中：
 - `--owner` 操作者密钥库名字或账户地址，如使用之前创建的`Peter`或`Peter`对应的地址`address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s`
 - `--name`  给验证节点起个名字，如`Peter's node`
-- `--pubkey` 可通过`qosd tendermint show-validator`查询
+- `--nodeHome` 节点配置文件和数据所在目录，默认：`$HOME/.qosd`
 - `--tokens` 将绑定到验证节点上的Token量，应小于等于操作者持有的QOS量
 - `--description` 备注信息，可放置**以太坊地址**，方便接收QOS奖励
 

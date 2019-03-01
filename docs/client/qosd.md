@@ -66,13 +66,13 @@ $ qosd add-genesis-accounts address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy,10000
 
 ## 设置验证节点
 
-`qosd add-genesis-validator --name <validator_name> --owner <account_address> --pubkey <validator_pubkey> --tokens <tokens> --description <description>`
+`qosd add-genesis-validator --name <validator_name> --owner <account_address> --tokens <tokens> --description <description>`
 
 参数说明参照[成为验证节点](qoscli.md#成为验证节点)
 
 设置验证节点信息：
 ```bash
-qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --pubkey VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA= --tokens 1000 --description "I am a validator."
+qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000 --description "I am a validator."
 ```
 
 会在`genesis.json`文件`app-state`中`validators`部分添加验证节点信息。
