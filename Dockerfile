@@ -1,42 +1,46 @@
-# Simple usage with a mounted data directory:
-# > docker build -t qosd .
-# > docker run -it -p 46657:46657 -p 46656:46656 -v ~/.qosd:/root/.qosd -v ~/.qoscli:/root/.qoscli qosd qosd init
-# > docker run -it -p 46657:46657 -p 46656:46656 -v ~/.qosd:/root/.qosd -v ~/.qoscli:/root/.qoscli qosd gstarsd start
-FROM golang:alpine AS build-env
+# Base build image
+FROM golang:1.11.5-alpine3.9 as builder
 
-# Set up dependencies
-ENV PACKAGES git bash gcc make libc-dev linux-headers eudev-dev
-#make libc-dev bash gcc linux-headers eudev-dev
+# Install some dependencies needed to build the project
+RUN apk add make gcc git libc-dev bash linux-headers eudev-dev
 
-# Set working directory for the build
-WORKDIR /go/src/github.com/QOSGroup/qos
+# Set up GOPATH & PATH
+ENV GOPATH       /root/go
+ENV BASE_PATH    $GOPATH/src/github.com/
+ENV REPO_PATH    $BASE_PATH/qos
+ENV PATH         $GOPATH/bin:$PATH
+
+# Force the go compiler to use modules
+ENV GO111MODULE=on
+
+# Set the Current Working Directory inside the container
+WORKDIR $REPO_PATH
+
+# We want to populate the module cache based on the go.{mod,sum} files.
+COPY go.mod .
+COPY go.sum .
+
+#This is the ‘magic’ step that will download all the dependencies that are specified in
+# the go.mod and go.sum file.
+# Because of how the layer caching system works in Docker, the  go mod download
+# command will _ only_ be re-run when the go.mod or go.sum file change
+# (or when we add another docker instruction this line)
+RUN go mod download
 
 # Add source files
-COPY . .
+COPY . $REPO_PATH/
 
-# Install minimum necessary dependencies, build Cosmos SDK, remove packages
-RUN apk add --no-cache $PACKAGES && \
-  #    make tools && \
-  #    make vendor-deps && \
-  #    make build && \
-  #    make install
-  cd cmd/qosd && \
-  export GOPROXY=http://192.168.1.177:8081 && \
-  export GO111MODULE=on && \
-  go build && \
-  cd ../qoscli && \
-  go build
+# build qosd & qoscli
+RUN go build -o qosd $REPO_PATH/cmd/qosd/main.go
+RUN go build -o qoscli $REPO_PATH/cmd/qoscli/main.go
 
-# Final image
-FROM alpine:edge
+# new stage
+FROM alpine:3.9
 
-# Install ca-certificates
-#RUN apk add --update ca-certificates
-WORKDIR /root
+# p2p port
+EXPOSE 26656
+# rpc port
+EXPOSE 26657
 
-# Copy over binaries from the build-env
-COPY --from=build-env /go/src/github.com/QOSGroup/qos/cmd/qosd/qosd /usr/bin/qosd
-COPY --from=build-env /go/src/github.com/QOSGroup/qos/cmd/qoscli/qoscli /usr/bin/qoscli
-
-# Run gaiad by default, omit entrypoint to ease using container with gaiacli
-CMD ["qosd"]
+COPY --from=builder /root/go/src/github.com/qos/qosd /usr/local/bin/
+COPY --from=builder /root/go/src/github.com/qos/qoscli /usr/local/bin/
