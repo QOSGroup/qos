@@ -21,6 +21,16 @@ type TxProposal struct {
 	InitialDeposit uint64              `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
+func NewTxProposal(title, description string, proposalType gtypes.ProposalType, proposer btypes.Address, deposit uint64) *TxProposal {
+	return &TxProposal{
+		Title:          title,
+		Description:    description,
+		ProposalType:   proposalType,
+		Proposer:       proposer,
+		InitialDeposit: deposit,
+	}
+}
+
 var _ txs.ITx = (*TxProposal)(nil)
 
 func (tx TxProposal) ValidateData(ctx context.Context) error {

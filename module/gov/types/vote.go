@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/QOSGroup/qbase/types"
+	"strings"
 )
 
 // Vote
@@ -52,14 +53,14 @@ const (
 
 // String to proposalType byte.  Returns ff if invalid.
 func VoteOptionFromString(str string) (VoteOption, error) {
-	switch str {
-	case "Yes":
+	switch strings.ToLower(str) {
+	case "yes":
 		return OptionYes, nil
-	case "Abstain":
+	case "abstain":
 		return OptionAbstain, nil
-	case "No":
+	case "no":
 		return OptionNo, nil
-	case "NoWithVeto":
+	case "nowithveto":
 		return OptionNoWithVeto, nil
 	default:
 		return VoteOption(0xff), fmt.Errorf("'%s' is not a valid vote option", str)

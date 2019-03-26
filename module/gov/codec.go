@@ -3,6 +3,7 @@ package gov
 import (
 	"github.com/QOSGroup/kepler/cert"
 	"github.com/QOSGroup/qbase/baseabci"
+	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 )
@@ -16,7 +17,9 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&TxProposal{}, "gov/TxProposal", nil)
-	cdc.RegisterConcrete(&TxDeposit{}, "gov/TxDeposit", nil)
-	cdc.RegisterConcrete(&TxVote{}, "gov/TxVote", nil)
+	cdc.RegisterInterface((*gtypes.ProposalContent)(nil), nil)
+	cdc.RegisterConcrete(&gtypes.TextProposal{}, "gov/TextProposal", nil)
+	cdc.RegisterConcrete(&TxProposal{}, "gov/txs/TxProposal", nil)
+	cdc.RegisterConcrete(&TxDeposit{}, "gov/txs/TxDeposit", nil)
+	cdc.RegisterConcrete(&TxVote{}, "gov/txs/TxVote", nil)
 }

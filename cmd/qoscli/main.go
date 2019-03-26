@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/module/approve/client"
 	"github.com/QOSGroup/qos/module/distribution/client"
+	"github.com/QOSGroup/qos/module/gov/client"
 	"github.com/QOSGroup/qos/module/qcp/client"
 	"github.com/QOSGroup/qos/module/qsc/client"
 	"github.com/QOSGroup/qos/module/stake/client"
@@ -54,6 +55,8 @@ func main() {
 	txsCommands.AddCommand(staking.TxValidatorCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
 	txsCommands.AddCommand(staking.TxDelegationCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(gov.TxCommands(cdc)...)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),

@@ -3,6 +3,7 @@ package module
 import (
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/eco"
+	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
@@ -17,4 +18,5 @@ func RegisterCodec(cdc *amino.Codec) {
 	stake.RegisterCodec(cdc)
 	qcp.RegisterCodec(cdc)
 	eco.RegisterCodec(cdc)
+	gov.RegisterCodec(cdc)
 }

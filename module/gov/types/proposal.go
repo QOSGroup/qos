@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	"strings"
 	"time"
 )
 
@@ -104,6 +105,38 @@ const (
 	ProposalTypeSoftwareUpgrade ProposalType = 0x03
 	ProposalTypeTaxUsage        ProposalType = 0x04
 )
+
+// String to proposalType byte. Returns 0xff if invalid.
+func ProposalTypeFromString(str string) (ProposalType, error) {
+	switch strings.ToLower(str) {
+	case "text":
+		return ProposalTypeText, nil
+	case "parameterchange":
+		return ProposalTypeParameterChange, nil
+	case "softwareupgrade":
+		return ProposalTypeSoftwareUpgrade, nil
+	case "taxusage":
+		return ProposalTypeTaxUsage, nil
+	default:
+		return ProposalType(0xff), fmt.Errorf("'%s' is not a valid proposal type", str)
+	}
+}
+
+// Turns VoteOption byte to String
+func (pt ProposalType) String() string {
+	switch pt {
+	case ProposalTypeText:
+		return "Text"
+	case ProposalTypeParameterChange:
+		return "ParameterChange"
+	case ProposalTypeSoftwareUpgrade:
+		return "SoftwareUpgrade"
+	case ProposalTypeTaxUsage:
+		return "TaxUsage"
+	default:
+		return ""
+	}
+}
 
 // is defined ProposalType?
 func ValidProposalType(pt ProposalType) bool {
