@@ -12,6 +12,7 @@ import (
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/gov"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -103,6 +104,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	//gov mapper
 	app.RegisterMapper(gov.NewGovMapper())
 
+	//guardian mapper
+	app.RegisterMapper(guardian.NewGuardianMapper())
+
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
 
 		if len(route) == 0 {
@@ -170,6 +174,7 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 		approve.ExportGenesis(ctx),
 		distribution.ExportGenesis(ctx, forZeroHeight),
 		gov.ExportGenesis(ctx),
+		guardian.ExportGenesis(ctx),
 	)
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
@@ -195,6 +200,12 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams().GasPerUnitCost))
+
+	// tax free for tx send by guardian
+	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
+		app.Logger.Info("tx send by guardian: %s", payer.String())
+		return nil
+	}
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
