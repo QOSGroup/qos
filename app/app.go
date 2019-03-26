@@ -11,6 +11,7 @@ import (
 	"github.com/QOSGroup/qos/module/distribution"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -66,6 +67,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		gov.EndBlocker(ctx)
 		distribution.EndBlocker(ctx, req)
 		stake.EndBlockerByReturnUnbondTokens(ctx)
 		return stake.EndBlocker(ctx)
@@ -97,6 +99,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	//delegationMapper
 	app.RegisterMapper(ecomapper.NewDelegationMapper())
+
+	//gov mapper
+	app.RegisterMapper(gov.NewGovMapper())
 
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
 
@@ -164,6 +169,7 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 		qsc.ExportGenesis(ctx),
 		approve.ExportGenesis(ctx),
 		distribution.ExportGenesis(ctx, forZeroHeight),
+		gov.ExportGenesis(ctx),
 	)
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
