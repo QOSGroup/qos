@@ -14,8 +14,8 @@ type DepositParams struct {
 
 func (dp DepositParams) String() string {
 	return fmt.Sprintf(`Deposit Params:
-  Min Deposit:        %s
-  Max Deposit Period: %s`, dp.MinDeposit, dp.MaxDepositPeriod)
+  Min Deposit:        %d
+  Max Deposit Period: %d`, dp.MinDeposit, dp.MaxDepositPeriod)
 }
 
 // Checks equality of DepositParams

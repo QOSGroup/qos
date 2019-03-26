@@ -40,7 +40,7 @@ func DepositCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().Uint64(flagProposalID, 0, "Proposal ID")
 	cmd.Flags().String(flagDepositor, "", "Depositor")
-	cmd.Flags().Uint64(flagAmount, 0, "Amount of QOS for deposit")
+	cmd.Flags().Uint64(flagAmount, 0, "Percent of QOS for deposit")
 	cmd.MarkFlagRequired(flagProposalID)
 	cmd.MarkFlagRequired(flagDepositor)
 	cmd.MarkFlagRequired(flagAmount)

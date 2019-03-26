@@ -2,6 +2,8 @@ package types
 
 import (
 	"fmt"
+	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/types"
 	"strings"
 	"time"
 )
@@ -26,7 +28,7 @@ type ProposalContent interface {
 	GetTitle() string
 	GetDescription() string
 	GetDeposit() uint64
-	ProposalType() ProposalType
+	GetProposalType() ProposalType
 }
 
 // Type that represents Proposal Status as a byte
@@ -102,8 +104,7 @@ const (
 	ProposalTypeNil             ProposalType = 0x00
 	ProposalTypeText            ProposalType = 0x01
 	ProposalTypeParameterChange ProposalType = 0x02
-	ProposalTypeSoftwareUpgrade ProposalType = 0x03
-	ProposalTypeTaxUsage        ProposalType = 0x04
+	ProposalTypeTaxUsage        ProposalType = 0x03
 )
 
 // String to proposalType byte. Returns 0xff if invalid.
@@ -113,8 +114,6 @@ func ProposalTypeFromString(str string) (ProposalType, error) {
 		return ProposalTypeText, nil
 	case "parameterchange":
 		return ProposalTypeParameterChange, nil
-	case "softwareupgrade":
-		return ProposalTypeSoftwareUpgrade, nil
 	case "taxusage":
 		return ProposalTypeTaxUsage, nil
 	default:
@@ -129,8 +128,6 @@ func (pt ProposalType) String() string {
 		return "Text"
 	case ProposalTypeParameterChange:
 		return "ParameterChange"
-	case ProposalTypeSoftwareUpgrade:
-		return "SoftwareUpgrade"
 	case ProposalTypeTaxUsage:
 		return "TaxUsage"
 	default:
@@ -138,11 +135,10 @@ func (pt ProposalType) String() string {
 	}
 }
 
-// is defined ProposalType?
+// is defined GetProposalType?
 func ValidProposalType(pt ProposalType) bool {
 	if pt == ProposalTypeText ||
 		pt == ProposalTypeParameterChange ||
-		pt == ProposalTypeSoftwareUpgrade ||
 		pt == ProposalTypeTaxUsage {
 		return true
 	}
@@ -168,7 +164,35 @@ func NewTextProposal(title, description string, deposit uint64) TextProposal {
 var _ ProposalContent = TextProposal{}
 
 // nolint
-func (tp TextProposal) GetTitle() string           { return tp.Title }
-func (tp TextProposal) GetDescription() string     { return tp.Description }
-func (tp TextProposal) GetDeposit() uint64         { return tp.Deposit }
-func (tp TextProposal) ProposalType() ProposalType { return ProposalTypeText }
+func (tp TextProposal) GetTitle() string              { return tp.Title }
+func (tp TextProposal) GetDescription() string        { return tp.Description }
+func (tp TextProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText }
+
+// Text Proposals
+type TaxUsageProposal struct {
+	TextProposal
+	DestAddress btypes.Address `json:"dest_address"`
+	Percent     types.Dec      `json:"percent"`
+}
+
+func NewTaxUsageProposal(title, description string, deposit uint64, destAddress btypes.Address, percent types.Dec) TaxUsageProposal {
+	return TaxUsageProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		DestAddress: destAddress,
+		Percent:     percent,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = TaxUsageProposal{}
+
+// nolint
+func (tp TaxUsageProposal) GetTitle() string              { return tp.Title }
+func (tp TaxUsageProposal) GetDescription() string        { return tp.Description }
+func (tp TaxUsageProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeText }

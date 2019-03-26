@@ -31,4 +31,7 @@ const (
 
 	flagVoter      = "voter"
 	flagVoteOption = "option"
+
+	flagDestAddress = "dest-address"
+	flagPercent     = "percent"
 )

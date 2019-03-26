@@ -2,10 +2,13 @@ package gov
 
 import (
 	"fmt"
+	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/eco/mapper"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/types"
+	"github.com/tendermint/tendermint/libs/log"
 )
 
 // Called every block, process inflation, update validator set
@@ -60,6 +63,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusPassed
 			tagValue = ActionProposalPassed
+			Execute(ctx, activeProposal, logger)
 		} else {
 			mapper.DeleteDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusRejected
@@ -82,4 +86,35 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 	}
 
 	return resTags
+}
+
+func Execute(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
+	switch proposal.GetProposalType() {
+	case gtypes.ProposalTypeParameterChange:
+		return nil
+	case gtypes.ProposalTypeTaxUsage:
+		return executeTaxUsage(ctx, proposal, logger)
+	}
+
+	return nil
+}
+
+func executeTaxUsage(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
+	proposalContent := proposal.ProposalContent.(*gtypes.TaxUsageProposal)
+	distributionMapper := mapper.GetDistributionMapper(ctx)
+	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+	account := accountMapper.GetAccount(proposalContent.DestAddress).(*types.QOSAccount)
+	if account == nil {
+		account = types.NewQOSAccountWithAddress(proposalContent.DestAddress)
+	}
+	feePool := distributionMapper.GetCommunityFeePool()
+	qos := types.NewDec(feePool.Int64()).Mul(proposalContent.Percent).TruncateInt()
+	account.MustPlusQOS(qos)
+	accountMapper.SetAccount(account)
+
+	distributionMapper.SetCommunityFeePool(feePool.Sub(qos))
+
+	logger.Info("execute taxUsage, proposal: %d", proposal.ProposalID)
+
+	return nil
 }
