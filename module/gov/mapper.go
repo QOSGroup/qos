@@ -140,7 +140,7 @@ func (mapper GovMapper) setInitialProposalID(ctx context.Context, proposalID uin
 	if exists {
 		return ErrInvalidGenesis("Initial ProposalID already set")
 	}
-	mapper.Set(KeyNextProposalID, mapper.GetCodec().MustMarshalBinaryLengthPrefixed(proposalID))
+	mapper.Set(KeyNextProposalID, proposalID)
 	return nil
 }
 
@@ -156,18 +156,18 @@ func (mapper GovMapper) GetLastProposalID(ctx context.Context) (proposalID uint6
 
 // Gets the next available ProposalID and increments it
 func (mapper GovMapper) getNewProposalID(ctx context.Context) (proposalID uint64, err btypes.Error) {
-	bz := mapper.Get(KeyNextProposalID, &proposalID)
-	if !bz {
+	exists := mapper.Get(KeyNextProposalID, &proposalID)
+	if !exists {
 		return 0, ErrInvalidGenesis("InitialProposalID never set")
 	}
-	mapper.Set(KeyNextProposalID, mapper.GetCodec().MustMarshalBinaryLengthPrefixed(proposalID+1))
+	mapper.Set(KeyNextProposalID, proposalID+1)
 	return proposalID, nil
 }
 
 // Peeks the next available ProposalID without incrementing it
 func (mapper GovMapper) peekCurrentProposalID(ctx context.Context) (proposalID uint64, err btypes.Error) {
-	bz := mapper.Get(KeyNextProposalID, &proposalID)
-	if !bz {
+	exists := mapper.Get(KeyNextProposalID, &proposalID)
+	if !exists {
 		return 0, ErrInvalidGenesis("InitialProposalID never set")
 	}
 	return proposalID, nil
@@ -243,7 +243,7 @@ func (mapper GovMapper) GetVote(ctx context.Context, proposalID uint64, voterAdd
 }
 
 func (mapper GovMapper) setVote(ctx context.Context, proposalID uint64, voterAddr btypes.Address, vote gtypes.Vote) {
-	mapper.Set(KeyVote(proposalID, voterAddr), mapper.GetCodec().MustMarshalBinaryLengthPrefixed(vote))
+	mapper.Set(KeyVote(proposalID, voterAddr), vote)
 }
 
 // Gets all the votes on a specific proposal
@@ -268,7 +268,7 @@ func (mapper GovMapper) GetDeposit(ctx context.Context, proposalID uint64, depos
 }
 
 func (mapper GovMapper) setDeposit(ctx context.Context, proposalID uint64, depositorAddr btypes.Address, deposit gtypes.Deposit) {
-	mapper.Set(KeyDeposit(proposalID, depositorAddr), mapper.GetCodec().MustMarshalBinaryLengthPrefixed(deposit))
+	mapper.Set(KeyDeposit(proposalID, depositorAddr), deposit)
 }
 
 // Adds or updates a deposit of a specific depositor on a specific proposal
@@ -280,7 +280,7 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 	}
 
 	// add gov deposit
-	mapper.AddGovDeposit(depositAmount)
+	mapper.addGovDeposit(depositAmount)
 
 	// Update proposal
 	proposal.TotalDeposit = proposal.TotalDeposit + depositAmount
@@ -323,7 +323,7 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
 		depositor.PlusQOS(btypes.NewInt(int64(deposit.Amount)))
-		mapper.MinusGovDeposit(deposit.Amount)
+		mapper.minusGovDeposit(deposit.Amount)
 
 		mapper.Del(depositsIterator.Key())
 	}
@@ -341,7 +341,7 @@ func (mapper GovMapper) DeleteDeposits(ctx context.Context, proposalID uint64) {
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
 		depositor.PlusQOS(btypes.NewInt(int64(deposit.Amount)))
-		mapper.MinusGovDeposit(deposit.Amount)
+		mapper.minusGovDeposit(deposit.Amount)
 
 		mapper.Del(depositsIterator.Key())
 	}
@@ -356,8 +356,7 @@ func (mapper GovMapper) ActiveProposalQueueIterator(ctx context.Context, endTime
 
 // Inserts a ProposalID into the active proposal queue at endTime
 func (mapper GovMapper) InsertActiveProposalQueue(ctx context.Context, endTime time.Time, proposalID uint64) {
-	bz := mapper.GetCodec().MustMarshalBinaryLengthPrefixed(proposalID)
-	mapper.Set(KeyActiveProposalQueueProposal(endTime, proposalID), bz)
+	mapper.Set(KeyActiveProposalQueueProposal(endTime, proposalID), proposalID)
 }
 
 // removes a proposalID from the Active Proposal Queue
@@ -372,8 +371,7 @@ func (mapper GovMapper) InactiveProposalQueueIterator(ctx context.Context, endTi
 
 // Inserts a ProposalID into the inactive proposal queue at endTime
 func (mapper GovMapper) InsertInactiveProposalQueue(ctx context.Context, endTime time.Time, proposalID uint64) {
-	bz := mapper.GetCodec().MustMarshalBinaryLengthPrefixed(proposalID)
-	mapper.Set(KeyInactiveProposalQueueProposal(endTime, proposalID), bz)
+	mapper.Set(KeyInactiveProposalQueueProposal(endTime, proposalID), proposalID)
 }
 
 // removes a proposalID from the Inactive Proposal Queue
@@ -382,7 +380,7 @@ func (mapper GovMapper) RemoveFromInactiveProposalQueue(ctx context.Context, end
 }
 
 // get deposit
-func (mapper *GovMapper) GetGovDeposit() (deposit uint64) {
+func (mapper *GovMapper) getGovDeposit() (deposit uint64) {
 	exists := mapper.Get(GovDepositKey, &deposit)
 	if !exists {
 		return 0
@@ -392,14 +390,14 @@ func (mapper *GovMapper) GetGovDeposit() (deposit uint64) {
 }
 
 // add deposit
-func (mapper *GovMapper) AddGovDeposit(deposit uint64) {
-	current := mapper.GetGovDeposit()
+func (mapper *GovMapper) addGovDeposit(deposit uint64) {
+	current := mapper.getGovDeposit()
 	mapper.Set(GovDepositKey, current+deposit)
 }
 
 // minus deposit
-func (mapper *GovMapper) MinusGovDeposit(deposit uint64) {
-	current := mapper.GetGovDeposit()
+func (mapper *GovMapper) minusGovDeposit(deposit uint64) {
+	current := mapper.getGovDeposit()
 	if current < deposit {
 		panic("no enough deposit to minus")
 	}
@@ -407,7 +405,7 @@ func (mapper *GovMapper) MinusGovDeposit(deposit uint64) {
 }
 
 // get burned deposit
-func (mapper *GovMapper) GetGovBurnedDeposit() (deposit uint64) {
+func (mapper *GovMapper) getGovBurnedDeposit() (deposit uint64) {
 	exists := mapper.Get(BurnedGovDepositKey, &deposit)
 	if !exists {
 		return 0
@@ -417,12 +415,12 @@ func (mapper *GovMapper) GetGovBurnedDeposit() (deposit uint64) {
 }
 
 // burn deposit
-func (mapper *GovMapper) BurnGovDeposit(deposit uint64) {
-	current := mapper.GetGovDeposit()
+func (mapper *GovMapper) burnGovDeposit(deposit uint64) {
+	current := mapper.getGovDeposit()
 	if deposit > current {
 		panic("no enough deposit to burn")
 	}
 	mapper.Set(GovDepositKey, current-deposit)
-	burned := mapper.GetGovBurnedDeposit()
+	burned := mapper.getGovBurnedDeposit()
 	mapper.Set(BurnedGovDepositKey, burned+deposit)
 }

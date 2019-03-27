@@ -37,6 +37,7 @@ func main() {
 	rootCmd.AddCommand(qosdinit.ConfigRootCA(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
+	rootCmd.AddCommand(qosdinit.AddGuardian(cdc))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp)
 

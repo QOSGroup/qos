@@ -11,7 +11,15 @@ import (
 type TxDeposit struct {
 	ProposalID uint64         `json:"proposal_id"` // ID of the proposal
 	Depositor  btypes.Address `json:"depositor"`   // Address of the depositor
-	Amount     uint64         `json:"amount"`      // Amount of QOS to add to the proposal's deposit
+	Amount     uint64         `json:"amount"`      // Percent of QOS to add to the proposal's deposit
+}
+
+func NewTxDeposit(proposalID uint64, depositor btypes.Address, amount uint64) *TxDeposit {
+	return &TxDeposit{
+		ProposalID: proposalID,
+		Depositor:  depositor,
+		Amount:     amount,
+	}
 }
 
 var _ txs.ITx = (*TxDeposit)(nil)
@@ -42,20 +50,10 @@ func (tx TxDeposit) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 		Code: btypes.CodeOK,
 	}
 
-	err, votingStarted := GetGovMapper(ctx).AddDeposit(ctx, tx.ProposalID, tx.Depositor, tx.Amount)
+	err, _ := GetGovMapper(ctx).AddDeposit(ctx, tx.ProposalID, tx.Depositor, tx.Amount)
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
-
-	resTags := btypes.NewTags(
-		Depositor, []byte(tx.Depositor.String()),
-		ProposalID, tx.ProposalID,
-	)
-
-	if votingStarted {
-		resTags = resTags.AppendTag(VotingPeriodStart, types.Uint64ToBigEndian(tx.ProposalID))
-	}
-	result.Tags = result.Tags.AppendTags(resTags)
 
 	return
 }

@@ -14,6 +14,14 @@ type TxVote struct {
 	Option     gtypes.VoteOption `json:"option"`      //  option from OptionSet chosen by the voter
 }
 
+func NewTxVote(proposalID uint64, voter btypes.Address, option gtypes.VoteOption) *TxVote {
+	return &TxVote{
+		ProposalID: proposalID,
+		Voter:      voter,
+		Option:     option,
+	}
+}
+
 var _ txs.ITx = (*TxVote)(nil)
 
 func (tx TxVote) ValidateData(ctx context.Context) error {
@@ -47,13 +55,6 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
-
-	resTags := btypes.NewTags(
-		Depositor, []byte(tx.Voter.String()),
-		ProposalID, tx.ProposalID,
-	)
-
-	result.Tags = result.Tags.AppendTags(resTags)
 
 	return
 }

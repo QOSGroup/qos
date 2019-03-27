@@ -7,6 +7,8 @@ import (
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/module/approve/client"
 	"github.com/QOSGroup/qos/module/distribution/client"
+	"github.com/QOSGroup/qos/module/gov/client"
+	"github.com/QOSGroup/qos/module/guardian/client"
 	"github.com/QOSGroup/qos/module/qcp/client"
 	"github.com/QOSGroup/qos/module/qsc/client"
 	"github.com/QOSGroup/qos/module/stake/client"
@@ -40,6 +42,8 @@ func main() {
 	queryCommands.AddCommand(qsc.QueryCommands(cdc)...)
 	queryCommands.AddCommand(staking.QueryCommands(cdc)...)
 	queryCommands.AddCommand(distribution.QueryCommands(cdc)...)
+	queryCommands.AddCommand(gov.QueryCommands(cdc)...)
+	queryCommands.AddCommand(guardian.QueryCommands(cdc)...)
 
 	// txs commands
 	txsCommands := bcli.TxCommand()
@@ -54,6 +58,10 @@ func main() {
 	txsCommands.AddCommand(staking.TxValidatorCommands(cdc)...)
 	txsCommands.AddCommand(bctypes.LineBreak)
 	txsCommands.AddCommand(staking.TxDelegationCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(gov.TxCommands(cdc)...)
+	txsCommands.AddCommand(bctypes.LineBreak)
+	txsCommands.AddCommand(guardian.TxCommands(cdc)...)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),
