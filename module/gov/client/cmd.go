@@ -7,7 +7,14 @@ import (
 )
 
 func QueryCommands(cdc *amino.Codec) []*cobra.Command {
-	return bctypes.GetCommands()
+	return bctypes.GetCommands(
+		QueryProposalsCmd(cdc),
+		QueryProposalCmd(cdc),
+		QueryDepositsCmd(cdc),
+		QueryDepositCmd(cdc),
+		QueryVotesCmd(cdc),
+		QueryVoteCmd(cdc),
+	)
 }
 
 func TxCommands(cdc *amino.Codec) []*cobra.Command {

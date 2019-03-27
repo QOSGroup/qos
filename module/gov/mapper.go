@@ -260,7 +260,7 @@ func (mapper GovMapper) deleteVote(ctx context.Context, proposalID uint64, voter
 // Gets the deposit of a specific depositor on a specific proposal
 func (mapper GovMapper) GetDeposit(ctx context.Context, proposalID uint64, depositorAddr btypes.Address) (deposit gtypes.Deposit, exists bool) {
 	exists = mapper.Get(KeyDeposit(proposalID, depositorAddr), &deposit)
-	if exists {
+	if !exists {
 		return gtypes.Deposit{}, false
 	}
 
@@ -281,6 +281,11 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 
 	// add gov deposit
 	mapper.addGovDeposit(depositAmount)
+
+	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
+	account := accountMapper.GetAccount(depositorAddr).(*types.QOSAccount)
+	account.MustMinusQOS(btypes.NewInt(int64(depositAmount)))
+	accountMapper.SetAccount(account)
 
 	// Update proposal
 	proposal.TotalDeposit = proposal.TotalDeposit + depositAmount
