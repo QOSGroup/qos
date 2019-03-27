@@ -40,7 +40,7 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 	defer votesIterator.Close()
 	for ; votesIterator.Valid(); votesIterator.Next() {
 		vote := &gtypes.Vote{}
-		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(votesIterator.Value(), vote)
+		mapper.DecodeObject(votesIterator.Value(), vote)
 
 		valAddrStr := btypes.Address(vote.Voter).String()
 		// iterate over all delegations from voter, deduct from any delegated-to validators

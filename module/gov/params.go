@@ -2,8 +2,9 @@ package gov
 
 import (
 	"fmt"
-	"github.com/QOSGroup/qos/types"
 	"time"
+
+	"github.com/QOSGroup/qos/types"
 )
 
 // Param around deposits for governance

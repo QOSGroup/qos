@@ -6,7 +6,6 @@ import (
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
-	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/module/gov"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
@@ -14,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
-	"strconv"
 )
 
 func ProposalCmd(cdc *amino.Codec) *cobra.Command {
@@ -74,78 +72,6 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagProposalType)
 	cmd.MarkFlagRequired(flagProposer)
 	cmd.MarkFlagRequired(flagDeposit)
-
-	return cmd
-}
-
-func QueryProposalCmd(cdc *amino.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "proposal [proposal-id]",
-		Short: "Query proposal",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			queryPath := "store/governance/key"
-
-			pID, err := strconv.ParseInt(args[0], 10, 64)
-			if err != nil || pID <= 0 {
-				return errors.New("invalid proposal-id")
-			}
-
-			output, err := cliCtx.Query(queryPath, gov.KeyProposal(uint64(pID)))
-			if err != nil {
-				return err
-			}
-
-			if output == nil {
-				return errors.New("unknown proposal")
-			}
-
-			proposal := gtypes.Proposal{}
-			cdc.MustUnmarshalBinaryBare(output, &proposal)
-
-			return cliCtx.PrintResult(proposal)
-		},
-	}
-
-	return cmd
-}
-
-func QueryProposalsCmd(cdc *amino.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "proposals",
-		Short: "Query proposal list",
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			node, err := cliCtx.GetNode()
-			if err != nil {
-				return err
-			}
-
-			result, err := node.ABCIQuery("store/governance/subspace", gov.KeyProposalSubspace())
-
-			if err != nil {
-				return err
-			}
-
-			if len(result.Response.Value) == 0 {
-				return errors.New("no proposal")
-			}
-
-			var proposals []gtypes.ProposalContent
-			var vKVPair []store.KVPair
-			cdc.UnmarshalBinaryLengthPrefixed(result.Response.Value, &vKVPair)
-			for _, kv := range vKVPair {
-				var proposal gtypes.Proposal
-				cdc.UnmarshalBinaryBare(kv.Value, &proposal)
-				proposals = append(proposals, proposal)
-			}
-
-			return cliCtx.PrintResult(proposals)
-		},
-	}
 
 	return cmd
 }

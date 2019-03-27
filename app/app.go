@@ -121,6 +121,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 			return distribution.Query(ctx, route[1:], req)
 		}
 
+		if route[0] == gov.GOV {
+			return gov.Query(ctx, route[1:], req)
+		}
+
 		return nil, nil
 	})
 

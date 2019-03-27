@@ -166,7 +166,7 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	}
 
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
-	
+
 	return
 }
 
