@@ -1,6 +1,7 @@
 package gov
 
 import (
+	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -49,6 +50,13 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	if tx.InitialDeposit < govMapper.GetDepositParams().MinDeposit/3 {
 		return ErrInvalidInput("initial deposit is too small")
 	}
+
+	accountMapper := baseabci.GetAccountMapper(ctx)
+	account := accountMapper.GetAccount(tx.Proposer).(*types.QOSAccount)
+	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
+		return ErrInvalidInput("proposer has no enough qos")
+	}
+
 	return nil
 }
 
@@ -60,11 +68,13 @@ func (tx TxProposal) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	govMapper := GetGovMapper(ctx)
 
 	textContent := gtypes.NewTextProposal(tx.Title, tx.Description, tx.InitialDeposit)
-	_, err := govMapper.SubmitProposal(ctx, textContent)
+	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
+
+	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
 	return
 }
@@ -132,6 +142,12 @@ func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput("DestAddress must be guardian")
 	}
 
+	accountMapper := baseabci.GetAccountMapper(ctx)
+	account := accountMapper.GetAccount(tx.Proposer).(*types.QOSAccount)
+	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
+		return ErrInvalidInput("proposer has no enough qos")
+	}
+
 	return nil
 }
 
@@ -143,12 +159,14 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	govMapper := GetGovMapper(ctx)
 
 	textContent := gtypes.NewTaxUsageProposal(tx.Title, tx.Description, tx.InitialDeposit, tx.DestAddress, tx.Percent)
-	_, err := govMapper.SubmitProposal(ctx, textContent)
+	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
+	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+	
 	return
 }
 

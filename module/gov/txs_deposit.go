@@ -1,6 +1,7 @@
 package gov
 
 import (
+	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -40,6 +41,12 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 
 	if (proposal.Status != gtypes.StatusDepositPeriod) && (proposal.Status != gtypes.StatusVotingPeriod) {
 		return ErrFinishedProposal(tx.ProposalID)
+	}
+
+	accountMapper := baseabci.GetAccountMapper(ctx)
+	account := accountMapper.GetAccount(tx.Depositor).(*types.QOSAccount)
+	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.Amount))) {
+		return ErrInvalidInput("depositor has no enough qos")
 	}
 
 	return nil

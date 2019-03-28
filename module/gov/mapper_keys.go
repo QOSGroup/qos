@@ -24,6 +24,10 @@ var (
 	BurnedGovDepositKey = []byte("govBurnedDeposit")
 )
 
+func KeyProposalSubspace() []byte {
+	return []byte("proposals:")
+}
+
 // Key for getting a specific proposal from the store
 func KeyProposal(proposalID uint64) []byte {
 	return []byte(fmt.Sprintf("proposals:%d", proposalID))
@@ -31,12 +35,12 @@ func KeyProposal(proposalID uint64) []byte {
 
 // Key for getting a specific deposit from the store
 func KeyDeposit(proposalID uint64, depositorAddr btypes.Address) []byte {
-	return []byte(fmt.Sprintf("deposits:%d:%d", proposalID, depositorAddr))
+	return []byte(fmt.Sprintf("deposits:%d:%s", proposalID, depositorAddr.String()))
 }
 
 // Key for getting a specific vote from the store
 func KeyVote(proposalID uint64, voterAddr btypes.Address) []byte {
-	return []byte(fmt.Sprintf("votes:%d:%d", proposalID, voterAddr))
+	return []byte(fmt.Sprintf("votes:%d:%s", proposalID, voterAddr.String()))
 }
 
 // Key for getting all deposits on a proposal from the store
