@@ -2,6 +2,7 @@ package init
 
 import (
 	"bytes"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -14,6 +15,8 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/crypto"
+	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
 	"github.com/tendermint/tendermint/privval"
@@ -46,6 +49,7 @@ example:
 		`,
 		RunE: func(_ *cobra.Command, args []string) error {
 
+			pubkey := viper.GetString("pubkey")
 			home := viper.GetString(cli.HomeFlag)
 			genFile := filepath.Join(home, "config", "genesis.json")
 			if !common.FileExists(genFile) {
@@ -72,11 +76,24 @@ example:
 			}
 			desc := viper.GetString(flagDescription)
 
-			privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorFile()))
+			var publicKey crypto.PubKey
+
+			if len(pubkey) == 0 {
+				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorFile()))
+				publicKey = privValidator.PubKey
+			} else {
+				bz, err := base64.StdEncoding.DecodeString(pubkey)
+				if err != nil {
+					return err
+				}
+				var cKey ed25519.PubKeyEd25519
+				copy(cKey[:], bz)
+				publicKey = cKey
+			}
 
 			val := ecotypes.Validator{
 				Name:            name,
-				ValidatorPubKey: privValidator.PubKey,
+				ValidatorPubKey: publicKey,
 				Owner:           owner,
 				BondTokens:      uint64(tokens),
 				Status:          ecotypes.Active,
@@ -128,6 +145,7 @@ example:
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "node's home directory")
 	cmd.Flags().Bool(flagCompound, false, "whether the income is calculated as compound interest")
+	cmd.Flags().String("pubkey", "", "manual provide validator pubkey")
 
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagOwner)

@@ -8,12 +8,14 @@ import (
 
 func QueryCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.GetCommands(
-		QueryProposalsCmd(cdc),
-		QueryProposalCmd(cdc),
-		QueryDepositsCmd(cdc),
-		QueryDepositCmd(cdc),
-		QueryVotesCmd(cdc),
-		QueryVoteCmd(cdc),
+		queryProposalCommand(cdc),
+		queryProposalsCommand(cdc),
+		queryVoteCommand(cdc),
+		queryVotesCommand(cdc),
+		queryDepositCommand(cdc),
+		queryDepositsCommand(cdc),
+		queryTallyCommand(cdc),
+		queryParamsCommand(cdc),
 	)
 }
 
@@ -41,4 +43,7 @@ const (
 
 	flagDestAddress = "dest-address"
 	flagPercent     = "percent"
+
+	flagStatus   = "status"
+	flagNumLimit = "limit"
 )
