@@ -50,8 +50,6 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 				results[vote.Option] += delegation.Amount
 			}
 		})
-
-		mapper.deleteVote(ctx, vote.ProposalID, vote.Voter)
 	}
 
 	tallyParams := mapper.GetTallyParams()
