@@ -285,6 +285,12 @@ func (mapper *DistributionMapper) SetCommunityFeePool(communityFee btypes.BigInt
 	mapper.Set(types.BuildCommunityFeePoolKey(), communityFee)
 }
 
+func (mapper *DistributionMapper) AddToCommunityFeePool(fee btypes.BigInt) {
+	communityFee := mapper.GetCommunityFeePool()
+	mapper.SetCommunityFeePool(communityFee.Add(fee))
+}
+
+
 func (mapper *DistributionMapper) GetValidatorHistoryPeriodSummary(valAddr btypes.Address, period uint64) (frac qtypes.Fraction) {
 	key := types.BuildValidatorHistoryPeriodSummaryKey(valAddr, period)
 	exsits := mapper.Get(key, &frac)

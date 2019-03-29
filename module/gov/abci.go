@@ -5,7 +5,8 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/eco/mapper"
+	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
+	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/libs/log"
@@ -56,18 +57,25 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
 
-		passes, tallyResults := tally(ctx, mapper, activeProposal)
-
+		proposalResult, tallyResults, votingValidators := tally(ctx, mapper, activeProposal)
 		var tagValue string
-		if passes {
+		switch proposalResult {
+		case gtypes.PASS:
 			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusPassed
 			tagValue = ActionProposalPassed
 			Execute(ctx, activeProposal, logger)
-		} else {
+			break
+		case gtypes.REJECT:
+			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
+			activeProposal.Status = gtypes.StatusRejected
+			tagValue = ActionProposalRejected
+			break
+		case gtypes.REJECTVETO:
 			mapper.DeleteDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusRejected
 			tagValue = ActionProposalRejected
+			break
 		}
 
 		activeProposal.FinalTallyResult = tallyResults
@@ -77,15 +85,70 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		logger.Info(
 			fmt.Sprintf(
 				"proposal %d (%s) tallied; passed: %v",
-				activeProposal.ProposalID, activeProposal.GetTitle(), passes,
+				activeProposal.ProposalID, activeProposal.GetTitle(), proposalResult,
 			),
 		)
 
 		resTags = resTags.AppendTag(ProposalID, types.Uint64ToBigEndian(proposalID))
 		resTags = resTags.AppendTag(ProposalResult, []byte(tagValue))
+
+		penalty := mapper.GetTallyParams().Penalty
+		if penalty.GT(types.ZeroDec()) {
+			validatorMapper := ecomapper.GetValidatorMapper(ctx)
+			validators := validatorMapper.GetActiveValidatorSet(false)
+			for _, val := range validators {
+				if _, ok := votingValidators[val.String()]; !ok {
+					if validator, exists := validatorMapper.GetValidator(val); exists && validator.BondHeight < activeProposal.VotingStartHeight {
+						slash(ctx, validator, penalty)
+					}
+				}
+			}
+		}
+
+		mapper.DeleteValidatorSet(proposalID)
 	}
 
 	return resTags
+}
+
+// TODO slash
+func slash(ctx context.Context, validator ecotypes.Validator, penalty types.Dec) error {
+	validatorMapper := ecomapper.GetValidatorMapper(ctx)
+	delegationMapper := ecomapper.GetDelegationMapper(ctx)
+	distributionMapper := ecomapper.GetDistributionMapper(ctx)
+	var delegations []ecotypes.DelegationInfo
+	delegationMapper.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.Address, delAddr btypes.Address) {
+		if delegation, exists := delegationMapper.GetDelegationInfo(delAddr, valAddr); exists {
+			delegations = append(delegations, delegation)
+		}
+	})
+
+	totalSlash := types.ZeroDec()
+	height := uint64(ctx.BlockHeight())
+	for _, delegation := range delegations {
+		// 计算惩罚
+		amountSlashed := types.NewDec(int64(delegation.Amount)).Mul(penalty)
+		totalSlash = totalSlash.Add(amountSlashed)
+
+		// 计算当前delegator收益
+		updatedTokens := types.NewDec(int64(delegation.Amount)).Sub(amountSlashed)
+		delegation.Amount = uint64(updatedTokens.Int64())
+		if err := distributionMapper.ModifyDelegatorTokens(validator, delegation.ValidatorAddr, delegation.Amount, height); err != nil {
+			return err
+		}
+
+		// 更新delegation
+		delegationMapper.SetDelegationInfo(delegation)
+	}
+
+	// 更新validator
+	updatedValidatorTokens := uint64(types.NewDec(int64(validator.BondTokens)).Sub(totalSlash).Int64())
+	validatorMapper.ChangeValidatorBondTokens(validator, updatedValidatorTokens)
+
+	// slash放入社区费池
+	distributionMapper.AddToCommunityFeePool(totalSlash.TruncateInt())
+
+	return nil
 }
 
 func Execute(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
@@ -101,7 +164,7 @@ func Execute(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) e
 
 func executeTaxUsage(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
 	proposalContent := proposal.ProposalContent.(*gtypes.TaxUsageProposal)
-	distributionMapper := mapper.GetDistributionMapper(ctx)
+	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	account := accountMapper.GetAccount(proposalContent.DestAddress).(*types.QOSAccount)
 	if account == nil {

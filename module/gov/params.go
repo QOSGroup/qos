@@ -29,14 +29,16 @@ type TallyParams struct {
 	Quorum    types.Dec `json:"quorum"`    //  Minimum percentage of total stake needed to vote for a result to be considered valid
 	Threshold types.Dec `json:"threshold"` //  Minimum propotion of Yes votes for proposal to pass. Initial value: 0.5
 	Veto      types.Dec `json:"veto"`      //  Minimum value of Veto votes to Total votes ratio for proposal to be vetoed. Initial value: 1/3
+	Penalty   types.Dec `json:"penalty"`   //  Penalty if validator does not vote
 }
 
 func (tp TallyParams) String() string {
 	return fmt.Sprintf(`Tally Params:
   Quorum:             %s
   Threshold:          %s
-  Veto:               %s`,
-		tp.Quorum, tp.Threshold, tp.Veto)
+  Veto:               %s
+  Penalty:            %s`,
+		tp.Quorum, tp.Threshold, tp.Veto, tp.Penalty)
 }
 
 // Param around Voting in governance

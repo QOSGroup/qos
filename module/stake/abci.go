@@ -123,7 +123,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	newValidatorsMap := make(map[string]ecotypes.Validator)
 	newValidators := make([]ecotypes.Validator, 0, len(currentValidators))
 
-	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
+	iterator := validatorMapper.IteratorValidatorByVoterPower(false)
 	defer iterator.Close()
 
 	var key []byte

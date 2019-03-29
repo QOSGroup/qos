@@ -43,6 +43,7 @@ func DefaultGenesisState() GenesisState {
 			Quorum:    types.NewDecWithPrec(334, 3),
 			Threshold: types.NewDecWithPrec(5, 1),
 			Veto:      types.NewDecWithPrec(334, 3),
+			Penalty:   types.ZeroDec(),
 		},
 	}
 }

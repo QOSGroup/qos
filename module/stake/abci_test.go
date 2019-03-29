@@ -70,7 +70,7 @@ func TestValidatorMapper(t *testing.T) {
 		validatorMapper.Set(staketypes.BuildValidatorByVotePower(i, addr), 1)
 	}
 
-	descIter := validatorMapper.IteratorValidatrorByVoterPower(false)
+	descIter := validatorMapper.IteratorValidatorByVoterPower(false)
 	defer descIter.Close()
 
 	power := uint64(200)
@@ -82,7 +82,7 @@ func TestValidatorMapper(t *testing.T) {
 		power = cp
 	}
 
-	ascIter := validatorMapper.IteratorValidatrorByVoterPower(true)
+	ascIter := validatorMapper.IteratorValidatorByVoterPower(true)
 	defer ascIter.Close()
 
 	power = uint64(0)

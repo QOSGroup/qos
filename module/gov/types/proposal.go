@@ -20,8 +20,9 @@ type Proposal struct {
 	DepositEndTime time.Time `json:"deposit_end_time"` // Time that the Proposal would expire if deposit amount isn't met
 	TotalDeposit   uint64    `json:"total_deposit"`    //  Current deposit on this proposal. Initial value is set at InitialDeposit
 
-	VotingStartTime time.Time `json:"voting_start_time"` //  Time of the block where MinDeposit was reached. -1 if MinDeposit is not reached
-	VotingEndTime   time.Time `json:"voting_end_time"`   // Time that the VotingPeriod for this proposal will end and votes will be tallied
+	VotingStartTime   time.Time `json:"voting_start_time"` //  Time of the block where MinDeposit was reached. -1 if MinDeposit is not reached
+	VotingStartHeight uint64    `json:"voting_start_height"`
+	VotingEndTime     time.Time `json:"voting_end_time"` // Time that the VotingPeriod for this proposal will end and votes will be tallied
 }
 
 type ProposalContent interface {
@@ -30,6 +31,14 @@ type ProposalContent interface {
 	GetDeposit() uint64
 	GetProposalType() ProposalType
 }
+
+type ProposalResult string
+
+const (
+	PASS       ProposalResult = "pass"
+	REJECT     ProposalResult = "reject"
+	REJECTVETO ProposalResult = "reject-veto"
+)
 
 // Type that represents Proposal Status as a byte
 type ProposalStatus byte
@@ -55,13 +64,13 @@ func ValidProposalStatus(status ProposalStatus) bool {
 
 // Tally Results
 type TallyResult struct {
-	Yes        uint64 `json:"yes"`
-	Abstain    uint64 `json:"abstain"`
-	No         uint64 `json:"no"`
-	NoWithVeto uint64 `json:"no_with_veto"`
+	Yes        int64 `json:"yes"`
+	Abstain    int64 `json:"abstain"`
+	No         int64 `json:"no"`
+	NoWithVeto int64 `json:"no_with_veto"`
 }
 
-func NewTallyResult(yes, abstain, no, noWithVeto uint64) TallyResult {
+func NewTallyResult(yes, abstain, no, noWithVeto int64) TallyResult {
 	return TallyResult{
 		Yes:        yes,
 		Abstain:    abstain,

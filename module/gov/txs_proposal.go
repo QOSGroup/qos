@@ -47,7 +47,7 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	}
 
 	govMapper := GetGovMapper(ctx)
-	if tx.InitialDeposit < govMapper.GetDepositParams().MinDeposit/3 {
+	if types.NewDec(int64(tx.InitialDeposit)).Mul(MinDepositRate).LT(types.NewDec(int64(govMapper.GetDepositParams().MinDeposit))) {
 		return ErrInvalidInput("initial deposit is too small")
 	}
 

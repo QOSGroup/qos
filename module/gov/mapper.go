@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
+	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/types"
 	"time"
@@ -13,6 +14,11 @@ import (
 
 const (
 	GovMapperName = "governance"
+)
+
+var (
+	BurnRate              = types.NewDecWithPrec(2, 1)
+	MinDepositRate        = types.NewDecWithPrec(3, 1)
 )
 
 type GovMapper struct {
@@ -175,6 +181,7 @@ func (mapper GovMapper) peekCurrentProposalID(ctx context.Context) (proposalID u
 
 func (mapper GovMapper) activateVotingPeriod(ctx context.Context, proposal gtypes.Proposal) {
 	proposal.VotingStartTime = ctx.BlockHeader().Time
+	proposal.VotingStartHeight = uint64(ctx.BlockHeight())
 	votingPeriod := mapper.GetVotingParams().VotingPeriod
 	proposal.VotingEndTime = proposal.VotingStartTime.Add(votingPeriod)
 	proposal.Status = gtypes.StatusVotingPeriod
@@ -182,7 +189,24 @@ func (mapper GovMapper) activateVotingPeriod(ctx context.Context, proposal gtype
 
 	mapper.RemoveFromInactiveProposalQueue(ctx, proposal.DepositEndTime, proposal.ProposalID)
 	mapper.InsertActiveProposalQueue(ctx, proposal.VotingEndTime, proposal.ProposalID)
+
+	mapper.saveValidatorSet(ctx, proposal.ProposalID)
 }
+
+// Save validator set when proposal entering voting period.
+func (mapper GovMapper) saveValidatorSet(ctx context.Context, proposalID uint64) {
+	mapper.Set(KeyVotingPeriodValidators(proposalID), ecomapper.GetValidatorMapper(ctx).GetActiveValidatorSet(false))
+}
+
+func (mapper GovMapper) GetValidatorSet(proposalID uint64) (validators []btypes.Address, exists bool) {
+	exists = mapper.Get(KeyVotingPeriodValidators(proposalID), &validators)
+	return
+}
+
+func (mapper GovMapper) DeleteValidatorSet(proposalID uint64) {
+	mapper.Del(KeyVotingPeriodValidators(proposalID))
+}
+
 
 // Params
 
@@ -279,9 +303,6 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 		return ErrUnknownProposal(proposalID), false
 	}
 
-	// add gov deposit
-	mapper.addGovDeposit(depositAmount)
-
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	account := accountMapper.GetAccount(depositorAddr).(*types.QOSAccount)
 	account.MustMinusQOS(btypes.NewInt(int64(depositAmount)))
@@ -325,10 +346,15 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 		deposit := &gtypes.Deposit{}
 		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(depositsIterator.Value(), deposit)
 
+		originAmount := types.NewDec(int64(deposit.Amount))
+		burnAmount := BurnRate.Mul(originAmount)
+
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
-		depositor.PlusQOS(btypes.NewInt(int64(deposit.Amount)))
-		mapper.minusGovDeposit(deposit.Amount)
+		depositor.PlusQOS(originAmount.Sub(burnAmount).TruncateInt())
+
+		// burn deposit
+		ecomapper.GetDistributionMapper(ctx).AddToCommunityFeePool(burnAmount.TruncateInt())
 
 		mapper.Del(depositsIterator.Key())
 	}
@@ -336,17 +362,14 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 
 // Deletes all the deposits on a specific proposal without refunding them
 func (mapper GovMapper) DeleteDeposits(ctx context.Context, proposalID uint64) {
-	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	depositsIterator := mapper.GetDeposits(ctx, proposalID)
 	defer depositsIterator.Close()
 	for ; depositsIterator.Valid(); depositsIterator.Next() {
 		deposit := &gtypes.Deposit{}
 		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(depositsIterator.Value(), deposit)
 
-		// refund deposit
-		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
-		depositor.PlusQOS(btypes.NewInt(int64(deposit.Amount)))
-		mapper.minusGovDeposit(deposit.Amount)
+		// burn deposit
+		ecomapper.GetDistributionMapper(ctx).AddToCommunityFeePool(btypes.NewInt(int64(deposit.Amount)))
 
 		mapper.Del(depositsIterator.Key())
 	}
@@ -382,50 +405,4 @@ func (mapper GovMapper) InsertInactiveProposalQueue(ctx context.Context, endTime
 // removes a proposalID from the Inactive Proposal Queue
 func (mapper GovMapper) RemoveFromInactiveProposalQueue(ctx context.Context, endTime time.Time, proposalID uint64) {
 	mapper.Del(KeyInactiveProposalQueueProposal(endTime, proposalID))
-}
-
-// get deposit
-func (mapper *GovMapper) getGovDeposit() (deposit uint64) {
-	exists := mapper.Get(GovDepositKey, &deposit)
-	if !exists {
-		return 0
-	}
-
-	return deposit
-}
-
-// add deposit
-func (mapper *GovMapper) addGovDeposit(deposit uint64) {
-	current := mapper.getGovDeposit()
-	mapper.Set(GovDepositKey, current+deposit)
-}
-
-// minus deposit
-func (mapper *GovMapper) minusGovDeposit(deposit uint64) {
-	current := mapper.getGovDeposit()
-	if current < deposit {
-		panic("no enough deposit to minus")
-	}
-	mapper.Set(GovDepositKey, current-deposit)
-}
-
-// get burned deposit
-func (mapper *GovMapper) getGovBurnedDeposit() (deposit uint64) {
-	exists := mapper.Get(BurnedGovDepositKey, &deposit)
-	if !exists {
-		return 0
-	}
-
-	return deposit
-}
-
-// burn deposit
-func (mapper *GovMapper) burnGovDeposit(deposit uint64) {
-	current := mapper.getGovDeposit()
-	if deposit > current {
-		panic("no enough deposit to burn")
-	}
-	mapper.Set(GovDepositKey, current-deposit)
-	burned := mapper.getGovBurnedDeposit()
-	mapper.Set(BurnedGovDepositKey, burned+deposit)
 }

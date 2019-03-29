@@ -225,7 +225,7 @@ func queryTallyByProposalID(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
 
-	_, result := tally(ctx, govMapper, proposal)
+	_, result, _ := tally(ctx, govMapper, proposal)
 	return govMapper.GetCodec().MarshalJSON(result)
 }
 
