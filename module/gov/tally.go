@@ -51,7 +51,7 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 		})
 	}
 
-	tallyParams := mapper.GetTallyParams()
+	params := mapper.GetParams()
 	tallyResults = gtypes.TallyResult{
 		Yes:        results[gtypes.OptionYes],
 		Abstain:    results[gtypes.OptionAbstain],
@@ -70,12 +70,12 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 	}
 
 	// If more than 1/3 of voters veto, proposal fails
-	if types.NewDec(int64(results[gtypes.OptionNoWithVeto])).Quo(types.NewDecFromInt(totalVotingPower)).GT(tallyParams.Veto) {
+	if types.NewDec(int64(results[gtypes.OptionNoWithVeto])).Quo(types.NewDecFromInt(totalVotingPower)).GT(params.Veto) {
 		return gtypes.REJECTVETO, tallyResults, validators
 	}
 
 	// If more than 1/2 of non-abstaining voters vote Yes, proposal passes
-	if types.NewDec(int64(results[gtypes.OptionYes])).Quo(types.NewDecFromInt(totalVotingPower.Sub(btypes.NewInt(results[gtypes.OptionAbstain])))).GT(tallyParams.Threshold) {
+	if types.NewDec(int64(results[gtypes.OptionYes])).Quo(types.NewDecFromInt(totalVotingPower.Sub(btypes.NewInt(results[gtypes.OptionAbstain])))).GT(params.Threshold) {
 		return gtypes.PASS, tallyResults, validators
 	}
 

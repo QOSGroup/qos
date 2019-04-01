@@ -17,8 +17,8 @@ const (
 )
 
 var (
-	BurnRate              = types.NewDecWithPrec(2, 1)
-	MinDepositRate        = types.NewDecWithPrec(3, 1)
+	BurnRate       = types.NewDecWithPrec(2, 1)
+	MinDepositRate = types.NewDecWithPrec(3, 1)
 )
 
 type GovMapper struct {
@@ -51,7 +51,7 @@ func (mapper GovMapper) SubmitProposal(ctx context.Context, content gtypes.Propo
 	}
 
 	submitTime := ctx.BlockHeader().Time
-	depositPeriod := mapper.GetDepositParams().MaxDepositPeriod
+	depositPeriod := mapper.GetParams().MaxDepositPeriod
 
 	proposal = gtypes.Proposal{
 		ProposalContent: content,
@@ -182,7 +182,7 @@ func (mapper GovMapper) peekCurrentProposalID(ctx context.Context) (proposalID u
 func (mapper GovMapper) activateVotingPeriod(ctx context.Context, proposal gtypes.Proposal) {
 	proposal.VotingStartTime = ctx.BlockHeader().Time
 	proposal.VotingStartHeight = uint64(ctx.BlockHeight())
-	votingPeriod := mapper.GetVotingParams().VotingPeriod
+	votingPeriod := mapper.GetParams().VotingPeriod
 	proposal.VotingEndTime = proposal.VotingStartTime.Add(votingPeriod)
 	proposal.Status = gtypes.StatusVotingPeriod
 	mapper.SetProposal(ctx, proposal)
@@ -207,40 +207,16 @@ func (mapper GovMapper) DeleteValidatorSet(proposalID uint64) {
 	mapper.Del(KeyVotingPeriodValidators(proposalID))
 }
 
-
 // Params
 
-// Returns the current DepositParams from the global param store
-func (mapper GovMapper) GetDepositParams() DepositParams {
-	var depositParams DepositParams
-	mapper.Get(ParamStoreKeyDepositParams, &depositParams)
-	return depositParams
+func (mapper GovMapper) GetParams() Params {
+	var params Params
+	mapper.Get(ParamStoreKey, &params)
+	return params
 }
 
-// Returns the current VotingParams from the global param store
-func (mapper GovMapper) GetVotingParams() VotingParams {
-	var votingParams VotingParams
-	mapper.Get(ParamStoreKeyVotingParams, &votingParams)
-	return votingParams
-}
-
-// Returns the current TallyParam from the global param store
-func (mapper GovMapper) GetTallyParams() TallyParams {
-	var tallyParams TallyParams
-	mapper.Get(ParamStoreKeyTallyParams, &tallyParams)
-	return tallyParams
-}
-
-func (mapper GovMapper) setDepositParams(depositParams DepositParams) {
-	mapper.Set(ParamStoreKeyDepositParams, &depositParams)
-}
-
-func (mapper GovMapper) setVotingParams(votingParams VotingParams) {
-	mapper.Set(ParamStoreKeyVotingParams, &votingParams)
-}
-
-func (mapper GovMapper) setTallyParams(tallyParams TallyParams) {
-	mapper.Set(ParamStoreKeyTallyParams, &tallyParams)
+func (mapper GovMapper) setParams(params Params) {
+	mapper.Set(ParamStoreKey, &params)
 }
 
 // Votes
@@ -314,7 +290,7 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
-	if proposal.Status == gtypes.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetDepositParams().MinDeposit {
+	if proposal.Status == gtypes.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetParams().MinDeposit {
 		mapper.activateVotingPeriod(ctx, proposal)
 		activatedVotingPeriod = true
 	}

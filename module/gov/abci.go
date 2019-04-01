@@ -39,7 +39,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			fmt.Sprintf("proposal %d (%s) didn't meet minimum deposit of %d (had only %d); deleted",
 				inactiveProposal.ProposalID,
 				inactiveProposal.GetTitle(),
-				mapper.GetDepositParams().MinDeposit,
+				mapper.GetParams().MinDeposit,
 				inactiveProposal.TotalDeposit,
 			),
 		)
@@ -92,7 +92,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		resTags = resTags.AppendTag(ProposalID, types.Uint64ToBigEndian(proposalID))
 		resTags = resTags.AppendTag(ProposalResult, []byte(tagValue))
 
-		penalty := mapper.GetTallyParams().Penalty
+		penalty := mapper.GetParams().Penalty
 		if penalty.GT(types.ZeroDec()) {
 			validatorMapper := ecomapper.GetValidatorMapper(ctx)
 			validators := validatorMapper.GetActiveValidatorSet(false)
@@ -154,10 +154,16 @@ func slash(ctx context.Context, validator ecotypes.Validator, penalty types.Dec)
 func Execute(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
 	switch proposal.GetProposalType() {
 	case gtypes.ProposalTypeParameterChange:
-		return nil
+		return executeParameterChange(ctx, proposal, logger)
 	case gtypes.ProposalTypeTaxUsage:
 		return executeTaxUsage(ctx, proposal, logger)
 	}
+
+	return nil
+}
+
+func executeParameterChange(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
+	logger.Info("execute taxUsage, proposal: %d", proposal.ProposalID)
 
 	return nil
 }

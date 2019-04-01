@@ -232,10 +232,7 @@ func queryTallyByProposalID(ctx context.Context, pid string) ([]byte, error) {
 func queryParams(ctx context.Context) ([]byte, error) {
 	govMapper := GetGovMapper(ctx)
 
-	var result Params
-	result.DepositParams = govMapper.GetDepositParams()
-	result.TallyParams = govMapper.GetTallyParams()
-	result.VotingParams = govMapper.GetVotingParams()
+	var result = govMapper.GetParams()
 
 	return govMapper.GetCodec().MarshalJSON(result)
 }

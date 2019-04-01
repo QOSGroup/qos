@@ -136,7 +136,7 @@ func (pt ProposalType) String() string {
 	case ProposalTypeText:
 		return "Text"
 	case ProposalTypeParameterChange:
-		return "ParameterChange"
+		return "Parameter"
 	case ProposalTypeTaxUsage:
 		return "TaxUsage"
 	default:
@@ -178,7 +178,7 @@ func (tp TextProposal) GetDescription() string        { return tp.Description }
 func (tp TextProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText }
 
-// Text Proposals
+// TaxUsage Proposals
 type TaxUsageProposal struct {
 	TextProposal
 	DestAddress btypes.Address `json:"dest_address"`
@@ -204,4 +204,43 @@ var _ ProposalContent = TaxUsageProposal{}
 func (tp TaxUsageProposal) GetTitle() string              { return tp.Title }
 func (tp TaxUsageProposal) GetDescription() string        { return tp.Description }
 func (tp TaxUsageProposal) GetDeposit() uint64            { return tp.Deposit }
-func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeText }
+func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeTaxUsage }
+
+// Parameters change Proposals
+type ParameterProposal struct {
+	TextProposal
+	Params []Param `json:"params"`
+}
+
+func NewParameterProposal(title, description string, deposit uint64, params []Param) ParameterProposal {
+	return ParameterProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		Params: params,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = ParameterProposal{}
+
+// nolint
+func (tp ParameterProposal) GetTitle() string              { return tp.Title }
+func (tp ParameterProposal) GetDescription() string        { return tp.Description }
+func (tp ParameterProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp ParameterProposal) GetProposalType() ProposalType { return ProposalTypeParameterChange }
+
+type Param struct {
+	Module string `json:"module"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+func (param Param) String() string {
+	return fmt.Sprintf(`
+  Module:     %s
+  Key:    	  %s
+  Value:      %s`, param.Module, param.Key, param.Value)
+}

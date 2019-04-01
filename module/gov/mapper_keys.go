@@ -16,9 +16,7 @@ var (
 	PrefixActiveProposalQueue   = []byte("activeProposalQueue")
 	PrefixInactiveProposalQueue = []byte("inactiveProposalQueue")
 
-	ParamStoreKeyDepositParams = []byte("depositparams")
-	ParamStoreKeyVotingParams  = []byte("votingparams")
-	ParamStoreKeyTallyParams   = []byte("tallyparams")
+	ParamStoreKey = []byte("params")
 )
 
 func KeyProposalSubspace() []byte {
