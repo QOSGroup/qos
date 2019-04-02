@@ -8,6 +8,7 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
+	pmapper "github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 	"time"
 )
@@ -37,7 +38,7 @@ func GetGovMapper(ctx context.Context) *GovMapper {
 	return ctx.Mapper(GovMapperName).(*GovMapper)
 }
 
-func NewGovMapper() *GovMapper {
+func NewGovMapper(paramsMapper *pmapper.Mapper) *GovMapper {
 	var govMapper = GovMapper{}
 	govMapper.BaseMapper = mapper.NewBaseMapper(nil, GovMapperName)
 	return &govMapper
@@ -51,7 +52,7 @@ func (mapper GovMapper) SubmitProposal(ctx context.Context, content gtypes.Propo
 	}
 
 	submitTime := ctx.BlockHeader().Time
-	depositPeriod := mapper.GetParams().MaxDepositPeriod
+	depositPeriod := mapper.GetParams(ctx).MaxDepositPeriod
 
 	proposal = gtypes.Proposal{
 		ProposalContent: content,
@@ -182,7 +183,7 @@ func (mapper GovMapper) peekCurrentProposalID(ctx context.Context) (proposalID u
 func (mapper GovMapper) activateVotingPeriod(ctx context.Context, proposal gtypes.Proposal) {
 	proposal.VotingStartTime = ctx.BlockHeader().Time
 	proposal.VotingStartHeight = uint64(ctx.BlockHeight())
-	votingPeriod := mapper.GetParams().VotingPeriod
+	votingPeriod := mapper.GetParams(ctx).VotingPeriod
 	proposal.VotingEndTime = proposal.VotingStartTime.Add(votingPeriod)
 	proposal.Status = gtypes.StatusVotingPeriod
 	mapper.SetProposal(ctx, proposal)
@@ -209,14 +210,14 @@ func (mapper GovMapper) DeleteValidatorSet(proposalID uint64) {
 
 // Params
 
-func (mapper GovMapper) GetParams() Params {
+func (mapper GovMapper) GetParams(ctx context.Context) Params {
 	var params Params
-	mapper.Get(ParamStoreKey, &params)
+	pmapper.GetMapper(ctx).GetParamSet(&params)
 	return params
 }
 
-func (mapper GovMapper) setParams(params Params) {
-	mapper.Set(ParamStoreKey, &params)
+func (mapper GovMapper) SetParams(ctx context.Context, params Params) {
+	pmapper.GetMapper(ctx).SetParamSet(&params)
 }
 
 // Votes
@@ -290,7 +291,7 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
-	if proposal.Status == gtypes.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetParams().MinDeposit {
+	if proposal.Status == gtypes.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetParams(ctx).MinDeposit {
 		mapper.activateVotingPeriod(ctx, proposal)
 		activatedVotingPeriod = true
 	}

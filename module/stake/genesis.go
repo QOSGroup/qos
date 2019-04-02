@@ -105,7 +105,7 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []DelegationInfoStat
 
 func initParams(ctx context.Context, params ecotypes.StakeParams) {
 	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*mapper.ValidatorMapper)
-	mapper.SetParams(params)
+	mapper.SetParams(ctx, params)
 }
 
 func ValidateGenesis(genesisAccounts []*types.QOSAccount, data GenesisState) error {
@@ -155,7 +155,7 @@ func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
 		validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
 	}
 
-	params := validatorMapper.GetParams()
+	params := validatorMapper.GetParams(ctx)
 
 	var validators []ecotypes.Validator
 	validatorMapper.IterateValidators(func(validator ecotypes.Validator) {

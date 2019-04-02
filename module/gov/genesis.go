@@ -74,14 +74,14 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	if err != nil {
 		panic(err)
 	}
-	mapper.setParams(data.Params)
+	mapper.SetParams(ctx, data.Params)
 }
 
 // ExportGenesis - output genesis parameters
 func ExportGenesis(ctx context.Context) GenesisState {
 	mapper := GetGovMapper(ctx)
 	startingProposalID, _ := mapper.peekCurrentProposalID(ctx)
-	params := mapper.GetParams()
+	params := mapper.GetParams(ctx)
 
 	return GenesisState{
 		StartingProposalID: startingProposalID,

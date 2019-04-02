@@ -15,8 +15,6 @@ var (
 	KeyNextProposalID           = []byte("newProposalID")
 	PrefixActiveProposalQueue   = []byte("activeProposalQueue")
 	PrefixInactiveProposalQueue = []byte("inactiveProposalQueue")
-
-	ParamStoreKey = []byte("params")
 )
 
 func KeyProposalSubspace() []byte {

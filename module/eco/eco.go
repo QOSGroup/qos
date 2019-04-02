@@ -17,7 +17,7 @@ import (
 //delegator当前收益和收益发放信息数据不删除, 只是将bondTokens重置为0
 //发放收益时,若delegator非validator的委托人, 或validator 不存在 则可以将delegator的收益相关数据删除
 //发放收益时,validator的汇总数据可能会不存在
-func (e Eco) RemoveValidator(valAddr btypes.Address) error {
+func (e Eco) RemoveValidator(ctx context.Context, valAddr btypes.Address) error {
 
 	height := uint64(e.Context.BlockHeight())
 
@@ -26,7 +26,7 @@ func (e Eco) RemoveValidator(valAddr btypes.Address) error {
 	validatorMapper := e.ValidatorMapper
 	voteInfoMapper := e.VoteInfoMapper
 
-	stakeParams := validatorMapper.GetParams()
+	stakeParams := validatorMapper.GetParams(ctx)
 
 	// 删除validator相关数据
 	validator, ok := validatorMapper.KickValidator(valAddr)
@@ -75,7 +75,7 @@ func (e Eco) RemoveValidator(valAddr btypes.Address) error {
 	return nil
 }
 
-func (e Eco) DelegateValidator(validator types.Validator, delegatorAddr btypes.Address, delegateAmount uint64, isCompound bool, needMinusAccountQOS bool) error {
+func (e Eco) DelegateValidator(ctx context.Context, validator types.Validator, delegatorAddr btypes.Address, delegateAmount uint64, isCompound bool, needMinusAccountQOS bool) error {
 
 	height := uint64(e.Context.BlockHeight())
 
@@ -97,7 +97,7 @@ func (e Eco) DelegateValidator(validator types.Validator, delegatorAddr btypes.A
 	delegatedAmount := uint64(0)
 	info, exsits := delegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
 	if !exsits {
-		distributionMapper.InitDelegatorIncomeInfo(valAddr, delegatorAddr, uint64(0), height)
+		distributionMapper.InitDelegatorIncomeInfo(ctx, valAddr, delegatorAddr, uint64(0), height)
 		info = types.NewDelegationInfo(delegatorAddr, valAddr, uint64(0), false)
 	} else {
 		delegatedAmount = info.Amount
@@ -122,7 +122,7 @@ func (e Eco) DelegateValidator(validator types.Validator, delegatorAddr btypes.A
 	return nil
 }
 
-func (e Eco) UnbondValidator(validator types.Validator, delegatorAddr btypes.Address, isUnbondAll bool, unbondAmount uint64, isRedelegate bool) error {
+func (e Eco) UnbondValidator(ctx context.Context, validator types.Validator, delegatorAddr btypes.Address, isUnbondAll bool, unbondAmount uint64, isRedelegate bool) error {
 
 	height := uint64(e.Context.BlockHeight())
 
@@ -153,7 +153,7 @@ func (e Eco) UnbondValidator(validator types.Validator, delegatorAddr btypes.Add
 
 	if !isRedelegate {
 		//3. 增加unbond信息
-		stakeParams := validatorMapper.GetParams()
+		stakeParams := validatorMapper.GetParams(ctx)
 		unbondHeight := uint64(stakeParams.DelegatorUnbondReturnHeight) + height
 		delegationMapper.AddDelegatorUnbondingQOSatHeight(unbondHeight, delegatorAddr, unbondAmount)
 	}

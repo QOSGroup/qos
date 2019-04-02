@@ -2,12 +2,12 @@ package mapper
 
 import (
 	"fmt"
-
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco/types"
+	pmapper "github.com/QOSGroup/qos/module/params"
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
@@ -55,10 +55,10 @@ func (mapper *DistributionMapper) DeleteValidatorPeriodSummaryInfo(valAddr btype
 //首次Delegate:
 //1. first delegate
 //2. unbond all , then delegate
-func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
+func (mapper *DistributionMapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
 	//初始化delegaotr 收益计算信息
 	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
-	params := mapper.GetParams()
+	params := mapper.GetParams(ctx)
 
 	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 
@@ -228,7 +228,7 @@ type DistributionMapper struct {
 
 var _ mapper.IMapper = (*DistributionMapper)(nil)
 
-func NewDistributionMapper() *DistributionMapper {
+func NewDistributionMapper(paramsMapper *pmapper.Mapper) *DistributionMapper {
 	var distributionMapper = DistributionMapper{}
 	distributionMapper.BaseMapper = mapper.NewBaseMapper(nil, types.DistributionMapperName)
 	return &distributionMapper
@@ -244,16 +244,13 @@ func (mapper *DistributionMapper) Copy() mapper.IMapper {
 	return distributionMapper
 }
 
-func (mapper *DistributionMapper) GetParams() (params types.DistributionParams) {
-	exsits := mapper.Get(types.BuildDistributeParamsKey(), &params)
-	if !exsits {
-		params = types.DefaultDistributionParams()
-	}
+func (mapper *DistributionMapper) GetParams(ctx context.Context) (params types.DistributionParams) {
+	pmapper.GetMapper(ctx).GetParamSet(&params)
 	return
 }
 
-func (mapper *DistributionMapper) SetParams(params types.DistributionParams) {
-	mapper.Set(types.BuildDistributeParamsKey(), params)
+func (mapper *DistributionMapper) SetParams(ctx context.Context, params types.DistributionParams) {
+	pmapper.GetMapper(ctx).SetParamSet(&params)
 }
 
 func (mapper *DistributionMapper) GetValidatorCurrentPeriodSummary(valAddr btypes.Address) (vcps types.ValidatorCurrentPeriodSummary, exsits bool) {
@@ -289,7 +286,6 @@ func (mapper *DistributionMapper) AddToCommunityFeePool(fee btypes.BigInt) {
 	communityFee := mapper.GetCommunityFeePool()
 	mapper.SetCommunityFeePool(communityFee.Add(fee))
 }
-
 
 func (mapper *DistributionMapper) GetValidatorHistoryPeriodSummary(valAddr btypes.Address, period uint64) (frac qtypes.Fraction) {
 	key := types.BuildValidatorHistoryPeriodSummaryKey(valAddr, period)

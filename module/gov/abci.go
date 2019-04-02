@@ -8,6 +8,7 @@ import (
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
@@ -39,7 +40,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			fmt.Sprintf("proposal %d (%s) didn't meet minimum deposit of %d (had only %d); deleted",
 				inactiveProposal.ProposalID,
 				inactiveProposal.GetTitle(),
-				mapper.GetParams().MinDeposit,
+				mapper.GetParams(ctx).MinDeposit,
 				inactiveProposal.TotalDeposit,
 			),
 		)
@@ -92,7 +93,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		resTags = resTags.AppendTag(ProposalID, types.Uint64ToBigEndian(proposalID))
 		resTags = resTags.AppendTag(ProposalResult, []byte(tagValue))
 
-		penalty := mapper.GetParams().Penalty
+		penalty := mapper.GetParams(ctx).Penalty
 		if penalty.GT(types.ZeroDec()) {
 			validatorMapper := ecomapper.GetValidatorMapper(ctx)
 			validators := validatorMapper.GetActiveValidatorSet(false)
@@ -163,7 +164,13 @@ func Execute(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) e
 }
 
 func executeParameterChange(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
-	logger.Info("execute taxUsage, proposal: %d", proposal.ProposalID)
+	proposalContent := proposal.ProposalContent.(*gtypes.ParameterProposal)
+	paramMapper := params.GetMapper(ctx)
+	for _, param := range proposalContent.Params {
+		paramMapper.SetParam(param.Module, param.Key, param.Value)
+	}
+
+	logger.Info("execute parameterChange, proposal: %d", proposal.ProposalID)
 
 	return nil
 }

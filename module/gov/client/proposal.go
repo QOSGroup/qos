@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
+	"strings"
 )
 
 func ProposalCmd(cdc *amino.Codec) *cobra.Command {
@@ -53,6 +54,12 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					}
 					ps, _ := types.NewDecFromStr(fmt.Sprintf("%f", percent))
 					return gov.NewTxTaxUsage(title, description, proposalType, proposer, uint64(deposit), destAddress, ps), nil
+				case gtypes.ProposalTypeParameterChange:
+					params, err := parseParams(viper.GetString(flagParams))
+					if err != nil {
+						return nil, err
+					}
+					return gov.NewTxParameterChange(title, description, proposalType, proposer, uint64(deposit), params), nil
 				}
 
 				return nil, errors.New("unknown proposal-type")
@@ -67,6 +74,7 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().Uint64(flagDeposit, 0, "Initial deposit paid by proposer. Must be strictly positive")
 	cmd.Flags().String(flagDestAddress, "", "Address to receive QOS")
 	cmd.Flags().Float64(flagPercent, 0, "Percent of QOS in fee pool send to dest-address")
+	cmd.Flags().String(flagParams, "", "params, format:<module>/<key>:<value>,<module>/<key>:<value>")
 	cmd.MarkFlagRequired(flagTitle)
 	cmd.MarkFlagRequired(flagDescription)
 	cmd.MarkFlagRequired(flagProposalType)
@@ -74,4 +82,17 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagDeposit)
 
 	return cmd
+}
+
+func parseParams(paramsStr string) (params []gtypes.Param, err error) {
+	if len(paramsStr) == 0 {
+		return nil, errors.New("params is empty")
+	}
+	items := strings.Split(paramsStr, ",")
+	for _, item := range items {
+		param := strings.Split(item, ":")
+		params = append(params, gtypes.NewParam(strings.TrimSpace(param[0]), strings.TrimSpace(param[1]), strings.TrimSpace(param[2])))
+	}
+
+	return params, err
 }

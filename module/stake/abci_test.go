@@ -2,6 +2,7 @@ package stake
 
 import (
 	"encoding/binary"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -136,13 +137,16 @@ func defaultContext() context.Context {
 
 	mapperMap := make(map[string]mapper.IMapper)
 
+	paramsMapper := params.NewMapper()
+	mapperMap[params.MapperName] = paramsMapper
+
 	mainMapper := stakemapper.NewMintMapper()
 	mapperMap[staketypes.MintMapperName] = mainMapper
 
 	accountMapper := account.NewAccountMapper(cdc, types.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper
 
-	validatorMapper := stakemapper.NewValidatorMapper()
+	validatorMapper := stakemapper.NewValidatorMapper(paramsMapper)
 	validatorMapper.SetCodec(cdc)
 	mapperMap[staketypes.ValidatorMapperName] = validatorMapper
 

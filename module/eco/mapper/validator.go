@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"encoding/binary"
+	pmapper "github.com/QOSGroup/qos/module/params"
 	"time"
 
 	"github.com/QOSGroup/qbase/context"
@@ -17,7 +18,7 @@ type ValidatorMapper struct {
 
 var _ mapper.IMapper = (*ValidatorMapper)(nil)
 
-func NewValidatorMapper() *ValidatorMapper {
+func NewValidatorMapper(paramsMapper *pmapper.Mapper) *ValidatorMapper {
 	var validatorMapper = ValidatorMapper{}
 	validatorMapper.BaseMapper = mapper.NewBaseMapper(nil, ecotypes.ValidatorMapperName)
 	return &validatorMapper
@@ -132,7 +133,6 @@ func (mapper *ValidatorMapper) GetActiveValidatorSet(ascending bool) (validators
 	return validators
 }
 
-
 func (mapper *ValidatorMapper) MakeValidatorActive(valAddress btypes.Address) {
 	validator, exsits := mapper.GetValidator(valAddress)
 	if !exsits {
@@ -156,13 +156,13 @@ func (mapper *ValidatorMapper) GetValidatorByOwner(owner btypes.Address) (valida
 	return mapper.GetValidator(valAddress)
 }
 
-func (mapper *ValidatorMapper) SetParams(params ecotypes.StakeParams) {
-	mapper.Set(ecotypes.BuildStakeParamsKey(), params)
+func (mapper *ValidatorMapper) SetParams(ctx context.Context, params ecotypes.StakeParams) {
+	pmapper.GetMapper(ctx).SetParamSet(&params)
 }
 
-func (mapper *ValidatorMapper) GetParams() ecotypes.StakeParams {
+func (mapper *ValidatorMapper) GetParams(ctx context.Context) ecotypes.StakeParams {
 	params := ecotypes.StakeParams{}
-	mapper.Get(ecotypes.BuildStakeParamsKey(), &params)
+	pmapper.GetMapper(ctx).GetParamSet(&params)
 	return params
 }
 

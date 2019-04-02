@@ -3,6 +3,7 @@ package gov
 import (
 	"errors"
 	"fmt"
+	ptypes "github.com/QOSGroup/qos/module/params/types"
 	"strconv"
 	"strings"
 
@@ -309,13 +310,30 @@ func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
 }
 
 func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "params",
 		Short: "Query the parameters of the governance process",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			path := gov.BuildQueryParamsPath()
+
+			module := viper.GetString(flagModule)
+			key := viper.GetString(flagParamKey)
+			if len(key) != 0 && len(module) == 0 {
+				return errors.New("module is empty")
+			}
+
+			mod := 0
+			var path string
+			if len(module) == 0 {
+				path = gov.BuildQueryParamsPath()
+			} else if len(key) == 0 {
+				mod = 1
+				path = gov.BuildQueryModuleParamsPath(module)
+			} else {
+				mod = 2
+				path = gov.BuildQueryParamPath(module, key)
+			}
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -325,12 +343,27 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 				return errors.New("no result found")
 			}
 
-			var result gov.Params
-			if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
-				return err
+			if mod == 0 {
+				var result []ptypes.ParamSet
+				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
+					return err
+				}
+				return cliCtx.PrintResult(result)
+			} else if mod == 1 {
+				var result ptypes.ParamSet
+				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
+					return err
+				}
+				return cliCtx.PrintResult(result)
+			} else {
+				fmt.Println(string(res))
+				return nil
 			}
-
-			return cliCtx.PrintResult(result)
 		},
 	}
+
+	cmd.Flags().String(flagModule, "", "(optional) module name.")
+	cmd.Flags().String(flagParamKey, "", "(optional) parameter name")
+
+	return cmd
 }

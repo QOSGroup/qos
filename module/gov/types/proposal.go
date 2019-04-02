@@ -238,6 +238,14 @@ type Param struct {
 	Value  string `json:"value"`
 }
 
+func NewParam(module, key, value string) Param {
+	return Param{
+		Module: module,
+		Key:    key,
+		Value:  value,
+	}
+}
+
 func (param Param) String() string {
 	return fmt.Sprintf(`
   Module:     %s

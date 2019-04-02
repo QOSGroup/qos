@@ -7,6 +7,7 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/guardian"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 )
 
@@ -47,7 +48,7 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	}
 
 	govMapper := GetGovMapper(ctx)
-	if types.NewDec(int64(tx.InitialDeposit)).Mul(MinDepositRate).LT(types.NewDec(int64(govMapper.GetParams().MinDeposit))) {
+	if types.NewDec(int64(tx.InitialDeposit)).Mul(MinDepositRate).LT(types.NewDec(int64(govMapper.GetParams(ctx).MinDeposit))) {
 		return ErrInvalidInput("initial deposit is too small")
 	}
 
@@ -212,6 +213,13 @@ func (tx TxParameterChange) ValidateData(ctx context.Context) error {
 
 	if len(tx.Params) == 0 {
 		return ErrInvalidInput("Params is empty")
+	}
+
+	paramMapper := params.GetMapper(ctx)
+	for _, param := range tx.Params {
+		if err = paramMapper.Validate(param.Module, param.Key, param.Value); err != nil {
+			return err
+		}
 	}
 
 	return nil

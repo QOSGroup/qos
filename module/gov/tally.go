@@ -51,7 +51,7 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 		})
 	}
 
-	params := mapper.GetParams()
+	params := mapper.GetParams(ctx)
 	tallyResults = gtypes.TallyResult{
 		Yes:        results[gtypes.OptionYes],
 		Abstain:    results[gtypes.OptionAbstain],

@@ -3,6 +3,7 @@ package gov
 import (
 	"errors"
 	"fmt"
+	"github.com/QOSGroup/qos/module/params"
 	"runtime/debug"
 	"strconv"
 
@@ -68,7 +69,13 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	case Tally:
 		data, e = queryTallyByProposalID(ctx, route[1])
 	case ParamsPath:
-		data, e = queryParams(ctx)
+		if len(route) == 1 {
+			data, e = queryParams(ctx)
+		} else if len(route) == 2 {
+			data, e = queryModuleParams(ctx, route[1])
+		} else {
+			data, e = queryParam(ctx, route[1], route[2])
+		}
 	default:
 		data = nil
 		e = errors.New("not found match path")
@@ -230,11 +237,27 @@ func queryTallyByProposalID(ctx context.Context, pid string) ([]byte, error) {
 }
 
 func queryParams(ctx context.Context) ([]byte, error) {
-	govMapper := GetGovMapper(ctx)
+	paramMapper := params.GetMapper(ctx)
+	return paramMapper.GetCodec().MarshalJSON(paramMapper.GetParams())
+}
 
-	var result = govMapper.GetParams()
+func queryModuleParams(ctx context.Context, module string) ([]byte, error) {
+	paramMapper := params.GetMapper(ctx)
+	result, exists := paramMapper.GetModuleParams(module)
+	if !exists {
+		return nil, errors.New(fmt.Sprintf("no parameter in module %s", module))
+	}
+	return paramMapper.GetCodec().MarshalJSON(result)
+}
 
-	return govMapper.GetCodec().MarshalJSON(result)
+func queryParam(ctx context.Context, module string, key string) ([]byte, error) {
+	paramMapper := params.GetMapper(ctx)
+	result, exists := paramMapper.GetParam(module, key)
+	if !exists {
+		return nil, errors.New(fmt.Sprintf("no %s in module %s", key, module))
+	}
+
+	return paramMapper.GetCodec().MarshalJSON(result)
 }
 
 //nolint
@@ -283,4 +306,14 @@ func BuildQueryTallyPath(pid uint64) string {
 //nolint
 func BuildQueryParamsPath() string {
 	return fmt.Sprintf("custom/%s/%s", GOV, ParamsPath)
+}
+
+//nolint
+func BuildQueryModuleParamsPath(module string) string {
+	return fmt.Sprintf("custom/%s/%s/%s", GOV, ParamsPath, module)
+}
+
+//nolint
+func BuildQueryParamPath(module string, key string) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", GOV, ParamsPath, module, key)
 }

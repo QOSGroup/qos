@@ -7,6 +7,7 @@ import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -294,12 +295,12 @@ type voteInfoDetail struct {
 func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) (voteSummary, error) {
 
 	voteSummaryDisplay := voteSummary{}
-	stakeConfig, err := getStakeConfig(ctx)
+
+	windownLength, err := getStakeConfig(ctx)
 	if err != nil {
 		return voteSummaryDisplay, err
 	}
 
-	windownLength := uint64(stakeConfig.ValidatorVotingStatusLen)
 	votesInfo := make([]voteInfoDetail, 0, windownLength)
 
 	val, err := getValidator(ctx, ownerAddress)
@@ -352,31 +353,29 @@ func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) 
 	return voteSummaryDisplay, nil
 }
 
-func getStakeConfig(ctx context.CLIContext) (ecotypes.StakeParams, error) {
+func getStakeConfig(ctx context.CLIContext) (uint64, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
-		return ecotypes.StakeParams{}, err
+		return 0, err
 	}
 
-	path := "/store/validator/key"
-	key := []byte(ecotypes.BuildStakeParamsKey())
+	path := "/store/params/key"
+	key := params.BuildParamKey(ecotypes.DistributionParamSpace, ecotypes.KeyValidatorVotingStatusLen)
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
 	if err != nil {
-		return ecotypes.StakeParams{}, err
+		return 0, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return ecotypes.StakeParams{}, errors.New("response empty value. getStakeConfig is empty")
+		return 0, errors.New("response empty value. getStakeConfig is empty")
 	}
 
-	var stakeConfig ecotypes.StakeParams
-	{
-	}
-	ctx.Codec.UnmarshalBinaryBare(valueBz, &stakeConfig)
+	var length uint64
+	ctx.Codec.UnmarshalBinaryBare(valueBz, &length)
 
-	return stakeConfig, nil
+	return length, nil
 }
 
 func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) (ecotypes.ValidatorVoteInfo, error) {

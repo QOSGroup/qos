@@ -14,6 +14,7 @@ import (
 	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
@@ -74,6 +75,12 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		return stake.EndBlocker(ctx)
 	})
 
+	//parameter mapper
+	paramsMapper := params.NewMapper()
+	//config params
+	paramsMapper.RegisterParamSet(&ecotypes.StakeParams{}, &ecotypes.DistributionParams{}, &gov.Params{})
+	app.RegisterMapper(paramsMapper)
+
 	// 账户mapper
 	app.RegisterAccountProto(types.ProtoQOSAccount)
 
@@ -87,7 +94,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(approve.NewApproveMapper())
 
 	// Staking Validator mapper
-	app.RegisterMapper(ecomapper.NewValidatorMapper())
+	app.RegisterMapper(ecomapper.NewValidatorMapper(paramsMapper))
 
 	// Staking mapper
 	app.RegisterMapper(ecomapper.NewVoteInfoMapper())
@@ -96,13 +103,13 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(ecomapper.NewMintMapper())
 
 	//distributionMapper
-	app.RegisterMapper(ecomapper.NewDistributionMapper())
+	app.RegisterMapper(ecomapper.NewDistributionMapper(paramsMapper))
 
 	//delegationMapper
 	app.RegisterMapper(ecomapper.NewDelegationMapper())
 
 	//gov mapper
-	app.RegisterMapper(gov.NewGovMapper())
+	app.RegisterMapper(gov.NewGovMapper(paramsMapper))
 
 	//guardian mapper
 	app.RegisterMapper(guardian.NewGuardianMapper())
@@ -203,7 +210,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 // gas
 func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams().GasPerUnitCost))
+	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams(ctx).GasPerUnitCost))
 
 	// tax free for tx send by guardian
 	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
