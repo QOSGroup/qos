@@ -3,6 +3,7 @@ package gov
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/context"
+	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/types"
 	"time"
 )
@@ -69,8 +70,12 @@ func ValidateGenesis(data GenesisState) error {
 
 // InitGenesis - store genesis parameters
 func InitGenesis(ctx context.Context, data GenesisState) {
+	err := ValidateGenesis(data)
+	if err != nil {
+		panic(err)
+	}
 	mapper := GetGovMapper(ctx)
-	err := mapper.setInitialProposalID(ctx, data.StartingProposalID)
+	err = mapper.setInitialProposalID(ctx, data.StartingProposalID)
 	if err != nil {
 		panic(err)
 	}
@@ -86,5 +91,20 @@ func ExportGenesis(ctx context.Context) GenesisState {
 	return GenesisState{
 		StartingProposalID: startingProposalID,
 		Params:             params,
+	}
+}
+
+func PrepForZeroHeightGenesis(ctx context.Context) {
+	mapper := GetGovMapper(ctx)
+	proposals := mapper.GetProposalsFiltered(ctx, nil, nil, gtypes.StatusDepositPeriod, 0)
+	for _, proposal := range proposals {
+		proposalID := proposal.ProposalID
+		mapper.RefundDeposits(ctx, proposalID)
+	}
+
+	proposals = mapper.GetProposalsFiltered(ctx, nil, nil, gtypes.StatusVotingPeriod, 0)
+	for _, proposal := range proposals {
+		proposalID := proposal.ProposalID
+		mapper.RefundDeposits(ctx, proposalID)
 	}
 }

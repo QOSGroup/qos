@@ -204,6 +204,9 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	// return unbond tokens
 	stake.ReturnAllUnbondTokens(ctx)
 
+	// return proposal deposit
+	gov.PrepForZeroHeightGenesis(ctx)
+
 	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }
 
