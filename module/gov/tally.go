@@ -37,7 +37,7 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 	}
 
 	// 统计投票人对应验证节点信息，一个验证节点任意delegator投过票，则算这个验证节点参与了投票
-	votesIterator := mapper.GetVotes(ctx, proposal.ProposalID)
+	votesIterator := mapper.GetVotes(proposal.ProposalID)
 	defer votesIterator.Close()
 	for ; votesIterator.Valid(); votesIterator.Next() {
 		vote := &gtypes.Vote{}

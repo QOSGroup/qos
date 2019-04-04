@@ -38,7 +38,7 @@ func KeyVote(proposalID uint64, voterAddr btypes.Address) []byte {
 
 // Key for validators set at entering voting period.
 func KeyVotingPeriodValidators(proposalID uint64) []byte {
-	return []byte(fmt.Sprintf("votes:%d", proposalID))
+	return []byte(fmt.Sprintf("validators:%d", proposalID))
 }
 
 // Key for getting all deposits on a proposal from the store

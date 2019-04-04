@@ -19,13 +19,13 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 	resTags := btypes.NewTags()
 
 	mapper := GetGovMapper(ctx)
-	inactiveIterator := mapper.InactiveProposalQueueIterator(ctx, ctx.BlockHeader().Time)
+	inactiveIterator := mapper.InactiveProposalQueueIterator(ctx.BlockHeader().Time)
 	defer inactiveIterator.Close()
 	for ; inactiveIterator.Valid(); inactiveIterator.Next() {
 		var proposalID uint64
 
 		mapper.GetCodec().UnmarshalBinaryBare(inactiveIterator.Value(), &proposalID)
-		inactiveProposal, ok := mapper.GetProposal(ctx, proposalID)
+		inactiveProposal, ok := mapper.GetProposal(proposalID)
 		if !ok {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
@@ -47,13 +47,13 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 	}
 
 	// fetch active proposals whose voting periods have ended (are passed the block time)
-	activeIterator := mapper.ActiveProposalQueueIterator(ctx, ctx.BlockHeader().Time)
+	activeIterator := mapper.ActiveProposalQueueIterator(ctx.BlockHeader().Time)
 	defer activeIterator.Close()
 	for ; activeIterator.Valid(); activeIterator.Next() {
 		var proposalID uint64
 
 		mapper.GetCodec().UnmarshalBinaryBare(activeIterator.Value(), &proposalID)
-		activeProposal, ok := mapper.GetProposal(ctx, proposalID)
+		activeProposal, ok := mapper.GetProposal(proposalID)
 		if !ok {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
@@ -80,8 +80,8 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		}
 
 		activeProposal.FinalTallyResult = tallyResults
-		mapper.SetProposal(ctx, activeProposal)
-		mapper.RemoveFromActiveProposalQueue(ctx, activeProposal.VotingEndTime, activeProposal.ProposalID)
+		mapper.SetProposal(activeProposal)
+		mapper.RemoveFromActiveProposalQueue(activeProposal.VotingEndTime, activeProposal.ProposalID)
 
 		logger.Info(
 			fmt.Sprintf(

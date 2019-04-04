@@ -34,7 +34,7 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput("amount of deposit is zero")
 	}
 
-	proposal, ok := GetGovMapper(ctx).GetProposal(ctx, tx.ProposalID)
+	proposal, ok := GetGovMapper(ctx).GetProposal(tx.ProposalID)
 	if !ok {
 		return ErrUnknownProposal(tx.ProposalID)
 	}

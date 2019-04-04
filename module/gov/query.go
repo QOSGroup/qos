@@ -96,7 +96,7 @@ func queryProposal(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	proposal, exsits := govMapper.GetProposal(ctx, proposalID)
+	proposal, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
@@ -125,12 +125,12 @@ func queryVotesByProposalID(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
 
-	iter := govMapper.GetVotes(ctx, proposalID)
+	iter := govMapper.GetVotes(proposalID)
 	defer iter.Close()
 
 	var votes []types.Vote
@@ -150,7 +150,7 @@ func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
@@ -160,7 +160,7 @@ func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string
 		return nil, fmt.Errorf("voter %s is not valid address", voter)
 	}
 
-	result, exsits := govMapper.GetVote(ctx, proposalID, voterAddress)
+	result, exsits := govMapper.GetVote(proposalID, voterAddress)
 	if !exsits {
 		return nil, fmt.Errorf("voter %s is not vote on proposal %s", voterAddress, pid)
 	}
@@ -176,7 +176,7 @@ func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depo
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
@@ -186,7 +186,7 @@ func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depo
 		return nil, fmt.Errorf("depositer %s is not valid address", depositer)
 	}
 
-	result, exsits := govMapper.GetDeposit(ctx, proposalID, depositerAddress)
+	result, exsits := govMapper.GetDeposit(proposalID, depositerAddress)
 	if !exsits {
 		return nil, fmt.Errorf("depositer %s is not deposit on proposal %s", depositer, pid)
 	}
@@ -201,12 +201,12 @@ func queryDepositsByProposalID(ctx context.Context, pid string) ([]byte, error) 
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
 
-	iter := govMapper.GetDeposits(ctx, proposalID)
+	iter := govMapper.GetDeposits(proposalID)
 	defer iter.Close()
 
 	var deposits []types.Deposit
@@ -227,7 +227,7 @@ func queryTallyByProposalID(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	proposal, exsits := govMapper.GetProposal(ctx, proposalID)
+	proposal, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
