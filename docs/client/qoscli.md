@@ -255,7 +255,7 @@ QOS支持以下几种交易类型：
 
 ### 转账（transfer）
 
-查阅[转账设计](../spec/txs/transfer.md)了解QOS转账交易设计。
+查阅[转账设计](../spec/transfer.md)了解QOS转账交易设计。
 
 `qoscli tx transfer --senders <senders_and_coins> --receivers <receivers_and_coins>`
 
@@ -276,7 +276,7 @@ Password to sign with 'Arya':<输入密码>
 
 ### 预授权（approve）
 
-[QOS预授权设计](../spec/txs/approve.md)包含以下操作指令：
+[QOS预授权设计](../spec/approve.md)包含以下操作指令：
 
 * `qoscli tx create-approve`    [创建预授权](#创建预授权)
 * `qoscli query approve`        [查询预授权](#查询预授权)
@@ -391,7 +391,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 ### 联盟币（qsc）
 
-> 创建联盟币前需要申请[CA](../spec/ca.md)，点击[联盟币设计文档](../spec/txs/qsc.md)了解更多。
+> 创建联盟币前需要申请[CA](../spec/ca.md)，点击[联盟币设计文档](../spec/qsc.md)了解更多。
 
 联盟币相关指令：
 * `qoscli tx create-qsc`    [创建联盟币](#创建联盟币)
@@ -470,7 +470,7 @@ Password to sign with 'ATM':<输入ATM本地密钥库密码>
 
 QOS跨链协议QCP，支持跨链交易
 
-> 创建联盟链前需要申请[CA](../spec/ca.md)，点击[联盟链设计文档](../spec/txs/qcp.md)了解更多。
+> 创建联盟链前需要申请[CA](../spec/ca.md)，点击[联盟链设计文档](../spec/qcp.md)了解更多。
 
 联盟链相关指令：
 * `qoscli tx init-qcp`: [初始化联盟链](#初始化联盟链)

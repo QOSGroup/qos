@@ -68,7 +68,7 @@ $ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,10000
 
 * config-root-ca
 
-root CA用于校验[QSC](../spec/txs/qsc.md)和[QCP](../spec/txs/qcp.md)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
+root CA用于校验[QSC](../spec/qsc.md)和[QCP](../spec/qcp.md)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
 
 使用`qosd config-root-ca`初始化root CA公钥到配置文件。
 
