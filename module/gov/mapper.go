@@ -329,6 +329,7 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
 		depositor.PlusQOS(originAmount.Sub(burnAmount).TruncateInt())
+		accountMapper.SetAccount(depositor)
 
 		// burn deposit
 		ecomapper.GetDistributionMapper(ctx).AddToCommunityFeePool(burnAmount.TruncateInt())
