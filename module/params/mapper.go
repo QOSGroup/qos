@@ -66,7 +66,7 @@ func (mapper Mapper) SetParamSet(params types.ParamSet) {
 
 func (mapper Mapper) GetParamSet(params types.ParamSet) {
 	for _, pair := range params.KeyValuePairs() {
-		mapper.Get(BuildParamKey(params.GetParamSpace(), []byte(pair.Key)), pair.Value)
+		mapper.Get(BuildParamKey(params.GetParamSpace(), pair.Key), pair.Value)
 	}
 }
 
@@ -77,7 +77,7 @@ func (mapper Mapper) SetParam(paramSpace string, key string, value interface{}) 
 func (mapper Mapper) GetParam(paramSpace string, key string) (value interface{}, exists bool) {
 	for _, pair := range mapper.paramSets[paramSpace].KeyValuePairs() {
 		if key == string(pair.Key) {
-			mapper.Get(BuildParamKey(paramSpace, []byte(pair.Key)), pair.Value)
+			mapper.Get(BuildParamKey(paramSpace, pair.Key), pair.Value)
 			return pair.Value, true
 		}
 	}
@@ -91,6 +91,14 @@ func (mapper Mapper) GetModuleParams(module string) (set types.ParamSet, exists 
 		return nil, false
 	}
 	mapper.GetParamSet(set)
+	return set, true
+}
+
+func (mapper Mapper) GetModuleParamSet(module string) (set types.ParamSet, exists bool) {
+	set, ok := mapper.paramSets[module]
+	if !ok {
+		return nil, false
+	}
 	return set, true
 }
 

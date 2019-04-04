@@ -167,7 +167,12 @@ func executeParameterChange(ctx context.Context, proposal gtypes.Proposal, logge
 	proposalContent := proposal.ProposalContent.(*gtypes.ParameterProposal)
 	paramMapper := params.GetMapper(ctx)
 	for _, param := range proposalContent.Params {
-		paramMapper.SetParam(param.Module, param.Key, param.Value)
+		paramSet, exists := paramMapper.GetModuleParamSet(param.Module)
+		if !exists {
+			panic(fmt.Sprintf("%s should exists", param.Module))
+		}
+		v, _ := paramSet.Validate(param.Key, param.Value)
+		paramMapper.SetParam(param.Module, param.Key, v)
 	}
 
 	logger.Info("execute parameterChange, proposal: %d", proposal.ProposalID)
