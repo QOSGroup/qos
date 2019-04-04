@@ -38,7 +38,7 @@ func GetGovMapper(ctx context.Context) *GovMapper {
 	return ctx.Mapper(GovMapperName).(*GovMapper)
 }
 
-func NewGovMapper(paramsMapper *pmapper.Mapper) *GovMapper {
+func NewGovMapper() *GovMapper {
 	var govMapper = GovMapper{}
 	govMapper.BaseMapper = mapper.NewBaseMapper(nil, GovMapperName)
 	return &govMapper
@@ -60,7 +60,7 @@ func (mapper GovMapper) SubmitProposal(ctx context.Context, content gtypes.Propo
 
 		Status:           gtypes.StatusDepositPeriod,
 		FinalTallyResult: gtypes.EmptyTallyResult(),
-		TotalDeposit:     content.GetDeposit(),
+		TotalDeposit:     0,
 		SubmitTime:       submitTime,
 		DepositEndTime:   submitTime.Add(depositPeriod),
 	}
@@ -321,7 +321,7 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 	defer depositsIterator.Close()
 	for ; depositsIterator.Valid(); depositsIterator.Next() {
 		deposit := &gtypes.Deposit{}
-		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(depositsIterator.Value(), deposit)
+		mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), deposit)
 
 		originAmount := types.NewDec(int64(deposit.Amount))
 		burnAmount := BurnRate.Mul(originAmount)
@@ -343,7 +343,7 @@ func (mapper GovMapper) DeleteDeposits(ctx context.Context, proposalID uint64) {
 	defer depositsIterator.Close()
 	for ; depositsIterator.Valid(); depositsIterator.Next() {
 		deposit := &gtypes.Deposit{}
-		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(depositsIterator.Value(), deposit)
+		mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), deposit)
 
 		// burn deposit
 		ecomapper.GetDistributionMapper(ctx).AddToCommunityFeePool(btypes.NewInt(int64(deposit.Amount)))

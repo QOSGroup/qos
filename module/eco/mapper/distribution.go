@@ -228,7 +228,7 @@ type DistributionMapper struct {
 
 var _ mapper.IMapper = (*DistributionMapper)(nil)
 
-func NewDistributionMapper(paramsMapper *pmapper.Mapper) *DistributionMapper {
+func NewDistributionMapper() *DistributionMapper {
 	var distributionMapper = DistributionMapper{}
 	distributionMapper.BaseMapper = mapper.NewBaseMapper(nil, types.DistributionMapperName)
 	return &distributionMapper

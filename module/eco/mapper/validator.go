@@ -18,7 +18,7 @@ type ValidatorMapper struct {
 
 var _ mapper.IMapper = (*ValidatorMapper)(nil)
 
-func NewValidatorMapper(paramsMapper *pmapper.Mapper) *ValidatorMapper {
+func NewValidatorMapper() *ValidatorMapper {
 	var validatorMapper = ValidatorMapper{}
 	validatorMapper.BaseMapper = mapper.NewBaseMapper(nil, ecotypes.ValidatorMapperName)
 	return &validatorMapper

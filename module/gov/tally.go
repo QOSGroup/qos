@@ -18,6 +18,7 @@ func tally(ctx context.Context, mapper *GovMapper, proposal gtypes.Proposal) (pa
 
 	totalVotingPower := btypes.ZeroInt()
 	totalSystemPower := btypes.ZeroInt()
+	validators = make(map[string]bool)
 	currValidators := make(map[string]ecotypes.Validator)
 
 	// 统计当前验证节点信息

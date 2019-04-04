@@ -24,7 +24,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 	for ; inactiveIterator.Valid(); inactiveIterator.Next() {
 		var proposalID uint64
 
-		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(inactiveIterator.Value(), &proposalID)
+		mapper.GetCodec().UnmarshalBinaryBare(inactiveIterator.Value(), &proposalID)
 		inactiveProposal, ok := mapper.GetProposal(ctx, proposalID)
 		if !ok {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
@@ -52,7 +52,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 	for ; activeIterator.Valid(); activeIterator.Next() {
 		var proposalID uint64
 
-		mapper.GetCodec().MustUnmarshalBinaryLengthPrefixed(activeIterator.Value(), &proposalID)
+		mapper.GetCodec().UnmarshalBinaryBare(activeIterator.Value(), &proposalID)
 		activeProposal, ok := mapper.GetProposal(ctx, proposalID)
 		if !ok {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))

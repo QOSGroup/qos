@@ -94,7 +94,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(approve.NewApproveMapper())
 
 	// Staking Validator mapper
-	app.RegisterMapper(ecomapper.NewValidatorMapper(paramsMapper))
+	app.RegisterMapper(ecomapper.NewValidatorMapper())
 
 	// Staking mapper
 	app.RegisterMapper(ecomapper.NewVoteInfoMapper())
@@ -103,13 +103,13 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	app.RegisterMapper(ecomapper.NewMintMapper())
 
 	//distributionMapper
-	app.RegisterMapper(ecomapper.NewDistributionMapper(paramsMapper))
+	app.RegisterMapper(ecomapper.NewDistributionMapper())
 
 	//delegationMapper
 	app.RegisterMapper(ecomapper.NewDelegationMapper())
 
 	//gov mapper
-	app.RegisterMapper(gov.NewGovMapper(paramsMapper))
+	app.RegisterMapper(gov.NewGovMapper())
 
 	//guardian mapper
 	app.RegisterMapper(guardian.NewGuardianMapper())

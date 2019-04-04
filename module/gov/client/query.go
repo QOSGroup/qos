@@ -137,7 +137,7 @@ func toProposalStatus(statusStr string) types.ProposalStatus {
 
 func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "vote [proposal-id] [voter-addr]",
+		Use:   "vote [proposal-id] [voter]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Query details of a single vote",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -148,11 +148,12 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			if _, err := btypes.GetAddrFromBech32(args[1]); err != nil {
-				return fmt.Errorf("voter-addr %s is not a valid address value", args[1])
+			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1]);
+			if  err != nil {
+				return fmt.Errorf("voter %s is not a valid address value", args[1])
 			}
 
-			path := gov.BuildQueryVotePath(pID, args[1])
+			path := gov.BuildQueryVotePath(pID, addr.String())
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -210,7 +211,7 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 
 func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "deposit [proposal-id] [depositer-addr]",
+		Use:   "deposit [proposal-id] [depositor]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Query details of a deposit",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -221,11 +222,12 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			if _, err := btypes.GetAddrFromBech32(args[1]); err != nil {
-				return fmt.Errorf("depositer-addr %s is not a valid address value", args[1])
+			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1]);
+			if  err != nil {
+				return fmt.Errorf("depositer %s is not a valid address value", args[1])
 			}
 
-			path := gov.BuildQueryDepositPath(pID, args[1])
+			path := gov.BuildQueryDepositPath(pID, addr.String())
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err

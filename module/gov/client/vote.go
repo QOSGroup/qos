@@ -41,7 +41,7 @@ func VoteCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().Uint64(flagProposalID, 0, "Proposal ID")
 	cmd.Flags().String(flagVoter, "", "Voter")
-	cmd.Flags().String(flagVoteOption, "", "Vote option")
+	cmd.Flags().String(flagVoteOption, "", "Vote option, possible values: Yes、Abstain、No、NoWithVeto")
 	cmd.MarkFlagRequired(flagProposalID)
 	cmd.MarkFlagRequired(flagVoter)
 	cmd.MarkFlagRequired(flagVoteOption)

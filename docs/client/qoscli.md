@@ -140,6 +140,17 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query delegations-to`         [验证节点委托列表](#验证节点委托列表)
 * `qoscli query delegations`            [代理用户委托列表](#代理用户委托列表)
 * `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
+* `qoscli query community-fee-pool`     [社区费池](#社区费池)         
+* `qoscli query proposal`               [提议查询](#提议查询)
+* `qoscli query proposals`              [提议列表](#提议列表)   
+* `qoscli query vote`                   [投票查询](#投票查询)
+* `qoscli query votes`                  [投票列表](#投票列表)
+* `qoscli query deposit`                [抵押查询](#抵押查询)
+* `qoscli query deposits`               [抵押列表](#抵押列表)
+* `qoscli query tally`                  [投票统计](#投票统计)
+* `qoscli query params`                 [参数查询](#参数查询)
+* `qoscli query guardian`               [特权账户查询](#特权账户查询)
+* `qoscli query guardians`              [特权账户列表](#特权账户列表)                        
 
 查询的具体指令将在各自模块进行介绍。
 
@@ -234,8 +245,13 @@ QOS支持以下几种交易类型：
 * `qoscli tx modify-compound`  [修改收益复投方式](#修改收益复投方式)
 * `qoscli tx unbond`           [解除委托](#解除委托)
 * `qoscli tx redelegate`       [变更委托验证节点](#变更委托验证节点)
+* `qoscli tx submit-proposal`  [提交提议](#提交提议)
+* `qoscli tx deposit`          [提议抵押](#提议抵押)
+* `qoscli tx vote`             [提议投票](#提议投票)
+* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
+* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
 
-分为**转账**、**预授权**、**联盟币**、**联盟链**、**验证节点**五大类。
+分为[转账](#转账（transfer）)、[预授权](#预授权（approve）)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
 
 ### 转账（transfer）
 
@@ -800,6 +816,20 @@ $ qoscli query delegations Sansa
 ]
 ```
 
+#### 社区费池
+
+`qoscli query community-fee-pool`
+
+社区费池查询：
+```bash
+$ qoscli query community-fee-pool
+```
+
+查询结果：
+```bash
+"27211098"
+```
+
 #### 委托收益查询
 
 `qoscli query delegator-income --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address`
@@ -879,6 +909,445 @@ $ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
 `Sansa`将代理给`Arya`的10个QOS转移到`John`操作的验证节点上：
 ```bash
 $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tokens 10
+```
+
+### 治理（governance）
+
+* `qoscli tx submit-proposal`  [提交提议](#提交提议)
+* `qoscli query proposal`      [提议查询](#提议查询)
+* `qoscli query proposals`     [提议列表](#提议列表)   
+* `qoscli tx deposit`          [提议抵押](#提议抵押)
+* `qoscli query deposit`       [抵押查询](#抵押查询)
+* `qoscli query deposits`      [抵押列表](#抵押列表)
+* `qoscli tx vote`             [提议投票](#提议投票)
+* `qoscli query vote`          [投票查询](#投票查询)
+* `qoscli query votes`         [投票列表](#投票列表)
+* `qoscli query tally`         [投票统计](#投票统计)
+* `qoscli query params`        [参数查询](#参数查询)  
+* `qoscli query guardian`      [特权账户查询](#特权账户查询)
+* `qoscli query guardians`     [特权账户列表](#特权账户列表) 
+* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
+* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
+
+#### 提交提议
+
+`qoscli tx submit-proposal 
+    --title <proposal_title> 
+    --proposal-type <proposal_type> 
+    --proposer <proposer_key_name_or_account_address> 
+    --deposit <deposit_amount_of_qos> 
+    --description <description>`
+
+主要参数：
+
+必填参数：
+
+- `--title`             标题
+- `--proposal-type`     提议类型：`Text`、`ParameterChange`、`TaxUsage`
+- `--proposer`          提议账户，账户地址或密钥库中密钥名字
+- `--deposit`           提议押金，不能小于`MinDeposit`的三分之一
+- `--description`       描述信息
+
+`TaxUsage`类型提议特有参数：
+
+- `--dest-address`      目标地址，用于接收QOS
+- `--percent`           社区费池提取比例，小数0~1
+
+`ParameterChange`类型提议特有参数：
+
+- `--params`            参数列表，格式：'module:key_name:value,module:key_name:value，如：gov:min_deposit:10000
+
+
+`Arya`提交一个文本提议：
+```bash
+$ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer Arya --deposit 10000000 --description 'this is the description'
+```
+
+`Arya`提交一个参数修改提议：
+```bash
+$ qoscli tx submit-proposal --title 'update qos' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
+```
+
+假设`Arya`在QOS初始化时已经通过[添加特权账户](qosd.md#添加特权账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
+```bash
+$ qoscli tx submit-proposal --title 'update qos' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
+```
+
+#### 提议查询
+
+`qoscli query proposal <proposal-id>`
+
+查询`ProposalID`为1的提议：
+```bash
+$ qoscli query proposal 1 --indent
+```
+
+查询结果：
+```bash
+{
+  "proposal_content": {
+    "type": "gov/TextProposal",
+    "value": {
+      "title": "update qos",
+      "description": "this is the description",
+      "deposit": "100000000"
+    }
+  },
+  "proposal_id": "1",
+  "proposal_status": 2,
+  "final_tally_result": {
+    "yes": "0",
+    "abstain": "0",
+    "no": "0",
+    "no_with_veto": "0"
+  },
+  "submit_time": "2019-04-03T08:20:34.99523986Z",
+  "deposit_end_time": "2019-04-05T08:20:34.99523986Z",
+  "total_deposit": "200000000",
+  "voting_start_time": "2019-04-03T08:20:34.99523986Z",
+  "voting_start_height": "700",
+  "voting_end_time": "2019-04-05T08:20:34.99523986Z"
+}
+```
+
+#### 提议列表
+
+`qoscli query proposals`
+
+查询所有提议：
+```bash
+$ qoscli query proposals
+```
+
+查询结果：
+```bash
+[
+  {
+    "proposal_content": {
+      "type": "gov/TextProposal",
+      "value": {
+        "title": "update qos",
+        "description": "this is the description",
+        "deposit": "100000000"
+      }
+    },
+    "proposal_id": "1",
+    "proposal_status": 2,
+    "final_tally_result": {
+      "yes": "0",
+      "abstain": "0",
+      "no": "0",
+      "no_with_veto": "0"
+    },
+    "submit_time": "2019-04-03T08:20:34.99523986Z",
+    "deposit_end_time": "2019-04-05T08:20:34.99523986Z",
+    "total_deposit": "200000000",
+    "voting_start_time": "2019-04-03T08:20:34.99523986Z",
+    "voting_start_height": "700",
+    "voting_end_time": "2019-04-05T08:20:34.99523986Z"
+  }
+]
+```
+
+#### 提议抵押
+
+提议在抵押、投票阶段都可以执行下面的抵押交易：
+
+`qoscli tx deposit --proposal-id <proposal_id> --depositor <depositor_key_name_or_account_address> --amount <amount_of_qos>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+- `--depositor`         抵押账户，地址或密钥库名字
+- `--amount`            抵押QOS数量
+
+`Arya`抵押100000个QOS到3号提议：
+```bash
+$ qoscli tx deposit --proposal-id 1 --depositor Arya --amount 100000
+```
+
+#### 抵押查询
+
+`qoscli query deposit <proposal-id> <depositer>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+- `--depositor`         抵押账户，地址或密钥库名字
+
+查询`Arya`在编号为1的提议上的抵押：
+```bash
+$ qoscli query deposit 1 Arya --indent
+```
+
+查询结果：
+```bash
+{
+  "depositor": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "proposal_id": "1",
+  "amount": "100000000"
+}
+```
+
+#### 抵押列表
+
+`qoscli query deposits <proposal-id>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+
+查询编号为1的提议上的所有抵押：
+```bash
+$ qoscli query deposits 1 --indent
+```
+
+查询结果：
+```bash
+[
+  {
+    "depositor": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "proposal_id": "1",
+    "amount": "100000000"
+  }
+]
+```
+
+#### 提议投票
+
+进入投票阶段的提议可通过下面指令进行投票操作：
+
+`qoscli tx vote --proposal-id <proposal_id> --voter <voter_key_name_or_account_address> --option <vote_option>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+- `--voter`             投票账户，地址或密钥库名字
+- `--option`            投票选项，可选值：`Yes`,`Abstain`,`No`,`NoWithVeto`
+
+`Arya`给1号提议投票`Yes`：
+```bash
+$ qoscli tx vote --proposal-id 1 --voter Arya --option Yes
+```
+
+#### 投票查询
+
+`qoscli query vote <proposal-id> <voter>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+- `--voter`             投票账户，地址或密钥库名字
+
+查询`Arya`在编号为1的提议上的投票信息：
+```bash
+$ qoscli query vote 1 Arya --indent
+```
+
+查询结果：
+```bash
+{
+  "voter": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "proposal_id": "1",
+  "option": "Yes"
+}
+```
+
+#### 投票列表
+
+`qoscli query votes <proposal-id>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+
+查询编号为1的提议上的所有投票：
+```bash
+$ qoscli query votes 1 --indent
+```
+
+查询结果：
+```bash
+[
+  {
+    "voter": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "proposal_id": "1",
+    "option": "Yes"
+  }
+]
+```
+
+#### 投票统计
+
+`qoscli query tally <proposal-id>`
+
+主要参数：
+
+- `--proposal-id`       提议ID
+
+查询编号为1的提议上实时统计结果：
+```bash
+$ qoscli query tally 1 --indent
+```
+
+查询结果：
+```bash
+{
+  "yes": "100",
+  "abstain": "0",
+  "no": "0",
+  "no_with_veto": "0"
+}
+```
+
+#### 参数查询
+
+`qoscli query params --module <module> --key <key_name>`
+
+主要参数：
+
+- `--module`       模块名称：`stake`、`gov`、`distribution`
+- `--key`          参数名
+
+查询所有参数：
+```bash
+$ qoscli query params --indent
+[
+  {
+    "type": "stake",
+    "value": {
+      "max_validator_cnt": 10,
+      "voting_status_len": 100,
+      "voting_status_least": 50,
+      "survival_secs": 600,
+      "unbond_return_height": 10
+    }
+  },
+  {
+    "type": "distribution",
+    "value": {
+      "proposer_reward_rate": {
+        "value": "0.040000000000000000"
+      },
+      "community_reward_rate": {
+        "value": "0.010000000000000000"
+      },
+      "validator_commission_rate": {
+        "value": "0.010000000000000000"
+      },
+      "delegator_income_period_height": "10",
+      "gas_per_unit_cost": "10"
+    }
+  },
+  {
+    "type": "gov",
+    "value": {
+      "min_deposit": "10000000",
+      "max_deposit_period": "172800000000000",
+      "voting_period": "172800000000000",
+      "quorum": "0.334000000000000000",
+      "threshold": "0.500000000000000000",
+      "veto": "0.334000000000000000",
+      "penalty": "0.000000000000000000"
+    }
+  }
+]
+```
+
+查询`gov`模块下参数：
+```bash
+$ qoscli query params --module gov --indent
+{
+  "type": "gov",
+  "value": {
+    "min_deposit": "10000000",
+    "max_deposit_period": "172800000000000",
+    "voting_period": "172800000000000",
+    "quorum": "0.334000000000000000",
+    "threshold": "0.500000000000000000",
+    "veto": "0.334000000000000000",
+    "penalty": "0.000000000000000000"
+  }
+}
+```
+
+查询`gov`模块下`min_deposit`参数值：
+```bash
+$ qoscli query params --module gov --key min_deposit
+"10000000"
+```
+
+#### 特权账户查询
+
+`qoscli query guardian <guardian_key_name_or_account_address>`
+
+查询`Arya`特权信息：
+```bash
+$ qoscli query guardian Arya --indent
+```
+
+查询结果：
+```bash
+{
+  "description": "Arya",
+  "guardian_type": 1,
+  "address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "creator": "address1ah9uz0"
+}
+```
+
+#### 特权账户列表
+
+`qoscli query guardians`
+
+查询所有特权账户：
+```bash
+$ qoscli query guardians --indent
+```
+
+查询结果：
+```bash
+[
+  {
+    "description": "Arya",
+    "guardian_type": 1,
+    "address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "creator": "address1ah9uz0"
+  }
+]
+```
+
+#### 添加特权账户
+
+在`genesis.json`中配置的特权账户可通过下面的添加指令添加新的特权账户：
+
+`qoscli tx add-guardian --address <new_guardian_key_name_or_account_address> --creator <creator_key_name_or_account_address> --description <description>`
+
+主要参数：
+
+- `--address`         新特权账户，账户地址或密钥库中密钥名字
+- `--creator`         创建账户，账户地址或密钥库中密钥名字
+- `--description`     描述
+
+`Arya`添加`Sansa`为特权账户：
+```bash
+$ qoscli tx add-guardian --address Sansa --creator Arya --description 'set Sansa to be a guardian'
+```
+
+#### 删除特权账户
+
+在`genesis.json`中配置的特权账户可通过下面的指令删除非`genesis.json`中配置的特权账户：
+
+`qoscli tx delete-guardian --address <new_guardian_key_name_or_account_address> --deleted-by <delete_operator_key_name_or_account_address>`
+
+主要参数：
+
+- `--address`         新特权账户，账户地址或密钥库中密钥名字
+- `--deleted-by`      删除操作账户，账户地址或密钥库中密钥名字
+
+`Arya`将`Sansa`从特权账户中删除：
+```bash
+$ qoscli tx delete-guardian --address Sansa --deleted-by Arya
 ```
 
 ## tendermint

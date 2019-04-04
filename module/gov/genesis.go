@@ -9,7 +9,7 @@ import (
 
 const (
 	// Default period for deposits & voting
-	DefaultPeriod = 86400 * 2 * time.Second // 2 days
+	DefaultPeriod = /*86400 **/ 2 * time.Minute // 2 days
 )
 
 type GenesisState struct {
@@ -29,7 +29,7 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		StartingProposalID: 1,
 		Params: Params{
-			MinDeposit:       10000000,
+			MinDeposit:       10,
 			MaxDepositPeriod: DefaultPeriod,
 			VotingPeriod:     DefaultPeriod,
 			Quorum:           types.NewDecWithPrec(334, 3),
