@@ -42,7 +42,11 @@ func NewMapper() *Mapper {
 }
 
 func (mapper Mapper) Validate(paramSpace string, key string, value string) btypes.Error {
-	_, err := mapper.paramSets[paramSpace].Validate(key, value)
+	module, ok := mapper.paramSets[paramSpace]
+	if !ok {
+		return ErrInvalidParam("unknown module")
+	}
+	_, err := module.Validate(key, value)
 	return err
 }
 

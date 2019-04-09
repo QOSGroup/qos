@@ -29,14 +29,8 @@ func (v Votes) String() string {
 	return out
 }
 
-// Returns whether 2 votes are equal
 func (v Vote) Equals(comp Vote) bool {
 	return v.Voter.EqualsTo(comp.Voter) && v.ProposalID == comp.ProposalID && v.Option == comp.Option
-}
-
-// Returns whether a vote is empty
-func (v Vote) Empty() bool {
-	return v.Equals(Vote{})
 }
 
 // Type that represents VoteOption as a byte

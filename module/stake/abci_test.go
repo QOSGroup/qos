@@ -146,7 +146,7 @@ func defaultContext() context.Context {
 	accountMapper := account.NewAccountMapper(cdc, types.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper
 
-	validatorMapper := stakemapper.NewValidatorMapper(paramsMapper)
+	validatorMapper := stakemapper.NewValidatorMapper()
 	validatorMapper.SetCodec(cdc)
 	mapperMap[staketypes.ValidatorMapperName] = validatorMapper
 

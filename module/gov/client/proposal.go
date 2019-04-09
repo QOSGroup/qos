@@ -42,7 +42,7 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 
 				switch proposalType {
 				case gtypes.ProposalTypeText:
-					return gov.NewTxProposal(title, description, proposalType, proposer, uint64(deposit)), nil
+					return gov.NewTxProposal(title, description, proposer, uint64(deposit)), nil
 				case gtypes.ProposalTypeTaxUsage:
 					destAddress, err := qcliacc.GetAddrFromFlag(ctx, flagDestAddress)
 					if err != nil {
@@ -53,13 +53,13 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 						return nil, errors.New("deposit must be positive")
 					}
 					ps, _ := types.NewDecFromStr(fmt.Sprintf("%f", percent))
-					return gov.NewTxTaxUsage(title, description, proposalType, proposer, uint64(deposit), destAddress, ps), nil
+					return gov.NewTxTaxUsage(title, description, proposer, uint64(deposit), destAddress, ps), nil
 				case gtypes.ProposalTypeParameterChange:
 					params, err := parseParams(viper.GetString(flagParams))
 					if err != nil {
 						return nil, err
 					}
-					return gov.NewTxParameterChange(title, description, proposalType, proposer, uint64(deposit), params), nil
+					return gov.NewTxParameterChange(title, description, proposer, uint64(deposit), params), nil
 				}
 
 				return nil, errors.New("unknown proposal-type")

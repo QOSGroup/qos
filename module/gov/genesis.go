@@ -36,15 +36,7 @@ func NewGenesisState(startingProposalID uint64, params Params) GenesisState {
 func DefaultGenesisState() GenesisState {
 	return GenesisState{
 		StartingProposalID: 1,
-		Params: Params{
-			MinDeposit:       10,
-			MaxDepositPeriod: DefaultPeriod,
-			VotingPeriod:     DefaultPeriod,
-			Quorum:           types.NewDecWithPrec(334, 3),
-			Threshold:        types.NewDecWithPrec(5, 1),
-			Veto:             types.NewDecWithPrec(334, 3),
-			Penalty:          types.ZeroDec(),
-		},
+		Params:             DefaultParams(),
 	}
 }
 
@@ -82,7 +74,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 		panic(err)
 	}
 	mapper := GetGovMapper(ctx)
-	err = mapper.setInitialProposalID(ctx, data.StartingProposalID)
+	err = mapper.setInitialProposalID(data.StartingProposalID)
 	if err != nil {
 		panic(err)
 	}
@@ -95,7 +87,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 			mapper.InsertActiveProposalQueue(proposal.Proposal.VotingEndTime, proposal.Proposal.ProposalID)
 		}
 		for _, deposit := range proposal.Deposits {
-			mapper.setDeposit(ctx, deposit.ProposalID, deposit.Depositor, deposit)
+			mapper.setDeposit(deposit.ProposalID, deposit.Depositor, deposit)
 		}
 		for _, vote := range proposal.Votes {
 			mapper.setVote(vote.ProposalID, vote.Voter, vote)
@@ -145,7 +137,7 @@ func PrepForZeroHeightGenesis(ctx context.Context) {
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
 		mapper.RefundDeposits(ctx, proposalID)
-		mapper.DeleteProposal(ctx, proposalID)
+		mapper.DeleteProposal(proposalID)
 	}
 
 	proposals = mapper.GetProposalsFiltered(ctx, nil, nil, gtypes.StatusVotingPeriod, 0)
@@ -153,6 +145,6 @@ func PrepForZeroHeightGenesis(ctx context.Context) {
 		proposalID := proposal.ProposalID
 		mapper.RefundDeposits(ctx, proposalID)
 		mapper.DeleteVotes(proposalID)
-		mapper.DeleteProposal(ctx, proposalID)
+		mapper.DeleteProposal(proposalID)
 	}
 }

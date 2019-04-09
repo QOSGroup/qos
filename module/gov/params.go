@@ -38,6 +38,18 @@ type Params struct {
 	Penalty   types.Dec `json:"penalty"`   //  Penalty if validator does not vote
 }
 
+func DefaultParams() Params {
+	return Params{
+		MinDeposit:       10,
+		MaxDepositPeriod: DefaultPeriod,
+		VotingPeriod:     DefaultPeriod,
+		Quorum:           types.NewDecWithPrec(334, 3),
+		Threshold:        types.NewDecWithPrec(5, 1),
+		Veto:             types.NewDecWithPrec(334, 3),
+		Penalty:          types.ZeroDec(),
+	}
+}
+
 func (params *Params) KeyValuePairs() ptypes.KeyValuePairs {
 	return ptypes.KeyValuePairs{
 		{KeyMinDeposit, &params.MinDeposit},
@@ -52,14 +64,19 @@ func (params *Params) KeyValuePairs() ptypes.KeyValuePairs {
 
 func (params *Params) Validate(key string, value string) (interface{}, btypes.Error) {
 	switch key {
-	case string(KeyMinDeposit),
-		string(KeyMaxDepositPeriod),
-		string(KeyVotingPeriod):
+	case string(KeyMinDeposit):
 		v, err := strconv.ParseUint(value, 10, 64)
 		if err != nil {
 			return nil, perr.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
 		return v, nil
+	case string(KeyMaxDepositPeriod),
+		string(KeyVotingPeriod):
+		v, err := strconv.ParseUint(value, 10, 64)
+		if err != nil {
+			return nil, perr.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
+		}
+		return time.Duration(v), nil
 	case string(KeyQuorum), string(KeyThreshold), string(KeyVeto), string(KeyPenalty):
 		v, err := types.NewDecFromStr(value)
 		if err != nil {

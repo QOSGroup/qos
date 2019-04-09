@@ -17,7 +17,6 @@ func (d Deposit) String() string {
 		d.Depositor, d.ProposalID, d.Amount)
 }
 
-// Deposits is a collection of depoist
 type Deposits []Deposit
 
 func (d Deposits) String() string {
@@ -31,12 +30,6 @@ func (d Deposits) String() string {
 	return out
 }
 
-// Returns whether 2 deposits are equal
 func (d Deposit) Equals(comp Deposit) bool {
 	return d.Depositor.EqualsTo(comp.Depositor) && d.ProposalID == comp.ProposalID && d.Amount == comp.Amount
-}
-
-// Returns whether a deposit is empty
-func (d Deposit) Empty() bool {
-	return d.Equals(Deposit{})
 }

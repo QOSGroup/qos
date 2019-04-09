@@ -30,7 +30,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
 
-		mapper.DeleteProposal(ctx, proposalID)
+		mapper.DeleteProposal(proposalID)
 		mapper.DeleteDeposits(ctx, proposalID) // delete any associated deposits (burned)
 
 		resTags = resTags.AppendTag(ProposalID, types.Uint64ToBigEndian(proposalID))

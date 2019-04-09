@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
@@ -62,6 +63,72 @@ func ValidProposalStatus(status ProposalStatus) bool {
 	return false
 }
 
+// Turns VoteOption byte to String
+func (ps ProposalStatus) String() string {
+	switch ps {
+	case StatusDepositPeriod:
+		return "Deposit"
+	case StatusVotingPeriod:
+		return "Voting"
+	case StatusPassed:
+		return "Passed"
+	case StatusRejected:
+		return "Rejected"
+	default:
+		return ""
+	}
+}
+
+// String to proposalStatus byte.  Returns ff if invalid.
+func ProposalStatusFromString(str string) (ProposalStatus, error) {
+	switch strings.ToLower(str) {
+	case "deposit":
+		return StatusDepositPeriod, nil
+	case "voting":
+		return StatusVotingPeriod, nil
+	case "passed":
+		return StatusPassed, nil
+	case "rejected":
+		return StatusRejected, nil
+	case "":
+		return StatusNil, nil
+	default:
+		return ProposalStatus(0xff), fmt.Errorf("'%s' is not a valid proposal status", str)
+	}
+}
+
+// Marshal needed for protobuf compatibility
+func (ps ProposalStatus) Marshal() ([]byte, error) {
+	return []byte{byte(ps)}, nil
+}
+
+// Unmarshal needed for protobuf compatibility
+func (ps *ProposalStatus) Unmarshal(data []byte) error {
+	*ps = ProposalStatus(data[0])
+	return nil
+}
+
+// Marshals to JSON using string
+func (ps ProposalStatus) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ps.String())
+}
+
+// Unmarshals from JSON assuming Bech32 encoding
+func (ps *ProposalStatus) UnmarshalJSON(data []byte) error {
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		return err
+	}
+
+	bz2, err := ProposalStatusFromString(s)
+	if err != nil {
+		return err
+	}
+	*ps = bz2
+	return nil
+}
+
 // Tally Results
 type TallyResult struct {
 	Yes        int64 `json:"yes"`
@@ -79,17 +146,10 @@ func NewTallyResult(yes, abstain, no, noWithVeto int64) TallyResult {
 	}
 }
 
-// checks if two proposals are equal
 func EmptyTallyResult() TallyResult {
-	return TallyResult{
-		Yes:        0,
-		Abstain:    0,
-		No:         0,
-		NoWithVeto: 0,
-	}
+	return NewTallyResult(0, 0, 0, 0)
 }
 
-// checks if two proposals are equal
 func (tr TallyResult) Equals(comp TallyResult) bool {
 	return tr.Yes == comp.Yes &&
 		tr.Abstain == comp.Abstain &&
@@ -108,7 +168,6 @@ func (tr TallyResult) String() string {
 // Type that represents Proposal Type as a byte
 type ProposalType byte
 
-//nolint
 const (
 	ProposalTypeNil             ProposalType = 0x00
 	ProposalTypeText            ProposalType = 0x01

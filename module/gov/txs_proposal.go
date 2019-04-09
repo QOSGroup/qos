@@ -24,11 +24,11 @@ type TxProposal struct {
 	InitialDeposit uint64              `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
-func NewTxProposal(title, description string, proposalType gtypes.ProposalType, proposer btypes.Address, deposit uint64) *TxProposal {
+func NewTxProposal(title, description string, proposer btypes.Address, deposit uint64) *TxProposal {
 	return &TxProposal{
 		Title:          title,
 		Description:    description,
-		ProposalType:   proposalType,
+		ProposalType:   gtypes.ProposalTypeText,
 		Proposer:       proposer,
 		InitialDeposit: deposit,
 	}
@@ -53,8 +53,12 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	}
 
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	account := accountMapper.GetAccount(tx.Proposer).(*types.QOSAccount)
-	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
+	account := accountMapper.GetAccount(tx.Proposer)
+	if account == nil {
+		return ErrInvalidInput("proposer not exists")
+	}
+
+	if !account.(*types.QOSAccount).EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
 		return ErrInvalidInput("proposer has no enough qos")
 	}
 
@@ -108,12 +112,12 @@ type TxTaxUsage struct {
 	Percent     types.Dec      `json:"percent"`
 }
 
-func NewTxTaxUsage(title, description string, proposalType gtypes.ProposalType, proposer btypes.Address, deposit uint64, destAddress btypes.Address, percent types.Dec) *TxTaxUsage {
+func NewTxTaxUsage(title, description string, proposer btypes.Address, deposit uint64, destAddress btypes.Address, percent types.Dec) *TxTaxUsage {
 	return &TxTaxUsage{
 		TxProposal: TxProposal{
 			Title:          title,
 			Description:    description,
-			ProposalType:   proposalType,
+			ProposalType:   gtypes.ProposalTypeTaxUsage,
 			Proposer:       proposer,
 			InitialDeposit: deposit,
 		},
@@ -190,12 +194,12 @@ type TxParameterChange struct {
 	Params []gtypes.Param `json:"params"`
 }
 
-func NewTxParameterChange(title, description string, proposalType gtypes.ProposalType, proposer btypes.Address, deposit uint64, params []gtypes.Param) *TxParameterChange {
+func NewTxParameterChange(title, description string, proposer btypes.Address, deposit uint64, params []gtypes.Param) *TxParameterChange {
 	return &TxParameterChange{
 		TxProposal: TxProposal{
 			Title:          title,
 			Description:    description,
-			ProposalType:   proposalType,
+			ProposalType:   gtypes.ProposalTypeParameterChange,
 			Proposer:       proposer,
 			InitialDeposit: deposit,
 		},

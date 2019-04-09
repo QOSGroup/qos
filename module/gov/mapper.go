@@ -46,7 +46,7 @@ func NewGovMapper() *GovMapper {
 
 // Submit proposal
 func (mapper GovMapper) SubmitProposal(ctx context.Context, content gtypes.ProposalContent) (proposal gtypes.Proposal, err btypes.Error) {
-	proposalID, err := mapper.getNewProposalID(ctx)
+	proposalID, err := mapper.getNewProposalID()
 	if err != nil {
 		return
 	}
@@ -82,7 +82,7 @@ func (mapper GovMapper) SetProposal(proposal gtypes.Proposal) {
 }
 
 // Delete proposal
-func (mapper GovMapper) DeleteProposal(ctx context.Context, proposalID uint64) {
+func (mapper GovMapper) DeleteProposal(proposalID uint64) {
 	proposal, ok := mapper.GetProposal(proposalID)
 	if !ok {
 		panic("DeleteProposal cannot fail to GetProposal")
@@ -155,7 +155,7 @@ func (mapper GovMapper) GetProposals() []gtypes.Proposal {
 }
 
 // Set the initial proposal ID
-func (mapper GovMapper) setInitialProposalID(ctx context.Context, proposalID uint64) btypes.Error {
+func (mapper GovMapper) setInitialProposalID(proposalID uint64) btypes.Error {
 	exists := mapper.Get(KeyNextProposalID, &proposalID)
 	if exists {
 		return ErrInvalidGenesis("Initial ProposalID already set")
@@ -165,7 +165,7 @@ func (mapper GovMapper) setInitialProposalID(ctx context.Context, proposalID uin
 }
 
 // Get the last used proposal ID
-func (mapper GovMapper) GetLastProposalID(ctx context.Context) (proposalID uint64) {
+func (mapper GovMapper) GetLastProposalID() (proposalID uint64) {
 	proposalID, err := mapper.peekCurrentProposalID()
 	if err != nil {
 		return 0
@@ -175,7 +175,7 @@ func (mapper GovMapper) GetLastProposalID(ctx context.Context) (proposalID uint6
 }
 
 // Gets the next available ProposalID and increments it
-func (mapper GovMapper) getNewProposalID(ctx context.Context) (proposalID uint64, err btypes.Error) {
+func (mapper GovMapper) getNewProposalID() (proposalID uint64, err btypes.Error) {
 	exists := mapper.Get(KeyNextProposalID, &proposalID)
 	if !exists {
 		return 0, ErrInvalidGenesis("InitialProposalID never set")
@@ -209,7 +209,10 @@ func (mapper GovMapper) activateVotingPeriod(ctx context.Context, proposal gtype
 
 // Save validator set when proposal entering voting period.
 func (mapper GovMapper) saveValidatorSet(ctx context.Context, proposalID uint64) {
-	mapper.Set(KeyVotingPeriodValidators(proposalID), ecomapper.GetValidatorMapper(ctx).GetActiveValidatorSet(false))
+	validators := ecomapper.GetValidatorMapper(ctx).GetActiveValidatorSet(false)
+	if validators != nil {
+		mapper.Set(KeyVotingPeriodValidators(proposalID), validators)
+	}
 }
 
 func (mapper GovMapper) GetValidatorSet(proposalID uint64) (validators []btypes.Address, exists bool) {
@@ -290,7 +293,7 @@ func (mapper GovMapper) GetDeposit(proposalID uint64, depositorAddr btypes.Addre
 	return deposit, true
 }
 
-func (mapper GovMapper) setDeposit(ctx context.Context, proposalID uint64, depositorAddr btypes.Address, deposit gtypes.Deposit) {
+func (mapper GovMapper) setDeposit(proposalID uint64, depositorAddr btypes.Address, deposit gtypes.Deposit) {
 	mapper.Set(KeyDeposit(proposalID, depositorAddr), deposit)
 }
 
@@ -322,10 +325,10 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 	currDeposit, found := mapper.GetDeposit(proposalID, depositorAddr)
 	if !found {
 		newDeposit := gtypes.Deposit{depositorAddr, proposalID, depositAmount}
-		mapper.setDeposit(ctx, proposalID, depositorAddr, newDeposit)
+		mapper.setDeposit(proposalID, depositorAddr, newDeposit)
 	} else {
 		currDeposit.Amount = currDeposit.Amount + depositAmount
-		mapper.setDeposit(ctx, proposalID, depositorAddr, currDeposit)
+		mapper.setDeposit(proposalID, depositorAddr, currDeposit)
 	}
 
 	return nil, activatedVotingPeriod
