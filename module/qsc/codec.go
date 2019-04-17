@@ -16,6 +16,6 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&TxCreateQSC{}, "qos/txs/TxCreateQSC", nil)
-	cdc.RegisterConcrete(&TxIssueQSC{}, "qos/txs/TxIssueQSC", nil)
+	cdc.RegisterConcrete(&TxCreateQSC{}, "qsc/txs/TxCreateQSC", nil)
+	cdc.RegisterConcrete(&TxIssueQSC{}, "qsc/txs/TxIssueQSC", nil)
 }

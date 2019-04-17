@@ -14,9 +14,9 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&TxCreateApprove{}, "qos/txs/TxCreateApprove", nil)
-	cdc.RegisterConcrete(&TxIncreaseApprove{}, "qos/txs/TxIncreaseApprove", nil)
-	cdc.RegisterConcrete(&TxDecreaseApprove{}, "qos/txs/TxDecreaseApprove", nil)
-	cdc.RegisterConcrete(&TxUseApprove{}, "qos/txs/TxUseApprove", nil)
-	cdc.RegisterConcrete(&TxCancelApprove{}, "qos/txs/TxCancelApprove", nil)
+	cdc.RegisterConcrete(&TxCreateApprove{}, "approve/txs/TxCreateApprove", nil)
+	cdc.RegisterConcrete(&TxIncreaseApprove{}, "approve/txs/TxIncreaseApprove", nil)
+	cdc.RegisterConcrete(&TxDecreaseApprove{}, "approve/txs/TxDecreaseApprove", nil)
+	cdc.RegisterConcrete(&TxUseApprove{}, "approve/txs/TxUseApprove", nil)
+	cdc.RegisterConcrete(&TxCancelApprove{}, "approve/txs/TxCancelApprove", nil)
 }
