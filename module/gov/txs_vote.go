@@ -56,6 +56,10 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionVoteProposal,
+		TagProposalID, tx.ProposalID,
+		TagVoter, tx.Voter.String())
+
 	return
 }
 

@@ -43,6 +43,8 @@ func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 
 //创建或新增委托
 func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{Code: btypes.CodeOK}
+
 	e := eco.GetEco(ctx)
 
 	validator, _ := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
@@ -51,7 +53,11 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateDelegation,
+		TagValidator, validator.GetValidatorAddress(),
+		TagDelegator, tx.Delegator)
+
+	return
 }
 
 func (tx *TxCreateDelegation) GetSigner() []btypes.Address {
@@ -108,6 +114,7 @@ func (tx *TxModifyCompound) ValidateData(ctx context.Context) (err error) {
 
 //修改收益单复利
 func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{Code: btypes.CodeOK}
 
 	e := eco.GetEco(ctx)
 
@@ -117,7 +124,11 @@ func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, cro
 	info.IsCompound = tx.IsCompound
 	e.DelegationMapper.SetDelegationInfo(info)
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionModifyCompound,
+		TagValidator, validator.GetValidatorAddress(),
+		TagDelegator, tx.Delegator)
+
+	return
 }
 
 func (tx *TxModifyCompound) GetSigner() []btypes.Address {
@@ -179,6 +190,8 @@ func (tx *TxUnbondDelegation) ValidateData(ctx context.Context) error {
 
 //unbond delegator tokens
 func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{Code: btypes.CodeOK}
+
 	e := eco.GetEco(ctx)
 
 	validator, _ := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
@@ -186,7 +199,11 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionUnbondDelegation,
+		TagValidator, validator.GetValidatorAddress(),
+		TagDelegator, tx.Delegator)
+
+	return
 }
 
 func (tx *TxUnbondDelegation) GetSigner() []btypes.Address {
@@ -249,6 +266,8 @@ func (tx *TxCreateReDelegation) ValidateData(ctx context.Context) error {
 
 //delegate from one to another
 func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{Code: btypes.CodeOK}
+
 	e := eco.GetEco(ctx)
 
 	fromValidator, _ := e.ValidatorMapper.GetValidatorByOwner(tx.FromValidatorOwner)
@@ -268,7 +287,12 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateReDelegation,
+		TagValidator, fromValidator.GetValidatorAddress(),
+		TagNewValidator, toValidator.GetValidatorAddress(),
+		TagDelegator, tx.Delegator)
+
+	return
 
 }
 

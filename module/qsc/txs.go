@@ -110,6 +110,10 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 		}
 	}
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateQsc,
+		TagQsc, qscInfo.Name,
+		TagCreator, tx.Creator.String())
+
 	return
 }
 
@@ -191,6 +195,10 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	banker := accountMapper.GetAccount(tx.Banker).(*types.QOSAccount)
 	banker.MustPlusQSCs(types.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
 	accountMapper.SetAccount(banker)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionIssueQsc,
+		TagQsc, tx.QSCName,
+		TagBanker, tx.Banker.String())
 
 	return
 }

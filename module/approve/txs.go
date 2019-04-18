@@ -52,6 +52,8 @@ func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, cross
 	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	mapper.SaveApprove(tx.Approve)
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+
 	return
 }
 
@@ -102,6 +104,8 @@ func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 
 	// 保存更新
 	mapper.SaveApprove(approve)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionIncreaseApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
 
 	return
 }
@@ -157,6 +161,8 @@ func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 
 	// 保存更新
 	mapper.SaveApprove(approve)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDecreaseApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
 
 	return
 }
@@ -234,6 +240,8 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	// 保存更新
 	approveMapper.SaveApprove(approve.Minus(tx.QOS, tx.QSCs))
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionUseApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+
 	return
 }
 
@@ -280,6 +288,8 @@ func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, cross
 
 	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	mapper.DeleteApprove(tx.From, tx.To)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCancelApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
 
 	return
 }

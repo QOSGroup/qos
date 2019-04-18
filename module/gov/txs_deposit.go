@@ -62,6 +62,10 @@ func (tx TxDeposit) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDepositProposal,
+		TagProposalID, tx.ProposalID,
+		TagDepositor, tx.Depositor.String())
+
 	return
 }
 

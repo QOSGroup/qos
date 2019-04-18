@@ -81,6 +81,11 @@ func (tx TxProposal) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
+		TagProposalID, proposal.ProposalID,
+		TagProposer, tx.Proposer.String(),
+		TagProposalType, tx.ProposalType)
+
 	return
 }
 
@@ -164,6 +169,11 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
+		TagProposalID, proposal.ProposalID,
+		TagProposer, tx.Proposer.String(),
+		TagProposalType, tx.ProposalType)
+
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
 	return
@@ -244,6 +254,12 @@ func (tx TxParameterChange) Exec(ctx context.Context) (result btypes.Result, cro
 	}
 
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
+		TagProposalID, proposal.ProposalID,
+		TagProposer, tx.Proposer.String(),
+		TagDepositor, tx.Proposer.String(),
+		TagProposalType, tx.ProposalType)
 
 	return
 }
