@@ -54,7 +54,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 	}
 	iter.Close()
 
-	params := e.DistributionMapper.GetParams()
+	params := e.DistributionMapper.GetParams(ctx)
 	for k, delegators := range validatorMap {
 		valAddr, _ := btypes.GetAddrFromBech32(k)
 		distributeEarningByValidator(e, valAddr, delegators, height, params.DelegatorsIncomePeriodHeight)
@@ -176,7 +176,7 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower int64, propos
 	e := eco.GetEco(ctx)
 	log := ctx.Logger()
 
-	params := e.DistributionMapper.GetParams()
+	params := e.DistributionMapper.GetParams(ctx)
 
 	//获取待分配的QOS总量
 	totalAmount := e.DistributionMapper.GetPreDistributionQOS()

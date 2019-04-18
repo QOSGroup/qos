@@ -3,6 +3,7 @@ package gov
 import (
 	"errors"
 	"fmt"
+	"github.com/QOSGroup/qos/module/params"
 	"runtime/debug"
 	"strconv"
 
@@ -68,7 +69,13 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	case Tally:
 		data, e = queryTallyByProposalID(ctx, route[1])
 	case ParamsPath:
-		data, e = queryParams(ctx)
+		if len(route) == 1 {
+			data, e = queryParams(ctx)
+		} else if len(route) == 2 {
+			data, e = queryModuleParams(ctx, route[1])
+		} else {
+			data, e = queryParam(ctx, route[1], route[2])
+		}
 	default:
 		data = nil
 		e = errors.New("not found match path")
@@ -89,7 +96,7 @@ func queryProposal(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	proposal, exsits := govMapper.GetProposal(ctx, proposalID)
+	proposal, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
@@ -118,12 +125,12 @@ func queryVotesByProposalID(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
 
-	iter := govMapper.GetVotes(ctx, proposalID)
+	iter := govMapper.GetVotes(proposalID)
 	defer iter.Close()
 
 	var votes []types.Vote
@@ -143,7 +150,7 @@ func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
@@ -153,7 +160,7 @@ func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string
 		return nil, fmt.Errorf("voter %s is not valid address", voter)
 	}
 
-	result, exsits := govMapper.GetVote(ctx, proposalID, voterAddress)
+	result, exsits := govMapper.GetVote(proposalID, voterAddress)
 	if !exsits {
 		return nil, fmt.Errorf("voter %s is not vote on proposal %s", voterAddress, pid)
 	}
@@ -169,7 +176,7 @@ func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depo
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
@@ -179,7 +186,7 @@ func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depo
 		return nil, fmt.Errorf("depositer %s is not valid address", depositer)
 	}
 
-	result, exsits := govMapper.GetDeposit(ctx, proposalID, depositerAddress)
+	result, exsits := govMapper.GetDeposit(proposalID, depositerAddress)
 	if !exsits {
 		return nil, fmt.Errorf("depositer %s is not deposit on proposal %s", depositer, pid)
 	}
@@ -194,12 +201,12 @@ func queryDepositsByProposalID(ctx context.Context, pid string) ([]byte, error) 
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	_, exsits := govMapper.GetProposal(ctx, proposalID)
+	_, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
 
-	iter := govMapper.GetDeposits(ctx, proposalID)
+	iter := govMapper.GetDeposits(proposalID)
 	defer iter.Close()
 
 	var deposits []types.Deposit
@@ -220,24 +227,37 @@ func queryTallyByProposalID(ctx context.Context, pid string) ([]byte, error) {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
 
-	proposal, exsits := govMapper.GetProposal(ctx, proposalID)
+	proposal, exsits := govMapper.GetProposal(proposalID)
 	if !exsits {
 		return nil, fmt.Errorf("proposal id %d not exsits", proposalID)
 	}
 
-	_, result := tally(ctx, govMapper, proposal)
+	_, result, _ := tally(ctx, govMapper, proposal)
 	return govMapper.GetCodec().MarshalJSON(result)
 }
 
 func queryParams(ctx context.Context) ([]byte, error) {
-	govMapper := GetGovMapper(ctx)
+	paramMapper := params.GetMapper(ctx)
+	return paramMapper.GetCodec().MarshalJSON(paramMapper.GetParams())
+}
 
-	var result Params
-	result.DepositParams = govMapper.GetDepositParams()
-	result.TallyParams = govMapper.GetTallyParams()
-	result.VotingParams = govMapper.GetVotingParams()
+func queryModuleParams(ctx context.Context, module string) ([]byte, error) {
+	paramMapper := params.GetMapper(ctx)
+	result, exists := paramMapper.GetModuleParams(module)
+	if !exists {
+		return nil, errors.New(fmt.Sprintf("no parameter in module %s", module))
+	}
+	return paramMapper.GetCodec().MarshalJSON(result)
+}
 
-	return govMapper.GetCodec().MarshalJSON(result)
+func queryParam(ctx context.Context, module string, key string) ([]byte, error) {
+	paramMapper := params.GetMapper(ctx)
+	result, exists := paramMapper.GetParam(module, key)
+	if !exists {
+		return nil, errors.New(fmt.Sprintf("no %s in module %s", key, module))
+	}
+
+	return paramMapper.GetCodec().MarshalJSON(result)
 }
 
 //nolint
@@ -286,4 +306,14 @@ func BuildQueryTallyPath(pid uint64) string {
 //nolint
 func BuildQueryParamsPath() string {
 	return fmt.Sprintf("custom/%s/%s", GOV, ParamsPath)
+}
+
+//nolint
+func BuildQueryModuleParamsPath(module string) string {
+	return fmt.Sprintf("custom/%s/%s/%s", GOV, ParamsPath, module)
+}
+
+//nolint
+func BuildQueryParamPath(module string, key string) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", GOV, ParamsPath, module, key)
 }

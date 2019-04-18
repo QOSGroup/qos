@@ -33,7 +33,7 @@ func (tx TxVote) ValidateData(ctx context.Context) error {
 		return ErrInvalidInput("invalid voting option")
 	}
 
-	proposal, ok := GetGovMapper(ctx).GetProposal(ctx, tx.ProposalID)
+	proposal, ok := GetGovMapper(ctx).GetProposal(tx.ProposalID)
 	if !ok {
 		return ErrUnknownProposal(tx.ProposalID)
 	}
@@ -50,7 +50,7 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 		Code: btypes.CodeOK,
 	}
 
-	err := GetGovMapper(ctx).AddVote(ctx, tx.ProposalID, tx.Voter, tx.Option)
+	err := GetGovMapper(ctx).AddVote(tx.ProposalID, tx.Voter, tx.Option)
 
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}

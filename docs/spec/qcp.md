@@ -11,7 +11,7 @@ type TxInitQCP struct {
 }
 ```
 
-需要提供创建账户和QCP证书，创建账户需在对应QOS网络中存在，证书申请参照[QCP证书](../ca.md#QCP)。
+需要提供创建账户和QCP证书，创建账户需在对应QOS网络中存在，证书申请参照[QCP证书](ca.md#QCP)。
 
 * Store
 ```go

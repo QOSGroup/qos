@@ -14,6 +14,7 @@ import (
 	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
@@ -73,6 +74,12 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		stake.EndBlockerByReturnUnbondTokens(ctx)
 		return stake.EndBlocker(ctx)
 	})
+
+	//parameter mapper
+	paramsMapper := params.NewMapper()
+	//config params
+	paramsMapper.RegisterParamSet(&ecotypes.StakeParams{}, &ecotypes.DistributionParams{}, &gov.Params{})
+	app.RegisterMapper(paramsMapper)
 
 	// 账户mapper
 	app.RegisterAccountProto(types.ProtoQOSAccount)
@@ -197,13 +204,16 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	// return unbond tokens
 	stake.ReturnAllUnbondTokens(ctx)
 
+	// return proposal deposit
+	gov.PrepForZeroHeightGenesis(ctx)
+
 	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }
 
 // gas
 func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams().GasPerUnitCost))
+	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams(ctx).GasPerUnitCost))
 
 	// tax free for tx send by guardian
 	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {

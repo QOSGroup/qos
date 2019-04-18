@@ -2,8 +2,6 @@ package types
 
 import (
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/pkg/errors"
-	"strings"
 )
 
 type Guardian struct {
@@ -11,6 +9,13 @@ type Guardian struct {
 	GuardianType GuardianType   `json:"guardian_type"`
 	Address      btypes.Address `json:"address"`
 	Creator      btypes.Address `json:"creator"`
+}
+
+func (g Guardian) Equals(g1 Guardian) bool {
+	return g.Description == g1.Description &&
+		g.GuardianType == g1.GuardianType &&
+		g.Address.EqualsTo(g1.Address) &&
+		g.Creator.EqualsTo(g1.Creator)
 }
 
 func NewGuardian(description string, guardianType GuardianType, address, creator btypes.Address) *Guardian {
@@ -28,14 +33,3 @@ const (
 	Genesis  GuardianType = 0x01
 	Ordinary GuardianType = 0x02
 )
-
-func AccountTypeFromString(str string) (GuardianType, error) {
-	switch strings.ToLower(str) {
-	case "genesis":
-		return Genesis, nil
-	case "ordinary":
-		return Ordinary, nil
-	default:
-		return GuardianType(0xff), errors.Errorf("'%s' is not a valid account type", str)
-	}
-}

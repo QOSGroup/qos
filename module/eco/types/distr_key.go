@@ -36,12 +36,7 @@ var (
 	//value: true
 	delegatorPeriodIncomePrefixKey = []byte{0x31}
 
-	distributeParamsKey = []byte("distr_params")
 )
-
-func BuildDistributeParamsKey() []byte {
-	return distributeParamsKey
-}
 
 func BuildCommunityFeePoolKey() []byte {
 	return communityFeePoolKey

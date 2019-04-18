@@ -7,6 +7,7 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/guardian"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 )
 
@@ -23,11 +24,11 @@ type TxProposal struct {
 	InitialDeposit uint64              `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
-func NewTxProposal(title, description string, proposalType gtypes.ProposalType, proposer btypes.Address, deposit uint64) *TxProposal {
+func NewTxProposal(title, description string, proposer btypes.Address, deposit uint64) *TxProposal {
 	return &TxProposal{
 		Title:          title,
 		Description:    description,
-		ProposalType:   proposalType,
+		ProposalType:   gtypes.ProposalTypeText,
 		Proposer:       proposer,
 		InitialDeposit: deposit,
 	}
@@ -47,13 +48,17 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	}
 
 	govMapper := GetGovMapper(ctx)
-	if tx.InitialDeposit < govMapper.GetDepositParams().MinDeposit/3 {
+	if types.NewDec(int64(tx.InitialDeposit)).LT(types.NewDec(int64(govMapper.GetParams(ctx).MinDeposit)).Mul(MinDepositRate)) {
 		return ErrInvalidInput("initial deposit is too small")
 	}
 
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	account := accountMapper.GetAccount(tx.Proposer).(*types.QOSAccount)
-	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
+	account := accountMapper.GetAccount(tx.Proposer)
+	if account == nil {
+		return ErrInvalidInput("proposer not exists")
+	}
+
+	if !account.(*types.QOSAccount).EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
 		return ErrInvalidInput("proposer has no enough qos")
 	}
 
@@ -107,12 +112,12 @@ type TxTaxUsage struct {
 	Percent     types.Dec      `json:"percent"`
 }
 
-func NewTxTaxUsage(title, description string, proposalType gtypes.ProposalType, proposer btypes.Address, deposit uint64, destAddress btypes.Address, percent types.Dec) *TxTaxUsage {
+func NewTxTaxUsage(title, description string, proposer btypes.Address, deposit uint64, destAddress btypes.Address, percent types.Dec) *TxTaxUsage {
 	return &TxTaxUsage{
 		TxProposal: TxProposal{
 			Title:          title,
 			Description:    description,
-			ProposalType:   proposalType,
+			ProposalType:   gtypes.ProposalTypeTaxUsage,
 			Proposer:       proposer,
 			InitialDeposit: deposit,
 		},
@@ -140,12 +145,6 @@ func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
 	// 接受账户必须是guardian
 	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(tx.DestAddress); !exists {
 		return ErrInvalidInput("DestAddress must be guardian")
-	}
-
-	accountMapper := baseabci.GetAccountMapper(ctx)
-	account := accountMapper.GetAccount(tx.Proposer).(*types.QOSAccount)
-	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
-		return ErrInvalidInput("proposer has no enough qos")
 	}
 
 	return nil
@@ -187,5 +186,84 @@ func (tx TxTaxUsage) GetSignData() (ret []byte) {
 	ret = append(ret, tx.DestAddress...)
 	ret = append(ret, tx.Percent.String()...)
 
+	return
+}
+
+type TxParameterChange struct {
+	TxProposal
+	Params []gtypes.Param `json:"params"`
+}
+
+func NewTxParameterChange(title, description string, proposer btypes.Address, deposit uint64, params []gtypes.Param) *TxParameterChange {
+	return &TxParameterChange{
+		TxProposal: TxProposal{
+			Title:          title,
+			Description:    description,
+			ProposalType:   gtypes.ProposalTypeParameterChange,
+			Proposer:       proposer,
+			InitialDeposit: deposit,
+		},
+		Params: params,
+	}
+}
+
+var _ txs.ITx = (*TxProposal)(nil)
+
+func (tx TxParameterChange) ValidateData(ctx context.Context) error {
+	err := tx.TxProposal.ValidateData(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(tx.Params) == 0 {
+		return ErrInvalidInput("Params is empty")
+	}
+
+	paramMapper := params.GetMapper(ctx)
+	for _, param := range tx.Params {
+		if err = paramMapper.Validate(param.Module, param.Key, param.Value); err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+func (tx TxParameterChange) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{
+		Code: btypes.CodeOK,
+	}
+
+	govMapper := GetGovMapper(ctx)
+
+	textContent := gtypes.NewParameterProposal(tx.Title, tx.Description, tx.InitialDeposit, tx.Params)
+	proposal, err := govMapper.SubmitProposal(ctx, textContent)
+
+	if err != nil {
+		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
+	}
+
+	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+
+	return
+}
+
+func (tx TxParameterChange) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Proposer}
+}
+
+func (tx TxParameterChange) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx TxParameterChange) GetGasPayer() btypes.Address {
+	return tx.Proposer
+}
+
+func (tx TxParameterChange) GetSignData() (ret []byte) {
+	ret = append(ret, tx.TxProposal.GetSignData()...)
+	for _, param := range tx.Params {
+		ret = append(ret, param.String()...)
+	}
 	return
 }

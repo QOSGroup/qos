@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
@@ -20,8 +21,9 @@ type Proposal struct {
 	DepositEndTime time.Time `json:"deposit_end_time"` // Time that the Proposal would expire if deposit amount isn't met
 	TotalDeposit   uint64    `json:"total_deposit"`    //  Current deposit on this proposal. Initial value is set at InitialDeposit
 
-	VotingStartTime time.Time `json:"voting_start_time"` //  Time of the block where MinDeposit was reached. -1 if MinDeposit is not reached
-	VotingEndTime   time.Time `json:"voting_end_time"`   // Time that the VotingPeriod for this proposal will end and votes will be tallied
+	VotingStartTime   time.Time `json:"voting_start_time"` //  Time of the block where MinDeposit was reached. -1 if MinDeposit is not reached
+	VotingStartHeight uint64    `json:"voting_start_height"`
+	VotingEndTime     time.Time `json:"voting_end_time"` // Time that the VotingPeriod for this proposal will end and votes will be tallied
 }
 
 type ProposalContent interface {
@@ -30,6 +32,14 @@ type ProposalContent interface {
 	GetDeposit() uint64
 	GetProposalType() ProposalType
 }
+
+type ProposalResult string
+
+const (
+	PASS       ProposalResult = "pass"
+	REJECT     ProposalResult = "reject"
+	REJECTVETO ProposalResult = "reject-veto"
+)
 
 // Type that represents Proposal Status as a byte
 type ProposalStatus byte
@@ -53,15 +63,81 @@ func ValidProposalStatus(status ProposalStatus) bool {
 	return false
 }
 
-// Tally Results
-type TallyResult struct {
-	Yes        uint64 `json:"yes"`
-	Abstain    uint64 `json:"abstain"`
-	No         uint64 `json:"no"`
-	NoWithVeto uint64 `json:"no_with_veto"`
+// Turns VoteOption byte to String
+func (ps ProposalStatus) String() string {
+	switch ps {
+	case StatusDepositPeriod:
+		return "Deposit"
+	case StatusVotingPeriod:
+		return "Voting"
+	case StatusPassed:
+		return "Passed"
+	case StatusRejected:
+		return "Rejected"
+	default:
+		return ""
+	}
 }
 
-func NewTallyResult(yes, abstain, no, noWithVeto uint64) TallyResult {
+// String to proposalStatus byte.  Returns ff if invalid.
+func ProposalStatusFromString(str string) (ProposalStatus, error) {
+	switch strings.ToLower(str) {
+	case "deposit":
+		return StatusDepositPeriod, nil
+	case "voting":
+		return StatusVotingPeriod, nil
+	case "passed":
+		return StatusPassed, nil
+	case "rejected":
+		return StatusRejected, nil
+	case "":
+		return StatusNil, nil
+	default:
+		return ProposalStatus(0xff), fmt.Errorf("'%s' is not a valid proposal status", str)
+	}
+}
+
+// Marshal needed for protobuf compatibility
+func (ps ProposalStatus) Marshal() ([]byte, error) {
+	return []byte{byte(ps)}, nil
+}
+
+// Unmarshal needed for protobuf compatibility
+func (ps *ProposalStatus) Unmarshal(data []byte) error {
+	*ps = ProposalStatus(data[0])
+	return nil
+}
+
+// Marshals to JSON using string
+func (ps ProposalStatus) MarshalJSON() ([]byte, error) {
+	return json.Marshal(ps.String())
+}
+
+// Unmarshals from JSON assuming Bech32 encoding
+func (ps *ProposalStatus) UnmarshalJSON(data []byte) error {
+	var s string
+	err := json.Unmarshal(data, &s)
+	if err != nil {
+		return err
+	}
+
+	bz2, err := ProposalStatusFromString(s)
+	if err != nil {
+		return err
+	}
+	*ps = bz2
+	return nil
+}
+
+// Tally Results
+type TallyResult struct {
+	Yes        int64 `json:"yes"`
+	Abstain    int64 `json:"abstain"`
+	No         int64 `json:"no"`
+	NoWithVeto int64 `json:"no_with_veto"`
+}
+
+func NewTallyResult(yes, abstain, no, noWithVeto int64) TallyResult {
 	return TallyResult{
 		Yes:        yes,
 		Abstain:    abstain,
@@ -70,17 +146,10 @@ func NewTallyResult(yes, abstain, no, noWithVeto uint64) TallyResult {
 	}
 }
 
-// checks if two proposals are equal
 func EmptyTallyResult() TallyResult {
-	return TallyResult{
-		Yes:        0,
-		Abstain:    0,
-		No:         0,
-		NoWithVeto: 0,
-	}
+	return NewTallyResult(0, 0, 0, 0)
 }
 
-// checks if two proposals are equal
 func (tr TallyResult) Equals(comp TallyResult) bool {
 	return tr.Yes == comp.Yes &&
 		tr.Abstain == comp.Abstain &&
@@ -99,7 +168,6 @@ func (tr TallyResult) String() string {
 // Type that represents Proposal Type as a byte
 type ProposalType byte
 
-//nolint
 const (
 	ProposalTypeNil             ProposalType = 0x00
 	ProposalTypeText            ProposalType = 0x01
@@ -127,7 +195,7 @@ func (pt ProposalType) String() string {
 	case ProposalTypeText:
 		return "Text"
 	case ProposalTypeParameterChange:
-		return "ParameterChange"
+		return "Parameter"
 	case ProposalTypeTaxUsage:
 		return "TaxUsage"
 	default:
@@ -169,7 +237,7 @@ func (tp TextProposal) GetDescription() string        { return tp.Description }
 func (tp TextProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText }
 
-// Text Proposals
+// TaxUsage Proposals
 type TaxUsageProposal struct {
 	TextProposal
 	DestAddress btypes.Address `json:"dest_address"`
@@ -195,4 +263,51 @@ var _ ProposalContent = TaxUsageProposal{}
 func (tp TaxUsageProposal) GetTitle() string              { return tp.Title }
 func (tp TaxUsageProposal) GetDescription() string        { return tp.Description }
 func (tp TaxUsageProposal) GetDeposit() uint64            { return tp.Deposit }
-func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeText }
+func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeTaxUsage }
+
+// Parameters change Proposals
+type ParameterProposal struct {
+	TextProposal
+	Params []Param `json:"params"`
+}
+
+func NewParameterProposal(title, description string, deposit uint64, params []Param) ParameterProposal {
+	return ParameterProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		Params: params,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = ParameterProposal{}
+
+// nolint
+func (tp ParameterProposal) GetTitle() string              { return tp.Title }
+func (tp ParameterProposal) GetDescription() string        { return tp.Description }
+func (tp ParameterProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp ParameterProposal) GetProposalType() ProposalType { return ProposalTypeParameterChange }
+
+type Param struct {
+	Module string `json:"module"`
+	Key    string `json:"key"`
+	Value  string `json:"value"`
+}
+
+func NewParam(module, key, value string) Param {
+	return Param{
+		Module: module,
+		Key:    key,
+		Value:  value,
+	}
+}
+
+func (param Param) String() string {
+	return fmt.Sprintf(`
+  Module:     %s
+  Key:    	  %s
+  Value:      %s`, param.Module, param.Key, param.Value)
+}

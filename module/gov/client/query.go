@@ -3,6 +3,7 @@ package gov
 import (
 	"errors"
 	"fmt"
+	ptypes "github.com/QOSGroup/qos/module/params/types"
 	"strconv"
 	"strings"
 
@@ -136,7 +137,7 @@ func toProposalStatus(statusStr string) types.ProposalStatus {
 
 func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "vote [proposal-id] [voter-addr]",
+		Use:   "vote [proposal-id] [voter]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Query details of a single vote",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -147,11 +148,12 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			if _, err := btypes.GetAddrFromBech32(args[1]); err != nil {
-				return fmt.Errorf("voter-addr %s is not a valid address value", args[1])
+			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1]);
+			if  err != nil {
+				return fmt.Errorf("voter %s is not a valid address value", args[1])
 			}
 
-			path := gov.BuildQueryVotePath(pID, args[1])
+			path := gov.BuildQueryVotePath(pID, addr.String())
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -209,7 +211,7 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 
 func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 	return &cobra.Command{
-		Use:   "deposit [proposal-id] [depositer-addr]",
+		Use:   "deposit [proposal-id] [depositor]",
 		Args:  cobra.ExactArgs(2),
 		Short: "Query details of a deposit",
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -220,11 +222,12 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			if _, err := btypes.GetAddrFromBech32(args[1]); err != nil {
-				return fmt.Errorf("depositer-addr %s is not a valid address value", args[1])
+			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1]);
+			if  err != nil {
+				return fmt.Errorf("depositer %s is not a valid address value", args[1])
 			}
 
-			path := gov.BuildQueryDepositPath(pID, args[1])
+			path := gov.BuildQueryDepositPath(pID, addr.String())
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -309,13 +312,30 @@ func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
 }
 
 func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
-	return &cobra.Command{
+	cmd := &cobra.Command{
 		Use:   "params",
 		Short: "Query the parameters of the governance process",
 		Args:  cobra.NoArgs,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			path := gov.BuildQueryParamsPath()
+
+			module := viper.GetString(flagModule)
+			key := viper.GetString(flagParamKey)
+			if len(key) != 0 && len(module) == 0 {
+				return errors.New("module is empty")
+			}
+
+			mod := 0
+			var path string
+			if len(module) == 0 {
+				path = gov.BuildQueryParamsPath()
+			} else if len(key) == 0 {
+				mod = 1
+				path = gov.BuildQueryModuleParamsPath(module)
+			} else {
+				mod = 2
+				path = gov.BuildQueryParamPath(module, key)
+			}
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -325,12 +345,27 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 				return errors.New("no result found")
 			}
 
-			var result gov.Params
-			if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
-				return err
+			if mod == 0 {
+				var result []ptypes.ParamSet
+				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
+					return err
+				}
+				return cliCtx.PrintResult(result)
+			} else if mod == 1 {
+				var result ptypes.ParamSet
+				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
+					return err
+				}
+				return cliCtx.PrintResult(result)
+			} else {
+				fmt.Println(string(res))
+				return nil
 			}
-
-			return cliCtx.PrintResult(result)
 		},
 	}
+
+	cmd.Flags().String(flagModule, "", "(optional) module name.")
+	cmd.Flags().String(flagParamKey, "", "(optional) parameter name")
+
+	return cmd
 }
