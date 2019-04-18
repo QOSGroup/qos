@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/module/eco/types"
 
@@ -39,7 +38,7 @@ func (e Eco) RemoveValidator(ctx context.Context, valAddr btypes.Address) error 
 
 	//2. 计算所有delegator的收益信息,并将delegator绑定的token置为0
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
-	iter := store.KVStorePrefixIterator(distributionMapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(distributionMapper.GetStore(), prefixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

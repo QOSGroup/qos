@@ -7,6 +7,7 @@ import (
 	qosinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	"github.com/QOSGroup/qos/module/distribution"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -118,6 +119,7 @@ Example:
 				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
 				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
 				DistributionData: distribution.DefaultGenesisState(),
+				GovData:          gov.DefaultGenesisState(),
 			}
 
 			// validators
@@ -128,6 +130,12 @@ Example:
 				config.SetRoot(nodeDir)
 
 				err := os.MkdirAll(filepath.Join(nodeDir, "config"), nodeDirPerm)
+				if err != nil {
+					_ = os.RemoveAll(outputDir)
+					return err
+				}
+
+				err = os.MkdirAll(filepath.Join(nodeDir, "data"), nodeDirPerm)
 				if err != nil {
 					_ = os.RemoveAll(outputDir)
 					return err
@@ -283,12 +291,12 @@ func populatePersistentPeersInConfigAndWriteIt(config *cfg.Config) error {
 
 func initFilesWithConfig(config *cfg.Config) (*privval.FilePV, error) {
 	// private validator
-	privValFile := config.PrivValidatorFile()
+	privValFile := config.PrivValidatorKeyFile()
 	var pv *privval.FilePV
 	if cmn.FileExists(privValFile) {
-		pv = privval.LoadFilePV(privValFile)
+		pv = privval.LoadFilePV(privValFile, config.PrivValidatorStateFile())
 	} else {
-		pv = privval.GenFilePV(privValFile)
+		pv = privval.GenFilePV(privValFile, config.PrivValidatorStateFile())
 		pv.Save()
 	}
 

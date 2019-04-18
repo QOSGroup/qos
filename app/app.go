@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
@@ -19,6 +20,7 @@ import (
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -36,7 +38,8 @@ type QOSApp struct {
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
-	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec)
+	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec,
+		baseabci.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))))
 	baseApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &QOSApp{

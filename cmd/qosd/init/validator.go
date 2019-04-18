@@ -79,8 +79,9 @@ example:
 			var publicKey crypto.PubKey
 
 			if len(pubkey) == 0 {
-				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorFile()))
-				publicKey = privValidator.PubKey
+				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorKeyFile()),
+					filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorStateFile()))
+				publicKey = privValidator.GetPubKey()
 			} else {
 				bz, err := base64.StdEncoding.DecodeString(pubkey)
 				if err != nil {

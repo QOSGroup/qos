@@ -144,7 +144,7 @@ func (mapper GovMapper) GetProposalsFiltered(ctx context.Context, voterAddr btyp
 func (mapper GovMapper) GetProposals() []gtypes.Proposal {
 
 	var proposals []gtypes.Proposal
-	iterator := store.KVStorePrefixIterator(mapper.GetStore(), KeyProposalSubspace())
+	iterator := btypes.KVStorePrefixIterator(mapper.GetStore(), KeyProposalSubspace())
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		proposal := gtypes.Proposal{}
@@ -265,7 +265,7 @@ func (mapper GovMapper) setVote(proposalID uint64, voterAddr btypes.Address, vot
 
 // Gets all the votes on a specific proposal
 func (mapper GovMapper) GetVotes(proposalID uint64) store.Iterator {
-	return store.KVStorePrefixIterator(mapper.GetStore(), KeyVotesSubspace(proposalID))
+	return btypes.KVStorePrefixIterator(mapper.GetStore(), KeyVotesSubspace(proposalID))
 }
 
 func (mapper GovMapper) deleteVote(proposalID uint64, voterAddr btypes.Address) {
@@ -336,7 +336,7 @@ func (mapper GovMapper) AddDeposit(ctx context.Context, proposalID uint64, depos
 
 // Gets all the deposits on a specific proposal as an sdk.Iterator
 func (mapper GovMapper) GetDeposits(proposalID uint64) store.Iterator {
-	return store.KVStorePrefixIterator(mapper.GetStore(), KeyDepositsSubspace(proposalID))
+	return btypes.KVStorePrefixIterator(mapper.GetStore(), KeyDepositsSubspace(proposalID))
 }
 
 // Refunds and deletes all the deposits on a specific proposal
@@ -382,7 +382,7 @@ func (mapper GovMapper) DeleteDeposits(ctx context.Context, proposalID uint64) {
 
 // Returns an iterator for all the proposals in the Active Queue that expire by endTime
 func (mapper GovMapper) ActiveProposalQueueIterator(endTime time.Time) store.Iterator {
-	return mapper.GetStore().Iterator(PrefixActiveProposalQueue, store.PrefixEndBytes(PrefixActiveProposalQueueTime(endTime)))
+	return mapper.GetStore().Iterator(PrefixActiveProposalQueue, btypes.PrefixEndBytes(PrefixActiveProposalQueueTime(endTime)))
 }
 
 // Inserts a ProposalID into the active proposal queue at endTime
@@ -397,7 +397,7 @@ func (mapper GovMapper) RemoveFromActiveProposalQueue(endTime time.Time, proposa
 
 // Returns an iterator for all the proposals in the Inactive Queue that expire by endTime
 func (mapper GovMapper) InactiveProposalQueueIterator(endTime time.Time) store.Iterator {
-	return mapper.GetStore().Iterator(PrefixInactiveProposalQueue, store.PrefixEndBytes(PrefixInactiveProposalQueueTime(endTime)))
+	return mapper.GetStore().Iterator(PrefixInactiveProposalQueue, btypes.PrefixEndBytes(PrefixInactiveProposalQueueTime(endTime)))
 }
 
 // Inserts a ProposalID into the inactive proposal queue at endTime

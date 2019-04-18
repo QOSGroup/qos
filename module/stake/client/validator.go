@@ -49,7 +49,8 @@ example:
 				}
 				desc := viper.GetString(flagDescription)
 
-				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorFile()))
+				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()),
+					filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()))
 
 				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 				if err != nil {
@@ -57,7 +58,7 @@ example:
 				}
 
 				isCompound := viper.GetBool(flagCompound)
-				return stake.NewCreateValidatorTx(name, owner, privValidator.PubKey, tokens, isCompound, desc), nil
+				return stake.NewCreateValidatorTx(name, owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
 			})
 
 		},

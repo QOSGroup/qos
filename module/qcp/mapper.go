@@ -5,6 +5,7 @@ import (
 	"github.com/QOSGroup/qbase/qcp"
 	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qbase/txs"
+	btypes "github.com/QOSGroup/qbase/types"
 	qcptypes "github.com/QOSGroup/qos/module/qcp/types"
 	"github.com/tendermint/tendermint/crypto"
 )
@@ -53,9 +54,9 @@ func GetQCPTxsWithLimit(ctx context.Context, chainId string, limit uint64, asc b
 	qcpTxs := make([]txs.TxQcp, 0)
 	var iterator store.Iterator
 	if asc {
-		iterator = store.KVStorePrefixIterator(qcpMapper.GetStore(), []byte("tx/out/"+chainId))
+		iterator = btypes.KVStorePrefixIterator(qcpMapper.GetStore(), []byte("tx/out/"+chainId))
 	} else {
-		iterator = store.KVStoreReversePrefixIterator(qcpMapper.GetStore(), []byte("tx/out/"+chainId))
+		iterator = btypes.KVStoreReversePrefixIterator(qcpMapper.GetStore(), []byte("tx/out/"+chainId))
 	}
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
@@ -76,7 +77,7 @@ func ExportQCPs(ctx context.Context) []qcptypes.QCPInfo {
 	qcpChains := make([]string, 0)
 
 	prefix := []byte("sequence/in/")
-	iter := qcpMapper.GetStore().Iterator(prefix, store.PrefixEndBytes(prefix))
+	iter := qcpMapper.GetStore().Iterator(prefix, btypes.PrefixEndBytes(prefix))
 	defer iter.Close()
 	for {
 		if !iter.Valid() {

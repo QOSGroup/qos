@@ -3,7 +3,6 @@ package mapper
 import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 )
@@ -76,7 +75,7 @@ func (mapper *DelegationMapper) IterateDelegationsValDeleAddr(valAddr btypes.Add
 		prefixKey = append(ecotypes.DelegationByValDelKey, valAddr...)
 	}
 
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -98,7 +97,7 @@ func (mapper *DelegationMapper) IterateDelegationsInfo(deleAddr btypes.Address, 
 		prefixKey = append(ecotypes.DelegationByDelValKey, deleAddr...)
 	}
 
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		var info ecotypes.DelegationInfo
@@ -108,7 +107,7 @@ func (mapper *DelegationMapper) IterateDelegationsInfo(deleAddr btypes.Address, 
 }
 
 func (mapper *DelegationMapper) IterateDelegationsUnbondInfo(fn func(btypes.Address, uint64, uint64)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.DelegatorUnbondingQOSatHeightKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), ecotypes.DelegatorUnbondingQOSatHeightKey)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()

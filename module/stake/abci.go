@@ -2,7 +2,6 @@ package stake
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
@@ -45,7 +44,7 @@ func ReturnAllUnbondTokens(ctx context.Context) {
 	for h := height; h <= maxHeight; h++ {
 		prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(h)
 
-		iter := store.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
+		iter := btypes.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
 		defer iter.Close()
 
 		for ; iter.Valid(); iter.Next() {
@@ -69,7 +68,7 @@ func EndBlockerByReturnUnbondTokens(ctx context.Context) {
 	e := eco.GetEco(ctx)
 	prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(height)
 
-	iter := store.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
+	iter := btypes.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

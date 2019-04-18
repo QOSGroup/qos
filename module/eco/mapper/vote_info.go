@@ -3,8 +3,6 @@ package mapper
 import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qbase/store"
-
 	"github.com/QOSGroup/qos/module/eco/types"
 
 	btypes "github.com/QOSGroup/qbase/types"
@@ -72,7 +70,7 @@ func (mapper *VoteInfoMapper) SetVoteInfoInWindow(valAddr btypes.Address, index 
 
 func (mapper *VoteInfoMapper) ClearValidatorVoteInfoInWindow(valAddr btypes.Address) {
 	prefixKey := append(types.GetValidatorVoteInfoInWindowKey(), valAddr...)
-	endKey := store.PrefixEndBytes(prefixKey)
+	endKey := btypes.PrefixEndBytes(prefixKey)
 	iter := mapper.GetStore().Iterator(prefixKey, endKey)
 	defer iter.Close()
 
@@ -84,7 +82,7 @@ func (mapper *VoteInfoMapper) ClearValidatorVoteInfoInWindow(valAddr btypes.Addr
 //-------------------------genesis export
 
 func (mapper *VoteInfoMapper) IterateVoteInfos(fn func(btypes.Address, types.ValidatorVoteInfo)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
@@ -96,7 +94,7 @@ func (mapper *VoteInfoMapper) IterateVoteInfos(fn func(btypes.Address, types.Val
 }
 
 func (mapper *VoteInfoMapper) IterateVoteInWindowsInfos(fn func(uint64, btypes.Address, bool)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoInWindowKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoInWindowKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
