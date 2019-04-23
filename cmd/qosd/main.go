@@ -27,7 +27,7 @@ func main() {
 	}
 
 	// testnet cmd
-	rootCmd.AddCommand(testnet.TestnetFileCmd(cdc))
+	rootCmd.AddCommand(testnet.TestnetFileCmd(ctx, cdc))
 
 	// version cmd
 	rootCmd.AddCommand(version.VersionCmd())
