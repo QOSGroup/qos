@@ -35,7 +35,6 @@ var (
 	//delegators某高度下是否发放收益信息: key = prefix + blockheight + validatorAddress+delegatorAddress
 	//value: true
 	delegatorPeriodIncomePrefixKey = []byte{0x31}
-
 )
 
 func BuildCommunityFeePoolKey() []byte {

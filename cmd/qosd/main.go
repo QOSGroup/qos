@@ -30,7 +30,7 @@ func main() {
 	rootCmd.AddCommand(testnet.TestnetFileCmd(cdc))
 
 	// version cmd
-	rootCmd.AddCommand(version.VersionCmd)
+	rootCmd.AddCommand(version.VersionCmd())
 
 	rootCmd.AddCommand(server.InitCmd(ctx, cdc, qosdinit.GenQOSGenesisDoc, types.DefaultNodeHome))
 	rootCmd.AddCommand(export.ExportCmd(ctx, cdc))

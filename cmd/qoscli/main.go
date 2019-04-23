@@ -76,7 +76,7 @@ func main() {
 		bcli.KeysCommand(cdc),
 		queryCommands,
 		txsCommands,
-		version.VersionCmd,
+		version.VersionCmd(),
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "qos", types.DefaultCLIHome)

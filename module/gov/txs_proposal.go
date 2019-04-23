@@ -1,6 +1,7 @@
 package gov
 
 import (
+	"fmt"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
@@ -82,9 +83,9 @@ func (tx TxProposal) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
-		TagProposalID, proposal.ProposalID,
+		TagProposalID, fmt.Sprintf("%d", proposal.ProposalID),
 		TagProposer, tx.Proposer.String(),
-		TagProposalType, tx.ProposalType)
+		TagProposalType, tx.ProposalType.String())
 
 	return
 }
@@ -170,9 +171,9 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	}
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
-		TagProposalID, proposal.ProposalID,
+		TagProposalID, fmt.Sprintf("%d", proposal.ProposalID),
 		TagProposer, tx.Proposer.String(),
-		TagProposalType, tx.ProposalType)
+		TagProposalType, tx.ProposalType.String())
 
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
@@ -256,10 +257,10 @@ func (tx TxParameterChange) Exec(ctx context.Context) (result btypes.Result, cro
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
-		TagProposalID, proposal.ProposalID,
+		TagProposalID, fmt.Sprintf("%d", proposal.ProposalID),
 		TagProposer, tx.Proposer.String(),
 		TagDepositor, tx.Proposer.String(),
-		TagProposalType, tx.ProposalType)
+		TagProposalType, tx.ProposalType.String())
 
 	return
 }

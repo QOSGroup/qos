@@ -1,6 +1,7 @@
 package gov
 
 import (
+	"fmt"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -57,7 +58,7 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 	}
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionVoteProposal,
-		TagProposalID, tx.ProposalID,
+		TagProposalID, fmt.Sprintf("%d", tx.ProposalID),
 		TagVoter, tx.Voter.String())
 
 	return

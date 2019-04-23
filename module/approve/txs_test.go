@@ -102,9 +102,9 @@ func defaultContext() context.Context {
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(approveKey, store.StoreTypeIAVL, db)
-	cms.MountStoreWithDB(acountKey, store.StoreTypeIAVL, db)
-	cms.MountStoreWithDB(qscKey, store.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(approveKey, btypes.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(acountKey, btypes.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(qscKey, btypes.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
 	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger(), mapperMap)
 	return ctx
