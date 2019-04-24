@@ -6,12 +6,12 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/module/stake"
-	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/privval"
 	"path/filepath"
 )
@@ -22,7 +22,6 @@ const (
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"
-	flagNodeHome    = "nodeHome"
 )
 
 func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
@@ -38,29 +37,7 @@ example:
 
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
-				name := viper.GetString(flagName)
-				if len(name) == 0 {
-					return nil, errors.New("name is empty")
-				}
-				tokens := uint64(viper.GetInt64(flagBondTokens))
-				if tokens <= 0 {
-					return nil, errors.New("tokens lte zero")
-				}
-				desc := viper.GetString(flagDescription)
-
-				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()),
-					filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()))
-
-				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
-				if err != nil {
-					return nil, err
-				}
-
-				isCompound := viper.GetBool(flagCompound)
-				return stake.NewCreateValidatorTx(name, owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
-			})
-
+			return qclitx.BroadcastTxAndPrintResult(cdc, TxCreateValidatorBuilder)
 		},
 	}
 
@@ -69,7 +46,6 @@ example:
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagDescription, "", "description")
-	cmd.Flags().String(flagNodeHome, types.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
 
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagOwner)
@@ -124,4 +100,27 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagOwner)
 
 	return cmd
+}
+
+func TxCreateValidatorBuilder(ctx context.CLIContext) (txs.ITx, error) {
+	name := viper.GetString(flagName)
+	if len(name) == 0 {
+		return nil, errors.New("name is empty")
+	}
+	tokens := uint64(viper.GetInt64(flagBondTokens))
+	if tokens <= 0 {
+		return nil, errors.New("tokens lte zero")
+	}
+	desc := viper.GetString(flagDescription)
+
+	privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorKeyFile()),
+		filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorKeyFile()))
+
+	owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	isCompound := viper.GetBool(flagCompound)
+	return stake.NewCreateValidatorTx(name, owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
 }

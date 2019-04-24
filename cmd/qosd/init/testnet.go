@@ -1,10 +1,9 @@
-package testnet
+package init
 
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
-	qosinit "github.com/QOSGroup/qos/cmd/qosd/init"
 	"github.com/QOSGroup/qos/module/distribution"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/gov"
@@ -151,7 +150,7 @@ Example:
 				}
 				genesisAccounts = append(genesisAccounts, types.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
 				appState.Accounts = genesisAccounts
-				qosinit.AddValidator(&appState, genVals[i], compound)
+				AddValidator(&appState, genVals[i], compound)
 
 				// write private key of validator owner
 				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
@@ -182,7 +181,6 @@ Example:
 				config.P2P.AddrBookStrict = false
 				cfg.WriteConfigFile(filepath.Join(nodeDirs[i], "config", "config.toml"), config)
 			}
-
 
 			fmt.Printf("Successfully initialized %v node directories\n", nValidators)
 			return nil

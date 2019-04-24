@@ -5,7 +5,6 @@ import (
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/cmd/qosd/export"
 	qosdinit "github.com/QOSGroup/qos/cmd/qosd/init"
-	"github.com/QOSGroup/qos/cmd/qosd/testnet"
 	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
@@ -27,7 +26,7 @@ func main() {
 	}
 
 	// testnet cmd
-	rootCmd.AddCommand(testnet.TestnetFileCmd(ctx, cdc))
+	rootCmd.AddCommand(qosdinit.TestnetFileCmd(ctx, cdc))
 
 	// version cmd
 	rootCmd.AddCommand(version.VersionCmd())
@@ -38,6 +37,8 @@ func main() {
 	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
 	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
 	rootCmd.AddCommand(qosdinit.AddGuardian(cdc))
+	rootCmd.AddCommand(qosdinit.GenTxCmd(ctx, cdc))
+	rootCmd.AddCommand(qosdinit.CollectGenTxsCmd(ctx, cdc))
 
 	server.AddCommands(ctx, cdc, rootCmd, newApp)
 
