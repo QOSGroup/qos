@@ -23,11 +23,6 @@ import (
 	"strings"
 )
 
-const (
-	flagClientHome = "home-client"
-	flagIP         = "ip"
-)
-
 func GenTxCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "gentx",

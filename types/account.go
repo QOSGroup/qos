@@ -5,7 +5,6 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/client/context"
 	clikeys "github.com/QOSGroup/qbase/client/keys"
-	"github.com/QOSGroup/qbase/keys"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/pkg/errors"
 	"strings"
@@ -357,7 +356,6 @@ func (account *QOSAccount) RemoveQSC(qscName string) {
 // address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
 func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
 	var keybaseAvailable bool
-	keys.RegisterCodec(cdc)
 	cliCtx := context.NewCLIContext().WithCodec(cdc)
 	keybase, err := clikeys.GetKeyBaseFromDir(cliCtx, clientHome)
 	if err == nil {

@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/QOSGroup/qbase/account"
+	"github.com/QOSGroup/qbase/keys"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto/encoding/amino"
 )
@@ -12,6 +13,7 @@ var cdc = go_amino.NewCodec()
 func init() {
 	cryptoAmino.RegisterAmino(cdc)
 	cdc.RegisterInterface((*account.Account)(nil), nil)
+	keys.RegisterCodec(cdc)
 	RegisterCodec(cdc)
 }
 

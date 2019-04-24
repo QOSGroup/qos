@@ -2,6 +2,7 @@ package init
 
 import (
 	"fmt"
+	"github.com/QOSGroup/qbase/server"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
 	gtypes "github.com/QOSGroup/qos/module/guardian/types"
@@ -10,27 +11,18 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/libs/common"
-	"strings"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-func AddGuardian(cdc *amino.Codec) *cobra.Command {
-
-	flagAddress := "address"
-	flagDescription := "description"
+func AddGuardian(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
 		Use:   "add-guardian",
 		Short: "Add guardian to genesis",
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, args []string) error {
-
-			home := viper.GetString(cli.HomeFlag)
-			genFile := strings.Join([]string{home, "config", "genesis.json"}, "/")
-
-			if !common.FileExists(genFile) {
-				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
-			}
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			address := viper.GetString(flagAddress)
 			addr, err := btypes.GetAddrFromBech32(address)
@@ -40,7 +32,7 @@ func AddGuardian(cdc *amino.Codec) *cobra.Command {
 
 			description := viper.GetString(flagDescription)
 
-			genDoc, err := loadGenesisDoc(cdc, genFile)
+			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
 			if err != nil {
 				return err
 			}
@@ -67,7 +59,7 @@ func AddGuardian(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			err = genDoc.SaveAs(genFile)
+			err = genDoc.SaveAs(config.GenesisFile())
 			if err != nil {
 				return err
 			}

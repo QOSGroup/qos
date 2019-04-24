@@ -14,8 +14,6 @@ import (
 	"path/filepath"
 )
 
-const flagGenTxDir string = "gentx-dir"
-
 func CollectGenTxsCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "collect-gentxs",

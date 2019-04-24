@@ -33,10 +33,9 @@ func main() {
 
 	rootCmd.AddCommand(server.InitCmd(ctx, cdc, qosdinit.GenQOSGenesisDoc, types.DefaultNodeHome))
 	rootCmd.AddCommand(export.ExportCmd(ctx, cdc))
-	rootCmd.AddCommand(qosdinit.ConfigRootCA(cdc))
-	rootCmd.AddCommand(qosdinit.AddGenesisAccount(cdc))
-	rootCmd.AddCommand(qosdinit.AddGenesisValidator(cdc))
-	rootCmd.AddCommand(qosdinit.AddGuardian(cdc))
+	rootCmd.AddCommand(qosdinit.ConfigRootCA(ctx, cdc))
+	rootCmd.AddCommand(qosdinit.AddGenesisAccount(ctx, cdc))
+	rootCmd.AddCommand(qosdinit.AddGuardian(ctx, cdc))
 	rootCmd.AddCommand(qosdinit.GenTxCmd(ctx, cdc))
 	rootCmd.AddCommand(qosdinit.CollectGenTxsCmd(ctx, cdc))
 
