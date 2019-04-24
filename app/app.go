@@ -234,19 +234,23 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 }
 
 // gas
-func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
+func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
+	gasUsed = ctx.GasMeter().GasConsumed()
 	// gas free for txs in the first block
 	if ctx.BlockHeight() == 0 {
-		return nil
+		return
 	}
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams(ctx).GasPerUnitCost))
 
 	// tax free for tx send by guardian
 	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
 		app.Logger.Info("tx send by guardian: %s", payer.String())
-		return nil
+		return
 	}
+
+	distributionMapper := ecomapper.GetDistributionMapper(ctx)
+	uint := distributionMapper.GetParams(ctx).GasPerUnitCost
+	gasFeeUsed := btypes.NewInt(int64(gasUsed / uint))
+	gasUsed = gasUsed / uint * uint
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
@@ -254,7 +258,8 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 
 		if !account.EnoughOfQOS(gasFeeUsed) {
 			log := fmt.Sprintf("%s no enough coins to pay the gas after this tx done", payer)
-			return btypes.ErrInternal(log)
+			err = btypes.ErrInternal(log)
+			return
 		}
 
 		account.MustMinusQOS(gasFeeUsed)
@@ -264,5 +269,5 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 		distributionMapper.AddPreDistributionQOS(gasFeeUsed)
 	}
 
-	return nil
+	return
 }
