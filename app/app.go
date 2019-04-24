@@ -235,6 +235,10 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
 // gas
 func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
+	// gas free for txs in the first block
+	if ctx.BlockHeight() == 0 {
+		return nil
+	}
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams(ctx).GasPerUnitCost))
 
