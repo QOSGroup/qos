@@ -27,8 +27,12 @@ func CollectGenTxsCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
+			genTxsDir := viper.GetString(flagGenTxDir)
+			if genTxsDir == "" {
+				genTxsDir = filepath.Join(config.RootDir, "config", "gentx")
+			}
 
-			return UpdateGenesisStateFromGenTxs(config, cdc, nodeID)
+			return updateGenesisStateFromGenTxs(config, cdc, nodeID, genTxsDir)
 		},
 	}
 
@@ -37,15 +41,10 @@ func CollectGenTxsCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
-func UpdateGenesisStateFromGenTxs(config *cfg.Config, cdc *amino.Codec, nodeID string) (err error) {
+func updateGenesisStateFromGenTxs(config *cfg.Config, cdc *amino.Codec, nodeID, genTxsDir string) (err error) {
 	genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
 	if err != nil {
 		return err
-	}
-
-	genTxsDir := viper.GetString(flagGenTxDir)
-	if genTxsDir == "" {
-		genTxsDir = filepath.Join(config.RootDir, "config", "gentx")
 	}
 
 	genTxs, persistentPeers, err := app.CollectStdTxs(cdc, nodeID, genTxsDir, genDoc)

@@ -159,7 +159,27 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 		panic(err)
 	}
 
-	res.Validators = InitGenesis(ctx, genesisState)
+	// accounts init should in the first
+	initAccounts(ctx, genesisState.Accounts)
+	gov.InitGenesis(ctx, genesisState.GovData)
+	guardian.InitGenesis(ctx, genesisState.GuardianData)
+	mint.InitGenesis(ctx, genesisState.MintData)
+	stake.InitGenesis(ctx, genesisState.StakeData)
+	qcp.InitGenesis(ctx, genesisState.QCPData)
+	qsc.InitGenesis(ctx, genesisState.QSCData)
+	approve.InitGenesis(ctx, genesisState.ApproveData)
+	distribution.InitGenesis(ctx, genesisState.DistributionData)
+	if len(genesisState.GenTxs) > 0 {
+		for _, genTx := range genesisState.GenTxs {
+			bz := app.GetCdc().MustMarshalBinaryBare(genTx)
+			res := app.BaseApp.DeliverTx(bz)
+			if !res.IsOK() {
+				panic(res.Log)
+			}
+		}
+	}
+
+	res.Validators = stake.GetUpdatedValidators(ctx, uint64(genesisState.StakeData.Params.MaxValidatorCnt))
 
 	return
 }

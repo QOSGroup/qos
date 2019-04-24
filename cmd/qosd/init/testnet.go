@@ -3,6 +3,7 @@ package init
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/server"
+	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/module/distribution"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
@@ -12,19 +13,19 @@ import (
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
+	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
+	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"net"
 	"os"
 	"path/filepath"
-	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	btypes "github.com/QOSGroup/qbase/types"
-	cfg "github.com/tendermint/tendermint/config"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	ttypes "github.com/tendermint/tendermint/types"
 )
@@ -71,14 +72,11 @@ Example:
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
 
-			var nodeDirs []string
-			var persistentPeers []string
-
 			// accounts
 			genesisAccounts := make([]*types.QOSAccount, 0)
 			var err error
 			if accounts != "" {
-				genesisAccounts, err = types.ParseAccounts(accounts)
+				genesisAccounts, err = types.ParseAccounts(accounts, viper.GetString(flagClientHome))
 				if err != nil {
 					return err
 				}
@@ -100,6 +98,16 @@ Example:
 				}
 			}
 
+			genDoc := &ttypes.GenesisDoc{
+				GenesisTime: time.Now(),
+			}
+			// chainId
+			if chainId != "" {
+				genDoc.ChainID = chainId
+			} else {
+				genDoc.ChainID = "test-chain-" + cmn.RandStr(6)
+			}
+
 			appState := app.GenesisState{
 				Accounts:         genesisAccounts,
 				MintData:         mint.DefaultGenesisState(),
@@ -111,7 +119,9 @@ Example:
 			}
 
 			// validators
-			genVals := make([]staketypes.Validator, nValidators)
+			genTxDir := filepath.Join(outputDir, "gentxs")
+			var nodeDirs []string
+			var nodeIDs []string
 			for i := 0; i < nValidators; i++ {
 				nodeDirName := fmt.Sprintf("%s%d", nodeDirPrefix, i)
 				nodeDir := filepath.Join(outputDir, nodeDirName)
@@ -131,55 +141,55 @@ Example:
 					return err
 				}
 
-				nodeId, valPubKey, err := server.InitializeNodeValidatorFiles(config)
+				nodeID, valPubKey, err := server.InitializeNodeValidatorFiles(config)
+				nodeIDs = append(nodeIDs, nodeID)
 				if err != nil {
 					_ = os.RemoveAll(outputDir)
 					return err
 				}
-				persistentPeers = append(persistentPeers, fmt.Sprintf("%s@%s:%d", nodeId, hostnameOrIP(i), 26656))
 
-				// create validator
+				// create gentx file
 				owner := ed25519.GenPrivKey()
-				genVals[i] = staketypes.Validator{
-					Name:            nodeDirName,
-					ValidatorPubKey: valPubKey,
-					Owner:           btypes.Address(owner.PubKey().Address()),
-					Status:          staketypes.Active,
-					BondTokens:      validatorBondTokens,
-					BondHeight:      1,
+				txCreateValidator := stake.NewCreateValidatorTx(nodeDirName, btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, "")
+				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
+				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
+				if err != nil {
+					return err
 				}
+				txStd.Signature = append(txStd.Signature, txs.Signature{
+					Pubkey:    owner.PubKey(),
+					Signature: sig,
+					Nonce:     1,
+				})
+				writeSignedGenTx(cdc, genTxDir, nodeID, hostnameOrIP(i), txStd)
+
 				genesisAccounts = append(genesisAccounts, types.NewQOSAccount(owner.PubKey().Address().Bytes(), btypes.NewInt(validatorOwnerInitQOS), nil))
-				appState.Accounts = genesisAccounts
-				AddValidator(&appState, genVals[i], compound)
 
 				// write private key of validator owner
 				ownerFile := filepath.Join(nodeDir, "config", validatorOperatorFile)
 				ownerBz, _ := cdc.MarshalJSON(owner)
 				cmn.MustWriteFile(ownerFile, ownerBz, nodeFilePerm)
+
+				// write config file
+				config.P2P.AddrBookStrict = false
+				cfg.WriteConfigFile(filepath.Join(nodeDirs[i], "config", "config.toml"), config)
 			}
 
+			appState.Accounts = genesisAccounts
 			rawState, _ := cdc.MarshalJSON(appState)
-			genDoc := &ttypes.GenesisDoc{
-				GenesisTime: time.Now(),
-				AppState:    rawState,
-			}
+			genDoc.AppState = rawState
 
-			// chainId
-			if chainId != "" {
-				genDoc.ChainID = chainId
-			} else {
-				genDoc.ChainID = "test-chain-" + cmn.RandStr(6)
-			}
-
-			// Write genesis file.
+			// collect gentxs, write genesis files and update config files
 			for i := 0; i < nValidators; i++ {
 				if err := genDoc.SaveAs(filepath.Join(nodeDirs[i], config.Genesis)); err != nil {
 					_ = os.RemoveAll(outputDir)
 					return err
 				}
-				config.P2P.PersistentPeers = strings.Join(persistentPeers, ",")
-				config.P2P.AddrBookStrict = false
-				cfg.WriteConfigFile(filepath.Join(nodeDirs[i], "config", "config.toml"), config)
+				config.SetRoot(nodeDirs[i])
+				err = updateGenesisStateFromGenTxs(config, cdc, nodeIDs[i], genTxDir)
+				if err != nil {
+					return err
+				}
 			}
 
 			fmt.Printf("Successfully initialized %v node directories\n", nValidators)
@@ -203,6 +213,7 @@ Example:
 	cmd.Flags().StringVar(&qscRootCA, "qcp-root-ca", "", "Config pubKey of root CA for QSC")
 	cmd.Flags().StringVar(&chainId, "chain-id", "", "Chain ID")
 	cmd.Flags().BoolVar(&compound, "compound", true, "whether the validator's income is calculated as compound interest, default: true")
+	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
 
 	return cmd
 }

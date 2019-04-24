@@ -35,7 +35,7 @@ Example:
 				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
 			}
 
-			accounts, err := types.ParseAccounts(args[0])
+			accounts, err := types.ParseAccounts(args[0], viper.GetString(flagClientHome))
 
 			genDoc, err := loadGenesisDoc(cdc, genFile)
 			if err != nil {
@@ -76,7 +76,8 @@ Example:
 		},
 	}
 
-	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "node's home directory")
+	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "directory for node's data and config files")
+	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
 
 	return cmd
 }

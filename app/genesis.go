@@ -17,7 +17,6 @@ import (
 	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/tendermint/go-amino"
-	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"io/ioutil"
 	"os"
@@ -81,21 +80,6 @@ func ValidGenesis(state GenesisState) error {
 	}
 
 	return nil
-}
-
-func InitGenesis(ctx context.Context, state GenesisState) []abci.ValidatorUpdate {
-	// accounts init should in the first
-	initAccounts(ctx, state.Accounts)
-	gov.InitGenesis(ctx, state.GovData)
-	guardian.InitGenesis(ctx, state.GuardianData)
-	mint.InitGenesis(ctx, state.MintData)
-	stake.InitGenesis(ctx, state.StakeData)
-	qcp.InitGenesis(ctx, state.QCPData)
-	qsc.InitGenesis(ctx, state.QSCData)
-	approve.InitGenesis(ctx, state.ApproveData)
-	distribution.InitGenesis(ctx, state.DistributionData)
-
-	return stake.GetUpdatedValidators(ctx, uint64(state.StakeData.Params.MaxValidatorCnt))
 }
 
 func initAccounts(ctx context.Context, accounts []*types.QOSAccount) {

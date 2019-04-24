@@ -90,7 +90,7 @@ qosd gentx --name validatorName --owner ownerName --tokens 100
 				return err
 			}
 			txStd := txs.NewTxStd(itx, genDoc.ChainID, btypes.NewInt(1000000))
-			sigdata := txStd.BuildSignatureBytes(0, "")
+			sigdata := txStd.BuildSignatureBytes(1, "")
 			pass, err := clikeys.GetPassphrase(cliCtx, info.GetName())
 			if err != nil {
 				panic(fmt.Sprintf("Get %s Passphrase error: %s", info.GetAddress(), err.Error()))
@@ -102,15 +102,10 @@ qosd gentx --name validatorName --owner ownerName --tokens 100
 			txStd.Signature = append(txStd.Signature, txs.Signature{
 				Pubkey:    pubkey,
 				Signature: sig,
-				Nonce:     0,
+				Nonce:     1,
 			})
 
-			genTx, err := makeOutputFilepath(config.RootDir, nodeID)
-			if err != nil {
-				return err
-			}
-
-			if err := writeSignedGenTx(cdc, genTx, txStd); err != nil {
+			if err := writeSignedGenTx(cdc, filepath.Join(config.RootDir, "config", "gentx"), nodeID, viper.GetString(flagIP), txStd); err != nil {
 				return err
 			}
 
@@ -124,12 +119,11 @@ qosd gentx --name validatorName --owner ownerName --tokens 100
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
-	cmd.Flags().String(flagIP, "", "ip of your node")
+	cmd.Flags().String(flagIP, "127.0.0.1", "ip of your node")
 
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagBondTokens)
-	cmd.MarkFlagRequired(flagIP)
 
 	return cmd
 }
@@ -158,16 +152,12 @@ func validGenesisAccount(genesisState app.GenesisState, address btypes.Address, 
 	return fmt.Errorf("account %s in not in the app_state.accounts array of genesis.json", address)
 }
 
-func makeOutputFilepath(rootDir, nodeID string) (string, error) {
-	writePath := filepath.Join(rootDir, "config", "gentx")
-	if err := common.EnsureDir(writePath, 0700); err != nil {
-		return "", err
+func writeSignedGenTx(cdc *amino.Codec, genTxDir, nodeID, ip string, tx *txs.TxStd) error {
+	if err := common.EnsureDir(genTxDir, 0700); err != nil {
+		return err
 	}
-	return filepath.Join(writePath, fmt.Sprintf("%s@%s.json", nodeID, viper.GetString(flagIP))), nil
-}
-
-func writeSignedGenTx(cdc *amino.Codec, outputDocument string, tx *txs.TxStd) error {
-	outputFile, err := os.OpenFile(outputDocument, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+	genTx := filepath.Join(genTxDir, fmt.Sprintf("%s@%s.json", nodeID, ip))
+	outputFile, err := os.OpenFile(genTx, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
 	if err != nil {
 		return err
 	}
