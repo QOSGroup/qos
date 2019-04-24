@@ -54,8 +54,8 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	}
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateDelegation,
-		TagValidator, validator.GetValidatorAddress(),
-		TagDelegator, tx.Delegator)
+		TagValidator, validator.GetValidatorAddress().String(),
+		TagDelegator, tx.Delegator.String())
 
 	return
 }
@@ -125,8 +125,8 @@ func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, cro
 	e.DelegationMapper.SetDelegationInfo(info)
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionModifyCompound,
-		TagValidator, validator.GetValidatorAddress(),
-		TagDelegator, tx.Delegator)
+		TagValidator, validator.GetValidatorAddress().String(),
+		TagDelegator, tx.Delegator.String())
 
 	return
 }
@@ -200,8 +200,8 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	}
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionUnbondDelegation,
-		TagValidator, validator.GetValidatorAddress(),
-		TagDelegator, tx.Delegator)
+		TagValidator, validator.GetValidatorAddress().String(),
+		TagDelegator, tx.Delegator.String())
 
 	return
 }
@@ -288,9 +288,9 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 	}
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateReDelegation,
-		TagValidator, fromValidator.GetValidatorAddress(),
-		TagNewValidator, toValidator.GetValidatorAddress(),
-		TagDelegator, tx.Delegator)
+		TagValidator, fromValidator.GetValidatorAddress().String(),
+		TagNewValidator, toValidator.GetValidatorAddress().String(),
+		TagDelegator, tx.Delegator.String())
 
 	return
 

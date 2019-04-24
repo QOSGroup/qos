@@ -104,8 +104,8 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validatorMapper.CreateValidator(validator)
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateValidator,
-		TagValidator, valAddr,
-		TagOwner, tx.Owner,
+		TagValidator, valAddr.String(),
+		TagOwner, tx.Owner.String(),
 		TagDelegator, tx.Owner.String())
 
 	return
@@ -172,8 +172,8 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	mapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.Revoke)
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionRevokeValidator,
-		TagValidator, valAddr,
-		TagOwner, tx.Owner)
+		TagValidator, valAddr.String(),
+		TagOwner, tx.Owner.String())
 
 	return
 }
@@ -247,8 +247,8 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, uint64(ctx.BlockHeight()))
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionActiveValidator,
-		TagValidator, valAddr,
-		TagOwner, tx.Owner)
+		TagValidator, valAddr.String(),
+		TagOwner, tx.Owner.String())
 
 	return
 }
