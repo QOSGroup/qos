@@ -100,6 +100,7 @@ Example:
 
 			genDoc := &ttypes.GenesisDoc{
 				GenesisTime: time.Now(),
+				ConsensusParams: defaultConsensusParams(),
 			}
 			// chainId
 			if chainId != "" {

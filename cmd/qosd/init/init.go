@@ -13,8 +13,19 @@ func GenQOSGenesisDoc(ctx *server.Context, cdc *amino.Codec, chainID string, nod
 	appState, _ := cdc.MarshalJSONIndent(app.NewDefaultGenesisState(), "", " ")
 
 	return tmtypes.GenesisDoc{
-		ChainID:  chainID,
-		AppState: appState,
+		ChainID:         chainID,
+		ConsensusParams: defaultConsensusParams(),
+		AppState:        appState,
 	}, nil
 
+}
+
+func defaultConsensusParams() *tmtypes.ConsensusParams {
+	consensusParams := tmtypes.DefaultConsensusParams()
+	consensusParams.BlockSize = tmtypes.BlockSizeParams{
+		MaxBytes: 1048576, // 1MB
+		MaxGas:   -1,
+	}
+
+	return consensusParams
 }
