@@ -873,7 +873,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 创建的validator基于本地的配置文件取`$HOME/.qosd/config/priv_validator.json`内信息，如果更改过默认位置，请使用`--home`指定`config`所在目录。
 
-`Arya`初始化了一个[全节点](../install/testnet/fullnode.md)，可通过下面指令成为验证节点：
+`Arya`初始化了一个[全节点](../install/testnet.md#启动全节点)，可通过下面指令成为验证节点：
 ```bash
 $ qoscli tx create-validator --name "Arya's node" --owner Arya --tokens 1000
 ```
