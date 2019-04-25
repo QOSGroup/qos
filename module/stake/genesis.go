@@ -2,6 +2,7 @@ package stake
 
 import (
 	"fmt"
+	"github.com/QOSGroup/qos/module/eco"
 
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -144,24 +145,19 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []ecotyp
 	return nil
 }
 
-func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
+func ExportGenesis(ctx context.Context) GenesisState {
 
 	validatorMapper := mapper.GetValidatorMapper(ctx)
 	voteMapper := mapper.GetVoteInfoMapper(ctx)
 	delegationMapper := mapper.GetDelegationMapper(ctx)
 
 	var currentValidators []ecotypes.Validator
-	if !forZeroHeight {
-		validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
-	}
+	validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
 
 	params := validatorMapper.GetParams(ctx)
 
 	var validators []ecotypes.Validator
 	validatorMapper.IterateValidators(func(validator ecotypes.Validator) {
-		if forZeroHeight {
-			validator.BondHeight = 1
-		}
 		validators = append(validators, validator)
 	})
 
@@ -249,4 +245,60 @@ type DelegatorUnbondState struct {
 	DeleAddress btypes.Address `json:"delegator_address"`
 	Height      uint64         `json:"height"`
 	Amount      uint64         `json:"tokens"`
+}
+
+func PrepForZeroHeightGenesis(ctx context.Context) {
+
+	e := eco.GetEco(ctx)
+
+	// close all active validators
+	validatorSet := e.ValidatorMapper.GetActiveValidatorSet(true)
+	var validators []ecotypes.Validator
+	var delegations []ecotypes.DelegationInfo
+	for _, val := range validatorSet {
+		validator, exists := e.ValidatorMapper.GetValidator(val)
+		if !exists {
+			panic(fmt.Sprintf("active validator %s should exist", val))
+		}
+		validators = append(validators, validator)
+		e.DelegationMapper.IterateDelegationsValDeleAddr(val, func(val btypes.Address, del btypes.Address) {
+			delegation, exists := e.DelegationMapper.GetDelegationInfo(del, val)
+			if !exists {
+				panic(fmt.Sprintf("delegation from %s to %s should exists", del, val))
+			}
+
+			delegations = append(delegations, delegation)
+		})
+
+		e.ValidatorMapper.MakeValidatorInactive(val, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.Revoke)
+	}
+
+	// return unbond tokens
+	eco.ReturnAllUnbondTokens(ctx)
+
+	// close all inactive validators
+	closeExpireInactiveValidator(ctx, 0)
+
+	// reset block height
+	ctx = ctx.WithBlockHeight(0)
+	e = eco.GetEco(ctx)
+
+	// reinitialize all validators
+	for _, validator := range validators {
+		val := btypes.Address(validator.ValidatorPubKey.Address())
+		e.VoteInfoMapper.DelValidatorVoteInfo(val)
+		e.VoteInfoMapper.ClearValidatorVoteInfoInWindow(val)
+		e.DistributionMapper.DeleteValidatorPeriodSummaryInfo(val)
+		e.DistributionMapper.InitValidatorPeriodSummaryInfo(val)
+		e.ValidatorMapper.CreateValidator(validator)
+	}
+
+	// reinitialize all delegations
+	e.DistributionMapper.DeleteDelegatorsEarningStartInfo()
+	e.DistributionMapper.DeleteDelegatorsIncomeHeight()
+	for _, delegation := range delegations {
+		delegationInfo := ecotypes.NewDelegationInfo(delegation.DelegatorAddr, delegation.ValidatorAddr, delegation.Amount, delegation.IsCompound)
+		e.DelegationMapper.SetDelegationInfo(delegationInfo)
+		e.DistributionMapper.InitDelegatorIncomeInfo(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount, 1)
+	}
 }

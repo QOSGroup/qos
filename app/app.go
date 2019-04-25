@@ -159,7 +159,6 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 		panic(err)
 	}
 
-	// accounts init should in the first
 	initAccounts(ctx, genesisState.Accounts)
 	gov.InitGenesis(ctx, genesisState.GovData)
 	guardian.InitGenesis(ctx, genesisState.GuardianData)
@@ -202,11 +201,11 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 	genState := NewGenesisState(
 		accounts,
 		mint.ExportGenesis(ctx),
-		stake.ExportGenesis(ctx, forZeroHeight),
+		stake.ExportGenesis(ctx),
 		qcp.ExportGenesis(ctx),
 		qsc.ExportGenesis(ctx),
 		approve.ExportGenesis(ctx),
-		distribution.ExportGenesis(ctx, forZeroHeight),
+		distribution.ExportGenesis(ctx),
 		gov.ExportGenesis(ctx),
 		guardian.ExportGenesis(ctx),
 	)
@@ -221,16 +220,11 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 // prepare for fresh start at zero height
 func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
-	// close inactive validators
-	stake.CloseExpireInactiveValidator(ctx, 0)
+	stake.PrepForZeroHeightGenesis(ctx)
 
-	// return unbond tokens
-	stake.ReturnAllUnbondTokens(ctx)
+	mint.PrepForZeroHeightGenesis(ctx)
 
-	// return proposal deposit
 	gov.PrepForZeroHeightGenesis(ctx)
-
-	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }
 
 // gas

@@ -85,7 +85,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 
 }
 
-func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
+func ExportGenesis(ctx context.Context) GenesisState {
 
 	distributionMapper := mapper.GetDistributionMapper(ctx)
 	validatorMapper := mapper.GetValidatorMapper(ctx)
@@ -132,12 +132,6 @@ func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
 				DeleAddress:                deleAddr,
 				DelegatorEarningsStartInfo: desi,
 			}
-			if forZeroHeight {
-				dess.DelegatorEarningsStartInfo.CurrentStartingHeight = 1
-				dess.DelegatorEarningsStartInfo.FirstDelegateHeight = 1
-				dess.DelegatorEarningsStartInfo.LastIncomeCalHeight = 0
-				dess.DelegatorEarningsStartInfo.LastIncomeCalFees = btypes.NewInt(0)
-			}
 			delegatorEarningInfos = append(delegatorEarningInfos, dess)
 		}
 	})
@@ -151,9 +145,6 @@ func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
 				ValidatorPubKey: validator.ValidatorPubKey,
 				DeleAddress:     deleAddr,
 				Height:          height,
-			}
-			if forZeroHeight {
-				dihs.Height = height - uint64(ctx.BlockHeight())
 			}
 			delegatorIncomeHeights = append(delegatorIncomeHeights, dihs)
 		}

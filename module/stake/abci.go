@@ -32,34 +32,9 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 	survivalSecs := validatorMapper.GetParams(ctx).ValidatorSurvivalSecs
 	maxValidatorCount := uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt)
 
-	CloseExpireInactiveValidator(ctx, survivalSecs)
+	closeExpireInactiveValidator(ctx, survivalSecs)
 	res.ValidatorUpdates = GetUpdatedValidators(ctx, maxValidatorCount)
 	return
-}
-
-func ReturnAllUnbondTokens(ctx context.Context) {
-	height := uint64(ctx.BlockHeight())
-	e := eco.GetEco(ctx)
-	maxHeight := uint64(e.ValidatorMapper.GetParams(ctx).DelegatorUnbondReturnHeight) + height
-	for h := height; h <= maxHeight; h++ {
-		prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(h)
-
-		iter := btypes.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
-		defer iter.Close()
-
-		for ; iter.Valid(); iter.Next() {
-			k := iter.Key()
-			e.DelegationMapper.Del(k)
-
-			var amount uint64
-			e.DelegationMapper.BaseMapper.DecodeObject(iter.Value(), &amount)
-
-			_, deleAddr := ecotypes.GetUnbondingDelegationHeightAddress(k)
-			returnQOSAmount := amount
-
-			eco.IncrAccountQOS(ctx, deleAddr, btypes.NewInt(int64(returnQOSAmount)))
-		}
-	}
 }
 
 //unbond的token返还至delegator账户中
@@ -85,7 +60,7 @@ func EndBlockerByReturnUnbondTokens(ctx context.Context) {
 	}
 }
 
-func CloseExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
+func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 	log := ctx.Logger()
 	e := eco.GetEco(ctx)
 

@@ -377,6 +377,15 @@ func (mapper *DistributionMapper) IteratorDelegatorsEarningStartInfo(fn func(bty
 	}
 }
 
+func (mapper *DistributionMapper) DeleteDelegatorsEarningStartInfo() {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
+	}
+}
+
 func (mapper *DistributionMapper) IteratorDelegatorsIncomeHeight(fn func(btypes.Address, btypes.Address, uint64)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
 	defer iter.Close()
@@ -386,5 +395,14 @@ func (mapper *DistributionMapper) IteratorDelegatorsIncomeHeight(fn func(btypes.
 
 		valAddr, deleAddr, height := types.GetDelegatorPeriodIncomeHeightAddr(key)
 		fn(valAddr, deleAddr, height)
+	}
+}
+
+func (mapper *DistributionMapper) DeleteDelegatorsIncomeHeight() {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
 	}
 }

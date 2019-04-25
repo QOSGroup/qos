@@ -165,6 +165,31 @@ func (e Eco) UnbondValidator(ctx context.Context, validator types.Validator, del
 	return nil
 }
 
+func ReturnAllUnbondTokens(ctx context.Context) {
+	height := uint64(ctx.BlockHeight())
+	e := GetEco(ctx)
+	maxHeight := uint64(e.ValidatorMapper.GetParams(ctx).DelegatorUnbondReturnHeight) + height
+	for h := height; h <= maxHeight; h++ {
+		prePrefix := types.BuildUnbondingDelegationByHeightPrefix(h)
+
+		iter := btypes.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
+		defer iter.Close()
+
+		for ; iter.Valid(); iter.Next() {
+			k := iter.Key()
+			e.DelegationMapper.Del(k)
+
+			var amount uint64
+			e.DelegationMapper.BaseMapper.DecodeObject(iter.Value(), &amount)
+
+			_, deleAddr := types.GetUnbondingDelegationHeightAddress(k)
+			returnQOSAmount := amount
+
+			IncrAccountQOS(ctx, deleAddr, btypes.NewInt(int64(returnQOSAmount)))
+		}
+	}
+}
+
 type Eco struct {
 	Context            context.Context
 	DistributionMapper *mapper.DistributionMapper
