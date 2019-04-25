@@ -26,11 +26,11 @@ module.exports = {
                 ]
             },
             {
-                title: "Client",
+                title: "Command",
                 collapsable: false,
                 children: [
-                    ["/client/qoscli", "qoscli"],
-                    ["/client/qosd", "qosd"],
+                    ["/command/qoscli", "qoscli"],
+                    ["/command/qosd", "qosd"],
                 ]
             }
             ,
@@ -47,6 +47,7 @@ module.exports = {
                     ["/spec/qcp", "QCP"],
                     ["/spec/governance", "Governance"],
                     ["/spec/guardian", "Guardian"],
+                    ["/spec/indexing", "Index"],
                     ["/spec/ca", "CA"]
                 ]
             }

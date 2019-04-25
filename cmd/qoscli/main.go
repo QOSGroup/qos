@@ -39,10 +39,8 @@ func main() {
 
 	// query commands
 	queryCommands := bcli.QueryCommand(cdc)
-	queryCommands.AddCommand(bctypes.LineBreak)
-	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
-	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(qsc.QueryCommands(cdc)...)
+	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
 	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(staking.QueryCommands(cdc)...)
 	queryCommands.AddCommand(bctypes.LineBreak)

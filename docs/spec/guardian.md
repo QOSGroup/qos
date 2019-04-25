@@ -28,6 +28,8 @@ type Guardian struct {
 - Address 账户地址
 - Creator 创建Guardian地址
 
+## Txs
+
 ### TxAddGuardian
 
 添加特权账户
@@ -44,7 +46,7 @@ type TxAddGuardian struct {
 - Address 账户地址
 - Creator 创建Guardian地址
 
-操作指令：[添加特权账户](../client/qoscli.md#添加特权账户)
+操作指令：[添加特权账户](../command/qoscli.md#添加特权账户)
 
 ### TxDeleteGuardian
 
@@ -60,4 +62,4 @@ type TxDeleteGuardian struct {
 - Address 账户地址
 - DeletedBy 执行删除操作账户地址，只能是Genesis Guardian
 
-操作指令：[删除特权账户](../client/qoscli.md#删除特权账户)
+操作指令：[删除特权账户](../command/qoscli.md#删除特权账户)

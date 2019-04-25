@@ -3,9 +3,8 @@
 提供与QOS网络交互的命令行工具`qoscli`，主要提供以下命令行功能：
 * `keys`        [本地密钥库](#密钥（keys）)
 * `query`       [信息查询](#查询（query）)
-* `tx`          [执行交易](#交易（tx）)
-* `tendermint`  [tendermint自带指令](#tendermint)
-* `version`     版本信息
+* `tx`          [交易](#交易（tx）)
+* `version`     [版本信息](#版本（version）)
 
 所有命令均可通过添加`--help`获取命令说明
 
@@ -123,6 +122,19 @@ qoscli keys import Arya --file Arya.pri
 > Repeat the passphrase:<重复上面输入的密码>
 ```
 
+## 版本（version）
+`qoscli version`
+
+输出示例：
+```bash
+{
+ "version": "0.0.4-46-g5ec63bd", //QOS版本信息
+ "commit": "5ec63bd74c2c92924c25ffd5be1ff0f232bfcda4", //QOS源码commit ID
+ "go": "go version go1.11.5 linux/amd64" //go 版本信息
+}
+
+```
+
 ## 查询（query）
 
 * `qoscli query account`                [账户查询](#账户（account）)
@@ -150,9 +162,187 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query tally`                  [投票统计](#投票统计)
 * `qoscli query params`                 [参数查询](#参数查询)
 * `qoscli query guardian`               [特权账户查询](#特权账户查询)
-* `qoscli query guardians`              [特权账户列表](#特权账户列表)                        
+* `qoscli query guardians`              [特权账户列表](#特权账户列表)   
+* `qoscli query status`                 [查询节点状态](#状态（status）)
+* `qoscli query tendermint-validators`  [获取指定高度验证节点集合](#获取指定高度验证节点集合)
+* `qoscli query block`                  [获取指定高度区块信息](#区块（block）)
+* `qoscli query txs`                    [根据标签查找交易](#根据标签查找交易)
+* `qoscli query tx`                     [根据交易hash查询交易信息](#根据交易hash查询交易信息)                     
 
 查询的具体指令将在各自模块进行介绍。
+
+### 状态（status）
+`qoscli query status --indent`
+
+输出示例：
+```bash
+{
+  "node_info": {
+    "protocol_version": {
+      "p2p": "7",
+      "block": "10",
+      "app": "0"
+    },
+    "id": "4537e18828364c6e3529000e30bcf9f25b0fc50c",
+    "listen_addr": "tcp://0.0.0.0:26656",
+    "network": "imuge",
+    "version": "0.30.1",
+    "channels": "4020212223303800",
+    "moniker": "node1",
+    "other": {
+      "tx_index": "on",
+      "rpc_address": "tcp://0.0.0.0:26657"
+    }
+  },
+  "sync_info": {
+    "latest_block_hash": "4D935B625A5C2D63FD251C8448C9765916B289E435A0388F64401767DFA22BD5",
+    "latest_app_hash": "29E08C36CE8CEA35EF4DE04B002C852505361B303950F3E07EBFC031F8DAB854",
+    "latest_block_height": "396",
+    "latest_block_time": "2019-04-25T06:53:11.777203643Z",
+    "catching_up": false
+  },
+  "validator_info": {
+    "address": "0E447E66089C9D97EFC2F4C172403F35740DD507",
+    "pub_key": {
+      "type": "tendermint/PubKeyEd25519",
+      "value": "FIGPykhLqi5X5HYrFMiI7hus7x2rNVg18pPevIBRLoU="
+    },
+    "voting_power": "26590937"
+  }
+}
+```
+
+其中`catching_up`为`false`表示节点已同步到最新高度。
+
+### 区块（block）
+`qoscli query block <height>`
+
+其中`<height>`为区块高度
+
+查询高度10区块信息：
+```bash
+$ qoscli query block 10 --indent
+```
+
+输出示例：
+```bash
+{
+  "block_meta": {
+    "block_id": {
+      "hash": "A473CE3866A74277BC7F7B7AF70E55B40736B8A3CA3B8A55406AC8CF6E04ED50",
+      "parts": {
+        "total": "1",
+        "hash": "B9C5DEF42EAA9D445E52B1F8DD34ECC96C02E537F43D1F7C8D829C84F8663127"
+      }
+    },
+    "header": {
+      "version": {
+        "block": "10",
+        "app": "0"
+      },
+      "chain_id": "Arya",
+      "height": "20",
+      "time": "2019-04-25T06:19:28.353298129Z",
+      "num_txs": "0",
+      "total_txs": "0",
+      "last_block_id": {
+        "hash": "BC153175007D7E5D5C6A27D22E3F7227224E43C537988DDCBF6C2F14A95DD432",
+        "parts": {
+          "total": "1",
+          "hash": "EEFE6F3A761D9D28DBCA81424F9E50A8C716D0F4898FA7B3893CBB0AC7B55F4D"
+        }
+      },
+      "last_commit_hash": "863F17ACB4909A5E043782DB06F3FE18C6DCF4988EE9B7C0CDA7D8337504FCFB",
+      "data_hash": "",
+      "validators_hash": "5CA1D1B7D703F2D2A9C270D1CD5819E7E0D439BA1C55645BCD8DB7B079389CA8",
+      "next_validators_hash": "5CA1D1B7D703F2D2A9C270D1CD5819E7E0D439BA1C55645BCD8DB7B079389CA8",
+      "consensus_hash": "294D8FBD0B94B767A7EBA9840F299A3586DA7FE6B5DEAD3B7EECBA193C400F93",
+      "app_hash": "C31662F65DEE545FEDF15D98517CBF07034DC1821EF06DD87D2F956C315A0A9B",
+      "last_results_hash": "",
+      "evidence_hash": "",
+      "proposer_address": "0E447E66089C9D97EFC2F4C172403F35740DD507"
+    }
+  },
+  "block": {
+    "header": {
+      "version": {
+        "block": "10",
+        "app": "0"
+      },
+      "chain_id": "Arya",
+      "height": "20",
+      "time": "2019-04-25T06:19:28.353298129Z",
+      "num_txs": "0",
+      "total_txs": "0",
+      "last_block_id": {
+        "hash": "BC153175007D7E5D5C6A27D22E3F7227224E43C537988DDCBF6C2F14A95DD432",
+        "parts": {
+          "total": "1",
+          "hash": "EEFE6F3A761D9D28DBCA81424F9E50A8C716D0F4898FA7B3893CBB0AC7B55F4D"
+        }
+      },
+      "last_commit_hash": "863F17ACB4909A5E043782DB06F3FE18C6DCF4988EE9B7C0CDA7D8337504FCFB",
+      "data_hash": "",
+      "validators_hash": "5CA1D1B7D703F2D2A9C270D1CD5819E7E0D439BA1C55645BCD8DB7B079389CA8",
+      "next_validators_hash": "5CA1D1B7D703F2D2A9C270D1CD5819E7E0D439BA1C55645BCD8DB7B079389CA8",
+      "consensus_hash": "294D8FBD0B94B767A7EBA9840F299A3586DA7FE6B5DEAD3B7EECBA193C400F93",
+      "app_hash": "C31662F65DEE545FEDF15D98517CBF07034DC1821EF06DD87D2F956C315A0A9B",
+      "last_results_hash": "",
+      "evidence_hash": "",
+      "proposer_address": "0E447E66089C9D97EFC2F4C172403F35740DD507"
+    },
+    "data": {
+      "txs": null
+    },
+    "evidence": {
+      "evidence": null
+    },
+    "last_commit": {
+      "block_id": {
+        "hash": "BC153175007D7E5D5C6A27D22E3F7227224E43C537988DDCBF6C2F14A95DD432",
+        "parts": {
+          "total": "1",
+          "hash": "EEFE6F3A761D9D28DBCA81424F9E50A8C716D0F4898FA7B3893CBB0AC7B55F4D"
+        }
+      },
+      "precommits": [
+        {
+          "type": 2,
+          "height": "19",
+          "round": "0",
+          "block_id": {
+            "hash": "BC153175007D7E5D5C6A27D22E3F7227224E43C537988DDCBF6C2F14A95DD432",
+            "parts": {
+              "total": "1",
+              "hash": "EEFE6F3A761D9D28DBCA81424F9E50A8C716D0F4898FA7B3893CBB0AC7B55F4D"
+            }
+          },
+          "timestamp": "2019-04-25T06:19:28.353298129Z",
+          "validator_address": "0E447E66089C9D97EFC2F4C172403F35740DD507",
+          "validator_index": "0",
+          "signature": "bfhVFCZMS/6hEmkFAaLfNwumKEUQNtRkGvnrMTTvezjpCbv/X0wSQQKq6g4crd5mI3WjZYp4vM+EA4SY55ucCw=="
+        },
+        {
+          "type": 2,
+          "height": "19",
+          "round": "0",
+          "block_id": {
+            "hash": "BC153175007D7E5D5C6A27D22E3F7227224E43C537988DDCBF6C2F14A95DD432",
+            "parts": {
+              "total": "1",
+              "hash": "EEFE6F3A761D9D28DBCA81424F9E50A8C716D0F4898FA7B3893CBB0AC7B55F4D"
+            }
+          },
+          "timestamp": "2019-04-25T06:19:28.312339528Z",
+          "validator_address": "E9816412631B42AE3921769FFD9DE121AA745422",
+          "validator_index": "1",
+          "signature": "vePZhdo+dRTEghf3aHhqWXJQgyXeSoB2q4o1WiIncxI1raXU5YTGKNEdD8Tq8TbmI2uDH5J6CAOGy9ru1DzODQ=="
+        }
+      ]
+    }
+  }
+}
+```
 
 ### 账户（account）
 
@@ -208,7 +398,7 @@ QOS网络的存储内容均可通过下面指令查找：
 查询QOS网络中存储的ROOT CA 信息：
 
 ```bash
-$ qoscli query store --path /store/base/subspace --data rootca --indent
+$ qoscli query store --path /store/acc/subspace --data account --indent
 ```
 
 执行结果：
@@ -216,10 +406,18 @@ $ qoscli query store --path /store/base/subspace --data rootca --indent
 ```bash
 [
   {
-    "key": "rootca",
+    "key": "account:\ufffdjw15+RMW:wS\ufffd\ufffd\ufffd\ufffd\u0003_\ufffd\ufffd",
     "value": {
-      "type": "tendermint/PubKeyEd25519",
-      "value": "L+P3Vm8NQRDwVt4rHzlqtBJLGSsLZGLmmd4wLYrUe6U="
+      "type": "qos/types/QOSAccount",
+      "value": {
+        "base_account": {
+          "account_address": "address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk",
+          "public_key": null,
+          "nonce": "0"
+        },
+        "qos": "10000000000",
+        "qscs": null
+      }
     }
   }
 ]
@@ -252,6 +450,146 @@ QOS支持以下几种交易类型：
 * `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
 
 分为[转账](#转账（transfer）)、[预授权](#预授权（approve）)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
+
+支持的查询命令：
+
+* `qoscli query tx`            [根据交易hash查询交易信息](#根据交易hash查询交易信息)     
+* `qoscli query txs`           [根据标签查找交易](#根据标签查找交易)
+
+### 根据交易hash查询交易信息
+执行交易后会返回交易hash，通过交易hash可查询交易详细信息。
+
+根据hash `f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa12385` 查询交易信息：
+
+```bash
+$ qoscli query tx f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa12385 --indent
+```
+输出示例：
+
+```bash
+{
+  "hash": "f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa12385",
+  "height": "246",
+  "tx": {
+    "type": "qbase/txs/stdtx",
+    "value": {
+      "itx": [
+        {
+          "type": "approve/txs/TxCreateApprove",
+          "value": {
+            "Approve": {
+              "from": "address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk",
+              "to": "address1yqekgyy66v2cxzww6lqg6sdrsugjguxqws6mkf",
+              "qos": "100",
+              "qscs": null
+            }
+          }
+        }
+      ],
+      "sigature": [
+        {
+          "pubkey": {
+            "type": "tendermint/PubKeyEd25519",
+            "value": "B/iatjhcJ4yFyHfGYKw2IneYGu2zG+ZOR8XmRUaji0A="
+          },
+          "signature": "VrsOsULJx86y8ch529zvl3Sh19TwGm/AldPlQhVWqhtg+calZmBrk25sD9HxCYijAt+ZUWMiLtPg3QZzCCqHAg==",
+          "nonce": "1"
+        }
+      ],
+      "chainid": "QOS",
+      "maxgas": "100000"
+    }
+  },
+  "result": {
+    "gas_wanted": "100000",
+    "gas_used": "15220",
+    "tags": [
+      {
+        "key": "YWN0aW9u",
+        "value": "Y3JlYXRlLWFwcHJvdmU="
+      },
+      {
+        "key": "YXBwcm92ZS1mcm9t",
+        "value": "YWRkcmVzczFzMzQ4d3ZmNDlkZnk2NGU2d2FmYzkwbGNhdnA0bHJkNnh6aHpoaw=="
+      },
+      {
+        "key": "YXBwcm92ZS10bw==",
+        "value": "YWRkcmVzczF5cWVrZ3l5NjZ2MmN4end3NmxxZzZzZHJzdWdqZ3V4cXdzNm1rZg=="
+      }
+    ]
+  }
+}
+```
+
+### 根据标签查找交易
+执行交易后会同时会返回QOS为交易所打tag，通过交易tag可查询交易信息。
+
+根据`approve-from`=`address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk`查询预授权交易信息：
+
+```bash
+$ qoscli query txs --tag "approve-from='address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk'" --indent
+```
+输出示例：
+
+```bash
+[
+  {
+    "hash": "f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa12385",
+    "height": "246",
+    "tx": {
+      "type": "qbase/txs/stdtx",
+      "value": {
+        "itx": [
+          {
+            "type": "approve/txs/TxCreateApprove",
+            "value": {
+              "Approve": {
+                "from": "address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk",
+                "to": "address1yqekgyy66v2cxzww6lqg6sdrsugjguxqws6mkf",
+                "qos": "100",
+                "qscs": null
+              }
+            }
+          }
+        ],
+        "sigature": [
+          {
+            "pubkey": {
+              "type": "tendermint/PubKeyEd25519",
+              "value": "B/iatjhcJ4yFyHfGYKw2IneYGu2zG+ZOR8XmRUaji0A="
+            },
+            "signature": "VrsOsULJx86y8ch529zvl3Sh19TwGm/AldPlQhVWqhtg+calZmBrk25sD9HxCYijAt+ZUWMiLtPg3QZzCCqHAg==",
+            "nonce": "1"
+          }
+        ],
+        "chainid": "QOS",
+        "maxgas": "100000"
+      }
+    },
+    "result": {
+      "gasWanted": "100000",
+      "gasUsed": "15220",
+      "tags": [
+        {
+          "key": "YWN0aW9u",
+          "value": "Y3JlYXRlLWFwcHJvdmU="
+        },
+        {
+          "key": "YXBwcm92ZS1mcm9t",
+          "value": "YWRkcmVzczFzMzQ4d3ZmNDlkZnk2NGU2d2FmYzkwbGNhdnA0bHJkNnh6aHpoaw=="
+        },
+        {
+          "key": "YXBwcm92ZS10bw==",
+          "value": "YWRkcmVzczF5cWVrZ3l5NjZ2MmN4end3NmxxZzZzZHJzdWdqZ3V4cXdzNm1rZg=="
+        }
+      ]
+    }
+  }
+]
+
+```
+
+更多交易Tag请查阅[index](../spec/indexing.md)
 
 ### 转账（transfer）
 
@@ -605,6 +943,30 @@ validators:
   "inactiveHeight": "0",
   "bondHeight": "258"
 }
+```
+
+#### 获取指定高度验证节点集合
+
+`qoscli query tendermint-validators <height>`
+
+查询最新高度所有验证节点：
+```bash
+$ qoscli query tendermint-validators --indent
+```
+
+执行结果：
+```bash
+current query height: 260
+[
+  {
+    "Address": "address1axqkgynrrdp2uwfpw60lm80pyx48g4pz5xj3er",
+    "VotingPower": "1000",
+    "PubKey": {
+      "type": "tendermint/PubKeyEd25519",
+      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+    }
+  }
+]
 ```
 
 #### 查询验证节点漏块信息
@@ -1349,15 +1711,3 @@ $ qoscli tx add-guardian --address Sansa --creator Arya --description 'set Sansa
 ```bash
 $ qoscli tx delete-guardian --address Sansa --deleted-by Arya
 ```
-
-## tendermint
-
-QOS中包含的tendermint提供的基础指令：
-
-* `qoscli tendermint status`      查询节点状态
-* `qoscli tendermint validators`  获取指定高度验证节点集合
-* `qoscli tendermint block`       获取指定高度区块信息
-* `qoscli tendermint txs`         根据标签查找交易
-* `qoscli tendermint tx`          根据交易hash查询交易信息
-
-更多tendermint使用说明参照[tendermint 官方文档](https://tendermint.com/docs/)
