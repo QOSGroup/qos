@@ -7,6 +7,7 @@ const (
 	flagQSC = "qsc"
 
 	flagClientHome = "home-client"
+	flagNodeHome   = "home-node"
 	flagIP         = "ip"
 
 	flagAddress = "address"

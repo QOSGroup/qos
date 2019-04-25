@@ -114,6 +114,7 @@ qosd gentx --name validatorName --owner ownerName --tokens 100
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
+	cmd.Flags().String(flagNodeHome, types.DefaultNodeHome, "directory for your node")
 	cmd.Flags().String(flagIP, "127.0.0.1", "ip of your node")
 
 	cmd.MarkFlagRequired(flagName)
