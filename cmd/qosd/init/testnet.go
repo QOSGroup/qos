@@ -98,25 +98,9 @@ Example:
 				}
 			}
 
-			genDoc := &ttypes.GenesisDoc{
-				GenesisTime: time.Now(),
-				ConsensusParams: defaultConsensusParams(),
-			}
 			// chainId
-			if chainId != "" {
-				genDoc.ChainID = chainId
-			} else {
-				genDoc.ChainID = "test-chain-" + cmn.RandStr(6)
-			}
-
-			appState := app.GenesisState{
-				Accounts:         genesisAccounts,
-				MintData:         mint.DefaultGenesisState(),
-				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), nil, nil, nil, nil, nil, nil),
-				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
-				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
-				DistributionData: distribution.DefaultGenesisState(),
-				GovData:          gov.DefaultGenesisState(),
+			if len(chainId) == 0 {
+				chainId = "test-chain-" + cmn.RandStr(6)
 			}
 
 			// validators
@@ -176,9 +160,28 @@ Example:
 				cfg.WriteConfigFile(filepath.Join(nodeDirs[i], "config", "config.toml"), config)
 			}
 
-			appState.Accounts = genesisAccounts
+			appliedQOSAmount := btypes.ZeroInt()
+			for _, account := range genesisAccounts {
+				appliedQOSAmount = appliedQOSAmount.Add(account.QOS)
+			}
+			appState := app.GenesisState{
+				Accounts:         genesisAccounts,
+				MintData:         mint.DefaultGenesisState(),
+				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), nil, nil, nil, nil, nil, nil),
+				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
+				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
+				DistributionData: distribution.DefaultGenesisState(),
+				GovData:          gov.DefaultGenesisState(),
+			}
+			appState.MintData.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
+
 			rawState, _ := cdc.MarshalJSON(appState)
-			genDoc.AppState = rawState
+			genDoc := &ttypes.GenesisDoc{
+				ChainID:         chainId,
+				GenesisTime:     time.Now(),
+				ConsensusParams: defaultConsensusParams(),
+				AppState:        rawState,
+			}
 
 			// collect gentxs, write genesis files and update config files
 			for i := 0; i < nValidators; i++ {
