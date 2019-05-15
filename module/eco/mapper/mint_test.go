@@ -10,6 +10,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
+	btypes "github.com/QOSGroup/qbase/types"
 	minttypes "github.com/QOSGroup/qos/module/eco/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -63,7 +64,7 @@ func defaultMintContext() context.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 
-	cms.MountStoreWithDB(mintKey, store.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(mintKey, btypes.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
 	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger(), mapperMap)
 	return ctx

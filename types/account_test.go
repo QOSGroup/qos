@@ -507,7 +507,7 @@ func TestParseAccounts(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		res, err := ParseAccounts(tc.input1)
+		res, err := ParseAccounts(tc.input1, DefaultCLIHome)
 		require.Equal(t, tc.correct, err == nil, "tc #%d", tcIndex)
 		require.Equal(t, tc.expected, res, "tc #%d", tcIndex)
 	}

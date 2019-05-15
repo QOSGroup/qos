@@ -1,6 +1,7 @@
 package gov
 
 import (
+	"fmt"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
@@ -61,6 +62,10 @@ func (tx TxDeposit) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDepositProposal,
+		TagProposalID, fmt.Sprintf("%d", tx.ProposalID),
+		TagDepositor, tx.Depositor.String())
 
 	return
 }

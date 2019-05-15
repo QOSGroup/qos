@@ -4,11 +4,11 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	btypes "github.com/QOSGroup/qbase/types"
 	"time"
 
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qbase/store"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 )
 
@@ -36,7 +36,7 @@ func (mapper *MintMapper) Copy() mapper.IMapper {
 // 获取当前Inflation Phrase的键值
 func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, error) {
 	// 使用KVStorePrefixIterator，当前应该是key最小的也就是第一个
-	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
+	iter := btypes.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
 	if !iter.Valid() {
 		return nil, errors.New("No more coins to come, sad!")
 	}
@@ -107,7 +107,7 @@ func (mapper *MintMapper) SetMintParams(config ecotypes.MintParams) {
 
 func (mapper *MintMapper) GetMintParams() ecotypes.MintParams {
 	var phrases []ecotypes.InflationPhrase
-	iter := store.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
+	iter := btypes.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
 
 	for ; iter.Valid(); iter.Next() {
 		var inflationPhrase ecotypes.InflationPhrase

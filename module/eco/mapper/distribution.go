@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco/types"
 	pmapper "github.com/QOSGroup/qos/module/params"
@@ -41,7 +40,7 @@ func (mapper *DistributionMapper) InitValidatorPeriodSummaryInfo(valAddr btypes.
 //清空validator收益分配相关信息
 func (mapper *DistributionMapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.Address) {
 	periodPrifixKey := append(types.GetValidatorHistoryPeriodSummaryPrefixKey(), valAddr...)
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), periodPrifixKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), periodPrifixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -165,7 +164,7 @@ func (mapper *DistributionMapper) GetValidatorMinPeriodFromDelegators(valAddr bt
 
 	minPeriod := vcps.Period - 1
 
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -332,7 +331,7 @@ func (mapper *DistributionMapper) ClearPreDistributionQOS() {
 //------------------------ genesis export
 
 func (mapper *DistributionMapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.Address, period uint64, frac qtypes.Fraction)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorHistoryPeriodSummaryPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorHistoryPeriodSummaryPrefixKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -347,7 +346,7 @@ func (mapper *DistributionMapper) IteratorValidatorsHistoryPeriod(fn func(valAdd
 }
 
 func (mapper *DistributionMapper) IteratorValidatorsCurrentPeriod(fn func(btypes.Address, types.ValidatorCurrentPeriodSummary)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorCurrentPeriodSummaryPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorCurrentPeriodSummaryPrefixKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
@@ -363,7 +362,7 @@ func (mapper *DistributionMapper) IteratorValidatorsCurrentPeriod(fn func(btypes
 }
 
 func (mapper *DistributionMapper) IteratorDelegatorsEarningStartInfo(fn func(btypes.Address, btypes.Address, types.DelegatorEarningsStartInfo)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
@@ -378,8 +377,17 @@ func (mapper *DistributionMapper) IteratorDelegatorsEarningStartInfo(fn func(bty
 	}
 }
 
+func (mapper *DistributionMapper) DeleteDelegatorsEarningStartInfo() {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
+	}
+}
+
 func (mapper *DistributionMapper) IteratorDelegatorsIncomeHeight(fn func(btypes.Address, btypes.Address, uint64)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -387,5 +395,14 @@ func (mapper *DistributionMapper) IteratorDelegatorsIncomeHeight(fn func(btypes.
 
 		valAddr, deleAddr, height := types.GetDelegatorPeriodIncomeHeightAddr(key)
 		fn(valAddr, deleAddr, height)
+	}
+}
+
+func (mapper *DistributionMapper) DeleteDelegatorsIncomeHeight() {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
 	}
 }

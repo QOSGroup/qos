@@ -33,8 +33,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		mapper.DeleteProposal(proposalID)
 		mapper.DeleteDeposits(ctx, proposalID) // delete any associated deposits (burned)
 
-		resTags = resTags.AppendTag(ProposalID, types.Uint64ToBigEndian(proposalID))
-		resTags = resTags.AppendTag(ProposalResult, []byte(ActionProposalDropped))
+		resTags = resTags.AppendTags(btypes.NewTags(TagProposalID, types.Uint64ToBigEndian(proposalID), TagProposalResult, ProposalResultDropped))
 
 		logger.Info(
 			fmt.Sprintf("proposal %d (%s) didn't meet minimum deposit of %d (had only %d); deleted",
@@ -64,18 +63,18 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		case gtypes.PASS:
 			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusPassed
-			tagValue = ActionProposalPassed
+			tagValue = ProposalResultPassed
 			Execute(ctx, activeProposal, logger)
 			break
 		case gtypes.REJECT:
 			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusRejected
-			tagValue = ActionProposalRejected
+			tagValue = ProposalResultRejected
 			break
 		case gtypes.REJECTVETO:
 			mapper.DeleteDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusRejected
-			tagValue = ActionProposalRejected
+			tagValue = ProposalResultRejected
 			break
 		}
 
@@ -90,8 +89,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			),
 		)
 
-		resTags = resTags.AppendTag(ProposalID, types.Uint64ToBigEndian(proposalID))
-		resTags = resTags.AppendTag(ProposalResult, []byte(tagValue))
+		resTags = resTags.AppendTags(btypes.NewTags(TagProposalID, types.Uint64ToBigEndian(proposalID), TagProposalResult, tagValue))
 
 		penalty := mapper.GetParams(ctx).Penalty
 		if penalty.GT(types.ZeroDec()) {

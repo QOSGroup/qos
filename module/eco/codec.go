@@ -3,8 +3,6 @@ package eco
 import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qos/module/eco/types"
-	"github.com/QOSGroup/qos/module/gov"
-	ptypes "github.com/QOSGroup/qos/module/params/types"
 	"github.com/tendermint/go-amino"
 )
 
@@ -15,17 +13,7 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&types.DistributionParams{}, "distribution", nil)
-	cdc.RegisterConcrete(&types.StakeParams{}, "stake", nil)
-	cdc.RegisterConcrete(&types.MintParams{}, "eco/types/MintParams", nil)
-	cdc.RegisterConcrete(&types.InflationPhrase{}, "eco/types/InflationPhrase", nil)
-
-	cdc.RegisterConcrete(&types.Validator{}, "eco/types/Validator", nil)
-	cdc.RegisterConcrete(&types.DelegationInfo{}, "eco/types/DelegationInfo", nil)
-	cdc.RegisterConcrete(&types.DelegatorEarningsStartInfo{}, "eco/types/DelegatorEarningsStartInfo", nil)
-	cdc.RegisterConcrete(&types.ValidatorCurrentPeriodSummary{}, "eco/types/ValidatorCurrentPeriodSummary", nil)
-	cdc.RegisterConcrete(&types.ValidatorVoteInfo{}, "eco/types/ValidatorVoteInfo", nil)
-
-	cdc.RegisterInterface((*ptypes.ParamSet)(nil), nil)
-	cdc.RegisterConcrete(&gov.Params{}, "gov", nil)
+	cdc.RegisterConcrete(&types.DistributionParams{}, "distribution/params", nil)
+	cdc.RegisterConcrete(&types.StakeParams{}, "stake/params", nil)
+	cdc.RegisterConcrete(&types.MintParams{}, "mint/params", nil)
 }

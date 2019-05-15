@@ -44,7 +44,7 @@ const (
 	flagDestAddress = "dest-address"
 	flagPercent     = "percent"
 
-	flagParams     = "params"
+	flagParams = "params"
 
 	flagStatus   = "status"
 	flagNumLimit = "limit"

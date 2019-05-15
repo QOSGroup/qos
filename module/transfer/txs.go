@@ -46,10 +46,12 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
+	var tags btypes.Tags
 	for _, sender := range tx.Senders {
 		acc := accountMapper.GetAccount(sender.Address).(*types.QOSAccount)
 		acc.MustMinus(sender.QOS, sender.QSCs)
 		accountMapper.SetAccount(acc)
+		tags = tags.AppendTags(btypes.NewTags(TagSender, sender.Address.String()))
 	}
 	for _, receiver := range tx.Receivers {
 		a := accountMapper.GetAccount(receiver.Address)
@@ -61,9 +63,10 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		}
 		acc.MustPlus(receiver.QOS, receiver.QSCs)
 		accountMapper.SetAccount(acc)
+		tags = tags.AppendTags(btypes.NewTags(TagReceiver, receiver.Address.String()))
 	}
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	return btypes.Result{Code: btypes.CodeOK, Tags: tags}, nil
 }
 
 // 所有Senders

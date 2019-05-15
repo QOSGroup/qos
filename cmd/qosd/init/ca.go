@@ -1,12 +1,10 @@
 package init
 
 import (
-	"fmt"
+	"github.com/QOSGroup/qbase/server"
 	"github.com/pkg/errors"
-	"github.com/tendermint/tendermint/crypto"
-	"strings"
-
 	"github.com/spf13/viper"
+	"github.com/tendermint/tendermint/crypto"
 
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/types"
@@ -14,26 +12,17 @@ import (
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-const (
-	flagQCP = "qcp"
-	flagQSC = "qsc"
-)
-
-func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
+func ConfigRootCA(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config-root-ca",
 		Short: "Config pubKey of root CA for QCP and QSC",
 		Args:  cobra.NoArgs,
 		RunE: func(_ *cobra.Command, args []string) error {
-
-			home := viper.GetString(cli.HomeFlag)
-			genFile := strings.Join([]string{home, "config", "genesis.json"}, "/")
-
-			if !common.FileExists(genFile) {
-				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
-			}
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			qcpFile := viper.GetString(flagQCP)
 			qscFile := viper.GetString(flagQSC)
@@ -57,7 +46,7 @@ func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 				}
 			}
 
-			genDoc, err := loadGenesisDoc(cdc, genFile)
+			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
 			if err != nil {
 				return err
 			}
@@ -78,7 +67,7 @@ func ConfigRootCA(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			err = genDoc.SaveAs(genFile)
+			err = genDoc.SaveAs(config.GenesisFile())
 			if err != nil {
 				return err
 			}

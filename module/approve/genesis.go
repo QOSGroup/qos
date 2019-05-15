@@ -18,7 +18,9 @@ func NewGenesisState(approves []approvetypes.Approve) GenesisState {
 func InitGenesis(ctx context.Context, data GenesisState) {
 	approveMapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	for _, approve := range data.Approves {
-		approveMapper.SaveApprove(approve)
+		if approve.IsPositive() {
+			approveMapper.SaveApprove(approve)
+		}
 	}
 }
 

@@ -60,5 +60,5 @@ func (mapper GuardianMapper) GetGuardian(address btypes.Address) (guardian types
 }
 
 func (mapper GuardianMapper) GuardiansIterator() store.Iterator {
-	return store.KVStorePrefixIterator(mapper.GetStore(), KeyGuardiansSubspace())
+	return btypes.KVStorePrefixIterator(mapper.GetStore(), KeyGuardiansSubspace())
 }

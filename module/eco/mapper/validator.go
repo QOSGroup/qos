@@ -113,9 +113,9 @@ func (mapper *ValidatorMapper) IteratorInactiveValidatorByTime(fromTime, endTime
 
 func (mapper *ValidatorMapper) IteratorValidatorByVoterPower(ascending bool) store.Iterator {
 	if ascending {
-		return store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
+		return btypes.KVStorePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
 	}
-	return store.KVStoreReversePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
+	return btypes.KVStoreReversePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
 }
 
 func (mapper *ValidatorMapper) GetActiveValidatorSet(ascending bool) (validators []btypes.Address) {
@@ -170,7 +170,7 @@ func (mapper *ValidatorMapper) GetParams(ctx context.Context) ecotypes.StakePara
 
 func (mapper *ValidatorMapper) IterateValidators(fn func(ecotypes.Validator)) {
 
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.BulidValidatorPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), ecotypes.BulidValidatorPrefixKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

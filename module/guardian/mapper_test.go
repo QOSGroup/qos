@@ -61,7 +61,7 @@ func TestGuardianMapper_GuardiansIterator(t *testing.T) {
 		var g2 types.Guardian
 		mapper.GetCodec().MustUnmarshalBinaryBare(iterator.Value(), &g2)
 		require.True(t, g1.Equals(g2))
-		cnt ++
+		cnt++
 	}
 
 	require.Equal(t, cnt, 1)

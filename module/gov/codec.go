@@ -26,4 +26,5 @@ func RegisterCodec(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&TxProposal{}, "gov/txs/TxProposal", nil)
 	cdc.RegisterConcrete(&TxDeposit{}, "gov/txs/TxDeposit", nil)
 	cdc.RegisterConcrete(&TxVote{}, "gov/txs/TxVote", nil)
+	cdc.RegisterConcrete(&Params{}, "gov/params", nil)
 }

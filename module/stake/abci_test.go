@@ -158,7 +158,7 @@ func defaultContext() context.Context {
 	cms := store.NewCommitMultiStore(db)
 
 	for _, v := range mapperMap {
-		cms.MountStoreWithDB(v.GetStoreKey(), store.StoreTypeIAVL, db)
+		cms.MountStoreWithDB(v.GetStoreKey(), btypes.StoreTypeIAVL, db)
 	}
 	cms.LoadLatestVersion()
 

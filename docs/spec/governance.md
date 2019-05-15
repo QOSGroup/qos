@@ -41,7 +41,7 @@ QOS包括以下治理策略：
 
 ## 提议类型
 
-以下三种提议[操作说明](../client/qoscli.md#提交提议)
+以下三种提议[操作说明](../command/qoscli.md#提交提议)
 
 ### TxProposal
 
@@ -77,7 +77,7 @@ type TxProposal struct {
 
 提议修改QOS运行网络参数配置，提议通过后新参数会实时生效。
 
-可修改参数通过[参数查询](../client/qoscli.md#参数查询)获取，包含`gov`、`distribution`、`stake`三个模块参数配置。
+可修改参数通过[参数查询](../command/qoscli.md#参数查询)获取，包含`gov`、`distribution`、`stake`三个模块参数配置。
 
 ```go
 type TxParameterChange struct {

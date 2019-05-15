@@ -5,14 +5,15 @@
 * `init`                  [初始化](#初始化) 
 * `add-genesis-accounts`  [设置创世账户](#设置账户) 
 * `add-guardian`          [添加特权账户](#添加特权账户) 
-* `add-genesis-validator` [设置验证节点](#设置验证节点) 
+* `gentx`                 [生成创世交易](#生成创世交易) 
+* `collect-gentxs`        [收集创世交易](#收集创世交易) 
 * `config-root-ca`        [设置CA](#设置ca) 
 * `start`                 [启动](#启动) 
 * `export        `        [状态导出](#状态导出) 
 * `testnet`               [初始化测试网络](#初始化测试网络) 
 * `unsafe-reset-all`      [重置](#重置) 
 * `tendermint`            [Tendermint](#tendermint) 
-* `version`               版本信息
+* `version`               [版本信息](#版本)
 
 全局参数：
 
@@ -29,7 +30,7 @@
 
 参数说明:
 
-- `--moniker`      在P2P网络中的名称，与`config.toml`中`moniker`配置项对应，可后期修改
+- `--moniker`   在P2P网络中的名称，与`config.toml`中`moniker`配置项对应，可后期修改
 - `--chain-id`  链ID，链ID一致的节点才能组成同一个P2P网络
 - `--overwrite` 是否覆盖已存在初始文件
 
@@ -81,18 +82,26 @@ $ qosd add-guardian --address address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --d
 
 会在`genesis.json`文件`app-state`中`guardian`部分添加地址为`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`的特权账户。
 
-## 设置验证节点
+## 生成创世交易
 
-`qosd add-genesis-validator --name <validator_name> --owner <account_address> --tokens <tokens> --description <description>`
+生成创建验证节点[TxCreateValidator](../spec/staking.md#TxCreateValidator)交易
+
+`qosd gentx --name <validator_name> --owner <account_address> --tokens <tokens> --description <description>`
 
 参数说明参照[成为验证节点](qoscli.md#成为验证节点)
 
-设置验证节点信息：
+生成验证节点交易：
 ```bash
-qosd add-genesis-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000 --description "I am a validator."
+$ qosd gentx --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000 --description "I am a validator."
 ```
 
-会在`genesis.json`文件`app-state`中`validators`部分添加验证节点信息。
+默认会在`$HOME/.qosd/config/gentx`目录下生成以`nodeID@IP`为文件名的已签名的交易数据文件。
+
+## 收集创世交易
+
+`qosd collect-gentxs`
+
+收集`gentx`目录下交易数据，填充到`genesis.json`中`app_state`下`gen_txs`中。
 
 ## 设置CA
 
@@ -127,61 +136,92 @@ qosd add-genesis-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t
 |--rpc.laddr string                | "tcp://0.0.0.0:26657" |RPC listen address. Port required (default "tcp://0.0.0.0:26657")|
 |--rpc.unsafe                      | false |Enabled unsafe rpc methods|
 |--trace-store string              | false |Enable KVStore tracing to an output file|
-|--with-tendermint                 | false |Run abci app embedded in-process with tendermint|
+|--with-tendermint                 | true |Run abci app embedded in-process with tendermint|
 
 启动QOS网络
 
 ```bash
 $ qosd start
 ```
-启动QOS网络，并启动tendermint，如果正确[配置Validator](#设置验证节点)会看到打块信息。
 
 ## 状态导出
 
-`qosd export --height <block_height> --for-zero-height <export_state_to_start_at_height_zero>`
+`qosd export --height <block_height> --for-zero-height <export_state_to_start_at_height_zero> -o <directory for exported json file>`
 
 主要参数：
 
 - `--height`            指定导出区块高度
 - `--for-zero-height`   是否导出状态从0高度重新启动网络
+- `--o`                 导出文件位置
 
 导出区块高度为4的状态数据：
 ```bash
 qosd export --height 4
 ```
 
+到处完默认成会在`$HOME/.qosd`下生成以`genesis-<height>-<timestamp>.json`命名文件。
+
 ## 初始化测试网络
 
-`qosd testnet`
-| 参数 | 默认值 | 说明 |
-| :--- | :---: | :--- |
-|--chain-id string              | 随机字符串 |Chain ID|
-|--genesis-accounts string      | "" |Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'|
-|--hostname-prefix string       | "node" |Hostname prefix (node results in persistent peers list ID0@node0:26656, ID1@node1:26656, ...) (default "node")|
-|--n int                        | 0 |Number of non-validators to initialize the testnet with|
-|--name string                  | <your_computer_name> |Moniker|
-|--node-dir-prefix string       | "node" |Prefix the directory name for each node with (node results in node0, node1, ...) (default "node")|
-|--o string                     | "./mytestnet" |Directory to store initialization data for the testnet (default "./mytestnet")|
-|--p2p-port int                 | 26656 |P2P Port (default 26656)|
-|--populate-persistent-peers    | true |Update config of each node with the list of persistent peers build using either hostname-prefix or starting-ip-address (default true)|
-|--root-ca string               | "" |Config pubKey of root CA|
-|--starting-ip-address string   | "" |Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:26656, ID1@192.168.0.2:26656, ...)|
-|--v int                        | 4 |Number of validators to initialize the testnet with (default 4)|
+`qosd testnet`命令行工具，可批量生成集群配置文件，相关命令参考：
+```bash
+testnet will create "v" number of directories and populate each with
+necessary files (private validator, genesis, config, etc.).
 
-创建`v`+`n`个目录，每个目录创建必需的配置文件（`private validator`, `genesis`, `config`等等）。
+Note, strict routability for addresses is turned off in the config file.
 
-根据实际服务器、网络配置，少量修改这`v`+`n`目录中的配置文件可以轻松搭建多个验证节点和非验证节点的QOS网络。
+Example:
+
+	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos
+
+Usage:
+  qosd testnet [flags]
+
+Flags:
+      --chain-id string              Chain ID
+      --compound                     whether the validator's income is calculated as compound interest, default: true (default true)
+      --genesis-accounts string      Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
+  -h, --help                         help for testnet
+      --home-client string           directory for keybase (default "/home/imuge/.qoscli")
+      --hostname-prefix string       Hostname prefix (node results in persistent peers list ID0@node0:26656, ID1@node1:26656, ...) (default "node")
+      --node-dir-prefix string       Prefix the directory name for each node with (node results in node0, node1, ...) (default "node")
+      --o string                     Directory to store initialization data for the testnet (default "./mytestnet")
+      --qcp-root-ca string           Config pubKey of root CA for QSC
+      --qsc-root-ca string           Config pubKey of root CA for QCP
+      --starting-ip-address string   Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:26656, ID1@192.168.0.2:26656, ...)
+      --v int                        Number of validators to initialize the testnet with (default 4)
+
+Global Flags:
+      --home string        directory for config and data (default "/home/imuge/.qosd")
+      --log_level string   Log level (default "main:info,state:info,*:error")
+      --trace              print out full stack trace on errors
+
+
+```
+
+主要参数说明：
+- chain-id            链ID
+- genesis-accounts    初始账户
+- hostname-prefix     hostName前缀
+- miniker             miniker
+- qcp-root-ca         pubKey of root CA for QCP
+- qsc-root-ca         pubKey of root CA for QSC
+- compound            收益复投方式，默认true，即收益参与复投
+- starting-ip-address 起始IP地址
 
 ## 重置
 
 `qosd unsafe-reset-all`
 
-重置区块链数据库，删除地址簿文件，重置状态至创世状态。
+重置区块链数据库，删除地址簿文件，重置状态至初始状态。
 
 ## tendermint
 
 tendermint子命令：
 
-- `qosd tendermint show-address`    Shows this node's tendermint validator address
-- `show-node-id`                    Show this node's ID
-- `show-validator`                  Show this node's tendermint validator info
+- `qosd tendermint show-address`    Show this node's tendermint validator address
+- `qosd tendermint show-node-id`    Show this node's ID
+- `qosd tendermint show-validator`  Show this node's tendermint validator info
+
+## 版本
+与[qoscli version](qoscli.md#版本（version）)相同

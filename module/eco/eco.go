@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qos/module/eco/mapper"
 	"github.com/QOSGroup/qos/module/eco/types"
 
@@ -39,7 +38,7 @@ func (e Eco) RemoveValidator(ctx context.Context, valAddr btypes.Address) error 
 
 	//2. 计算所有delegator的收益信息,并将delegator绑定的token置为0
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
-	iter := store.KVStorePrefixIterator(distributionMapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(distributionMapper.GetStore(), prefixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -164,6 +163,31 @@ func (e Eco) UnbondValidator(ctx context.Context, validator types.Validator, del
 	validatorMapper.ChangeValidatorBondTokens(validator, updatedValidatorTokens)
 
 	return nil
+}
+
+func ReturnAllUnbondTokens(ctx context.Context) {
+	height := uint64(ctx.BlockHeight())
+	e := GetEco(ctx)
+	maxHeight := uint64(e.ValidatorMapper.GetParams(ctx).DelegatorUnbondReturnHeight) + height
+	for h := height; h <= maxHeight; h++ {
+		prePrefix := types.BuildUnbondingDelegationByHeightPrefix(h)
+
+		iter := btypes.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
+		defer iter.Close()
+
+		for ; iter.Valid(); iter.Next() {
+			k := iter.Key()
+			e.DelegationMapper.Del(k)
+
+			var amount uint64
+			e.DelegationMapper.BaseMapper.DecodeObject(iter.Value(), &amount)
+
+			_, deleAddr := types.GetUnbondingDelegationHeightAddress(k)
+			returnQOSAmount := amount
+
+			IncrAccountQOS(ctx, deleAddr, btypes.NewInt(int64(returnQOSAmount)))
+		}
+	}
 }
 
 type Eco struct {

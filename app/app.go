@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
@@ -19,6 +20,7 @@ import (
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
@@ -36,7 +38,8 @@ type QOSApp struct {
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
-	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec)
+	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec,
+		baseabci.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))))
 	baseApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &QOSApp{
@@ -156,7 +159,26 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 		panic(err)
 	}
 
-	res.Validators = InitGenesis(ctx, genesisState)
+	initAccounts(ctx, genesisState.Accounts)
+	gov.InitGenesis(ctx, genesisState.GovData)
+	guardian.InitGenesis(ctx, genesisState.GuardianData)
+	mint.InitGenesis(ctx, genesisState.MintData)
+	stake.InitGenesis(ctx, genesisState.StakeData)
+	qcp.InitGenesis(ctx, genesisState.QCPData)
+	qsc.InitGenesis(ctx, genesisState.QSCData)
+	approve.InitGenesis(ctx, genesisState.ApproveData)
+	distribution.InitGenesis(ctx, genesisState.DistributionData)
+	if len(genesisState.GenTxs) > 0 {
+		for _, genTx := range genesisState.GenTxs {
+			bz := app.GetCdc().MustMarshalBinaryBare(genTx)
+			res := app.BaseApp.DeliverTx(bz)
+			if !res.IsOK() {
+				panic(res.Log)
+			}
+		}
+	}
+
+	res.Validators = stake.GetUpdatedValidators(ctx, uint64(genesisState.StakeData.Params.MaxValidatorCnt))
 
 	return
 }
@@ -179,11 +201,11 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 	genState := NewGenesisState(
 		accounts,
 		mint.ExportGenesis(ctx),
-		stake.ExportGenesis(ctx, forZeroHeight),
+		stake.ExportGenesis(ctx),
 		qcp.ExportGenesis(ctx),
 		qsc.ExportGenesis(ctx),
 		approve.ExportGenesis(ctx),
-		distribution.ExportGenesis(ctx, forZeroHeight),
+		distribution.ExportGenesis(ctx),
 		gov.ExportGenesis(ctx),
 		guardian.ExportGenesis(ctx),
 	)
@@ -198,28 +220,31 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 // prepare for fresh start at zero height
 func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
-	// close inactive validators
-	stake.CloseExpireInactiveValidator(ctx, 0)
+	stake.PrepForZeroHeightGenesis(ctx)
 
-	// return unbond tokens
-	stake.ReturnAllUnbondTokens(ctx)
+	mint.PrepForZeroHeightGenesis(ctx)
 
-	// return proposal deposit
 	gov.PrepForZeroHeightGenesis(ctx)
-
-	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }
 
 // gas
-func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams(ctx).GasPerUnitCost))
+func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
+	gasUsed = ctx.GasMeter().GasConsumed()
+	// gas free for txs in the first block
+	if ctx.BlockHeight() == 0 {
+		return
+	}
 
 	// tax free for tx send by guardian
 	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
 		app.Logger.Info("tx send by guardian: %s", payer.String())
-		return nil
+		return
 	}
+
+	distributionMapper := ecomapper.GetDistributionMapper(ctx)
+	uint := distributionMapper.GetParams(ctx).GasPerUnitCost
+	gasFeeUsed := btypes.NewInt(int64(gasUsed / uint))
+	gasUsed = gasUsed / uint * uint
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
@@ -227,7 +252,8 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 
 		if !account.EnoughOfQOS(gasFeeUsed) {
 			log := fmt.Sprintf("%s no enough coins to pay the gas after this tx done", payer)
-			return btypes.ErrInternal(log)
+			err = btypes.ErrInternal(log)
+			return
 		}
 
 		account.MustMinusQOS(gasFeeUsed)
@@ -237,5 +263,5 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 		distributionMapper.AddPreDistributionQOS(gasFeeUsed)
 	}
 
-	return nil
+	return
 }

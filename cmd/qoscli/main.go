@@ -2,6 +2,7 @@ package main
 
 import (
 	bcli "github.com/QOSGroup/qbase/client"
+	"github.com/QOSGroup/qbase/client/block"
 	"github.com/QOSGroup/qbase/client/config"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qos/app"
@@ -38,12 +39,18 @@ func main() {
 
 	// query commands
 	queryCommands := bcli.QueryCommand(cdc)
-	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
 	queryCommands.AddCommand(qsc.QueryCommands(cdc)...)
+	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
+	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(staking.QueryCommands(cdc)...)
+	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(distribution.QueryCommands(cdc)...)
+	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(gov.QueryCommands(cdc)...)
+	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(guardian.QueryCommands(cdc)...)
+	queryCommands.AddCommand(bctypes.LineBreak)
+	queryCommands.AddCommand(block.BlockCommand(cdc)...)
 
 	// txs commands
 	txsCommands := bcli.TxCommand()
@@ -67,8 +74,7 @@ func main() {
 		bcli.KeysCommand(cdc),
 		queryCommands,
 		txsCommands,
-		bcli.TendermintCommand(cdc),
-		version.VersionCmd,
+		version.VersionCmd(),
 	)
 
 	executor := cli.PrepareMainCmd(rootCmd, "qos", types.DefaultCLIHome)

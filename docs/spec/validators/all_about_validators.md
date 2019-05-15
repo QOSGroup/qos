@@ -130,7 +130,7 @@ qoscli tx revoke-validator --owner ownerName
 qoscli tx active-validator --owner ownerName
 ```
 
-> 更多验证人操作详见[Validator命令行工具](../../client/qoscli.md#验证节点（validator）)
+> 更多验证人操作详见[Validator命令行工具](../../command/qoscli.md#验证节点（validator）)
 
 ## 测试网验证人奖励
 

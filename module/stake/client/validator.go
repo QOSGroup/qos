@@ -22,7 +22,7 @@ const (
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"
-	flagNodeHome    = "nodeHome"
+	flagNodeHome    = "home-node"
 )
 
 func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
@@ -38,28 +38,7 @@ example:
 
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
-				name := viper.GetString(flagName)
-				if len(name) == 0 {
-					return nil, errors.New("name is empty")
-				}
-				tokens := uint64(viper.GetInt64(flagBondTokens))
-				if tokens <= 0 {
-					return nil, errors.New("tokens lte zero")
-				}
-				desc := viper.GetString(flagDescription)
-
-				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorFile()))
-
-				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
-				if err != nil {
-					return nil, err
-				}
-
-				isCompound := viper.GetBool(flagCompound)
-				return stake.NewCreateValidatorTx(name, owner, privValidator.PubKey, tokens, isCompound, desc), nil
-			})
-
+			return qclitx.BroadcastTxAndPrintResult(cdc, TxCreateValidatorBuilder)
 		},
 	}
 
@@ -123,4 +102,27 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagOwner)
 
 	return cmd
+}
+
+func TxCreateValidatorBuilder(ctx context.CLIContext) (txs.ITx, error) {
+	name := viper.GetString(flagName)
+	if len(name) == 0 {
+		return nil, errors.New("name is empty")
+	}
+	tokens := uint64(viper.GetInt64(flagBondTokens))
+	if tokens <= 0 {
+		return nil, errors.New("tokens lte zero")
+	}
+	desc := viper.GetString(flagDescription)
+
+	privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()),
+		filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()))
+
+	owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
+	if err != nil {
+		return nil, err
+	}
+
+	isCompound := viper.GetBool(flagCompound)
+	return stake.NewCreateValidatorTx(name, owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
 }

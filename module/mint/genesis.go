@@ -45,3 +45,7 @@ func ExportGenesis(ctx context.Context) GenesisState {
 		AppliedQOSAmount: mintMapper.GetAppliedQOSAmount(),
 	}
 }
+
+func PrepForZeroHeightGenesis(ctx context.Context) {
+	mintmapper.GetMintMapper(ctx).SetFirstBlockTime(0)
+}

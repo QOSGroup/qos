@@ -60,6 +60,10 @@ func (tx TxAddGuardian) Exec(ctx context.Context) (result btypes.Result, crossTx
 
 	GetGuardianMapper(ctx).AddGuardian(*gtypes.NewGuardian(tx.Description, gtypes.Ordinary, tx.Address, tx.Creator))
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionAddGuardian,
+		TagCreator, tx.Creator.String(),
+		TagGuardian, tx.Address.String())
+
 	return
 }
 
@@ -130,6 +134,10 @@ func (tx TxDeleteGuardian) Exec(ctx context.Context) (result btypes.Result, cros
 	}
 
 	GetGuardianMapper(ctx).DeleteGuardian(tx.Address)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDeleteGuardian,
+		TagDeleteBy, tx.DeletedBy.String(),
+		TagGuardian, tx.Address.String())
 
 	return
 }

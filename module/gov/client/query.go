@@ -148,8 +148,8 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1]);
-			if  err != nil {
+			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1])
+			if err != nil {
 				return fmt.Errorf("voter %s is not a valid address value", args[1])
 			}
 
@@ -222,8 +222,8 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1]);
-			if  err != nil {
+			addr, err := qcliacc.GetAddrFromValue(cliCtx, args[1])
+			if err != nil {
 				return fmt.Errorf("depositer %s is not a valid address value", args[1])
 			}
 

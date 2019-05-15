@@ -5,7 +5,7 @@
 ## Single-node
 * init
 
-参照[初始化](../client/qosd.md#初始化) 执行：
+参照[初始化](../command/qosd.md#初始化) 执行：
 ```bash
 $ qosd init --moniker moniker --chain-id qos-test
 {
@@ -59,9 +59,9 @@ NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
 
 ```
-更多本地秘钥库相关指令参照[qoscli keys](../client/qoscli.md#密钥（keys）)
+更多本地秘钥库相关指令参照[qoscli keys](../command/qoscli.md#密钥（keys）)
 
-参照[设置账户](../client/qosd.md#设置账户) 初始化账户信息：
+参照[设置账户](../command/qosd.md#设置账户) 初始化账户信息：
 ```bash
 $ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos
 ```
@@ -76,17 +76,17 @@ root CA用于校验[QSC](../spec/qsc.md)和[QCP](../spec/qcp.md)，不存在相�
 $ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 ```
 
-更多操作说明查看[设置CA](../client/qosd.md#设置ca) 
+更多操作说明查看[设置CA](../command/qosd.md#设置ca) 
 
 查看genesis.json内容，确认配置成功。
 
-* add-genesis-validator
+* create-validator
 
-使用`qosd add-genesis-validator`初始化validator到配置文件中，只有配置了validator才能正常运行QOS网络。
+使用`qosd gentx`和`qosd collect-gentxs`初始化validator到配置文件中，只有配置了validator才能正常运行QOS网络。
 
 使用上面的初始化账户地址作为owner
 ```bash
-$ qosd add-genesis-validator --name validatorName --owner address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --tokens 10 --description "I am the first validator."
+$ qosd gentx --name validatorName --owner address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --tokens 10 --description "I am the first validator."
 ```
 
 主要参数说明:
@@ -96,7 +96,13 @@ $ qosd add-genesis-validator --name validatorName --owner address1lly0audg7yem8j
 - `--description`   备注
 - `--compound`      收益复投方式，默认false，即收益不复投
 
-更多操作说明参照[设置验证节点](../client/qosd.md#设置验证节点)
+更多操作说明参照[生成创世交易](../command/qosd.md#生成创世交易)
+
+运行：
+```bash
+$ qosd collect-gentxs
+```
+将创建验证节点交易写入`genesis.json`文件中。
 
 * start
 ```bash
@@ -107,56 +113,7 @@ $ qosd start --log_level debug
 ## Cluster
 
 ### qosd testnet
-`qosd testnet`命令行工具，可批量生成集群配置文件，相关命令参考：
-```bash
-$ qosd testnet --help
-testnet will create "v" + "n" number of directories and populate each with
-necessary files (private validator, genesis, config, etc.).
-
-Note, strict routability for addresses is turned off in the config file.
-
-Optionally, it will fill in persistent_peers list in config file using either hostnames or IPs.
-
-Example:
-
-	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars
-
-Usage:
-  qosd testnet [flags]
-
-Flags:
-      --chain-id string              Chain ID
-      --compound                     whether the validator's income is calculated as compound interest, default: true (default true)
-      --genesis-accounts string      Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
-  -h, --help                         help for testnet
-      --hostname-prefix string       Hostname prefix (node results in persistent peers list ID0@node0:26656, ID1@node1:26656, ...) (default "node")
-      --moniker string               Moniker
-      --n int                        Number of non-validators to initialize the testnet with
-      --node-dir-prefix string       Prefix the directory name for each node with (node results in node0, node1, ...) (default "node")
-      --o string                     Directory to store initialization data for the testnet (default "./mytestnet")
-      --p2p-port int                 P2P Port (default 26656)
-      --populate-persistent-peers    Update config of each node with the list of persistent peers build using either hostname-prefix or starting-ip-address (default true)
-      --qcp-root-ca string           Config pubKey of root CA for QSC
-      --qsc-root-ca string           Config pubKey of root CA for QCP
-      --starting-ip-address string   Starting IP address (192.168.0.1 results in persistent peers list ID0@192.168.0.1:26656, ID1@192.168.0.2:26656, ...)
-      --v int                        Number of validators to initialize the testnet with (default 4)
-
-Global Flags:
-      --home string        directory for config and data (default "$HOME/.qosd")
-      --log_level string   Log level (default "main:info,state:info,*:error")
-      --trace              print out full stack trace on errors
-
-```
-
-主要参数说明：
-- chain-id            链ID
-- genesis-accounts    初始账户
-- hostname-prefix     hostName前缀
-- miniker             miniker
-- qcp-root-ca         pubKey of root CA for QCP
-- qsc-root-ca         pubKey of root CA for QSC
-- compound            收益复投方式，默认true，即收益参与复投
-- starting-ip-address 起始IP地址
+[qosd-testnet](../command/qosd.md#初始化测试网络)命令可以批量生成一个测试网络多个验证节点配置信息
 
 假设第一台机器IP: 192.168.1.100
 ```bash
@@ -167,12 +124,9 @@ Successfully initialized 4 node directories
 会在当前目录下生成mytestnet文件夹，分别放置node0-3配置文件。
 其中priv_validator_owner.json为对应validator owner私钥，可通过`qoscli keys import`导入。
 
-`qosd testnet` 默认初始化owner 1000000QOS，validator bond 1000tokens。
-
 ### start
 启动前请确保按照[安装说明](installation.md)在四台机器上正确安装QOS。
 拷贝node0-3至不同机器，分别执行：
 ```bash
 $ qosd start --home <directory_for_config_and_data>
-
 ```

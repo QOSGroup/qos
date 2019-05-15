@@ -2,8 +2,7 @@ package init
 
 import (
 	"fmt"
-	"strings"
-
+	"github.com/QOSGroup/qbase/server"
 	"github.com/spf13/viper"
 
 	"github.com/QOSGroup/qos/app"
@@ -11,10 +10,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/cli"
-	"github.com/tendermint/tendermint/libs/common"
+	tmtypes "github.com/tendermint/tendermint/types"
 )
 
-func AddGenesisAccount(cdc *amino.Codec) *cobra.Command {
+func AddGenesisAccount(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-genesis-accounts [accounts]",
 		Short: "Add genesis accounts to genesis.json",
@@ -27,17 +26,12 @@ Example:
 	`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
+			config := ctx.Config
+			config.SetRoot(viper.GetString(cli.HomeFlag))
 
-			home := viper.GetString(cli.HomeFlag)
-			genFile := strings.Join([]string{home, "config", "genesis.json"}, "/")
+			accounts, err := types.ParseAccounts(args[0], viper.GetString(flagClientHome))
 
-			if !common.FileExists(genFile) {
-				return fmt.Errorf("%s does not exist, run `qosd init` first", genFile)
-			}
-
-			accounts, err := types.ParseAccounts(args[0])
-
-			genDoc, err := loadGenesisDoc(cdc, genFile)
+			genDoc, err := tmtypes.GenesisDocFromFile(config.GenesisFile())
 			if err != nil {
 				return err
 			}
@@ -68,7 +62,7 @@ Example:
 				return err
 			}
 
-			err = genDoc.SaveAs(genFile)
+			err = genDoc.SaveAs(config.GenesisFile())
 			if err != nil {
 				return err
 			}
@@ -76,7 +70,8 @@ Example:
 		},
 	}
 
-	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "node's home directory")
+	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "directory for node's data and config files")
+	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
 
 	return cmd
 }

@@ -2,7 +2,6 @@ package distribution
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco"
 	"github.com/QOSGroup/qos/module/eco/mapper"
@@ -43,7 +42,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 	prefixKey := types.BuildDelegatorPeriodIncomePrefixKey(height)
 
-	iter := store.KVStorePrefixIterator(e.DistributionMapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(e.DistributionMapper.GetStore(), prefixKey)
 	validatorMap := make(map[string][]btypes.Address)
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()

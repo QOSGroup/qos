@@ -69,6 +69,8 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 
 func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 
+	result = btypes.Result{Code: btypes.CodeOK}
+
 	err := eco.DecrAccountQOS(ctx, tx.Owner, btypes.NewInt(int64(tx.BondTokens)))
 	if err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
@@ -101,7 +103,12 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateValidator,
+		TagValidator, valAddr.String(),
+		TagOwner, tx.Owner.String(),
+		TagDelegator, tx.Owner.String())
+
+	return
 }
 
 func (tx *TxCreateValidator) GetSigner() []btypes.Address {
@@ -153,6 +160,8 @@ func (tx *TxRevokeValidator) ValidateData(ctx context.Context) (err error) {
 }
 
 func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{Code: btypes.CodeOK}
+
 	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
@@ -162,7 +171,11 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	valAddr := validator.GetValidatorAddress()
 	mapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.Revoke)
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionRevokeValidator,
+		TagValidator, valAddr.String(),
+		TagOwner, tx.Owner.String())
+
+	return
 }
 
 func (tx *TxRevokeValidator) GetSigner() []btypes.Address {
@@ -210,6 +223,8 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 }
 
 func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{Code: btypes.CodeOK}
+
 	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
@@ -231,7 +246,11 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, uint64(ctx.BlockHeight()))
 
-	return btypes.Result{Code: btypes.CodeOK}, nil
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionActiveValidator,
+		TagValidator, valAddr.String(),
+		TagOwner, tx.Owner.String())
+
+	return
 }
 
 func (tx *TxActiveValidator) GetSigner() []btypes.Address {

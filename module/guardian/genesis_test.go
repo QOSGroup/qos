@@ -31,8 +31,8 @@ func defaultContext() context.Context {
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
-	cms.MountStoreWithDB(approveKey, store.StoreTypeIAVL, db)
-	cms.MountStoreWithDB(acountKey, store.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(approveKey, btypes.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(acountKey, btypes.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
 	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger(), mapperMap)
 	return ctx
@@ -73,6 +73,6 @@ func TestExportGenesis(t *testing.T) {
 		ctx := defaultContext()
 		InitGenesis(ctx, tc.input)
 		export := ExportGenesis(ctx)
-		require.True(t, tc.input.Equals(export) , "tc #%d", tcIndex)
+		require.True(t, tc.input.Equals(export), "tc #%d", tcIndex)
 	}
 }
