@@ -4,6 +4,7 @@
 
 * `init`                  [初始化](#初始化) 
 * `add-genesis-accounts`  [设置创世账户](#设置账户) 
+* `add-guardian`          [添加特权账户](#添加特权账户) 
 * `add-genesis-validator` [设置验证节点](#设置验证节点) 
 * `config-root-ca`        [设置CA](#设置ca) 
 * `start`                 [启动](#启动) 
@@ -64,15 +65,31 @@ $ qosd add-genesis-accounts address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy,10000
 
 会在`genesis.json`文件`app-state`中`accounts`部分添加地址为`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`，持有10000QOS的账户信息。
 
+## 添加特权账户
+
+`qosd add-guardian --address <address> --description <description>`
+
+参数说明:
+
+- `--address`     特权账户地址，可接收`TaxUsageProposal`提议从社区费池提取的QOS代币
+- `--description` 描述
+
+添加特权账户至`genesis.json`文件：
+```bash
+$ qosd add-guardian --address address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --description "this is the description"
+```
+
+会在`genesis.json`文件`app-state`中`guardian`部分添加地址为`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`的特权账户。
+
 ## 设置验证节点
 
-`qosd add-genesis-validator --name <validator_name> --owner <account_address> --pubkey <validator_pubkey> --tokens <tokens> --description <description>`
+`qosd add-genesis-validator --name <validator_name> --owner <account_address> --tokens <tokens> --description <description>`
 
 参数说明参照[成为验证节点](qoscli.md#成为验证节点)
 
 设置验证节点信息：
 ```bash
-qoscli tx create-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --pubkey VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA= --tokens 1000 --description "I am a validator."
+qosd add-genesis-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000 --description "I am a validator."
 ```
 
 会在`genesis.json`文件`app-state`中`validators`部分添加验证节点信息。

@@ -68,7 +68,7 @@ $ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,10000
 
 * config-root-ca
 
-root CA用于校验[QSC](../spec/txs/qsc.md)和[QCP](../spec/txs/qcp.md)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
+root CA用于校验[QSC](../spec/qsc.md)和[QCP](../spec/qcp.md)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
 
 使用`qosd config-root-ca`初始化root CA公钥到配置文件。
 
@@ -84,21 +84,14 @@ $ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 
 使用`qosd add-genesis-validator`初始化validator到配置文件中，只有配置了validator才能正常运行QOS网络。
 
-查看validator pubkey:
-```bash
-$ qosd tendermint show-validator   
-"PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo="                                            
-```
-
 使用上面的初始化账户地址作为owner
 ```bash
-$ qosd add-genesis-validator --name validatorName --owner address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --pubkey "PJ58L4OuZp20opx2YhnMhkcTzdEWI+UayicuckdKaTo=" --tokens 10 --description "I am the first validator."
+$ qosd add-genesis-validator --name validatorName --owner address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --tokens 10 --description "I am the first validator."
 ```
 
 主要参数说明:
 - `--owner`         操作者账户地址
 - `--name`          验证节点名字
-- `--pubkey`        验证节点公钥，可通过执行`qosd tendermint show-validator`查看
 - `--tokens`        绑定tokens，不能大于操作者持有QOS数量
 - `--description`   备注
 - `--compound`      收益复投方式，默认false，即收益不复投

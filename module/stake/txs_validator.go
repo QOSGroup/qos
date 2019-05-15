@@ -96,7 +96,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	//初始化validator distribution数据
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	distributionMapper.InitValidatorPeriodSummaryInfo(valAddr)
-	distributionMapper.InitDelegatorIncomeInfo(valAddr, delegatorAddr, tx.BondTokens, validator.BondHeight)
+	distributionMapper.InitDelegatorIncomeInfo(ctx, valAddr, delegatorAddr, tx.BondTokens, validator.BondHeight)
 
 	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)

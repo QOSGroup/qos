@@ -1,27 +1,28 @@
 package staking
 
 import (
-	"encoding/base64"
-	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/module/stake"
+	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/crypto/ed25519"
+	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/privval"
+	"path/filepath"
 )
 
 const (
 	flagName        = "name"
 	flagOwner       = "owner"
-	flagPubKey      = "pubkey"
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"
+	flagNodeHome    = "nodeHome"
 )
 
 func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
@@ -29,16 +30,11 @@ func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "create-validator",
 		Short: "create new validator initialized with a self-delegation to it",
 		Long: `
-pubkey is a tendermint validator pubkey. the public key of the validator used in
-Tendermint consensus.
-
 owner is a keystore name or account address.
-
-ex: pubkey: {"type":"tendermint/PubKeyEd25519","value":"VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="}
 
 example:
 
-	 qoscli tx create-validator --name validatorName --owner ownerName --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
+	 qoscli tx create-validator --name validatorName --owner ownerName --tokens 100
 
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -52,21 +48,16 @@ example:
 					return nil, errors.New("tokens lte zero")
 				}
 				desc := viper.GetString(flagDescription)
-				valPubkey := viper.GetString(flagPubKey)
+
+				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorFile()))
+
 				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 				if err != nil {
 					return nil, err
 				}
 
-				bz, err := base64.StdEncoding.DecodeString(valPubkey)
-				if err != nil {
-					return nil, fmt.Errorf("pubkey parse error: %s", err.Error())
-				}
-				var cKey ed25519.PubKeyEd25519
-				copy(cKey[:], bz)
-
 				isCompound := viper.GetBool(flagCompound)
-				return stake.NewCreateValidatorTx(name, owner, cKey, tokens, isCompound, desc), nil
+				return stake.NewCreateValidatorTx(name, owner, privValidator.PubKey, tokens, isCompound, desc), nil
 			})
 
 		},
@@ -74,14 +65,13 @@ example:
 
 	cmd.Flags().String(flagName, "", "name for validator")
 	cmd.Flags().String(flagOwner, "", "keystore name or account address")
-	cmd.Flags().String(flagPubKey, "", "tendermint consensus validator public key")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagDescription, "", "description")
+	cmd.Flags().String(flagNodeHome, types.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
 
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagOwner)
-	cmd.MarkFlagRequired(flagPubKey)
 	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd

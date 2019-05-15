@@ -61,7 +61,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	}
 
 	distributionMapper.SetPreDistributionQOS(data.PreDistributionQOSAmount.NilToZero())
-	distributionMapper.SetParams(data.Params)
+	distributionMapper.SetParams(ctx, data.Params)
 
 	for _, validatorHistoryPeriodState := range data.ValidatorHistoryPeriods {
 		key := types.BuildValidatorHistoryPeriodSummaryKey(btypes.Address(validatorHistoryPeriodState.ValidatorPubKey.Address()), validatorHistoryPeriodState.Period)
@@ -93,7 +93,7 @@ func ExportGenesis(ctx context.Context, forZeroHeight bool) GenesisState {
 	feePool := distributionMapper.GetCommunityFeePool()
 	lastBlockProposer := distributionMapper.GetLastBlockProposer()
 	preDistributionQOS := distributionMapper.GetPreDistributionQOS()
-	params := distributionMapper.GetParams()
+	params := distributionMapper.GetParams(ctx)
 
 	var validatorHistoryPeriods []ValidatorHistoryPeriodState
 	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.Address, period uint64, frac qtypes.Fraction) {

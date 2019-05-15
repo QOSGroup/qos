@@ -6,6 +6,8 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
+	"github.com/QOSGroup/qos/module/gov"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -23,6 +25,8 @@ type GenesisState struct {
 	QSCData          qsc.GenesisState          `json:"qsc"`
 	ApproveData      approve.GenesisState      `json:"approve"`
 	DistributionData distribution.GenesisState `json:"distribution"`
+	GovData          gov.GenesisState          `json:"governance"`
+	GuardianData     guardian.GenesisState     `json:"guardian"`
 }
 
 func NewGenesisState(accounts []*types.QOSAccount,
@@ -32,6 +36,8 @@ func NewGenesisState(accounts []*types.QOSAccount,
 	qscData qsc.GenesisState,
 	approveData approve.GenesisState,
 	distributionData distribution.GenesisState,
+	govData gov.GenesisState,
+	guardianData guardian.GenesisState,
 ) GenesisState {
 	return GenesisState{
 		Accounts:         accounts,
@@ -41,6 +47,8 @@ func NewGenesisState(accounts []*types.QOSAccount,
 		QSCData:          qscData,
 		ApproveData:      approveData,
 		DistributionData: distributionData,
+		GovData:          govData,
+		GuardianData:     guardianData,
 	}
 }
 func NewDefaultGenesisState() GenesisState {
@@ -48,6 +56,7 @@ func NewDefaultGenesisState() GenesisState {
 		MintData:         mint.DefaultGenesisState(),
 		StakeData:        stake.DefaultGenesisState(),
 		DistributionData: distribution.DefaultGenesisState(),
+		GovData:          gov.DefaultGenesisState(),
 	}
 }
 
@@ -66,6 +75,8 @@ func ValidGenesis(state GenesisState) error {
 func InitGenesis(ctx context.Context, state GenesisState) []abci.ValidatorUpdate {
 	// accounts init should in the first
 	initAccounts(ctx, state.Accounts)
+	gov.InitGenesis(ctx, state.GovData)
+	guardian.InitGenesis(ctx, state.GuardianData)
 	mint.InitGenesis(ctx, state.MintData)
 	stake.InitGenesis(ctx, state.StakeData)
 	qcp.InitGenesis(ctx, state.QCPData)

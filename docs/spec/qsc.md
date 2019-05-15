@@ -19,7 +19,7 @@ type TxCreateQSC struct {
 字段说明：
 - Creator QSC创建账户，需要在对应网络中存在
 - Extrate qos汇率
-- QSC CA 证书申请参照[QSC证书](../ca.md#QSC)
+- QSC CA 证书申请参照[QSC证书](ca.md#QSC)
 - Description 备注信息
 - Accounts 接收联盟币的账户币值信息
 

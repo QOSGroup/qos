@@ -32,8 +32,8 @@ import (
 )
 
 var (
-	chainId string
-	moniker string
+	chainId  string
+	moniker  string
 	compound bool
 
 	nValidators    int

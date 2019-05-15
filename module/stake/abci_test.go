@@ -2,6 +2,7 @@ package stake
 
 import (
 	"encoding/binary"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -70,7 +71,7 @@ func TestValidatorMapper(t *testing.T) {
 		validatorMapper.Set(staketypes.BuildValidatorByVotePower(i, addr), 1)
 	}
 
-	descIter := validatorMapper.IteratorValidatrorByVoterPower(false)
+	descIter := validatorMapper.IteratorValidatorByVoterPower(false)
 	defer descIter.Close()
 
 	power := uint64(200)
@@ -82,7 +83,7 @@ func TestValidatorMapper(t *testing.T) {
 		power = cp
 	}
 
-	ascIter := validatorMapper.IteratorValidatrorByVoterPower(true)
+	ascIter := validatorMapper.IteratorValidatorByVoterPower(true)
 	defer ascIter.Close()
 
 	power = uint64(0)
@@ -135,6 +136,9 @@ func TestVoteInfoMapper(t *testing.T) {
 func defaultContext() context.Context {
 
 	mapperMap := make(map[string]mapper.IMapper)
+
+	paramsMapper := params.NewMapper()
+	mapperMap[params.MapperName] = paramsMapper
 
 	mainMapper := stakemapper.NewMintMapper()
 	mapperMap[staketypes.MintMapperName] = mainMapper

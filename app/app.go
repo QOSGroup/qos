@@ -11,7 +11,10 @@ import (
 	"github.com/QOSGroup/qos/module/distribution"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/gov"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
@@ -66,10 +69,17 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		gov.EndBlocker(ctx)
 		distribution.EndBlocker(ctx, req)
 		stake.EndBlockerByReturnUnbondTokens(ctx)
 		return stake.EndBlocker(ctx)
 	})
+
+	//parameter mapper
+	paramsMapper := params.NewMapper()
+	//config params
+	paramsMapper.RegisterParamSet(&ecotypes.StakeParams{}, &ecotypes.DistributionParams{}, &gov.Params{})
+	app.RegisterMapper(paramsMapper)
 
 	// 账户mapper
 	app.RegisterAccountProto(types.ProtoQOSAccount)
@@ -98,6 +108,12 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	//delegationMapper
 	app.RegisterMapper(ecomapper.NewDelegationMapper())
 
+	//gov mapper
+	app.RegisterMapper(gov.NewGovMapper())
+
+	//guardian mapper
+	app.RegisterMapper(guardian.NewGuardianMapper())
+
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
 
 		if len(route) == 0 {
@@ -110,6 +126,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 		if route[0] == ecotypes.Distribution {
 			return distribution.Query(ctx, route[1:], req)
+		}
+
+		if route[0] == gov.GOV {
+			return gov.Query(ctx, route[1:], req)
 		}
 
 		return nil, nil
@@ -164,6 +184,8 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 		qsc.ExportGenesis(ctx),
 		approve.ExportGenesis(ctx),
 		distribution.ExportGenesis(ctx, forZeroHeight),
+		gov.ExportGenesis(ctx),
+		guardian.ExportGenesis(ctx),
 	)
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
@@ -182,13 +204,22 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	// return unbond tokens
 	stake.ReturnAllUnbondTokens(ctx)
 
+	// return proposal deposit
+	gov.PrepForZeroHeightGenesis(ctx)
+
 	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }
 
 // gas
 func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams().GasPerUnitCost))
+	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams(ctx).GasPerUnitCost))
+
+	// tax free for tx send by guardian
+	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
+		app.Logger.Info("tx send by guardian: %s", payer.String())
+		return nil
+	}
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)

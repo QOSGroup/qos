@@ -15,8 +15,8 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 	validatorMapper := ecomapper.GetValidatorMapper(ctx)
 
-	votingWindowLen := uint64(validatorMapper.GetParams().ValidatorVotingStatusLen)
-	minVotingCounter := uint64(validatorMapper.GetParams().ValidatorVotingStatusLeast)
+	votingWindowLen := uint64(validatorMapper.GetParams(ctx).ValidatorVotingStatusLen)
+	minVotingCounter := uint64(validatorMapper.GetParams(ctx).ValidatorVotingStatusLeast)
 
 	for _, signingValidator := range req.LastCommitInfo.Votes {
 		valAddr := btypes.Address(signingValidator.Validator.Address)
@@ -30,8 +30,8 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 
 	validatorMapper := ecomapper.GetValidatorMapper(ctx)
-	survivalSecs := validatorMapper.GetParams().ValidatorSurvivalSecs
-	maxValidatorCount := uint64(validatorMapper.GetParams().MaxValidatorCnt)
+	survivalSecs := validatorMapper.GetParams(ctx).ValidatorSurvivalSecs
+	maxValidatorCount := uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt)
 
 	CloseExpireInactiveValidator(ctx, survivalSecs)
 	res.ValidatorUpdates = GetUpdatedValidators(ctx, maxValidatorCount)
@@ -41,8 +41,8 @@ func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
 func ReturnAllUnbondTokens(ctx context.Context) {
 	height := uint64(ctx.BlockHeight())
 	e := eco.GetEco(ctx)
-	maxHeight := uint64(e.ValidatorMapper.GetParams().DelegatorUnbondReturnHeight) + height
-	for h := height; h <= maxHeight; h ++ {
+	maxHeight := uint64(e.ValidatorMapper.GetParams(ctx).DelegatorUnbondReturnHeight) + height
+	for h := height; h <= maxHeight; h++ {
 		prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(h)
 
 		iter := store.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
@@ -98,7 +98,7 @@ func CloseExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 		key := iterator.Key()
 		valAddress := btypes.Address(key[9:])
 		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
-		e.RemoveValidator(valAddress)
+		e.RemoveValidator(ctx, valAddress)
 	}
 }
 
@@ -123,7 +123,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	newValidatorsMap := make(map[string]ecotypes.Validator)
 	newValidators := make([]ecotypes.Validator, 0, len(currentValidators))
 
-	iterator := validatorMapper.IteratorValidatrorByVoterPower(false)
+	iterator := validatorMapper.IteratorValidatorByVoterPower(false)
 	defer iterator.Close()
 
 	var key []byte

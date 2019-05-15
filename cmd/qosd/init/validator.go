@@ -14,9 +14,12 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
+	cfg "github.com/tendermint/tendermint/config"
+	"github.com/tendermint/tendermint/crypto"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/privval"
 	"path/filepath"
 	"strings"
 )
@@ -24,7 +27,6 @@ import (
 const (
 	flagName        = "name"
 	flagOwner       = "owner"
-	flagPubKey      = "pubkey"
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"
@@ -35,22 +37,19 @@ func AddGenesisValidator(cdc *amino.Codec) *cobra.Command {
 		Use:   "add-genesis-validator",
 		Short: "Add genesis validator to genesis.json",
 		Long: `
-pubkey is a tendermint validator pubkey. the public key of the validator used in
-Tendermint consensus.
 
 home node's home directory.
 
 owner is account address.
 
-ex: pubkey: {"type":"tendermint/PubKeyEd25519","value":"VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="}
-
 example:
 
-	 qosd add-genesis-validator --home "/.qosd/" --name validatorName --owner address1vdp54s5za8tl4dmf9dcldfzn62y66m40ursfsa --pubkey "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA=" --tokens 100
+	 qosd add-genesis-validator --home "$HOME/.qosd/" --name validatorName --owner address1vdp54s5za8tl4dmf9dcldfzn62y66m40ursfsa --tokens 100
 
 		`,
 		RunE: func(_ *cobra.Command, args []string) error {
 
+			pubkey := viper.GetString("pubkey")
 			home := viper.GetString(cli.HomeFlag)
 			genFile := filepath.Join(home, "config", "genesis.json")
 			if !common.FileExists(genFile) {
@@ -71,26 +70,30 @@ example:
 			if err != nil {
 				return err
 			}
-			valPubkey := viper.GetString(flagPubKey)
-			if len(valPubkey) == 0 {
-				return errors.New("pubkey is empty")
-			}
 			tokens := uint64(viper.GetInt64(flagBondTokens))
 			if tokens <= 0 {
 				return errors.New("tokens lte zero")
 			}
 			desc := viper.GetString(flagDescription)
 
-			bz, err := base64.StdEncoding.DecodeString(valPubkey)
-			if err != nil {
-				return err
+			var publicKey crypto.PubKey
+
+			if len(pubkey) == 0 {
+				privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorFile()))
+				publicKey = privValidator.PubKey
+			} else {
+				bz, err := base64.StdEncoding.DecodeString(pubkey)
+				if err != nil {
+					return err
+				}
+				var cKey ed25519.PubKeyEd25519
+				copy(cKey[:], bz)
+				publicKey = cKey
 			}
-			var cKey ed25519.PubKeyEd25519
-			copy(cKey[:], bz)
 
 			val := ecotypes.Validator{
 				Name:            name,
-				ValidatorPubKey: cKey,
+				ValidatorPubKey: publicKey,
 				Owner:           owner,
 				BondTokens:      uint64(tokens),
 				Status:          ecotypes.Active,
@@ -138,15 +141,14 @@ example:
 
 	cmd.Flags().String(flagName, "", "name for validator")
 	cmd.Flags().String(flagOwner, "", "account address")
-	cmd.Flags().String(flagPubKey, "", "tendermint consensus validator public key")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(cli.HomeFlag, types.DefaultNodeHome, "node's home directory")
 	cmd.Flags().Bool(flagCompound, false, "whether the income is calculated as compound interest")
+	cmd.Flags().String("pubkey", "", "manual provide validator pubkey")
 
 	cmd.MarkFlagRequired(flagName)
 	cmd.MarkFlagRequired(flagOwner)
-	cmd.MarkFlagRequired(flagPubKey)
 	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd

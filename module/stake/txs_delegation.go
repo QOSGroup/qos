@@ -47,7 +47,7 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 
 	validator, _ := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
 
-	if err := e.DelegateValidator(validator, tx.Delegator, tx.Amount, tx.IsCompound, true); err != nil {
+	if err := e.DelegateValidator(ctx, validator, tx.Delegator, tx.Amount, tx.IsCompound, true); err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
@@ -182,7 +182,7 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	e := eco.GetEco(ctx)
 
 	validator, _ := e.ValidatorMapper.GetValidatorByOwner(tx.ValidatorOwner)
-	if err := e.UnbondValidator(validator, tx.Delegator, tx.IsUnbondAll, tx.UnbondAmount, false); err != nil {
+	if err := e.UnbondValidator(ctx, validator, tx.Delegator, tx.IsUnbondAll, tx.UnbondAmount, false); err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
@@ -260,11 +260,11 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 		reDelegateAmount = info.Amount
 	}
 
-	if err := e.UnbondValidator(fromValidator, tx.Delegator, false, reDelegateAmount, true); err != nil {
+	if err := e.UnbondValidator(ctx, fromValidator, tx.Delegator, false, reDelegateAmount, true); err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	if err := e.DelegateValidator(toValidator, tx.Delegator, reDelegateAmount, tx.IsCompound, false); err != nil {
+	if err := e.DelegateValidator(ctx, toValidator, tx.Delegator, reDelegateAmount, tx.IsCompound, false); err != nil {
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
