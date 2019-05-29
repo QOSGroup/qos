@@ -29,7 +29,7 @@ func GenTxCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 		Short: "Generate a genesis tx carrying a self delegation",
 		Args:  cobra.NoArgs,
 		Long: `This command is an alias of the 'gaiad tx create-validator' command'.
-qosd gentx --name validatorName --owner ownerName --tokens 100
+qosd gentx --moniker validatorName --owner ownerName --tokens 100
 `,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)

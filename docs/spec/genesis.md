@@ -91,29 +91,4 @@ $ qosd add-genesis-accounts address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy,10000
 
 QOS使用app_state中包含的validators作为验证节点，启动前务必正确配置validators。
 
-> 验证节点可通过`qosd add-genesis-validator`命令添加。
-
-执行：
-```bash
-$ qosd add-genesis-validator --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 100
-```
-会在`genesis.json`中`validators`部分添加对应validator信息：
-```bash
-"validators": [                                                           
-  {                                                                       
-    "name": "Arya's node",                                                      
-    "owner": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",            
-    "validatorPubkey": {                                                  
-      "type": "tendermint/PubKeyEd25519",                                 
-      "value": "agD9zt3RhmAq6YnF7UKn0Kw53wQvZsiPmRYdG+dyaDk=""             
-    },                                                                    
-    "bondTokens": "100",                                                  
-    "description": "",                                                    
-    "status": 0,                                                          
-    "inActiveCode": 0,                                                    
-    "inActiveTime": "0001-01-01T00:00:00Z",                               
-    "inActiveHeight": "0",                                                
-    "bondHeight": "1"                                                     
-  }                                                                       
-]                                                                        
-```
+可通过[gen-tx](../command/qosd.md#生成创世交易)和[collect-gentxs](../command/qosd.md#收集创世交易)向`genesis`添加验证节点节点

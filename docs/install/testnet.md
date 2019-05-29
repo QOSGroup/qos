@@ -213,14 +213,16 @@ $ qoscli query account Peter --indent
 
 使用下面的命令执行创建验证节点：
 ```
-qoscli tx create-validator --owner Peter --name "Peter's node" --tokens 20000000 --description "hi, my eth address: xxxxxx"
+qoscli tx create-validator --owner Peter --moniker "Peter's node" --tokens 20000000
 ```
 其中：
 - `--owner` 操作者密钥库名字或账户地址，如使用之前创建的`Peter`或`Peter`对应的地址`address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s`
-- `--name`  给验证节点起个名字，如`Peter's node`
+- `--moniker`给验证节点起个名字，如`Peter's node`
+- `--logo`   logo
+- `--website` 网址
+- `--details`  详细描述信息
 - `--nodeHome` 节点配置文件和数据所在目录，默认：`$HOME/.qosd`
 - `--tokens` 将绑定到验证节点上的Token量，应小于等于操作者持有的QOS量
-- `--description` 备注信息，可放置**以太坊地址**，方便接收QOS奖励
 
 会输出出类似如下信息：
 ```bash

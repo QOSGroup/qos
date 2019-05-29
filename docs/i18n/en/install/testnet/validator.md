@@ -71,12 +71,11 @@ The `qos` indicates the amount of tokens in Peter's account.
 1. Exec create command
 
 ```
-qoscli tx create-validator --owner Peter --name "Peter's node" --tokens 20000000 --description "hi, my eth address: xxxxxx"
+qoscli tx create-validator --owner Peter --moniker "Peter's node" --tokens 20000000
 ```
 - `--owner` keybase name or address, eg, `Peter` or `address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s`
-- `--name`  validator name, anything you like
+- `--moniker`  validator name, anything you like
 - `--tokens` amount of tokens deposited to the validator, less than the `qos` in the owner's account
-- `--description` description info
 
 The output looks like:
 ```bash

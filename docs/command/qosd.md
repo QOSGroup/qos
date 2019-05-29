@@ -86,13 +86,13 @@ $ qosd add-guardian --address address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --d
 
 生成创建验证节点[TxCreateValidator](../spec/staking.md#TxCreateValidator)交易
 
-`qosd gentx --name <validator_name> --owner <account_address> --tokens <tokens> --description <description>`
+`qosd gentx --moniker <validator_name> --owner <account_address> --tokens <tokens>`
 
 参数说明参照[成为验证节点](qoscli.md#成为验证节点)
 
 生成验证节点交易：
 ```bash
-$ qosd gentx --name "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000 --description "I am a validator."
+$ qosd gentx --moniker "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000
 ```
 
 默认会在`$HOME/.qosd/config/gentx`目录下生成以`nodeID@IP`为文件名的已签名的交易数据文件。
