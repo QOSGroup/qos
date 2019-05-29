@@ -111,7 +111,7 @@ func TestValidatorSet(t *testing.T) {
 	ctx := defaultContext()
 	govMapper := GetGovMapper(ctx)
 	validatorMapper := ecomapper.GetValidatorMapper(ctx)
-	validatorMapper.CreateValidator(vtypes.Validator{Name: "qos", Owner: btypes.Address(""), ValidatorPubKey: ed25519.PubKeyEd25519{}})
+	validatorMapper.CreateValidator(vtypes.Validator{Description: vtypes.Description{Moniker: "qos"}, Owner: btypes.Address(""), ValidatorPubKey: ed25519.PubKeyEd25519{}})
 
 	govMapper.saveValidatorSet(ctx, 1)
 	validators, exists := govMapper.GetValidatorSet(1)

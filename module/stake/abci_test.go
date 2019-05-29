@@ -29,7 +29,7 @@ func TestValidatorMapper(t *testing.T) {
 	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 
 	validator := staketypes.Validator{
-		Name:            "test",
+		Description:     staketypes.Description{Moniker:"test"},
 		Owner:           btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
