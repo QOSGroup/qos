@@ -25,12 +25,19 @@ const (
 	MaxValidator                      // 4
 )
 
+// Description - description fields for a validator
+type Description struct {
+	Moniker string `json:"moniker"` // name
+	Logo    string `json:"logo"`    // optional logo link
+	Website string `json:"website"` // optional website link
+	Details string `json:"details"` // optional details
+}
+
 type Validator struct {
-	Name            string         `json:"name"`
 	Owner           btypes.Address `json:"owner"`
 	ValidatorPubKey crypto.PubKey  `json:"pub_key"`
 	BondTokens      uint64         `json:"bond_tokens"` //不能超过int64最大值
-	Description     string         `json:"description"`
+	Description     Description    `json:"description"`
 
 	Status         int8         `json:"status"`
 	InactiveCode   InactiveCode `json:"inactive_code"`

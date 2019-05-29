@@ -14,6 +14,7 @@ func init() {
 func RegisterCodec(cdc *amino.Codec) {
 	//validator相关
 	cdc.RegisterConcrete(&TxCreateValidator{}, "stake/txs/TxCreateValidator", nil)
+	cdc.RegisterConcrete(&TxModifyValidator{}, "stake/txs/TxModifyValidator", nil)
 	cdc.RegisterConcrete(&TxRevokeValidator{}, "stake/txs/TxRevokeValidator", nil)
 	cdc.RegisterConcrete(&TxActiveValidator{}, "stake/txs/TxActiveValidator", nil)
 

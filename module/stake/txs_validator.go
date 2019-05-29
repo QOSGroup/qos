@@ -16,23 +16,22 @@ import (
 
 const (
 	MaxNameLen        = 300
+	MaxLinkLen        = 255
 	MaxDescriptionLen = 1000
 )
 
 type TxCreateValidator struct {
-	Name        string
-	Owner       btypes.Address //操作者, self delegator
-	PubKey      crypto.PubKey  //validator公钥
-	BondTokens  uint64         //绑定Token数量
-	IsCompound  bool           //周期收益是否复投
-	Description string
+	Owner       btypes.Address       //操作者, self delegator
+	PubKey      crypto.PubKey        //validator公钥
+	BondTokens  uint64               //绑定Token数量
+	IsCompound  bool                 //周期收益是否复投
+	Description ecotypes.Description //描述信息
 }
 
 var _ txs.ITx = (*TxCreateValidator)(nil)
 
-func NewCreateValidatorTx(name string, owner btypes.Address, pubKey crypto.PubKey, bondTokens uint64, isCompound bool, description string) *TxCreateValidator {
+func NewCreateValidatorTx(owner btypes.Address, pubKey crypto.PubKey, bondTokens uint64, isCompound bool, description ecotypes.Description) *TxCreateValidator {
 	return &TxCreateValidator{
-		Name:        name,
 		Owner:       owner,
 		PubKey:      pubKey,
 		BondTokens:  bondTokens,
@@ -42,10 +41,12 @@ func NewCreateValidatorTx(name string, owner btypes.Address, pubKey crypto.PubKe
 }
 
 func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
-	if len(tx.Name) == 0 ||
-		len(tx.Name) > MaxNameLen ||
+	if len(tx.Description.Moniker) == 0 ||
+		len(tx.Description.Moniker) > MaxNameLen ||
 		tx.PubKey == nil ||
-		len(tx.Description) > MaxDescriptionLen ||
+		len(tx.Description.Logo) > MaxLinkLen ||
+		len(tx.Description.Website) > MaxLinkLen ||
+		len(tx.Description.Details) > MaxDescriptionLen ||
 		len(tx.Owner) == 0 ||
 		tx.BondTokens == 0 {
 		return ErrInvalidInput(DefaultCodeSpace, "")
@@ -77,7 +78,6 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	}
 
 	validator := ecotypes.Validator{
-		Name:            tx.Name,
 		Owner:           tx.Owner,
 		ValidatorPubKey: tx.PubKey,
 		BondTokens:      tx.BondTokens,
@@ -124,14 +124,88 @@ func (tx *TxCreateValidator) GetGasPayer() btypes.Address {
 }
 
 func (tx *TxCreateValidator) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Name...)
-	ret = append(ret, tx.Owner...)
-	ret = append(ret, tx.PubKey.Bytes()...)
-	ret = append(ret, btypes.Int2Byte(int64(tx.BondTokens))...)
-	ret = append(ret, btypes.Bool2Byte(tx.IsCompound)...)
-	ret = append(ret, tx.Description...)
+	return cdc.MustMarshalJSON(*tx)
+}
+
+type TxModifyValidator struct {
+	Owner       btypes.Address       //节点所有账户
+	Description ecotypes.Description //描述信息
+}
+
+var _ txs.ITx = (*TxModifyValidator)(nil)
+
+func NewModifyValidatorTx(owner btypes.Address, description ecotypes.Description) *TxModifyValidator {
+	return &TxModifyValidator{
+		Owner:       owner,
+		Description: description,
+	}
+}
+
+func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
+	if len(tx.Description.Moniker) > MaxNameLen ||
+		len(tx.Description.Logo) > MaxLinkLen ||
+		len(tx.Description.Website) > MaxLinkLen ||
+		len(tx.Description.Details) > MaxDescriptionLen ||
+		len(tx.Owner) == 0 {
+		return ErrInvalidInput(DefaultCodeSpace, "")
+	}
+
+	mapper := ecomapper.GetValidatorMapper(ctx)
+	if !mapper.ExistsWithOwner(tx.Owner) {
+		return ErrOwnerHasValidator(DefaultCodeSpace, fmt.Sprintf("%s has no validator", tx.Owner.String()))
+	}
+
+	return nil
+}
+
+func (tx *TxModifyValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+
+	result = btypes.Result{Code: btypes.CodeOK}
+
+	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
+	validator, exists := validatorMapper.GetValidatorByOwner(tx.Owner)
+	if !exists {
+		return btypes.Result{Code: btypes.CodeInternal}, nil
+	}
+
+	description := validator.Description
+	if len(tx.Description.Moniker) != 0 {
+		description.Moniker = tx.Description.Moniker
+	}
+	if len(tx.Description.Logo) != 0 {
+		description.Logo = tx.Description.Logo
+	}
+	if len(tx.Description.Website) != 0 {
+		description.Website = tx.Description.Website
+	}
+	if len(tx.Description.Details) != 0 {
+		description.Details = tx.Description.Details
+	}
+
+	validator.Description = description
+	validatorMapper.Set(ecotypes.BuildValidatorKey(validator.GetValidatorAddress()), validator)
+
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionModifyValidator,
+		TagOwner, tx.Owner.String(),
+		TagDelegator, tx.Owner.String())
 
 	return
+}
+
+func (tx *TxModifyValidator) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Owner}
+}
+
+func (tx *TxModifyValidator) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx *TxModifyValidator) GetGasPayer() btypes.Address {
+	return btypes.Address(tx.Owner)
+}
+
+func (tx *TxModifyValidator) GetSignData() (ret []byte) {
+	return cdc.MustMarshalJSON(*tx)
 }
 
 type TxRevokeValidator struct {

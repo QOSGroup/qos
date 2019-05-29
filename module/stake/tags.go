@@ -2,6 +2,7 @@ package stake
 
 var (
 	TagActionCreateValidator = "create-validator"
+	TagActionModifyValidator = "modify-validator"
 	TagActionRevokeValidator = "revoke-validator"
 	TagActionActiveValidator = "active-validator"
 
