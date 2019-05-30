@@ -350,9 +350,13 @@ func validateQOSAccount(ctx context.Context, addr btypes.Address, toPay uint64) 
 	acc := accountMapper.GetAccount(addr)
 
 	if toPay > 0 {
-		qosAccount := acc.(*types.QOSAccount)
-		if !qosAccount.EnoughOfQOS(btypes.NewInt(int64(toPay))) {
-			return ErrOwnerNoEnoughToken(DefaultCodeSpace, "No enough QOS in account: "+addr.String())
+		if acc != nil {
+			qosAccount := acc.(*types.QOSAccount)
+			if !qosAccount.EnoughOfQOS(btypes.NewInt(int64(toPay))) {
+				return ErrOwnerNoEnoughToken(DefaultCodeSpace, "No enough QOS in account: "+addr.String())
+			}
+		} else {
+			return ErrOwnerNoEnoughToken(DefaultCodeSpace, "account not exists: "+addr.String())
 		}
 	}
 	return nil
