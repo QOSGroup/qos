@@ -6,8 +6,13 @@ const (
 )
 
 var (
-	firstBlockTimeKey = []byte("first_block_time")
+	firstBlockTimeKey  = []byte("first_block_time")
+	allTotalMintQOSKey = []byte("total_mint_qos")
 )
+
+func BuildAllTotalMintQOSKey() []byte {
+	return allTotalMintQOSKey
+}
 
 func BuildFirstBlockTimeKey() []byte {
 	return firstBlockTimeKey

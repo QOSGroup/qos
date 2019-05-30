@@ -2,6 +2,7 @@ package init
 
 import (
 	"fmt"
+
 	"github.com/QOSGroup/qbase/server"
 	"github.com/spf13/viper"
 
@@ -52,6 +53,31 @@ Example:
 			appState.Accounts = append(appState.Accounts, accounts...)
 			for _, acc := range accounts {
 				appState.MintData.AppliedQOSAmount = appState.MintData.AppliedQOSAmount + uint64(acc.QOS.Int64())
+			}
+
+			//AppliedQOSAmount增加到当前通胀阶段内
+			totalAppliedQOSAmount := appState.MintData.AppliedQOSAmount
+			currentPhrases := appState.MintData.Params.Phrases
+
+			for i, phrase := range currentPhrases {
+				if totalAppliedQOSAmount <= uint64(0) {
+					break
+				}
+
+				currentPhraseAddAmount := uint64(0)
+				if totalAppliedQOSAmount <= phrase.TotalAmount {
+					currentPhraseAddAmount = totalAppliedQOSAmount
+				} else {
+					currentPhraseAddAmount = phrase.TotalAmount
+				}
+
+				phrase.AppliedAmount = currentPhraseAddAmount
+				currentPhrases[i] = phrase
+				totalAppliedQOSAmount = totalAppliedQOSAmount - currentPhraseAddAmount
+			}
+
+			if totalAppliedQOSAmount > uint64(0) {
+				return fmt.Errorf("init account amount too bigggggggger!")
 			}
 
 			rawMessage, _ := cdc.MarshalJSON(appState)

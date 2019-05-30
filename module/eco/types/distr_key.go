@@ -32,6 +32,9 @@ var (
 	//value: bigint
 	validatorCurrentPeriodSummaryPrefixKey = []byte{0x14}
 
+	//validator获得收益信息
+	validatorEcoFeePoolPrefixKey = []byte{0x15}
+
 	//delegators某高度下是否发放收益信息: key = prefix + blockheight + validatorAddress+delegatorAddress
 	//value: true
 	delegatorPeriodIncomePrefixKey = []byte{0x31}
@@ -65,6 +68,10 @@ func GetDelegatorPeriodIncomePrefixKey() []byte {
 	return delegatorPeriodIncomePrefixKey
 }
 
+func GetValidatorEcoFeePoolPrefixKey() []byte {
+	return validatorEcoFeePoolPrefixKey
+}
+
 func BuildDelegatorEarningStartInfoKey(validatorAddr btypes.Address, delegatorAddress btypes.Address) []byte {
 	return append(append(delegatorEarningsStartInfoPrefixKey, validatorAddr...), delegatorAddress...)
 }
@@ -75,6 +82,10 @@ func GetDelegatorEarningStartInfoAddr(key []byte) (valAddr, deleAddr btypes.Addr
 	}
 
 	return btypes.Address(key[1 : 1+AddrLen]), btypes.Address(key[1+AddrLen:])
+}
+
+func BuildValidatorHistoryPeriodSummaryPrefixKey(validatorAddr btypes.Address) []byte {
+	return append(validatorHistoryPeriodSummaryPrefixKey, validatorAddr...)
 }
 
 func BuildValidatorHistoryPeriodSummaryKey(validatorAddr btypes.Address, period uint64) []byte {
@@ -115,6 +126,14 @@ func BuildDelegatorPeriodIncomePrefixKey(height uint64) []byte {
 	b := make([]byte, 8)
 	binary.LittleEndian.PutUint64(b, height)
 	return append(delegatorPeriodIncomePrefixKey, b...)
+}
+
+func BuildValidatorEcoFeePoolKey(validatorAddr btypes.Address) []byte {
+	return append(validatorEcoFeePoolPrefixKey, validatorAddr...)
+}
+
+func GetValidatorEcoPoolAddress(key []byte) btypes.Address {
+	return btypes.Address(key[1 : 1+AddrLen])
 }
 
 func GetDelegatorPeriodIncomeHeightAddr(key []byte) (valAddr btypes.Address, deleAddr btypes.Address, height uint64) {

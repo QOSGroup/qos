@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/QOSGroup/qbase/context"
@@ -142,5 +143,94 @@ func TestDistributionMapper_calculateRewardsBetweenPeriod(t *testing.T) {
 
 	a := mapper.CalculateRewardsBetweenPeriod(addr, uint64(10), uint64(100), uint64(0))
 	require.Equal(t, btypes.ZeroInt(), a)
+
+}
+
+func TestDistributionMapper_IteratorValidatorEcoFeePools(t *testing.T) {
+
+	mapper := getDistributionMapper()
+
+	for i := 0; i < 10; i++ {
+		pubkey := ed25519.GenPrivKey().PubKey()
+		addr := btypes.Address(pubkey.Address())
+		mapper.SaveValidatorEcoFeePool(addr, types.ValidatorEcoFeePool{btypes.NewInt(int64(i)), btypes.NewInt(int64(i)), btypes.NewInt(int64(i)), btypes.NewInt(int64(i))})
+	}
+
+	mapper.IteratorValidatorEcoFeePools(func(addr btypes.Address, pool types.ValidatorEcoFeePool) {
+		require.Equal(t, pool.CommissionTotalRewardFee, pool.PreDistributeTotalRewardFee)
+	})
+
+}
+
+func TestDistributionMapper_DelValidatorHistoryPeroid(t *testing.T) {
+
+	mapper := getDistributionMapper()
+
+	pubkey := ed25519.GenPrivKey().PubKey()
+	validator := types.Validator{
+		ValidatorPubKey: pubkey,
+		BondTokens:      uint64(200),
+	}
+
+	cp := mapper.GetValidatorMinPeriodFromDelegators(validator.GetValidatorAddress())
+	fmt.Println(cp)
+
+	mapper.IncrementValidatorPeriod(validator)
+
+	cp = mapper.GetValidatorMinPeriodFromDelegators(validator.GetValidatorAddress())
+	fmt.Println(cp)
+
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+	mapper.IncrementValidatorPeriod(validator)
+
+	cp = mapper.GetValidatorMinPeriodFromDelegators(validator.GetValidatorAddress())
+	fmt.Println(cp)
+
+	minP := uint64(0)
+	mapper.IteratorWithKV(types.BuildValidatorHistoryPeriodSummaryPrefixKey(validator.GetValidatorAddress()), func(key []byte, value []byte) (stop bool) {
+		_, p := types.GetValidatorHistoryPeriodSummaryAddrPeriod(key)
+		minP = p
+		return true
+	})
+
+	require.Equal(t, minP, uint64(0))
+
+	mapper.ClearValidatorHistoryPeroid(validator.GetValidatorAddress(), 4)
+
+	mapper.IteratorWithKV(types.BuildValidatorHistoryPeriodSummaryPrefixKey(validator.GetValidatorAddress()), func(key []byte, value []byte) (stop bool) {
+		_, p := types.GetValidatorHistoryPeriodSummaryAddrPeriod(key)
+		minP = p
+		return true
+	})
+
+	require.Equal(t, minP, uint64(2))
+
+	mapper.ClearValidatorHistoryPeroid(validator.GetValidatorAddress(), 4)
+
+	mapper.IteratorWithKV(types.BuildValidatorHistoryPeriodSummaryPrefixKey(validator.GetValidatorAddress()), func(key []byte, value []byte) (stop bool) {
+		_, p := types.GetValidatorHistoryPeriodSummaryAddrPeriod(key)
+		minP = p
+		return true
+	})
+
+	require.Equal(t, minP, uint64(2))
+
+	mapper.ClearValidatorHistoryPeroid(validator.GetValidatorAddress(), 8)
+
+	mapper.IteratorWithKV(types.BuildValidatorHistoryPeriodSummaryPrefixKey(validator.GetValidatorAddress()), func(key []byte, value []byte) (stop bool) {
+		_, p := types.GetValidatorHistoryPeriodSummaryAddrPeriod(key)
+		minP = p
+		return true
+	})
+
+	require.Equal(t, minP, uint64(6))
 
 }

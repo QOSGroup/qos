@@ -76,6 +76,21 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 	}
 }
 
+func closeAllInactiveValidator(ctx context.Context) {
+	log := ctx.Logger()
+	e := eco.GetEco(ctx)
+
+	lastCloseValidatorSec := uint64(ctx.BlockHeader().Time.UTC().Unix()) + 1
+
+	iterator := e.ValidatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
+	for ; iterator.Valid(); iterator.Next() {
+		key := iterator.Key()
+		valAddress := btypes.Address(key[9:])
+		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
+		e.RemoveValidator(ctx, valAddress)
+	}
+}
+
 func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
 	log := ctx.Logger()
 	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
