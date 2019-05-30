@@ -57,7 +57,12 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 	for k, delegators := range validatorMap {
 		valAddr, _ := btypes.GetAddrFromBech32(k)
 		distributeEarningByValidator(e, valAddr, delegators, height, params.DelegatorsIncomePeriodHeight)
+
+		//获取validator委托人的最小计费点周期, 删除validator历史计费点周期
+		minPeriod := e.DistributionMapper.GetValidatorMinPeriodFromDelegators(valAddr)
+		e.DistributionMapper.ClearValidatorHistoryPeroid(valAddr, minPeriod)
 	}
+
 }
 
 //按周期分配收益:
@@ -82,7 +87,8 @@ func distributeEarningByValidator(e eco.Eco, valAddr btypes.Address, delegators 
 		//validator不存在时, 获取delegator当前收益信息, 将收益直接返还账户中,并删除当前delegator信息
 		for _, deleAddr := range delegators {
 			if info, _exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, deleAddr); _exsits {
-				eco.IncrAccountQOS(e.Context, deleAddr, info.HistoricalRewardFees.NilToZero())
+				eco.BonusToDelegator(e.Context, deleAddr, valAddr, info.HistoricalRewardFees.NilToZero(), false)
+				// eco.IncrAccountQOS(e.Context, deleAddr, info.HistoricalRewardFees.NilToZero())
 				e.DistributionMapper.DelDelegatorEarningStartInfo(valAddr, deleAddr)
 				e.DelegationMapper.DelDelegationInfo(deleAddr, valAddr)
 			}
@@ -130,7 +136,8 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 	if !exsits || delegationInfo.Amount == 0 {
 		//已无委托关系,收益直接分配到delegator账户中
 		log.Debug("delegation not exsits. rewards to account", "rewards", rewards)
-		eco.IncrAccountQOS(e.Context, deleAddr, rewards.NilToZero())
+		eco.BonusToDelegator(e.Context, deleAddr, valAddr, rewards.NilToZero(), false)
+		// eco.IncrAccountQOS(e.Context, deleAddr, rewards.NilToZero())
 		e.DistributionMapper.DelDelegatorEarningStartInfo(valAddr, deleAddr)
 		e.DelegationMapper.DelDelegationInfo(deleAddr, valAddr)
 		return 0
@@ -143,7 +150,8 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 	//非复投,收益直接分配到delegator账户中
 	if !delegationInfo.IsCompound {
 		log.Debug("delegation is not compound. rewards to delegator account", "rewards", rewards)
-		eco.IncrAccountQOS(e.Context, deleAddr, rewards.NilToZero())
+		eco.BonusToDelegator(e.Context, deleAddr, valAddr, rewards.NilToZero(), false)
+		// eco.IncrAccountQOS(e.Context, deleAddr, rewards.NilToZero())
 		return 0
 	}
 
@@ -158,6 +166,9 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 
 	delegationInfo.Amount = delegationInfo.Amount + addTokens
 	e.DelegationMapper.SetDelegationInfo(delegationInfo)
+
+	//复投时validator收益池处理
+	eco.BonusToDelegator(e.Context, deleAddr, valAddr, rewards.NilToZero(), true)
 
 	return addTokens
 }
@@ -194,6 +205,7 @@ func allocateQOS(ctx context.Context, signedTotalPower, totalPower int64, propos
 			info.HistoricalRewardFees = info.HistoricalRewardFees.Add(proposerRewards)
 			remainQOS = remainQOS.Sub(proposerRewards)
 			e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), info)
+			e.DistributionMapper.AddValidatorEcoFeePool(proposerAddr, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
 		}
 	}
 
@@ -240,4 +252,6 @@ func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt,
 		e.DistributionMapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), vcps)
 		log.Debug("reward validator shared", "validator", valAddr.String(), "sharedReward", sharedReward)
 	}
+
+	e.DistributionMapper.AddValidatorEcoFeePool(valAddr, btypes.ZeroInt(), commissionReward, sharedReward)
 }

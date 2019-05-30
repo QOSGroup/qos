@@ -71,6 +71,13 @@ func (e Eco) RemoveValidator(ctx context.Context, valAddr btypes.Address) error 
 	voteInfoMapper.DelValidatorVoteInfo(valAddr)
 	voteInfoMapper.ClearValidatorVoteInfoInWindow(valAddr)
 
+	// //删除validator收益信息
+	// feePool := distributionMapper.GetValidatorEcoFeePool(valAddr)
+	// distributionMapper.DeleteValidatorEcoFeePool(valAddr)
+
+	// log.Info("Remove Validator", "validatorAddr", valAddr.String(), "remainToCommunity", feePool.PreDistributeRemainTotalFee)
+	// distributionMapper.AddToCommunityFeePool(feePool.PreDistributeRemainTotalFee)
+
 	return nil
 }
 

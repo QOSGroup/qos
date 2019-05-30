@@ -35,7 +35,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	totalQOSAmount := currentInflationPhrase.TotalAmount
 	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(currentBlockTime)) / blockTimeAvg
 	//totalBlock := mintMapper.GetParams(ctx).TotalBlock
-	appliedQOSAmount := mintMapper.GetAppliedQOSAmount()
+	appliedQOSAmount := currentInflationPhrase.AppliedAmount
 
 	if appliedQOSAmount >= totalQOSAmount {
 		return
@@ -47,7 +47,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	if ctx.BlockHeight() > 1 {
 		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
 		if rewardPerBlock > 0 {
-			mintMapper.AddAppliedQOSAmount(rewardPerBlock)
+			mintMapper.MintQOS(rewardPerBlock)
 			log.Debug("block mint", "height", height, "mint", rewardPerBlock)
 			distributionMapper := ecomapper.GetDistributionMapper(ctx)
 			distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
