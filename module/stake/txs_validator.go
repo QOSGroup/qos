@@ -306,19 +306,19 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	}
 
 	valAddr := validator.GetValidatorAddress()
-	delegatorAddr := tx.Owner
+	// delegatorAddr := tx.Owner
 	mapper.MakeValidatorActive(valAddr)
 
 	voteInfoMapper := ecomapper.GetVoteInfoMapper(ctx)
 	voteInfo := ecotypes.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
 	voteInfoMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 
-	//更新owner对应的delegator的bondtokens
-	delegationMapper := ecomapper.GetDelegationMapper(ctx)
-	info, _ := delegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
+	// 更新owner对应的delegator的bondtokens
+	// delegationMapper := ecomapper.GetDelegationMapper(ctx)
+	// info, _ := delegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
 
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, uint64(ctx.BlockHeight()))
+	// distributionMapper := ecomapper.GetDistributionMapper(ctx)
+	// distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, uint64(ctx.BlockHeight()))
 
 	result.Tags = btypes.NewTags(btypes.TagAction, TagActionActiveValidator,
 		TagValidator, valAddr.String(),
