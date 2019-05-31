@@ -127,6 +127,9 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 			}
 		} else {
 			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
+				if !validator.IsActive() {
+					continue
+				}
 				i++
 				//保存数据
 				newValidatorAddressString := validator.GetValidatorAddress().String()
@@ -225,7 +228,7 @@ func blockValidator(ctx context.Context, validator ecotypes.Validator, code ecot
 	validatorMapper := ecomapper.GetValidatorMapper(ctx)
 	validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time, code)
 
-	//更新validator对应的delegator的token数量
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	distributionMapper.ModifyDelegatorTokens(validator, validator.Owner, uint64(0), uint64(ctx.BlockHeight()))
+	// //更新validator对应的delegator的token数量
+	// distributionMapper := ecomapper.GetDistributionMapper(ctx)
+	// distributionMapper.ModifyDelegatorTokens(validator, validator.Owner, uint64(0), uint64(ctx.BlockHeight()))
 }

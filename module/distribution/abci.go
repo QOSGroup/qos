@@ -233,6 +233,8 @@ func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt,
 	commissionReward := commissionRate.MultiBigInt(rewards)
 	sharedReward := rewards.Sub(commissionReward)
 
+	e.DistributionMapper.AddValidatorEcoFeePool(valAddr, btypes.ZeroInt(), commissionReward, sharedReward)
+
 	validator, exsits := e.ValidatorMapper.GetValidator(valAddr)
 	if !exsits {
 		log.Error("reward validator, validator not exsits", "validator", valAddr.String())
@@ -253,5 +255,4 @@ func rewardToValidator(e eco.Eco, valAddr btypes.Address, rewards btypes.BigInt,
 		log.Debug("reward validator shared", "validator", valAddr.String(), "sharedReward", sharedReward)
 	}
 
-	e.DistributionMapper.AddValidatorEcoFeePool(valAddr, btypes.ZeroInt(), commissionReward, sharedReward)
 }
