@@ -12,9 +12,13 @@ const (
 
 	flagAddress = "address"
 
-	flagName        = "name"
 	flagOwner       = "owner"
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"
+
+	flagMoniker = "moniker"
+	flagLogo    = "logo"
+	flagWebsite = "website"
+	flagDetails = "details"
 )

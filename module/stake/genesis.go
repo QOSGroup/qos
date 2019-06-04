@@ -124,10 +124,10 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []ecotyp
 		val := validators[i]
 		strKey := string(val.ValidatorPubKey.Bytes())
 		if _, ok := addrMap[strKey]; ok {
-			return fmt.Errorf("duplicate validator in genesis state: Name %v, Owner %v", val.Name, val.Owner)
+			return fmt.Errorf("duplicate validator in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
 		}
 		if val.Status != ecotypes.Active {
-			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, Owner %v", val.Name, val.Owner)
+			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
 		}
 		addrMap[strKey] = true
 
@@ -139,7 +139,7 @@ func validateValidators(genesisAccounts []*types.QOSAccount, validators []ecotyp
 		}
 
 		if !ownerExists {
-			return fmt.Errorf("owner of %s not exists", val.Name)
+			return fmt.Errorf("owner of %s not exists", val.Description.Moniker)
 		}
 	}
 	return nil

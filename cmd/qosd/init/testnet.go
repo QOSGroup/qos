@@ -135,7 +135,8 @@ Example:
 
 				// create gentx file
 				owner := ed25519.GenPrivKey()
-				txCreateValidator := stake.NewCreateValidatorTx(nodeDirName, btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, "")
+				desc := staketypes.Description{Moniker: nodeDirName}
+				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
 				if err != nil {

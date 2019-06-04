@@ -105,7 +105,7 @@ QOS目前规定验证人必须有一定的自绑定QOS来初始化运行验证�
 命令格式：
 
 ```bash
-qoscli tx create-validator --name validatorName --owner ownerName --tokens 20000000
+qoscli tx create-validator --moniker validatorName --owner ownerName --tokens 20000000
 ```
 
 ### revoke-validator

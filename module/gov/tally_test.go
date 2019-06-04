@@ -35,11 +35,10 @@ func TestTally(t *testing.T) {
 		accountMapper.SetAccount(types.NewQOSAccount(addr, btypes.NewInt(1000), nil))
 
 		validator := ecotypes.Validator{
-			Name:            string(i),
+			Description:     ecotypes.Description{Moniker: string(i)},
 			Owner:           addr,
 			ValidatorPubKey: pub,
 			BondTokens:      1000,
-			Description:     string(i),
 			Status:          ecotypes.Active,
 			MinPeriod:       uint64(0),
 			BondHeight:      uint64(ctx.BlockHeight()),

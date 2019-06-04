@@ -9,6 +9,7 @@ import (
 func TxValidatorCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.PostCommands(
 		CreateValidatorCmd(cdc),
+		ModifyValidatorCmd(cdc),
 		RevokeValidatorCmd(cdc),
 		ActiveValidatorCmd(cdc),
 	)

@@ -23,20 +23,18 @@ none---------------------->Active <------------------->Inactive------------->non
 
 ```go
 type TxCreateValidator struct {
-  Name  string
   Owner Address //操作者
   ValidatorPubkey crypto.Pubkey //validator公钥
   BondTokens  uint64 //绑定Token数量
-  Description string
+  Description Description
 }
 
 
 type Validator struct {
-  Name string
   Owner Address
   ValidatorPubkey crypto.Pubkey
   BondTokens uint64
-  Description string
+  Description Description
 
   Status  enum// ACTIVE/INACTIVE
   IsRevoke bool
@@ -50,6 +48,17 @@ type Validator struct {
 
 validator总数量不应超过`maxValidatorCnt`配置
 
+
+#### TxModifyValidator
+
+```go
+type TxModifyValidator struct {
+  Owner Address //操作者
+  Description Description //validator描述信息
+}
+```
+
+修改validator信息
 
 #### TxRevokeValidator
 

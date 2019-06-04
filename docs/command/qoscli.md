@@ -437,6 +437,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
 * `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
 * `qoscli tx create-validator` [成为验证节点](#成为验证节点)
+* `qoscli tx create-validator` [编辑验证节点](#编辑验证节点)
 * `qoscli tx revoke-validator` [撤销验证节点](#撤销验证节点)
 * `qoscli tx active-validator` [激活验证节点](#激活验证节点)
 * `qoscli tx delegate`         [委托](#委托)
@@ -860,27 +861,56 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 #### 成为验证节点
 
-`qoscli tx create-validator --name <validator_name> --owner <key_name_or_account_address> --tokens <tokens>`
+`qoscli tx create-validator --moniker <validator_name> --owner <key_name_or_account_address> --tokens <tokens>`
 
 主要参数：
 
 - `--owner`         操作者账户地址或密钥库中密钥名字
-- `--name`          验证节点名字
+- `--moniker`       验证节点名字，`len(moniker) <= 300`
 - `--nodeHome`      节点配置文件和数据所在目录，默认：`$HOME/.qosd`
 - `--tokens`        绑定tokens，不能大于操作者持有QOS数量
 - `--compound`      是否收益复投
-- `--description`   备注
+- `--logo`          logo, 可选参数，`len(logo) <= 255`
+- `--website`       网址, 可选参数，`len(website) <= 255`
+- `--details`       详细描述信息, 可选参数，`len(details) <= 1000`
 
 创建的validator基于本地的配置文件取`$HOME/.qosd/config/priv_validator.json`内信息，如果更改过默认位置，请使用`--home`指定`config`所在目录。
 
 `Arya`初始化了一个[全节点](../install/testnet.md#启动全节点)，可通过下面指令成为验证节点：
 ```bash
-$ qoscli tx create-validator --name "Arya's node" --owner Arya --tokens 1000
+$ qoscli tx create-validator --moniker "Arya's node" --owner Arya --tokens 1000
 ```
 
 执行结果：
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"258"}
+```
+
+执行成为验证节点命令后将从`Arya`账户扣除1000QOS，绑定到验证节点中，验证节点参与投票、打块所获得的挖矿收益将直接增加到`Arya`账户。
+
+#### 编辑验证节点
+
+`qoscli tx modify-validator --owner <key_name_or_account_address> --moniker <validator_name> --logo <logo_url> --website <website_url> --details <description info>`
+
+主要参数：
+
+- `--owner`         操作者账户地址或密钥库中密钥名字
+- `--moniker`       验证节点名字，`len(moniker) <= 300`
+- `--nodeHome`      节点配置文件和数据所在目录，默认：`$HOME/.qosd`
+- `--tokens`        绑定tokens，不能大于操作者持有QOS数量
+- `--compound`      是否收益复投
+- `--logo`          logo, 可选参数，`len(logo) <= 255`
+- `--website`       网址, 可选参数，`len(website) <= 255`
+- `--details`       详细描述信息, 可选参数，`len(details) <= 1000`
+
+`Arya`可通过`modify-validator`添加/修改节点信息：
+```bash
+$ qoscli tx modify-validator --moniker "Arya's node" --owner Arya --tokens 1000 --logo "https://..." --website "https://..." --description "Long live Arya."
+```
+
+执行结果：
+```bash
+{"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"265"}
 ```
 
 执行成为验证节点命令后将从`Arya`账户扣除1000QOS，绑定到验证节点中，验证节点参与投票、打块所获得的挖矿收益将直接增加到`Arya`账户。

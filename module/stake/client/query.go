@@ -33,12 +33,12 @@ const (
 )
 
 type validatorDisplayInfo struct {
-	Name            string         `json:"name"`
-	Owner           btypes.Address `json:"owner"`
-	ValidatorAddr   string         `json:"validatorAddress"`
-	ValidatorPubKey crypto.PubKey  `json:"validatorPubkey"`
-	BondTokens      uint64         `json:"bondTokens"` //不能超过int64最大值
-	Description     string         `json:"description"`
+	Name            string               `json:"name"`
+	Owner           btypes.Address       `json:"owner"`
+	ValidatorAddr   string               `json:"validatorAddress"`
+	ValidatorPubKey crypto.PubKey        `json:"validatorPubkey"`
+	BondTokens      uint64               `json:"bondTokens"` //不能超过int64最大值
+	Description     ecotypes.Description `json:"description"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
@@ -50,7 +50,6 @@ type validatorDisplayInfo struct {
 
 func toValidatorDisplayInfo(validator ecotypes.Validator) validatorDisplayInfo {
 	info := validatorDisplayInfo{
-		Name:            validator.Name,
 		Owner:           validator.Owner,
 		ValidatorPubKey: validator.ValidatorPubKey,
 		BondTokens:      validator.BondTokens,
