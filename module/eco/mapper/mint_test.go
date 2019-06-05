@@ -25,13 +25,15 @@ func TestSaveParams(t *testing.T) {
 
 	mintMapper.SetParams(params)
 
-	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
+	blockSec := uint64(time.Now().UTC().Unix())
+
+	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase(blockSec)
 	require.True(t, exist)
 
 	fmt.Println(currentInflationPhrase.EndTime)
 
-	mintMapper.addCurrentPhraseAppliedQOSAmount(1999)
-	require.Equal(t, mintMapper.getCurrentPhraseAppliedQOSAmount(), uint64(1999))
+	mintMapper.addCurrentPhraseAppliedQOSAmount(blockSec, 1999)
+	require.Equal(t, mintMapper.getCurrentPhraseAppliedQOSAmount(blockSec), uint64(1999))
 
 	now := time.Now()
 	mintMapper.AddInflationPhrase(minttypes.InflationPhrase{
@@ -46,7 +48,7 @@ func TestSaveParams(t *testing.T) {
 		0,
 	})
 
-	currentInflationPhrase, exist = mintMapper.GetCurrentInflationPhrase()
+	currentInflationPhrase, exist = mintMapper.GetCurrentInflationPhrase(blockSec)
 	require.True(t, exist)
 
 	fmt.Println(currentInflationPhrase.EndTime)
