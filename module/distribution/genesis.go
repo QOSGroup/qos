@@ -17,6 +17,7 @@ type GenesisState struct {
 	ValidatorCurrentPeriods  []ValidatorCurrentPeriodState `json:"validators_current_period"`
 	DelegatorEarningInfos    []DelegatorEarningStartState  `json:"delegators_earning_info"`
 	DelegatorIncomeHeights   []DelegatorIncomeHeightState  `json:"delegators_income_height"`
+	ValidatorEcoFeePools     []ValidatorEcoFeePoolState    `json:"validator_eco_fee_pools"`
 	Params                   types.DistributionParams      `json:"params"`
 }
 
@@ -27,6 +28,7 @@ func NewGenesisState(communityFeePool btypes.BigInt,
 	validatorCurrentPeriods []ValidatorCurrentPeriodState,
 	delegatorEarningInfos []DelegatorEarningStartState,
 	delegatorIncomeHeights []DelegatorIncomeHeightState,
+	validatorEcoFeePools []ValidatorEcoFeePoolState,
 	params types.DistributionParams) GenesisState {
 	return GenesisState{
 		CommunityFeePool:         communityFeePool,
@@ -36,6 +38,7 @@ func NewGenesisState(communityFeePool btypes.BigInt,
 		ValidatorCurrentPeriods:  validatorCurrentPeriods,
 		DelegatorEarningInfos:    delegatorEarningInfos,
 		DelegatorIncomeHeights:   delegatorIncomeHeights,
+		ValidatorEcoFeePools:     validatorEcoFeePools,
 		Params:                   params,
 	}
 }
@@ -81,6 +84,11 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	for _, delegatorIncomeHeightState := range data.DelegatorIncomeHeights {
 		key := types.BuildDelegatorPeriodIncomeKey(btypes.Address(delegatorIncomeHeightState.ValidatorPubKey.Address()), delegatorIncomeHeightState.DeleAddress, delegatorIncomeHeightState.Height)
 		distributionMapper.Set(key, true)
+	}
+
+	for _, validatorFeePoolState := range data.ValidatorEcoFeePools {
+		key := types.BuildValidatorEcoFeePoolKey(validatorFeePoolState.ValidatorAddress)
+		distributionMapper.Set(key, validatorFeePoolState.EcoFeePool)
 	}
 
 }
@@ -150,6 +158,14 @@ func ExportGenesis(ctx context.Context) GenesisState {
 		}
 	})
 
+	var validatorEcoFeePools []ValidatorEcoFeePoolState
+	distributionMapper.IteratorValidatorEcoFeePools(func(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool) {
+		validatorEcoFeePools = append(validatorEcoFeePools, ValidatorEcoFeePoolState{
+			ValidatorAddress: validatorAddr,
+			EcoFeePool:       pool,
+		})
+	})
+
 	return NewGenesisState(feePool,
 		lastBlockProposer,
 		preDistributionQOS,
@@ -157,6 +173,7 @@ func ExportGenesis(ctx context.Context) GenesisState {
 		validatorCurrentPeriods,
 		delegatorEarningInfos,
 		delegatorIncomeHeights,
+		validatorEcoFeePools,
 		params,
 	)
 }
@@ -182,4 +199,9 @@ type DelegatorIncomeHeightState struct {
 	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
 	DeleAddress     btypes.Address `json:"delegator_address"`
 	Height          uint64         `json:"height"`
+}
+
+type ValidatorEcoFeePoolState struct {
+	ValidatorAddress btypes.Address            `json:"validator_address"`
+	EcoFeePool       types.ValidatorEcoFeePool `json:"eco_fee_pool"`
 }

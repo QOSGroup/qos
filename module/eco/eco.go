@@ -19,6 +19,7 @@ import (
 func (e Eco) RemoveValidator(ctx context.Context, valAddr btypes.Address) error {
 
 	height := uint64(e.Context.BlockHeight())
+	log := e.Context.Logger()
 
 	distributionMapper := e.DistributionMapper
 	delegationMapper := e.DelegationMapper
@@ -33,10 +34,12 @@ func (e Eco) RemoveValidator(ctx context.Context, valAddr btypes.Address) error 
 		return fmt.Errorf("validator:%s not exsits", valAddr)
 	}
 
+	log.Debug("close validator", "height", ctx.BlockHeight(), "validator", validator.GetValidatorAddress().String(), "ownerAddr", validator.Owner.String())
+
 	//1. validator的汇总收益增加
 	endPeriod := distributionMapper.IncrementValidatorPeriod(validator)
 
-	//2. 计算所有delegator的收益信息,并将delegator绑定的token置为0
+	//2. 计算所有delegator的收益信息,并返回delegator绑定的token
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
 	iter := btypes.KVStorePrefixIterator(distributionMapper.GetStore(), prefixKey)
 	defer iter.Close()

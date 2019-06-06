@@ -3,6 +3,8 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
@@ -25,7 +27,6 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"io"
 )
 
 const (
@@ -64,9 +65,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// 4. close inactive  validator(stake),统计新的validator (stake)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+		mint.BeginBlocker(ctx, req)
 		distribution.BeginBlocker(ctx, req)
 		stake.BeginBlocker(ctx, req)
-		mint.BeginBlocker(ctx, req)
+
 		return abci.ResponseBeginBlock{}
 	})
 
@@ -75,7 +77,9 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		gov.EndBlocker(ctx)
 		distribution.EndBlocker(ctx, req)
 		stake.EndBlockerByReturnUnbondTokens(ctx)
-		return stake.EndBlocker(ctx)
+		validators := stake.EndBlocker(ctx)
+		confirmDataEveryHeight(ctx)
+		return validators
 	})
 
 	//parameter mapper
@@ -209,6 +213,9 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 		gov.ExportGenesis(ctx),
 		guardian.ExportGenesis(ctx),
 	)
+
+	stateDataConsistencyCheck(ctx, genState)
+
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
 		return nil, err
@@ -264,4 +271,68 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUse
 	}
 
 	return
+}
+
+func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
+
+	qosInAccounts := btypes.ZeroInt()
+	for _, account := range state.Accounts {
+		qosInAccounts = qosInAccounts.Add(account.QOS)
+	}
+	qosInDelegation := btypes.ZeroInt()
+	for _, delegation := range state.StakeData.DelegatorsInfo {
+		qosInDelegation = qosInDelegation.Add(btypes.NewInt(int64(delegation.Amount)))
+	}
+	preDistributionRemainTotal := btypes.ZeroInt()
+	for _, data := range state.DistributionData.ValidatorEcoFeePools {
+		preDistributionRemainTotal = preDistributionRemainTotal.Add(data.EcoFeePool.PreDistributeRemainTotalFee)
+	}
+	qosUnbond := btypes.ZeroInt()
+	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
+		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
+	}
+	qosFeePool := state.DistributionData.CommunityFeePool
+	qosPreQOS := state.DistributionData.PreDistributionQOSAmount
+
+	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal)
+	qosApplied := state.MintData.AppliedQOSAmount
+	diff := qosTotal.Sub(btypes.NewInt(int64(qosApplied)))
+
+	ctx.Logger().Info("DATA CONFIRM",
+		"height", ctx.BlockHeight(),
+		"accounts", qosInAccounts,
+		"delegations", qosInDelegation,
+		"unbond", qosUnbond,
+		"feepool", qosFeePool,
+		"pre", qosPreQOS,
+		"valshared", preDistributionRemainTotal,
+		"total", qosTotal,
+		"applied", qosApplied,
+		"diff", diff)
+
+	return diff.Equal(btypes.ZeroInt())
+}
+
+func confirmDataEveryHeight(ctx context.Context) {
+	accounts := []*types.QOSAccount{}
+	ctx.Mapper(account.AccountMapperName).(*account.AccountMapper).IterateAccounts(func(acc account.Account) (stop bool) {
+		accounts = append(accounts, acc.(*types.QOSAccount))
+		return false
+	})
+	genState := NewGenesisState(
+		accounts,
+		mint.ExportGenesis(ctx),
+		stake.ExportGenesis(ctx),
+		qcp.ExportGenesis(ctx),
+		qsc.ExportGenesis(ctx),
+		approve.ExportGenesis(ctx),
+		distribution.ExportGenesis(ctx),
+		gov.ExportGenesis(ctx),
+		guardian.ExportGenesis(ctx),
+	)
+
+	isSame := stateDataConsistencyCheck(ctx, genState)
+	if !isSame {
+		panic("DATA NOT CONSISTENCY")
+	}
 }

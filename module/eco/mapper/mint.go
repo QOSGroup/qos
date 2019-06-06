@@ -4,8 +4,8 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+
 	btypes "github.com/QOSGroup/qbase/types"
-	"time"
 
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
@@ -34,7 +34,7 @@ func (mapper *MintMapper) Copy() mapper.IMapper {
 }
 
 // 获取当前Inflation Phrase的键值
-func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, error) {
+func (mapper *MintMapper) GetCurrentInflationPhraseKey(blockSec uint64, newPhrase bool) ([]byte, error) {
 	// 使用KVStorePrefixIterator，当前应该是key最小的也就是第一个
 	iter := btypes.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
 	if !iter.Valid() {
@@ -45,25 +45,23 @@ func (mapper *MintMapper) GetCurrentInflationPhraseKey(newPhrase bool) ([]byte, 
 	var endtimesec uint64
 	binary.Read(bytes.NewBuffer(endtimesecBytes), binary.BigEndian, &endtimesec)
 
-	nowsec := uint64(time.Now().UTC().Unix())
-
 	// 当前时间已经超过endtime，需要进入下一phrase
-	if nowsec >= endtimesec {
+	if blockSec >= endtimesec {
 		if newPhrase {
 			// 排除设置错误，为啥会刚删过又删？
 			return nil, errors.New("Removing Inflation Plans too frequently")
 		}
 		// 删掉过期的phrase
 		mapper.Del(inflationPhraseKey)
-		return mapper.GetCurrentInflationPhraseKey(true)
+		return mapper.GetCurrentInflationPhraseKey(blockSec, true)
 	}
 	return iter.Key(), nil
 }
 
 // 获取当前的Inflation Phrase
-func (mapper *MintMapper) GetCurrentInflationPhrase() (inflationPhrase ecotypes.InflationPhrase, exist bool) {
+func (mapper *MintMapper) GetCurrentInflationPhrase(blockSec uint64) (inflationPhrase ecotypes.InflationPhrase, exist bool) {
 	inflationPhrase = ecotypes.InflationPhrase{}
-	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(false)
+	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(blockSec, false)
 	if err == nil {
 		exist = mapper.Get(currentInflationPhraseKey, &inflationPhrase)
 	}
@@ -118,19 +116,19 @@ func (mapper *MintMapper) GetMintParams() ecotypes.MintParams {
 	return ecotypes.MintParams{phrases}
 }
 
-// 获取已分配QOS总数
-func (mapper *MintMapper) GetAppliedQOSAmount() (v uint64) {
-	currentInflationPhrase, exists := mapper.GetCurrentInflationPhrase()
+// 获取当前阶段已分配QOS总数
+func (mapper *MintMapper) getCurrentPhraseAppliedQOSAmount(blockSec uint64) (v uint64) {
+	currentInflationPhrase, exists := mapper.GetCurrentInflationPhrase(blockSec)
 	if !exists {
 		return 0
 	}
 	return currentInflationPhrase.AppliedAmount
 }
 
-// 设置 已分配 QOS amount
-func (mapper *MintMapper) SetAppliedQOSAmount(amount uint64) {
+// 设置当前阶段已分配 QOS amount
+func (mapper *MintMapper) setCurrentPhraseAppliedQOSAmount(blockSec uint64, amount uint64) {
 	inflationPhrase := ecotypes.InflationPhrase{}
-	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(false)
+	currentInflationPhraseKey, err := mapper.GetCurrentInflationPhraseKey(blockSec, false)
 	if err == nil {
 		mapper.Get(currentInflationPhraseKey, &inflationPhrase)
 		inflationPhrase.AppliedAmount = amount
@@ -139,11 +137,19 @@ func (mapper *MintMapper) SetAppliedQOSAmount(amount uint64) {
 	// TODO dealing with errors
 }
 
-// 增加 已分配 QOS amount
-func (mapper *MintMapper) AddAppliedQOSAmount(amount uint64) {
-	mined := mapper.GetAppliedQOSAmount()
+// 增加当前阶段已分配 QOS amount
+func (mapper *MintMapper) addCurrentPhraseAppliedQOSAmount(blockSec uint64, amount uint64) {
+	mined := mapper.getCurrentPhraseAppliedQOSAmount(blockSec)
 	mined += amount
-	mapper.SetAppliedQOSAmount(mined)
+	mapper.setCurrentPhraseAppliedQOSAmount(blockSec, mined)
+}
+
+//mint处理:
+//1. 当前阶段分配数
+//2. 总分配
+func (mapper *MintMapper) MintQOS(blockSec uint64, amount uint64) {
+	mapper.addAllTotalMintQOSAmount(amount)
+	mapper.addCurrentPhraseAppliedQOSAmount(blockSec, amount)
 }
 
 func (mapper *MintMapper) SetFirstBlockTime(t int64) {
@@ -153,4 +159,28 @@ func (mapper *MintMapper) SetFirstBlockTime(t int64) {
 func (mapper *MintMapper) GetFirstBlockTime() (t int64) {
 	mapper.Get(ecotypes.BuildFirstBlockTimeKey(), &t)
 	return
+}
+
+//获取总分配的QOS总数
+func (mapper *MintMapper) GetAllTotalMintQOSAmount() (amount uint64) {
+	mapper.Get(ecotypes.BuildAllTotalMintQOSKey(), &amount)
+	return
+}
+
+func (mapper *MintMapper) DelAllTotalMintQOSAmount() {
+	mapper.Del(ecotypes.BuildAllTotalMintQOSKey())
+}
+
+//设置总分配的QOS总数
+func (mapper *MintMapper) SetAllTotalMintQOSAmount(amount uint64) {
+	mapper.Set(ecotypes.BuildAllTotalMintQOSKey(), amount)
+}
+
+//增加总分配的QOS总数
+func (mapper *MintMapper) addAllTotalMintQOSAmount(amount uint64) {
+
+	totalAmount := mapper.GetAllTotalMintQOSAmount()
+	totalAmount += amount
+
+	mapper.SetAllTotalMintQOSAmount(totalAmount)
 }
