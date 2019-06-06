@@ -25,7 +25,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
 		totalPower += voteInfo.Validator.Power
 		if !voteInfo.SignedLastBlock {
-			log.Debug("distribution begin", "validator not signed", voteInfo.Validator.Address)
+			log.Debug("distribution skip", "validatorNotSigned", voteInfo.Validator.Address)
 			continue
 		}
 
@@ -33,7 +33,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 		v, exsits := e.ValidatorMapper.GetValidator(valAddr)
 		if !(exsits && v.IsActive()) {
-			log.Debug("distribution begin", "validator not exsits or not active", voteInfo.Validator.Address)
+			log.Debug("distribution skip", "validatorNotExsitsorNotActive", voteInfo.Validator.Address)
 			continue
 		}
 
@@ -59,6 +59,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 	height := uint64(req.Height)
 	e := eco.GetEco(ctx)
+	log := e.Context.Logger()
 
 	prefixKey := types.BuildDelegatorPeriodIncomePrefixKey(height)
 
@@ -80,6 +81,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 		//获取validator委托人的最小计费点周期, 删除validator历史计费点周期
 		minPeriod := e.DistributionMapper.GetValidatorMinPeriodFromDelegators(valAddr)
+		log.Debug("distribution end. remove validator history period", "validator", valAddr, "minPeriod", minPeriod)
 		e.DistributionMapper.ClearValidatorHistoryPeroid(valAddr, minPeriod)
 	}
 
@@ -213,17 +215,17 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 	log.Debug("distribution total rewards", "total rewards", totalAmount, "height", ctx.BlockHeight())
 	//proposer奖励,直接归属proposer
 	proposerRewards := params.ProposerRewardRate.MultiBigInt(totalAmount)
-	proposerValidater, exsits := e.ValidatorMapper.GetValidator(proposerAddr)
-	if !exsits {
-		log.Error("distribution proposer validator not exsits", "proposer", proposerAddr)
+	proposerValidater, validatorExsits := e.ValidatorMapper.GetValidator(proposerAddr)
+	proposerInfo, proposerInfoExsits := e.DistributionMapper.GetDelegatorEarningStartInfo(proposerAddr, proposerValidater.Owner)
+
+	if validatorExsits && proposerInfoExsits {
+		log.Debug("distribution reward proposer", "proposer", proposerAddr.String(), "owner", proposerValidater.Owner.String(), "rewards", proposerRewards)
+		proposerInfo.HistoricalRewardFees = proposerInfo.HistoricalRewardFees.Add(proposerRewards)
+		remainQOS = remainQOS.Sub(proposerRewards)
+		e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), proposerInfo)
+		e.DistributionMapper.AddValidatorEcoFeePool(proposerAddr, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
 	} else {
-		if info, exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(proposerAddr, proposerValidater.Owner); exsits {
-			log.Debug("distribution reward proposer", "proposer", proposerAddr.String(), "owner", proposerValidater.Owner.String(), "rewards", proposerRewards)
-			info.HistoricalRewardFees = info.HistoricalRewardFees.Add(proposerRewards)
-			remainQOS = remainQOS.Sub(proposerRewards)
-			e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), info)
-			e.DistributionMapper.AddValidatorEcoFeePool(proposerAddr, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
-		}
+		log.Error("distribution proposer validator or earn info not exsits", "validator", proposerAddr, "validatorExsits", validatorExsits, "proposerInfoExsits", proposerInfoExsits)
 	}
 
 	//vote奖励(漏签和inactive的validator不分配奖励)
@@ -231,7 +233,6 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 	for _, validator := range validators {
 		votePowerFrac := qtypes.NewFraction(int64(validator.BondTokens), denomTotalPower)
 		rewards := votePowerFrac.Mul(votePercent).MultiBigInt(totalAmount)
-		log.Debug("distribution reward validator", "validator", validator.GetValidatorAddress(), "power", validator.BondTokens, "total rewards", rewards)
 		remainQOS = remainQOS.Sub(rewards)
 		rewardToValidator(e, validator, rewards, params.ValidatorCommissionRate)
 	}
@@ -257,14 +258,20 @@ func rewardToValidator(e eco.Eco, validator types.Validator, rewards btypes.BigI
 	if info, exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, validator.Owner); exsits {
 		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(commissionReward)
 		e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Owner), info)
-		log.Debug("distribution reward validator commission", "validator", valAddr.String(), "commissionReward", commissionReward)
 	}
 
 	//delegator 共同收益
 	if vcps, exsits := e.DistributionMapper.GetValidatorCurrentPeriodSummary(valAddr); exsits {
 		vcps.Fees = vcps.Fees.Add(sharedReward)
 		e.DistributionMapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), vcps)
-		log.Debug("distribution reward validator shared", "validator", valAddr.String(), "sharedReward", sharedReward)
 	}
+
+	log.Debug("distribution reward validator", "height", e.Context.BlockHeight(),
+		"validator", valAddr.String(),
+		"power", validator.BondTokens,
+		"totalReward", rewards,
+		"commissionReward", commissionReward,
+		"sharedReward", sharedReward,
+	)
 
 }
