@@ -8,6 +8,7 @@ import (
 	"github.com/QOSGroup/qos/module/distribution"
 	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/gov"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -21,11 +22,13 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/spf13/cobra"
 
 	btypes "github.com/QOSGroup/qbase/types"
+	gtypes "github.com/QOSGroup/qos/module/guardian/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	ttypes "github.com/tendermint/tendermint/types"
 )
@@ -45,6 +48,8 @@ var (
 	qcpRootCA string
 	qscRootCA string
 	accounts  string
+
+	guardianAddresses string
 )
 
 const (
@@ -161,6 +166,24 @@ Example:
 				cfg.WriteConfigFile(filepath.Join(nodeDirs[i], "config", "config.toml"), config)
 			}
 
+			// guardians
+			var guardians []gtypes.Guardian
+			if len(guardianAddresses) != 0 {
+				addressArr := strings.Split(guardianAddresses, ",")
+				for _, address := range addressArr {
+					addr, err := btypes.GetAddrFromBech32(address)
+					if err != nil {
+						return err
+					}
+					guardians = append(guardians, *gtypes.NewGuardian("genesis guardian", gtypes.Genesis, addr, nil))
+				}
+			}
+			guardianState := guardian.NewGenesisState(guardians)
+			err = guardian.ValidateGenesis(guardianState)
+			if err != nil {
+				return err
+			}
+
 			appliedQOSAmount := btypes.ZeroInt()
 			for _, account := range genesisAccounts {
 				appliedQOSAmount = appliedQOSAmount.Add(account.QOS)
@@ -173,6 +196,7 @@ Example:
 				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
 				DistributionData: distribution.DefaultGenesisState(),
 				GovData:          gov.DefaultGenesisState(),
+				GuardianData:     guardianState,
 			}
 			appState.MintData.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
 
@@ -218,6 +242,7 @@ Example:
 	cmd.Flags().StringVar(&qscRootCA, "qcp-root-ca", "", "Config pubKey of root CA for QSC")
 	cmd.Flags().StringVar(&chainId, "chain-id", "", "Chain ID")
 	cmd.Flags().BoolVar(&compound, "compound", true, "whether the validator's income is calculated as compound interest, default: true")
+	cmd.Flags().StringVar(&guardianAddresses, "guardians", "", "addresses for guardian. Multiple addresses separated by ','")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
 
 	return cmd

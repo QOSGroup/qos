@@ -181,8 +181,9 @@ Flags:
       --chain-id string              Chain ID
       --compound                     whether the validator's income is calculated as compound interest, default: true (default true)
       --genesis-accounts string      Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
+      --guardians string             addresses for guardian. Multiple addresses separated by ','
   -h, --help                         help for testnet
-      --home-client string           directory for keybase (default "/home/imuge/.qoscli")
+      --home-client string           directory for keybase (default "$HOME/.qoscli")
       --hostname-prefix string       Hostname prefix (node results in persistent peers list ID0@node0:26656, ID1@node1:26656, ...) (default "node")
       --node-dir-prefix string       Prefix the directory name for each node with (node results in node0, node1, ...) (default "node")
       --o string                     Directory to store initialization data for the testnet (default "./mytestnet")
@@ -192,7 +193,7 @@ Flags:
       --v int                        Number of validators to initialize the testnet with (default 4)
 
 Global Flags:
-      --home string        directory for config and data (default "/home/imuge/.qosd")
+      --home string        directory for config and data (default "$HOME/.qosd")
       --log_level string   Log level (default "main:info,state:info,*:error")
       --trace              print out full stack trace on errors
 
