@@ -1,6 +1,9 @@
 package main
 
 import (
+	"io"
+	_ "net/http/pprof"
+
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/cmd/qosd/export"
@@ -12,7 +15,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"io"
 )
 
 func main() {
@@ -42,6 +44,8 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp)
 
 	executor := cli.PrepareBaseCmd(rootCmd, "qos", types.DefaultNodeHome)
+
+	// go http.ListenAndServe(":1234", nil)
 
 	err := executor.Execute()
 	if err != nil {

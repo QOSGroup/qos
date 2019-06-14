@@ -76,6 +76,7 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
 		e.RemoveValidator(ctx, valAddress)
 	}
+	iterator.Close()
 }
 
 func closeAllInactiveValidator(ctx context.Context) {
@@ -91,6 +92,7 @@ func closeAllInactiveValidator(ctx context.Context) {
 		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
 		e.RemoveValidator(ctx, valAddress)
 	}
+	iterator.Close()
 }
 
 func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
