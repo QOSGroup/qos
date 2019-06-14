@@ -22,9 +22,10 @@ func GenQOSGenesisDoc(ctx *server.Context, cdc *amino.Codec, chainID string, nod
 
 func defaultConsensusParams() *tmtypes.ConsensusParams {
 	consensusParams := tmtypes.DefaultConsensusParams()
-	consensusParams.BlockSize = tmtypes.BlockSizeParams{
-		MaxBytes: 1048576, // 1MB
-		MaxGas:   -1,
+	consensusParams.Block = tmtypes.BlockParams{
+		MaxBytes:   1048576, // 1MB
+		MaxGas:     -1,
+		TimeIotaMs: 1000,
 	}
 
 	return consensusParams
