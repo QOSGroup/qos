@@ -33,7 +33,6 @@ const (
 )
 
 type validatorDisplayInfo struct {
-	Name            string               `json:"name"`
 	Owner           btypes.Address       `json:"owner"`
 	ValidatorAddr   string               `json:"validatorAddress"`
 	ValidatorPubKey crypto.PubKey        `json:"validatorPubkey"`

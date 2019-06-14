@@ -97,7 +97,6 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
 
-	cmd.MarkFlagRequired(flagMoniker)
 	cmd.MarkFlagRequired(flagOwner)
 
 	return cmd
