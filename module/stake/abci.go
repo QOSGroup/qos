@@ -155,6 +155,10 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 		}
 	}
 
+	if len(newValidators) == 0 {
+		panic("consens error. no validator exsits")
+	}
+
 	//存储新的validator
 	validatorMapper.Set(ecotypes.BuildCurrentValidatorsAddressKey(), newValidators)
 
