@@ -71,9 +71,6 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (tx txs.ITx, e error) {
 				name := viper.GetString(flagMoniker)
-				if len(name) == 0 {
-					return nil, errors.New("moniker is empty")
-				}
 				logo := viper.GetString(flagLogo)
 				website := viper.GetString(flagWebsite)
 				details := viper.GetString(flagDetails)
