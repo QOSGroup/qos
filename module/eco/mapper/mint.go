@@ -37,6 +37,8 @@ func (mapper *MintMapper) Copy() mapper.IMapper {
 func (mapper *MintMapper) GetCurrentInflationPhraseKey(blockSec uint64, newPhrase bool) ([]byte, error) {
 	// 使用KVStorePrefixIterator，当前应该是key最小的也就是第一个
 	iter := btypes.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
+	defer iter.Close()
+
 	if !iter.Valid() {
 		return nil, errors.New("No more coins to come, sad!")
 	}
@@ -106,6 +108,7 @@ func (mapper *MintMapper) SetMintParams(config ecotypes.MintParams) {
 func (mapper *MintMapper) GetMintParams() ecotypes.MintParams {
 	var phrases []ecotypes.InflationPhrase
 	iter := btypes.KVStorePrefixIterator(mapper.BaseMapper.GetStore(), ecotypes.BuildMintParamsKey())
+	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
 		var inflationPhrase ecotypes.InflationPhrase
