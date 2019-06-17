@@ -17,11 +17,6 @@ const (
 	GovMapperName = "governance"
 )
 
-var (
-	BurnRate       = types.NewDecWithPrec(2, 1)
-	MinDepositRate = types.NewDecWithPrec(3, 1)
-)
-
 type GovMapper struct {
 	*mapper.BaseMapper
 }
@@ -341,6 +336,7 @@ func (mapper GovMapper) GetDeposits(proposalID uint64) store.Iterator {
 
 // Refunds and deletes all the deposits on a specific proposal
 func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
+	params := mapper.GetParams(ctx)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	depositsIterator := mapper.GetDeposits(proposalID)
 	defer depositsIterator.Close()
@@ -349,7 +345,7 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 		mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), deposit)
 
 		originAmount := types.NewDec(int64(deposit.Amount))
-		burnAmount := BurnRate.Mul(originAmount)
+		burnAmount := params.BurnRate.Mul(originAmount)
 
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
