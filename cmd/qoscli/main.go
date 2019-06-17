@@ -10,6 +10,7 @@ import (
 	"github.com/QOSGroup/qos/module/distribution/client"
 	"github.com/QOSGroup/qos/module/gov/client"
 	"github.com/QOSGroup/qos/module/guardian/client"
+	mint "github.com/QOSGroup/qos/module/mint/client"
 	"github.com/QOSGroup/qos/module/qcp/client"
 	"github.com/QOSGroup/qos/module/qsc/client"
 	"github.com/QOSGroup/qos/module/stake/client"
@@ -47,6 +48,8 @@ func main() {
 	queryCommands.AddCommand(distribution.QueryCommands(cdc)...)
 	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(gov.QueryCommands(cdc)...)
+	queryCommands.AddCommand(bctypes.LineBreak)
+	queryCommands.AddCommand(mint.QueryCommands(cdc)...)
 	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(guardian.QueryCommands(cdc)...)
 	queryCommands.AddCommand(bctypes.LineBreak)

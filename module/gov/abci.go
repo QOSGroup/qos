@@ -156,6 +156,8 @@ func Execute(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) e
 		return executeParameterChange(ctx, proposal, logger)
 	case gtypes.ProposalTypeTaxUsage:
 		return executeTaxUsage(ctx, proposal, logger)
+	case gtypes.ProposalTypeAddInflationPhrase:
+		return executeAddInflationPhrase(ctx, proposal, logger)
 	}
 
 	return nil
@@ -194,6 +196,21 @@ func executeTaxUsage(ctx context.Context, proposal gtypes.Proposal, logger log.L
 	distributionMapper.SetCommunityFeePool(feePool.Sub(qos))
 
 	logger.Info("execute taxUsage, proposal: %d", proposal.ProposalID)
+
+	return nil
+}
+
+func executeAddInflationPhrase(ctx context.Context, proposal gtypes.Proposal, logger log.Logger) error {
+	proposalContent := proposal.ProposalContent.(*gtypes.AddInflationPhraseProposal)
+	mintMapper := ecomapper.GetMintMapper(ctx)
+	phrase := ecotypes.InflationPhrase{
+		EndTime:       proposalContent.EndTime,
+		TotalAmount:   proposalContent.TotalAmount,
+		AppliedAmount: uint64(0),
+	}
+	mintMapper.AddInflationPhrase(phrase)
+
+	logger.Info("execute addInflationPhrase, proposal: %d", proposal.ProposalID)
 
 	return nil
 }

@@ -46,6 +46,9 @@ const (
 
 	flagParams = "params"
 
+	flagEndTime     = "end-time"
+	flagTotalAmount = "total-amount"
+
 	flagStatus   = "status"
 	flagNumLimit = "limit"
 

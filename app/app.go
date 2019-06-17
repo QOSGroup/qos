@@ -139,6 +139,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 			return gov.Query(ctx, route[1:], req)
 		}
 
+		if route[0] == mint.Mint {
+			return mint.Query(ctx, route[1:], req)
+		}
+
 		return nil, nil
 	})
 

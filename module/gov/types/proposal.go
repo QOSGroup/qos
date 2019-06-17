@@ -169,10 +169,11 @@ func (tr TallyResult) String() string {
 type ProposalType byte
 
 const (
-	ProposalTypeNil             ProposalType = 0x00
-	ProposalTypeText            ProposalType = 0x01
-	ProposalTypeParameterChange ProposalType = 0x02
-	ProposalTypeTaxUsage        ProposalType = 0x03
+	ProposalTypeNil                ProposalType = 0x00
+	ProposalTypeText               ProposalType = 0x01
+	ProposalTypeParameterChange    ProposalType = 0x02
+	ProposalTypeTaxUsage           ProposalType = 0x03
+	ProposalTypeAddInflationPhrase ProposalType = 0x04
 )
 
 // String to proposalType byte. Returns 0xff if invalid.
@@ -184,6 +185,8 @@ func ProposalTypeFromString(str string) (ProposalType, error) {
 		return ProposalTypeParameterChange, nil
 	case "taxusage":
 		return ProposalTypeTaxUsage, nil
+	case "addinflationphrase":
+		return ProposalTypeAddInflationPhrase, nil
 	default:
 		return ProposalType(0xff), fmt.Errorf("'%s' is not a valid proposal type", str)
 	}
@@ -198,6 +201,8 @@ func (pt ProposalType) String() string {
 		return "Parameter"
 	case ProposalTypeTaxUsage:
 		return "TaxUsage"
+	case ProposalTypeAddInflationPhrase:
+		return "AddInflationPhrase"
 	default:
 		return ""
 	}
@@ -207,13 +212,14 @@ func (pt ProposalType) String() string {
 func ValidProposalType(pt ProposalType) bool {
 	if pt == ProposalTypeText ||
 		pt == ProposalTypeParameterChange ||
-		pt == ProposalTypeTaxUsage {
+		pt == ProposalTypeTaxUsage ||
+		pt == ProposalTypeAddInflationPhrase {
 		return true
 	}
 	return false
 }
 
-// Text Proposals
+// Text Proposal
 type TextProposal struct {
 	Title       string `json:"title"`       //  Title of the proposal
 	Description string `json:"description"` //  Description of the proposal
@@ -237,7 +243,7 @@ func (tp TextProposal) GetDescription() string        { return tp.Description }
 func (tp TextProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText }
 
-// TaxUsage Proposals
+// TaxUsage Proposal
 type TaxUsageProposal struct {
 	TextProposal
 	DestAddress btypes.Address `json:"dest_address"`
@@ -265,7 +271,7 @@ func (tp TaxUsageProposal) GetDescription() string        { return tp.Descriptio
 func (tp TaxUsageProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeTaxUsage }
 
-// Parameters change Proposals
+// Parameters change Proposal
 type ParameterProposal struct {
 	TextProposal
 	Params []Param `json:"params"`
@@ -290,6 +296,36 @@ func (tp ParameterProposal) GetTitle() string              { return tp.Title }
 func (tp ParameterProposal) GetDescription() string        { return tp.Description }
 func (tp ParameterProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp ParameterProposal) GetProposalType() ProposalType { return ProposalTypeParameterChange }
+
+// Add Inflation Phrase Proposal
+type AddInflationPhraseProposal struct {
+	TextProposal
+	EndTime     time.Time `json:"ent_time"`     //  End time
+	TotalAmount uint64    `json:"total_amount"` //  Total amount
+}
+
+func NewAddInflationPhrase(title, description string, deposit uint64, endTime time.Time, totalAmount uint64) AddInflationPhraseProposal {
+	return AddInflationPhraseProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		EndTime:     endTime,
+		TotalAmount: totalAmount,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = AddInflationPhraseProposal{}
+
+// nolint
+func (tp AddInflationPhraseProposal) GetTitle() string       { return tp.Title }
+func (tp AddInflationPhraseProposal) GetDescription() string { return tp.Description }
+func (tp AddInflationPhraseProposal) GetDeposit() uint64     { return tp.Deposit }
+func (tp AddInflationPhraseProposal) GetProposalType() ProposalType {
+	return ProposalTypeAddInflationPhrase
+}
 
 type Param struct {
 	Module string `json:"module"`
