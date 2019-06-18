@@ -67,7 +67,7 @@ func ExportCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			}
 			height := viper.GetInt64(flagHeight)
 			forZeroHeight := viper.GetBool(flagForZeroHeight)
-			appState, err := exportAppState(ctx.Logger, db, traceWriter, height, forZeroHeight)
+			height, appState, err := exportAppState(ctx.Logger, db, traceWriter, height, forZeroHeight)
 			if err != nil {
 				return errors.Errorf("error exporting state: %v\n", err)
 			}
@@ -132,8 +132,12 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 	return
 }
 
-func exportAppState(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool) (json.RawMessage, error) {
+func exportAppState(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool) (int64, json.RawMessage, error) {
 	qApp := app.NewApp(logger, db, traceStore)
-	qApp.LoadVersion(height)
-	return qApp.ExportAppStates(forZeroHeight)
+	if height != -1 {
+		qApp.LoadVersion(height)
+	}
+	height = qApp.LastBlockHeight()
+	appState, err := qApp.ExportAppStates(forZeroHeight)
+	return height, appState, err
 }
