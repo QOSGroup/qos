@@ -108,19 +108,19 @@ func ExportGenesis(ctx context.Context) GenesisState {
 		var votes []gtypes.Vote
 		proposalID := proposal.ProposalID
 		depositsIterator := mapper.GetDeposits(proposalID)
-		defer depositsIterator.Close()
 		for ; depositsIterator.Valid(); depositsIterator.Next() {
 			var deposit gtypes.Deposit
 			mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), &deposit)
 			deposits = append(deposits, deposit)
 		}
+		depositsIterator.Close()
 		votesIterator := mapper.GetVotes(proposalID)
-		defer votesIterator.Close()
 		for ; votesIterator.Valid(); votesIterator.Next() {
 			var vote gtypes.Vote
 			mapper.GetCodec().MustUnmarshalBinaryBare(votesIterator.Value(), &vote)
 			votes = append(votes, vote)
 		}
+		votesIterator.Close()
 		genesisProposals = append(genesisProposals, GenesisProposal{proposal, deposits, votes})
 	}
 
