@@ -161,6 +161,7 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query deposits`               [抵押列表](#抵押列表)
 * `qoscli query tally`                  [投票统计](#投票统计)
 * `qoscli query params`                 [参数查询](#参数查询)
+* `qoscli query inflation-phrases`      [通胀查询](#通胀查询)
 * `qoscli query guardian`               [特权账户查询](#特权账户查询)
 * `qoscli query guardians`              [特权账户列表](#特权账户列表)   
 * `qoscli query status`                 [查询节点状态](#状态（status）)
@@ -1303,6 +1304,42 @@ $ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
 $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tokens 10
 ```
 
+### 挖矿（mint）
+
+* `qoscli query inflation-phrases`  [通胀查询](#通胀查询)
+
+#### 通胀查询
+
+`qoscli query inflation-phrases`
+
+打印出所有通胀阶段及状态：
+```bash
+$ qoscli query inflation-phrases --indent
+[
+  {
+    "endtime": "2023-01-01T00:00:00Z",
+    "total_amount": "2500000000000",
+    "applied_amount": "39167137"
+  },
+  {
+    "endtime": "2027-01-01T00:00:00Z",
+    "total_amount": "12750000000000",
+    "applied_amount": "0"
+  },
+  {
+    "endtime": "2031-01-01T00:00:00Z",
+    "total_amount": "6375000000000",
+    "applied_amount": "0"
+  },
+  {
+    "endtime": "2035-01-01T00:00:00Z",
+    "total_amount": "3185000000000",
+    "applied_amount": "0"
+  }
+]
+```
+
+
 ### 治理（governance）
 
 * `qoscli tx submit-proposal`  [提交提议](#提交提议)
@@ -1337,7 +1374,7 @@ $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tok
 - `--title`             标题
 - `--proposal-type`     提议类型：`Text`、`ParameterChange`、`TaxUsage`
 - `--proposer`          提议账户，账户地址或密钥库中密钥名字
-- `--deposit`           提议押金，不能小于`MinDeposit`的三分之一
+- `--deposit`           提议押金，不能小于`min_deposit`与`min_proposer_deposit_rate`乘积
 - `--description`       描述信息
 
 `TaxUsage`类型提议特有参数：
@@ -1349,6 +1386,10 @@ $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tok
 
 - `--params`            参数列表，格式：'module:key_name:value,module:key_name:value，如：gov:min_deposit:10000
 
+`AddInflationPhrase`类型提议特有参数：
+
+- `end-time`            通胀结束时间，格式：'yyyy-MM-dd'
+- `total-amount`        发行量
 
 `Arya`提交一个文本提议：
 ```bash
@@ -1357,12 +1398,17 @@ $ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer
 
 `Arya`提交一个参数修改提议：
 ```bash
-$ qoscli tx submit-proposal --title 'update qos' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
+$ qoscli tx submit-proposal --title 'update parameters' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
 ```
 
 假设`Arya`在QOS初始化时已经通过[添加特权账户](qosd.md#添加特权账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
 ```bash
-$ qoscli tx submit-proposal --title 'update qos' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
+$ qoscli tx submit-proposal --title 'use tax' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
+```
+
+Arya`提交一个增加通胀阶段提议：
+```bash
+$ qoscli tx submit-proposal --title 'add inflation phrase' --proposal-type AddInflationPhrase --proposer Arya --deposit 10000000 --description 'this is the description' --end-time 2100-10-01 --total-amount 1000000000
 ```
 
 #### 提议查询

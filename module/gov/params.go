@@ -29,7 +29,7 @@ type Params struct {
 	// DepositParams
 	MinDeposit             uint64        `json:"min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
 	MinProposerDepositRate types.Dec     `json:"min_proposer_deposit_rate"` //  Minimum deposit rate for proposer to submit a proposal. Initial value: 1/3
-	MaxDepositPeriod       time.Duration `json:"max_deposit_period"`        //  Maximum period for Atom holders to deposit on a proposal. Initial value: 2 months
+	MaxDepositPeriod       time.Duration `json:"max_deposit_period"`        //  Maximum period for QOS holders to deposit on a proposal. Initial value: 2 months
 
 	// VotingParams
 	VotingPeriod time.Duration `json:"voting_period"` //  Length of the voting period.
