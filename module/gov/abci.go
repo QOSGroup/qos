@@ -182,9 +182,12 @@ func executeTaxUsage(ctx context.Context, proposal gtypes.Proposal, logger log.L
 	proposalContent := proposal.ProposalContent.(*gtypes.TaxUsageProposal)
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
-	account := accountMapper.GetAccount(proposalContent.DestAddress).(*types.QOSAccount)
-	if account == nil {
+	acc := accountMapper.GetAccount(proposalContent.DestAddress)
+	var account *types.QOSAccount
+	if acc == nil {
 		account = types.NewQOSAccountWithAddress(proposalContent.DestAddress)
+	} else {
+		account = acc.(*types.QOSAccount)
 	}
 	feePool := distributionMapper.GetCommunityFeePool()
 	qos := types.NewDec(feePool.Int64()).Mul(proposalContent.Percent).TruncateInt()
