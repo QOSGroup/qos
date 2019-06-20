@@ -15,6 +15,7 @@ import (
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/gov"
+	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
@@ -291,10 +292,18 @@ func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
 	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
 		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
 	}
+
+	govDeposit := btypes.ZeroInt()
+	for _, proposal := range state.GovData.Proposals {
+		if proposal.Proposal.Status != gtypes.StatusPassed && proposal.Proposal.Status != gtypes.StatusRejected {
+			govDeposit = govDeposit.Add(btypes.NewInt(int64(proposal.Proposal.TotalDeposit)))
+		}
+	}
+
 	qosFeePool := state.DistributionData.CommunityFeePool
 	qosPreQOS := state.DistributionData.PreDistributionQOSAmount
 
-	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal)
+	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal).Add(govDeposit)
 	qosApplied := state.MintData.AppliedQOSAmount
 	diff := qosTotal.Sub(btypes.NewInt(int64(qosApplied)))
 

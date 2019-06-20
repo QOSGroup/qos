@@ -169,7 +169,7 @@ func TestGovMapper_RefundDeposits(t *testing.T) {
 	account := accountMapper.GetAccount(addr).(*qtypes.QOSAccount)
 	require.Equal(t, btypes.NewInt(10), account.QOS)
 
-	govMapper.RefundDeposits(ctx, 1)
+	govMapper.RefundDeposits(ctx, 1, true)
 	account = accountMapper.GetAccount(addr).(*qtypes.QOSAccount)
 	burn := BurnRate.Mul(qtypes.MustNewDecFromStr("10")).TruncateInt()
 	require.Equal(t, btypes.NewInt(10).Add(btypes.NewInt(10).Sub(burn)), account.QOS)

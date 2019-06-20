@@ -1,6 +1,8 @@
 package gov
 
 import (
+	"time"
+
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
@@ -10,7 +12,6 @@ import (
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	pmapper "github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
-	"time"
 )
 
 const (
@@ -340,7 +341,10 @@ func (mapper GovMapper) GetDeposits(proposalID uint64) store.Iterator {
 }
 
 // Refunds and deletes all the deposits on a specific proposal
-func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
+func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64, burnDeposit bool) {
+
+	log := ctx.Logger()
+
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	depositsIterator := mapper.GetDeposits(proposalID)
 	defer depositsIterator.Close()
@@ -348,16 +352,27 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64) {
 		deposit := &gtypes.Deposit{}
 		mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), deposit)
 
-		originAmount := types.NewDec(int64(deposit.Amount))
-		burnAmount := BurnRate.Mul(originAmount)
+		depositAmount := int64(deposit.Amount)
+
+		//需要扣除部分押金时
+		burnAmount := int64(0)
+		if burnDeposit {
+			burnAmount = BurnRate.Mul(types.NewDec(depositAmount)).TruncateInt64()
+		}
+
+		refundAmount := depositAmount - burnAmount
 
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*types.QOSAccount)
-		depositor.PlusQOS(originAmount.Sub(burnAmount).TruncateInt())
+		depositor.PlusQOS(btypes.NewInt(refundAmount))
 		accountMapper.SetAccount(depositor)
 
 		// burn deposit
-		ecomapper.GetDistributionMapper(ctx).AddToCommunityFeePool(burnAmount.TruncateInt())
+		if burnDeposit {
+			ecomapper.GetDistributionMapper(ctx).AddToCommunityFeePool(btypes.NewInt(burnAmount))
+		}
+
+		log.Debug("RefundDeposits", "depositAmount", depositAmount, "refundAmount", refundAmount, "burnAmount", burnAmount)
 
 		mapper.Del(depositsIterator.Key())
 	}
