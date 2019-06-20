@@ -38,16 +38,18 @@ module.exports = {
                 title: "Spec",
                 collapsable: false,
                 children: [
+                    ["/spec/eco_module.v1", "ECO"],
+                    ["/spec/validators/all_about_validators", "Validators"],
                     ["/spec/staking", "Stake"],
                     ["/spec/account", "Account"],
                     ["/spec/genesis", "Genesis"],
                     ["/spec/transfer", "Transfer"],
                     ["/spec/approve", "Approve"],
-                    ["/spec/qsc", "QSC"],
-                    ["/spec/qcp", "QCP"],
                     ["/spec/governance", "Governance"],
                     ["/spec/guardian", "Guardian"],
                     ["/spec/indexing", "Index"],
+                    ["/spec/qsc", "QSC"],
+                    ["/spec/qcp", "QCP"],
                     ["/spec/ca", "CA"]
                 ]
             }

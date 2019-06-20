@@ -8,13 +8,13 @@ QOS公链是基于[授权股权证明Delegated Proof-of-Stake](https://multicoin
 
 * [设计原则](#设计原则)
 * [角色](#角色)
-	* [轻钱包](#轻钱包-Litewallet)
+	* [轻钱包](#轻钱包-litewallet)
 
-	* [全节点](#全节点-Fullnode)
+	* [全节点](#全节点-fullnode)
 
-	* [验证人](#验证人-Validator)
+	* [验证人](#验证人)
 
-	* [委托人](#委托人-Delegator)
+	* [委托人](#委托人)
 
 * [模块](#模块)
 	* [通胀](#QOS通胀机制)
@@ -57,16 +57,16 @@ QOS公链是基于[授权股权证明Delegated Proof-of-Stake](https://multicoin
 
 QOS公链中有一个验证人节点的集合，验证人节点担当了BFT共识算法的具体实现——网络中的每一块都需要收集至少2/3的验证人节点签名。QOS公链中的每一块包含零到多条交易，验证人节点对块中的交易进行校验，对校验通过的块用自己的私钥签名，并广播到网络中去。
 
-QOS公链验证人，必须是QOS公链的全节点，但全节点需要发出[创建验证人交易](all_about_validators.md#create-validator)，并符合[一定条件](all_about_validators.md#如何成为QOS验证人)，才能成为验证人。
+QOS公链验证人，必须是QOS公链的全节点，但全节点需要发出[创建验证人交易](validators/all_about_validators.md#create-validator)，并符合[一定条件](validators/all_about_validators.md#如何成为QOS验证人)，才能成为验证人。
 
-QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的实现——依照其绑定的QOS数量，获得QOS网络挖矿的收益。详见[QOS公链挖矿机制](#QOS公链挖矿机制)
+QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的实现——依照其绑定的QOS数量，获得QOS网络挖矿的收益。
 
-希望了解更多验证人节点的信息或希望成为QOS验证人，请查阅[验证人节点详解](all_about_validators.md)
+希望了解更多验证人节点的信息或希望成为QOS验证人，请查阅[验证人节点详解](validators/all_about_validators.md)
 
 ### 委托人-Delegator
 
 对于自己没有能力或者意愿来自己运行一个验证节点，但希望得到挖矿收益的QOS持有者，可以选择一个验证人，通过委托（delegation）将QOS投入到该验证人的总绑定数中，增加验证人的投票权重，收到相应的挖矿收益作为回报。
-关于委托收益的计算，详见[QOS验证/委托机制](#QOS验证/委托机制)
+关于委托收益的计算，详见[QOS验证/委托机制](#验证/委托机制)
 
 委托人可以不运行QOS全节点，通过轻钱包就可以进行委托操作。
 
@@ -144,7 +144,7 @@ QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的�
 
 ![验证人（及其委托人）单块总收益](https://github.com/QOSGroup/static/blob/master/validatorReward.png?raw=true)
 
-希望了解更多验证人节点的信息或希望成为QOS验证人，请查阅[验证人节点详解](all_about_validators.md)
+希望了解更多验证人节点的信息或希望成为QOS验证人，请查阅[验证人节点详解](validators/all_about_validators.md)
 
 #### 委托人
 

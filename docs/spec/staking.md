@@ -1,11 +1,3 @@
-## 验证人详解
-
-[QOS验证人详解](validators/all_about_validators.md)
-
-## 经济模型
-
-[QOS经济模型](validators/eco_module.md)
-
 ## 验证节点设计
 
 Validator状态图:
