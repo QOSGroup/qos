@@ -2,10 +2,11 @@ package gov
 
 import (
 	"fmt"
+	"time"
+
 	"github.com/QOSGroup/qbase/context"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/types"
-	"time"
 )
 
 const (
@@ -136,14 +137,14 @@ func PrepForZeroHeightGenesis(ctx context.Context) {
 	proposals := mapper.GetProposalsFiltered(ctx, nil, nil, gtypes.StatusDepositPeriod, 0)
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
-		mapper.RefundDeposits(ctx, proposalID)
+		mapper.RefundDeposits(ctx, proposalID, false)
 		mapper.DeleteProposal(proposalID)
 	}
 
 	proposals = mapper.GetProposalsFiltered(ctx, nil, nil, gtypes.StatusVotingPeriod, 0)
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
-		mapper.RefundDeposits(ctx, proposalID)
+		mapper.RefundDeposits(ctx, proposalID, false)
 		mapper.DeleteVotes(proposalID)
 		mapper.DeleteProposal(proposalID)
 	}

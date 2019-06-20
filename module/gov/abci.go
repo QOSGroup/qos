@@ -2,6 +2,7 @@ package gov
 
 import (
 	"fmt"
+
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -61,13 +62,13 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		var tagValue string
 		switch proposalResult {
 		case gtypes.PASS:
-			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
+			mapper.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = gtypes.StatusPassed
 			tagValue = ProposalResultPassed
 			Execute(ctx, activeProposal, logger)
 			break
 		case gtypes.REJECT:
-			mapper.RefundDeposits(ctx, activeProposal.ProposalID)
+			mapper.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = gtypes.StatusRejected
 			tagValue = ProposalResultRejected
 			break
@@ -84,7 +85,7 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 
 		logger.Info(
 			fmt.Sprintf(
-				"proposal %d (%s) tallied; passed: %v",
+				"proposal %d (%s) tallied; result: %v",
 				activeProposal.ProposalID, activeProposal.GetTitle(), proposalResult,
 			),
 		)
@@ -98,7 +99,10 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			for _, val := range validators {
 				if _, ok := votingValidators[val.String()]; !ok {
 					if validator, exists := validatorMapper.GetValidator(val); exists && validator.BondHeight < activeProposal.VotingStartHeight {
-						slash(ctx, validator, penalty)
+						e := slash(ctx, validator, penalty, activeProposal.ProposalID)
+						if e != nil {
+							logger.Error("slash validator error", "e", e, "validator", validator.GetValidatorAddress().String())
+						}
 					}
 				}
 			}
@@ -111,7 +115,12 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 }
 
 // TODO slash
-func slash(ctx context.Context, validator ecotypes.Validator, penalty types.Dec) error {
+func slash(ctx context.Context, validator ecotypes.Validator, penalty types.Dec, proposalID uint64) error {
+
+	log := ctx.Logger().With("module", "module/gov")
+
+	log.Debug("slash validator", "proposalId", proposalID, "validator", validator.GetValidatorAddress().String())
+
 	validatorMapper := ecomapper.GetValidatorMapper(ctx)
 	delegationMapper := ecomapper.GetDelegationMapper(ctx)
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
@@ -122,30 +131,48 @@ func slash(ctx context.Context, validator ecotypes.Validator, penalty types.Dec)
 		}
 	})
 
-	totalSlash := types.ZeroDec()
+	totalSlashTokens := int64(0)
 	height := uint64(ctx.BlockHeight())
-	for _, delegation := range delegations {
-		// 计算惩罚
-		amountSlashed := types.NewDec(int64(delegation.Amount)).Mul(penalty)
-		totalSlash = totalSlash.Add(amountSlashed)
 
-		// 计算当前delegator收益
-		updatedTokens := types.NewDec(int64(delegation.Amount)).Sub(amountSlashed)
-		delegation.Amount = uint64(updatedTokens.Int64())
-		if err := distributionMapper.ModifyDelegatorTokens(validator, delegation.ValidatorAddr, delegation.Amount, height); err != nil {
+	log.Debug("slash delegations", "delegations", delegations)
+
+	for _, delegation := range delegations {
+		bondTokens := int64(delegation.Amount)
+
+		// 计算惩罚
+		tokenSlashed := types.NewDec(bondTokens).Mul(penalty).TruncateInt64()
+
+		if tokenSlashed >= bondTokens {
+			tokenSlashed = bondTokens
+		}
+
+		// 修改delegator绑定收益
+		remainTokens := uint64(bondTokens - tokenSlashed)
+		if err := distributionMapper.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, remainTokens, height); err != nil {
 			return err
 		}
+		delegation.Amount = remainTokens
 
 		// 更新delegation
 		delegationMapper.SetDelegationInfo(delegation)
+
+		log.Debug("slash validator's delegators", "delegator", delegation.DelegatorAddr.String(), "preToken", bondTokens, "slashToken", tokenSlashed, "remainTokens", remainTokens)
+
+		totalSlashTokens += tokenSlashed
+	}
+
+	if uint64(totalSlashTokens) > validator.BondTokens {
+		panic("slash token is greater then validator bondTokens")
 	}
 
 	// 更新validator
-	updatedValidatorTokens := uint64(types.NewDec(int64(validator.BondTokens)).Sub(totalSlash).Int64())
+	updatedValidatorTokens := validator.BondTokens - uint64(totalSlashTokens)
 	validatorMapper.ChangeValidatorBondTokens(validator, updatedValidatorTokens)
 
+	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", updatedValidatorTokens)
+
 	// slash放入社区费池
-	distributionMapper.AddToCommunityFeePool(totalSlash.TruncateInt())
+	distributionMapper.AddToCommunityFeePool(btypes.NewInt(totalSlashTokens))
 
 	return nil
 }
@@ -173,7 +200,7 @@ func executeParameterChange(ctx context.Context, proposal gtypes.Proposal, logge
 		paramMapper.SetParam(param.Module, param.Key, v)
 	}
 
-	logger.Info("execute parameterChange, proposal: %d", proposal.ProposalID)
+	logger.Info("execute parameterChange", "proposal", proposal.ProposalID)
 
 	return nil
 }
@@ -193,7 +220,7 @@ func executeTaxUsage(ctx context.Context, proposal gtypes.Proposal, logger log.L
 
 	distributionMapper.SetCommunityFeePool(feePool.Sub(qos))
 
-	logger.Info("execute taxUsage, proposal: %d", proposal.ProposalID)
+	logger.Info("execute taxUsage", "proposal", proposal.ProposalID)
 
 	return nil
 }
