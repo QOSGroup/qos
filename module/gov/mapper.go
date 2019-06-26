@@ -18,11 +18,6 @@ const (
 	GovMapperName = "governance"
 )
 
-var (
-	BurnRate       = types.NewDecWithPrec(2, 1)
-	MinDepositRate = types.NewDecWithPrec(3, 1)
-)
-
 type GovMapper struct {
 	*mapper.BaseMapper
 }
@@ -344,7 +339,7 @@ func (mapper GovMapper) GetDeposits(proposalID uint64) store.Iterator {
 func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64, burnDeposit bool) {
 
 	log := ctx.Logger()
-
+	params := mapper.GetParams(ctx)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	depositsIterator := mapper.GetDeposits(proposalID)
 	defer depositsIterator.Close()
@@ -357,7 +352,7 @@ func (mapper GovMapper) RefundDeposits(ctx context.Context, proposalID uint64, b
 		//需要扣除部分押金时
 		burnAmount := int64(0)
 		if burnDeposit {
-			burnAmount = BurnRate.Mul(types.NewDec(depositAmount)).TruncateInt64()
+			burnAmount = params.BurnRate.Mul(types.NewDec(depositAmount)).TruncateInt64()
 		}
 
 		refundAmount := depositAmount - burnAmount

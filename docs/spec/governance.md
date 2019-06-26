@@ -12,16 +12,18 @@ QOS的链上治理提案类型包括以下几种：
 ### 提案抵押
 
 为了避免攻击，每个提案都需要抵押一定的QOS作为`Deposit`。
-提交提议者至少抵押30%的`$MinDeposit`，当抵押金超过`$MinDeposit`，才能进入投票阶段。该提议超过`$MaxDepositPeriod`，还未进超过`$MinDeposit`，则提议会被删除，且押金不会返还。
+提交提议者至少抵押`$MinDeposit * $MinProposerDepositRate`，当抵押金超过`$MinDeposit`，才能进入投票阶段。该提议超过`$MaxDepositPeriod`，还未进超过`$MinDeposit`，则提议会被删除，且押金不会返还。
 提议进入投票阶段后，依然可以进行抵押。
 
 * `MinDeposit` QOS最小抵押
+* `MinProposerDepositRate` 提议者最小抵押比例
 * `MaxDepositPeriod` 抵押最大时长
 * `VotingPeriod` 投票时长
 * `Quorum` voting power最小比例
 * `Threshold` 判定通过需要的`Yes`比例
 * `Veto` 判定强烈不同意需要的`Veto`比例
 * `Penalty` 不投票验证节点的惩罚比例
+* `BurnRate` 提议通过(`PASS`)或不通过(`REJECT`)抵押燃比例
 
 ### 投票
 
@@ -51,7 +53,7 @@ QOS的链上治理提案类型包括以下几种：
 
 ### 销毁机制
 
-提案`通过`或`未通过`，都要销毁抵押`Deposit`的20%，作为治理的费用，把剩余的`Deposit`原路返回。
+提案`通过`或`未通过`，都要销毁抵押`Deposit * $BurnRate`，作为治理的费用，把剩余的`Deposit`原路返回。
 
 但如果投票结果为`强烈反对``，则抵押`Deposit`会被全部收入到社区基金账户。
 
