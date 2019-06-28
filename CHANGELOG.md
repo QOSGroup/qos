@@ -1,6 +1,9 @@
 # Changelog
 ## v0.0.5
 2019.06.28
+
+**DOWNLOAD**
+
 [下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
 
 **IMPROVEMENTS**
