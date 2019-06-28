@@ -9,6 +9,7 @@
 **IMPROVEMENTS**
 * [module] fix经济模型相关BUG
 * [module] 增加数据一致性校验
+* [module] 新增governance,guardian模块
 
 ## v0.0.4
 2019.02.22
