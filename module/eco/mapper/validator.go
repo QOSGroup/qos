@@ -2,6 +2,7 @@ package mapper
 
 import (
 	"encoding/binary"
+	pmapper "github.com/QOSGroup/qos/module/params"
 	"time"
 
 	"github.com/QOSGroup/qbase/context"
@@ -110,11 +111,26 @@ func (mapper *ValidatorMapper) IteratorInactiveValidatorByTime(fromTime, endTime
 	return mapper.IteratorInactiveValidator(uint64(fromTime.UTC().Unix()), uint64(endTime.UTC().Unix()))
 }
 
-func (mapper *ValidatorMapper) IteratorValidatrorByVoterPower(ascending bool) store.Iterator {
+func (mapper *ValidatorMapper) IteratorValidatorByVoterPower(ascending bool) store.Iterator {
 	if ascending {
-		return store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
+		return btypes.KVStorePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
 	}
-	return store.KVStoreReversePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
+	return btypes.KVStoreReversePrefixIterator(mapper.GetStore(), ecotypes.GetValidatorByVotePowerKey())
+}
+
+func (mapper *ValidatorMapper) GetActiveValidatorSet(ascending bool) (validators []btypes.Address) {
+	iterator := mapper.IteratorValidatorByVoterPower(ascending)
+	defer iterator.Close()
+	var key []byte
+	for ; iterator.Valid(); iterator.Next() {
+		key = iterator.Key()
+		valAddr := btypes.Address(key[9:])
+		if _, exists := mapper.GetValidator(valAddr); exists {
+			validators = append(validators, valAddr)
+		}
+	}
+
+	return validators
 }
 
 func (mapper *ValidatorMapper) MakeValidatorActive(valAddress btypes.Address) {
@@ -140,13 +156,13 @@ func (mapper *ValidatorMapper) GetValidatorByOwner(owner btypes.Address) (valida
 	return mapper.GetValidator(valAddress)
 }
 
-func (mapper *ValidatorMapper) SetParams(params ecotypes.StakeParams) {
-	mapper.Set(ecotypes.BuildStakeParamsKey(), params)
+func (mapper *ValidatorMapper) SetParams(ctx context.Context, params ecotypes.StakeParams) {
+	pmapper.GetMapper(ctx).SetParamSet(&params)
 }
 
-func (mapper *ValidatorMapper) GetParams() ecotypes.StakeParams {
+func (mapper *ValidatorMapper) GetParams(ctx context.Context) ecotypes.StakeParams {
 	params := ecotypes.StakeParams{}
-	mapper.Get(ecotypes.BuildStakeParamsKey(), &params)
+	pmapper.GetMapper(ctx).GetParamSet(&params)
 	return params
 }
 
@@ -154,7 +170,7 @@ func (mapper *ValidatorMapper) GetParams() ecotypes.StakeParams {
 
 func (mapper *ValidatorMapper) IterateValidators(fn func(ecotypes.Validator)) {
 
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), ecotypes.BulidValidatorPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), ecotypes.BulidValidatorPrefixKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {

@@ -16,5 +16,5 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterConcrete(&TxInitQCP{}, "qos/txs/TxInitQCP", nil)
+	cdc.RegisterConcrete(&TxInitQCP{}, "qcp/txs/TxInitQCP", nil)
 }

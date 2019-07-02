@@ -5,11 +5,14 @@ import (
 	"fmt"
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/log"
 	"io"
 	"os"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -27,6 +30,7 @@ const (
 	flagHeight        = "height"
 	flagForZeroHeight = "for-zero-height"
 	flagTraceStore    = "trace-store"
+	flagOutput        = "o"
 )
 
 // ExportCmd dumps app state to JSON.
@@ -63,7 +67,7 @@ func ExportCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			}
 			height := viper.GetInt64(flagHeight)
 			forZeroHeight := viper.GetBool(flagForZeroHeight)
-			appState, err := exportAppState(ctx.Logger, db, traceWriter, height, forZeroHeight)
+			height, appState, err := exportAppState(ctx.Logger, db, traceWriter, height, forZeroHeight)
 			if err != nil {
 				return errors.Errorf("error exporting state: %v\n", err)
 			}
@@ -80,12 +84,25 @@ func ExportCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			fmt.Println(string(encoded))
+			export := filepath.Join(viper.GetString(flagOutput), "genesis-"+strconv.FormatInt(height, 10)+"-"+strconv.FormatInt(time.Now().Unix(), 10)+".json")
+			outputFile, err := os.OpenFile(export, os.O_CREATE|os.O_EXCL|os.O_WRONLY, 0644)
+			defer outputFile.Close()
+			if err != nil {
+				return err
+			}
+			_, err = fmt.Fprintf(outputFile, "%s\n", encoded)
+			if err != nil {
+				return err
+			}
+			fmt.Printf("export success: %s", export)
+			fmt.Println()
 			return nil
 		},
 	}
+	
 	cmd.Flags().Int64(flagHeight, -1, "Export state from a particular height (-1 means latest height)")
 	cmd.Flags().Bool(flagForZeroHeight, false, "Export state to start at height zero (perform preproccessing)")
+	cmd.Flags().String(flagOutput, types.DefaultNodeHome, "directory for exported json file, default $HOME/.qosd")
 	return cmd
 }
 
@@ -116,8 +133,12 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 	return
 }
 
-func exportAppState(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool) (json.RawMessage, error) {
+func exportAppState(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool) (int64, json.RawMessage, error) {
 	qApp := app.NewApp(logger, db, traceStore)
-	qApp.LoadVersion(height)
-	return qApp.ExportAppStates(forZeroHeight)
+	if height != -1 {
+		qApp.LoadVersion(height)
+	}
+	height = qApp.LastBlockHeight()
+	appState, err := qApp.ExportAppStates(forZeroHeight)
+	return height, appState, err
 }

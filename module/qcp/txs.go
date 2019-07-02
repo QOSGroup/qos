@@ -69,6 +69,10 @@ func (tx TxInitQCP) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 	qcpMapper.SetMaxChainInSequence(subj.QCPChain, 0)
 	qcpMapper.SetMaxChainOutSequence(subj.QCPChain, 0)
 
+	result.Tags = btypes.NewTags(btypes.TagAction, TagActionInitQcp,
+		TagQcp, subj.QCPChain,
+		TagCreator, tx.Creator.String())
+
 	return
 }
 

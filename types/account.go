@@ -3,6 +3,8 @@ package types
 import (
 	"fmt"
 	"github.com/QOSGroup/qbase/account"
+	"github.com/QOSGroup/qbase/client/context"
+	clikeys "github.com/QOSGroup/qbase/client/keys"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/pkg/errors"
 	"strings"
@@ -352,7 +354,14 @@ func (account *QOSAccount) RemoveQSC(qscName string) {
 
 // Parse accounts from string
 // address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
-func ParseAccounts(str string) ([]*QOSAccount, error) {
+func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
+	var keybaseAvailable bool
+	cliCtx := context.NewCLIContext().WithCodec(cdc)
+	keybase, err := clikeys.GetKeyBaseFromDir(cliCtx, clientHome)
+	if err == nil {
+		keybaseAvailable = true
+	}
+
 	accounts := make([]*QOSAccount, 0)
 	tis := strings.Split(str, ";")
 	for _, ti := range tis {
@@ -365,7 +374,20 @@ func ParseAccounts(str string) ([]*QOSAccount, error) {
 			return nil, fmt.Errorf("`%s` not match rules", ti)
 		}
 
-		addr, err := btypes.GetAddrFromBech32(addrAndCoins[0])
+		var addr btypes.Address
+		if !strings.HasPrefix(addrAndCoins[0], btypes.PREF_ADD) {
+			if keybaseAvailable {
+				info, err := keybase.Get(addrAndCoins[0])
+				if err != nil {
+					return nil, err
+				}
+				addr = info.GetAddress()
+			} else {
+				return nil, fmt.Errorf("no %s found in keybase", addrAndCoins[0])
+			}
+		} else {
+			addr, err = btypes.GetAddrFromBech32(addrAndCoins[0])
+		}
 		if err != nil {
 			return nil, err
 		}

@@ -31,7 +31,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	}
 
 	if data.AppliedQOSAmount > 0 {
-		mintMapper.SetAppliedQOSAmount(data.AppliedQOSAmount)
+		mintMapper.SetAllTotalMintQOSAmount(data.AppliedQOSAmount)
 	}
 
 }
@@ -42,6 +42,10 @@ func ExportGenesis(ctx context.Context) GenesisState {
 	return GenesisState{
 		Params:           mintMapper.GetMintParams(),
 		FirstBlockTime:   firstBlockTime,
-		AppliedQOSAmount: mintMapper.GetAppliedQOSAmount(),
+		AppliedQOSAmount: mintMapper.GetAllTotalMintQOSAmount(),
 	}
+}
+
+func PrepForZeroHeightGenesis(ctx context.Context) {
+	mintmapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }

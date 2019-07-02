@@ -13,13 +13,14 @@ func init() {
 
 func RegisterCodec(cdc *amino.Codec) {
 	//validator相关
-	cdc.RegisterConcrete(&TxCreateValidator{}, "qos/txs/TxCreateValidator", nil)
-	cdc.RegisterConcrete(&TxRevokeValidator{}, "qos/txs/TxRevokeValidator", nil)
-	cdc.RegisterConcrete(&TxActiveValidator{}, "qos/txs/TxActiveValidator", nil)
+	cdc.RegisterConcrete(&TxCreateValidator{}, "stake/txs/TxCreateValidator", nil)
+	cdc.RegisterConcrete(&TxModifyValidator{}, "stake/txs/TxModifyValidator", nil)
+	cdc.RegisterConcrete(&TxRevokeValidator{}, "stake/txs/TxRevokeValidator", nil)
+	cdc.RegisterConcrete(&TxActiveValidator{}, "stake/txs/TxActiveValidator", nil)
 
 	//delegation相关
-	cdc.RegisterConcrete(&TxCreateDelegation{}, "qos/txs/TxCreateDelegation", nil)
-	cdc.RegisterConcrete(&TxModifyCompound{}, "qos/txs/TxModifyCompound", nil)
-	cdc.RegisterConcrete(&TxUnbondDelegation{}, "qos/txs/TxUnbondDelegation", nil)
-	cdc.RegisterConcrete(&TxCreateReDelegation{}, "qos/txs/TxCreateReDelegation", nil)
+	cdc.RegisterConcrete(&TxCreateDelegation{}, "stake/txs/TxCreateDelegation", nil)
+	cdc.RegisterConcrete(&TxModifyCompound{}, "stake/txs/TxModifyCompound", nil)
+	cdc.RegisterConcrete(&TxUnbondDelegation{}, "stake/txs/TxUnbondDelegation", nil)
+	cdc.RegisterConcrete(&TxCreateReDelegation{}, "stake/txs/TxCreateReDelegation", nil)
 }

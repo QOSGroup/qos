@@ -2,12 +2,13 @@ package mapper
 
 import (
 	"fmt"
+	"reflect"
 
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
-	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/eco/types"
+	pmapper "github.com/QOSGroup/qos/module/params"
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
@@ -41,7 +42,7 @@ func (mapper *DistributionMapper) InitValidatorPeriodSummaryInfo(valAddr btypes.
 //清空validator收益分配相关信息
 func (mapper *DistributionMapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.Address) {
 	periodPrifixKey := append(types.GetValidatorHistoryPeriodSummaryPrefixKey(), valAddr...)
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), periodPrifixKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), periodPrifixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -55,10 +56,10 @@ func (mapper *DistributionMapper) DeleteValidatorPeriodSummaryInfo(valAddr btype
 //首次Delegate:
 //1. first delegate
 //2. unbond all , then delegate
-func (mapper *DistributionMapper) InitDelegatorIncomeInfo(valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
+func (mapper *DistributionMapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
 	//初始化delegaotr 收益计算信息
 	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
-	params := mapper.GetParams()
+	params := mapper.GetParams(ctx)
 
 	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 
@@ -158,19 +159,20 @@ func (mapper *DistributionMapper) ModifyDelegatorTokens(validator types.Validato
 func (mapper *DistributionMapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.Address) uint64 {
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
 
-	vcps, exsits := mapper.GetValidatorCurrentPeriodSummary(valAddr)
-	if !exsits {
-		return uint64(0)
-	}
+	minPeriod := uint64(0)
+	i := int64(0)
 
-	minPeriod := vcps.Period - 1
-
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
 		var info types.DelegatorEarningsStartInfo
 		mapper.BaseMapper.DecodeObject(iter.Value(), &info)
+
+		if i == int64(0) {
+			minPeriod = info.PreviousPeriod
+			i = i + 1
+		}
 
 		if info.PreviousPeriod < minPeriod {
 			minPeriod = info.PreviousPeriod
@@ -178,6 +180,24 @@ func (mapper *DistributionMapper) GetValidatorMinPeriodFromDelegators(valAddr bt
 	}
 
 	return minPeriod
+}
+
+//删除validator历史计费点信息,额外保留2个历史数据
+func (mapper *DistributionMapper) ClearValidatorHistoryPeroid(valAddr btypes.Address, minPeroid uint64) {
+	if minPeroid <= uint64(2) {
+		return
+	}
+
+	mapper.IteratorWithKV(types.BuildValidatorHistoryPeriodSummaryPrefixKey(valAddr), func(key []byte, value []byte) (stop bool) {
+		_, p := types.GetValidatorHistoryPeriodSummaryAddrPeriod(key)
+
+		if p >= (minPeroid - 2) {
+			return true
+		}
+
+		mapper.Del(key)
+		return false
+	})
 }
 
 //计算delegator在计费点区间的收益
@@ -244,16 +264,13 @@ func (mapper *DistributionMapper) Copy() mapper.IMapper {
 	return distributionMapper
 }
 
-func (mapper *DistributionMapper) GetParams() (params types.DistributionParams) {
-	exsits := mapper.Get(types.BuildDistributeParamsKey(), &params)
-	if !exsits {
-		params = types.DefaultDistributionParams()
-	}
+func (mapper *DistributionMapper) GetParams(ctx context.Context) (params types.DistributionParams) {
+	pmapper.GetMapper(ctx).GetParamSet(&params)
 	return
 }
 
-func (mapper *DistributionMapper) SetParams(params types.DistributionParams) {
-	mapper.Set(types.BuildDistributeParamsKey(), params)
+func (mapper *DistributionMapper) SetParams(ctx context.Context, params types.DistributionParams) {
+	pmapper.GetMapper(ctx).SetParamSet(&params)
 }
 
 func (mapper *DistributionMapper) GetValidatorCurrentPeriodSummary(valAddr btypes.Address) (vcps types.ValidatorCurrentPeriodSummary, exsits bool) {
@@ -283,6 +300,11 @@ func (mapper *DistributionMapper) GetCommunityFeePool() btypes.BigInt {
 
 func (mapper *DistributionMapper) SetCommunityFeePool(communityFee btypes.BigInt) {
 	mapper.Set(types.BuildCommunityFeePoolKey(), communityFee)
+}
+
+func (mapper *DistributionMapper) AddToCommunityFeePool(fee btypes.BigInt) {
+	communityFee := mapper.GetCommunityFeePool()
+	mapper.SetCommunityFeePool(communityFee.Add(fee))
 }
 
 func (mapper *DistributionMapper) GetValidatorHistoryPeriodSummary(valAddr btypes.Address, period uint64) (frac qtypes.Fraction) {
@@ -330,7 +352,7 @@ func (mapper *DistributionMapper) ClearPreDistributionQOS() {
 //------------------------ genesis export
 
 func (mapper *DistributionMapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.Address, period uint64, frac qtypes.Fraction)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorHistoryPeriodSummaryPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorHistoryPeriodSummaryPrefixKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -345,7 +367,7 @@ func (mapper *DistributionMapper) IteratorValidatorsHistoryPeriod(fn func(valAdd
 }
 
 func (mapper *DistributionMapper) IteratorValidatorsCurrentPeriod(fn func(btypes.Address, types.ValidatorCurrentPeriodSummary)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorCurrentPeriodSummaryPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorCurrentPeriodSummaryPrefixKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
@@ -361,7 +383,7 @@ func (mapper *DistributionMapper) IteratorValidatorsCurrentPeriod(fn func(btypes
 }
 
 func (mapper *DistributionMapper) IteratorDelegatorsEarningStartInfo(fn func(btypes.Address, btypes.Address, types.DelegatorEarningsStartInfo)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
@@ -376,8 +398,17 @@ func (mapper *DistributionMapper) IteratorDelegatorsEarningStartInfo(fn func(bty
 	}
 }
 
+func (mapper *DistributionMapper) DeleteDelegatorsEarningStartInfo() {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
+	}
+}
+
 func (mapper *DistributionMapper) IteratorDelegatorsIncomeHeight(fn func(btypes.Address, btypes.Address, uint64)) {
-	iter := store.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
 	defer iter.Close()
 
 	for ; iter.Valid(); iter.Next() {
@@ -386,4 +417,57 @@ func (mapper *DistributionMapper) IteratorDelegatorsIncomeHeight(fn func(btypes.
 		valAddr, deleAddr, height := types.GetDelegatorPeriodIncomeHeightAddr(key)
 		fn(valAddr, deleAddr, height)
 	}
+}
+
+func (mapper *DistributionMapper) DeleteDelegatorsIncomeHeight() {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		mapper.Del(iter.Key())
+	}
+}
+
+func (mapper *DistributionMapper) IteratorValidatorEcoFeePools(fn func(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool)) {
+	mapper.IteratorWithType(types.GetValidatorEcoFeePoolPrefixKey(), reflect.TypeOf(types.ValidatorEcoFeePool{}), func(key []byte, dataPtr interface{}) bool {
+		sPtr := dataPtr.(*types.ValidatorEcoFeePool)
+		ecoPool := *sPtr
+		fn(types.GetValidatorEcoPoolAddress(key), ecoPool)
+		return false
+	})
+}
+
+func (mapper *DistributionMapper) AddValidatorEcoFeePool(validatorAddr btypes.Address, proposerReward, commissionReward, preDistributionReward btypes.BigInt) {
+	pool := mapper.GetValidatorEcoFeePool(validatorAddr)
+
+	pool.ProposerTotalRewardFee = pool.ProposerTotalRewardFee.Add(proposerReward)
+	pool.CommissionTotalRewardFee = pool.CommissionTotalRewardFee.Add(commissionReward)
+	pool.PreDistributeTotalRewardFee = pool.PreDistributeTotalRewardFee.Add(preDistributionReward)
+
+	totalReward := proposerReward.Add(commissionReward).Add(preDistributionReward)
+	pool.PreDistributeRemainTotalFee = pool.PreDistributeRemainTotalFee.Add(totalReward)
+
+	mapper.SaveValidatorEcoFeePool(validatorAddr, pool)
+}
+
+func (mapper *DistributionMapper) MinusValidatorEcoFeePool(validatorAddr btypes.Address, bonusReward btypes.BigInt) {
+	pool := mapper.GetValidatorEcoFeePool(validatorAddr)
+	pool.PreDistributeRemainTotalFee = pool.PreDistributeRemainTotalFee.Sub(bonusReward)
+	mapper.SaveValidatorEcoFeePool(validatorAddr, pool)
+}
+
+func (mapper *DistributionMapper) SaveValidatorEcoFeePool(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool) {
+	mapper.Set(types.BuildValidatorEcoFeePoolKey(validatorAddr), pool)
+}
+
+func (mapper *DistributionMapper) DeleteValidatorEcoFeePool(validatorAddr btypes.Address) {
+	mapper.Del(types.BuildValidatorEcoFeePoolKey(validatorAddr))
+}
+
+func (mapper *DistributionMapper) GetValidatorEcoFeePool(validatorAddr btypes.Address) (pool types.ValidatorEcoFeePool) {
+	key := types.BuildValidatorEcoFeePoolKey(validatorAddr)
+	if exsits := mapper.Get(key, &pool); !exsits {
+		pool = types.NewValidatorEcoFeePool()
+	}
+	return
 }

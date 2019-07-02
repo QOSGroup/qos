@@ -26,11 +26,11 @@ module.exports = {
                 ]
             },
             {
-                title: "Client",
+                title: "Command",
                 collapsable: false,
                 children: [
-                    ["/client/qoscli", "qoscli"],
-                    ["/client/qosd", "qosd"],
+                    ["/command/qoscli", "qoscli"],
+                    ["/command/qosd", "qosd"],
                 ]
             }
             ,
@@ -38,13 +38,18 @@ module.exports = {
                 title: "Spec",
                 collapsable: false,
                 children: [
-                    ["/spec/txs/staking", "Stake"],
+                    ["/spec/eco_module.v1", "ECO"],
+                    ["/spec/validators/all_about_validators", "Validators"],
+                    ["/spec/staking", "Stake"],
                     ["/spec/account", "Account"],
                     ["/spec/genesis", "Genesis"],
-                    ["/spec/txs/transfer", "Transfer"],
-                    ["/spec/txs/approve", "Approve"],
-                    ["/spec/txs/qsc", "QSC"],
-                    ["/spec/txs/qcp", "QCP"],
+                    ["/spec/transfer", "Transfer"],
+                    ["/spec/approve", "Approve"],
+                    ["/spec/governance", "Governance"],
+                    ["/spec/guardian", "Guardian"],
+                    ["/spec/indexing", "Index"],
+                    ["/spec/qsc", "QSC"],
+                    ["/spec/qcp", "QCP"],
                     ["/spec/ca", "CA"]
                 ]
             }

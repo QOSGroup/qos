@@ -2,7 +2,6 @@ package mapper
 
 import (
 	"fmt"
-	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
@@ -10,7 +9,9 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
+	btypes "github.com/QOSGroup/qbase/types"
 	minttypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
@@ -24,13 +25,15 @@ func TestSaveParams(t *testing.T) {
 
 	mintMapper.SetParams(params)
 
-	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase()
+	blockSec := uint64(time.Now().UTC().Unix())
+
+	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase(blockSec)
 	require.True(t, exist)
 
 	fmt.Println(currentInflationPhrase.EndTime)
 
-	mintMapper.AddAppliedQOSAmount(1999)
-	require.Equal(t, mintMapper.GetAppliedQOSAmount(), uint64(1999))
+	mintMapper.addCurrentPhraseAppliedQOSAmount(blockSec, 1999)
+	require.Equal(t, mintMapper.getCurrentPhraseAppliedQOSAmount(blockSec), uint64(1999))
 
 	now := time.Now()
 	mintMapper.AddInflationPhrase(minttypes.InflationPhrase{
@@ -45,7 +48,7 @@ func TestSaveParams(t *testing.T) {
 		0,
 	})
 
-	currentInflationPhrase, exist = mintMapper.GetCurrentInflationPhrase()
+	currentInflationPhrase, exist = mintMapper.GetCurrentInflationPhrase(blockSec)
 	require.True(t, exist)
 
 	fmt.Println(currentInflationPhrase.EndTime)
@@ -63,8 +66,31 @@ func defaultMintContext() context.Context {
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 
-	cms.MountStoreWithDB(mintKey, store.StoreTypeIAVL, db)
+	cms.MountStoreWithDB(mintKey, btypes.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
 	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger(), mapperMap)
 	return ctx
+}
+
+func TestMintMapper_GetAllTotalMintQOSAmount(t *testing.T) {
+
+	mintMapper := defaultMintContext().Mapper(minttypes.MintMapperName).(*MintMapper)
+
+	amount := mintMapper.GetAllTotalMintQOSAmount()
+	require.Equal(t, amount, uint64(0))
+
+	mintMapper.SetAllTotalMintQOSAmount(uint64(100))
+
+	amount = mintMapper.GetAllTotalMintQOSAmount()
+	require.Equal(t, amount, uint64(100))
+
+	mintMapper.addAllTotalMintQOSAmount(uint64(100))
+
+	amount = mintMapper.GetAllTotalMintQOSAmount()
+	require.Equal(t, amount, uint64(200))
+
+	mintMapper.DelAllTotalMintQOSAmount()
+
+	amount = mintMapper.GetAllTotalMintQOSAmount()
+	require.Equal(t, amount, uint64(0))
 }

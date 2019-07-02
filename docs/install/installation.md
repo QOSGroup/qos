@@ -5,7 +5,7 @@
 * 带宽4M及以上，低延时公共网络
 * 1核CPU，2G内存，50G硬盘存储空间
 
-可通过**下载可执行文件**或**编译源码**两种方式安装QOS.
+可通过[下载可执行文件](#下载可执行文件)、[Docker](#Docker)、[编译源码](#编译源码)三种方式安装QOS.
 
 * `qosd 创建、初始化、启动QOS网络命令工具`
 * `qoscli 客户端命令行集合，执行交易和查询信息`
@@ -14,7 +14,34 @@
 
 [文件列表](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)页下载对应版本可执行文件
 
-> 下载完成可跳过下面的编译源码步骤
+## Docker
+
+可以通过源码构建：
+```bash
+$ mkdir -p $GOPATH/src/github.com/QOSGroup
+$ cd $GOPATH/src/github.com/QOSGroup
+$ git clone https://github.com/QOSGroup/qos
+$ cd qos
+$ docker build -t qos .
+```
+或拉取官方指定版本images：
+```bash
+$ docker pull qoschain/qos:latest
+$ docker tag qoschain/qos:latest qos:latest
+```
+
+查看本地images：
+```bash
+$ docker images
+REPOSITORY          TAG                 IMAGE ID            CREATED             SIZE
+qos                 latest              741b61ad6fdd        9 seconds ago       65.5MB
+qoschain/qos        latest              1fe9ca3e4cac        3 minutes ago       65.5MB
+```
+
+```bash
+$ alias qosd='docker run --rm -v $HOME/.qosd:/root/.qosd -v $HOME/.qoscli:/root/.qoscli -p 26657:26657 -p 26656:26656 --name qosd -d qos qosd'
+$ alias qoscli='docker run --rm -v $HOME/.qosd:/root/.qosd -v $HOME/.qoscli:/root/.qoscli --link qosd:qosd qos qoscli --node qosd:26657'
+```
 
 ## 编译源码
 

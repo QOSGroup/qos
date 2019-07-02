@@ -1,23 +1,27 @@
 package version
 
 import (
+	"encoding/json"
 	"fmt"
-
 	"github.com/spf13/cobra"
 )
 
-var (
-	VersionCmd = &cobra.Command{
+func VersionCmd() *cobra.Command {
+	cmd := &cobra.Command{
 		Use:   "version",
 		Short: "Print the app version",
-		Run:   printVersion,
+		RunE: func(cmd *cobra.Command, args []string) error {
+			verInfo := newVersionInfo()
+
+			bz, err := json.MarshalIndent(verInfo, "", " ")
+			if err != nil {
+				return err
+			}
+			fmt.Println(string(bz))
+
+			return nil
+		},
 	}
-)
 
-func GetVersion() string {
-	return Version
-}
-
-func printVersion(cmd *cobra.Command, args []string) {
-	fmt.Println(GetVersion())
+	return cmd
 }

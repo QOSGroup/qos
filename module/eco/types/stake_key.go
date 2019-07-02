@@ -41,9 +41,6 @@ var (
 	DelegatorUnbondingQOSatHeightKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
 
 	currentValidatorsAddressKey = []byte("currentValidatorsAddressKey")
-
-	// params
-	stakeParamsKey = []byte("stake_params")
 )
 
 func BuildValidatorStoreQueryPath() []byte {
@@ -119,10 +116,6 @@ func BuildValidatorByVotePower(votePower uint64, valAddress btypes.Address) []by
 	copy(bz[9:len(valAddress)+9], valAddress)
 
 	return bz
-}
-
-func BuildStakeParamsKey() []byte {
-	return stakeParamsKey
 }
 
 func BuildDelegationByDelValKey(delAdd btypes.Address, valAdd btypes.Address) []byte {

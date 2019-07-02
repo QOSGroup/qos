@@ -1,4 +1,16 @@
 # Changelog
+## v0.0.5
+2019.06.28
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [module] fix经济模型相关BUG
+* [module] 增加数据一致性校验
+* [module] 新增governance,guardian模块
+
 ## v0.0.4
 2019.02.22
 

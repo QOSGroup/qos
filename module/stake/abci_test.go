@@ -2,6 +2,7 @@ package stake
 
 import (
 	"encoding/binary"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -28,7 +29,7 @@ func TestValidatorMapper(t *testing.T) {
 	validatorMapper := stakemapper.GetValidatorMapper(ctx)
 
 	validator := staketypes.Validator{
-		Name:            "test",
+		Description:     staketypes.Description{Moniker: "test"},
 		Owner:           btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
@@ -70,7 +71,7 @@ func TestValidatorMapper(t *testing.T) {
 		validatorMapper.Set(staketypes.BuildValidatorByVotePower(i, addr), 1)
 	}
 
-	descIter := validatorMapper.IteratorValidatrorByVoterPower(false)
+	descIter := validatorMapper.IteratorValidatorByVoterPower(false)
 	defer descIter.Close()
 
 	power := uint64(200)
@@ -82,7 +83,7 @@ func TestValidatorMapper(t *testing.T) {
 		power = cp
 	}
 
-	ascIter := validatorMapper.IteratorValidatrorByVoterPower(true)
+	ascIter := validatorMapper.IteratorValidatorByVoterPower(true)
 	defer ascIter.Close()
 
 	power = uint64(0)
@@ -136,6 +137,9 @@ func defaultContext() context.Context {
 
 	mapperMap := make(map[string]mapper.IMapper)
 
+	paramsMapper := params.NewMapper()
+	mapperMap[params.MapperName] = paramsMapper
+
 	mainMapper := stakemapper.NewMintMapper()
 	mapperMap[staketypes.MintMapperName] = mainMapper
 
@@ -154,7 +158,7 @@ func defaultContext() context.Context {
 	cms := store.NewCommitMultiStore(db)
 
 	for _, v := range mapperMap {
-		cms.MountStoreWithDB(v.GetStoreKey(), store.StoreTypeIAVL, db)
+		cms.MountStoreWithDB(v.GetStoreKey(), btypes.StoreTypeIAVL, db)
 	}
 	cms.LoadLatestVersion()
 

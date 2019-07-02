@@ -3,24 +3,31 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"io"
+
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/gov"
+	gtypes "github.com/QOSGroup/qos/module/gov/types"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
+	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
+	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"io"
 )
 
 const (
@@ -33,7 +40,8 @@ type QOSApp struct {
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
-	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec)
+	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec,
+		baseabci.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))))
 	baseApp.SetCommitMultiStoreTracer(traceStore)
 
 	app := &QOSApp{
@@ -58,18 +66,28 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// 4. close inactive  validator(stake),统计新的validator (stake)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+		mint.BeginBlocker(ctx, req)
 		distribution.BeginBlocker(ctx, req)
 		stake.BeginBlocker(ctx, req)
-		mint.BeginBlocker(ctx, req)
+
 		return abci.ResponseBeginBlock{}
 	})
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		gov.EndBlocker(ctx)
 		distribution.EndBlocker(ctx, req)
 		stake.EndBlockerByReturnUnbondTokens(ctx)
-		return stake.EndBlocker(ctx)
+		validators := stake.EndBlocker(ctx)
+		confirmDataEveryHeight(ctx)
+		return validators
 	})
+
+	//parameter mapper
+	paramsMapper := params.NewMapper()
+	//config params
+	paramsMapper.RegisterParamSet(&ecotypes.StakeParams{}, &ecotypes.DistributionParams{}, &gov.Params{})
+	app.RegisterMapper(paramsMapper)
 
 	// 账户mapper
 	app.RegisterAccountProto(types.ProtoQOSAccount)
@@ -98,6 +116,12 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	//delegationMapper
 	app.RegisterMapper(ecomapper.NewDelegationMapper())
 
+	//gov mapper
+	app.RegisterMapper(gov.NewGovMapper())
+
+	//guardian mapper
+	app.RegisterMapper(guardian.NewGuardianMapper())
+
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
 
 		if len(route) == 0 {
@@ -110,6 +134,10 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 		if route[0] == ecotypes.Distribution {
 			return distribution.Query(ctx, route[1:], req)
+		}
+
+		if route[0] == gov.GOV {
+			return gov.Query(ctx, route[1:], req)
 		}
 
 		return nil, nil
@@ -136,7 +164,26 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 		panic(err)
 	}
 
-	res.Validators = InitGenesis(ctx, genesisState)
+	initAccounts(ctx, genesisState.Accounts)
+	gov.InitGenesis(ctx, genesisState.GovData)
+	guardian.InitGenesis(ctx, genesisState.GuardianData)
+	mint.InitGenesis(ctx, genesisState.MintData)
+	stake.InitGenesis(ctx, genesisState.StakeData)
+	qcp.InitGenesis(ctx, genesisState.QCPData)
+	qsc.InitGenesis(ctx, genesisState.QSCData)
+	approve.InitGenesis(ctx, genesisState.ApproveData)
+	distribution.InitGenesis(ctx, genesisState.DistributionData)
+	if len(genesisState.GenTxs) > 0 {
+		for _, genTx := range genesisState.GenTxs {
+			bz := app.GetCdc().MustMarshalBinaryBare(genTx)
+			res := app.BaseApp.DeliverTx(bz)
+			if !res.IsOK() {
+				panic(res.Log)
+			}
+		}
+	}
+
+	res.Validators = stake.GetUpdatedValidators(ctx, uint64(genesisState.StakeData.Params.MaxValidatorCnt))
 
 	return
 }
@@ -159,12 +206,17 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 	genState := NewGenesisState(
 		accounts,
 		mint.ExportGenesis(ctx),
-		stake.ExportGenesis(ctx, forZeroHeight),
+		stake.ExportGenesis(ctx),
 		qcp.ExportGenesis(ctx),
 		qsc.ExportGenesis(ctx),
 		approve.ExportGenesis(ctx),
-		distribution.ExportGenesis(ctx, forZeroHeight),
+		distribution.ExportGenesis(ctx),
+		gov.ExportGenesis(ctx),
+		guardian.ExportGenesis(ctx),
 	)
+
+	stateDataConsistencyCheck(ctx, genState)
+
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
 		return nil, err
@@ -176,19 +228,31 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 // prepare for fresh start at zero height
 func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
-	// close inactive validators
-	stake.CloseExpireInactiveValidator(ctx, 0)
+	stake.PrepForZeroHeightGenesis(ctx)
 
-	// return unbond tokens
-	stake.ReturnAllUnbondTokens(ctx)
+	mint.PrepForZeroHeightGenesis(ctx)
 
-	ecomapper.GetMintMapper(ctx).SetFirstBlockTime(0)
+	gov.PrepForZeroHeightGenesis(ctx)
 }
 
 // gas
-func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.Error {
+func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
+	gasUsed = ctx.GasMeter().GasConsumed()
+	// gas free for txs in the first block
+	if ctx.BlockHeight() == 0 {
+		return
+	}
+
+	// tax free for tx send by guardian
+	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
+		app.Logger.Info("tx send by guardian: %s", payer.String())
+		return
+	}
+
 	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	gasFeeUsed := btypes.NewInt(int64(ctx.GasMeter().GasConsumed() / distributionMapper.GetParams().GasPerUnitCost))
+	uint := distributionMapper.GetParams(ctx).GasPerUnitCost
+	gasFeeUsed := btypes.NewInt(int64(gasUsed / uint))
+	gasUsed = gasUsed / uint * uint
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
@@ -196,7 +260,8 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 
 		if !account.EnoughOfQOS(gasFeeUsed) {
 			log := fmt.Sprintf("%s no enough coins to pay the gas after this tx done", payer)
-			return btypes.ErrInternal(log)
+			err = btypes.ErrInternal(log)
+			return
 		}
 
 		account.MustMinusQOS(gasFeeUsed)
@@ -206,5 +271,77 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) btypes.
 		distributionMapper.AddPreDistributionQOS(gasFeeUsed)
 	}
 
-	return nil
+	return
+}
+
+func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
+
+	qosInAccounts := btypes.ZeroInt()
+	for _, account := range state.Accounts {
+		qosInAccounts = qosInAccounts.Add(account.QOS)
+	}
+	qosInDelegation := btypes.ZeroInt()
+	for _, delegation := range state.StakeData.DelegatorsInfo {
+		qosInDelegation = qosInDelegation.Add(btypes.NewInt(int64(delegation.Amount)))
+	}
+	preDistributionRemainTotal := btypes.ZeroInt()
+	for _, data := range state.DistributionData.ValidatorEcoFeePools {
+		preDistributionRemainTotal = preDistributionRemainTotal.Add(data.EcoFeePool.PreDistributeRemainTotalFee)
+	}
+	qosUnbond := btypes.ZeroInt()
+	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
+		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
+	}
+
+	govDeposit := btypes.ZeroInt()
+	for _, proposal := range state.GovData.Proposals {
+		if proposal.Proposal.Status != gtypes.StatusPassed && proposal.Proposal.Status != gtypes.StatusRejected {
+			govDeposit = govDeposit.Add(btypes.NewInt(int64(proposal.Proposal.TotalDeposit)))
+		}
+	}
+
+	qosFeePool := state.DistributionData.CommunityFeePool
+	qosPreQOS := state.DistributionData.PreDistributionQOSAmount
+
+	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal).Add(govDeposit)
+	qosApplied := state.MintData.AppliedQOSAmount
+	diff := qosTotal.Sub(btypes.NewInt(int64(qosApplied)))
+
+	ctx.Logger().Info("DATA CONFIRM",
+		"height", ctx.BlockHeight(),
+		"accounts", qosInAccounts,
+		"delegations", qosInDelegation,
+		"unbond", qosUnbond,
+		"feepool", qosFeePool,
+		"pre", qosPreQOS,
+		"valshared", preDistributionRemainTotal,
+		"total", qosTotal,
+		"applied", qosApplied,
+		"diff", diff)
+
+	return diff.Equal(btypes.ZeroInt())
+}
+
+func confirmDataEveryHeight(ctx context.Context) {
+	accounts := []*types.QOSAccount{}
+	ctx.Mapper(account.AccountMapperName).(*account.AccountMapper).IterateAccounts(func(acc account.Account) (stop bool) {
+		accounts = append(accounts, acc.(*types.QOSAccount))
+		return false
+	})
+	genState := NewGenesisState(
+		accounts,
+		mint.ExportGenesis(ctx),
+		stake.ExportGenesis(ctx),
+		qcp.ExportGenesis(ctx),
+		qsc.ExportGenesis(ctx),
+		approve.ExportGenesis(ctx),
+		distribution.ExportGenesis(ctx),
+		gov.ExportGenesis(ctx),
+		guardian.ExportGenesis(ctx),
+	)
+
+	isSame := stateDataConsistencyCheck(ctx, genState)
+	if !isSame {
+		panic("DATA NOT CONSISTENCY")
+	}
 }
