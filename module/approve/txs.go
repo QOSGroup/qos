@@ -52,7 +52,18 @@ func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, cross
 	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	mapper.SaveApprove(tx.Approve)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeCreateApprove,
+			btypes.NewAttribute(AttributeKeyApproveFrom, tx.From.String()),
+			btypes.NewAttribute(AttributeKeyApproveTo, tx.To.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -105,7 +116,18 @@ func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 	// 保存更新
 	mapper.SaveApprove(approve)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionIncreaseApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeIncreaseApprove,
+			btypes.NewAttribute(AttributeKeyApproveFrom, tx.From.String()),
+			btypes.NewAttribute(AttributeKeyApproveTo, tx.To.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -162,7 +184,18 @@ func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 	// 保存更新
 	mapper.SaveApprove(approve)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDecreaseApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeDecreaseApprove,
+			btypes.NewAttribute(AttributeKeyApproveFrom, tx.From.String()),
+			btypes.NewAttribute(AttributeKeyApproveTo, tx.To.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -240,7 +273,18 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	// 保存更新
 	approveMapper.SaveApprove(approve.Minus(tx.QOS, tx.QSCs))
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionUseApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeUseApprove,
+			btypes.NewAttribute(AttributeKeyApproveFrom, tx.From.String()),
+			btypes.NewAttribute(AttributeKeyApproveTo, tx.To.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -289,7 +333,18 @@ func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, cross
 	mapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
 	mapper.DeleteApprove(tx.From, tx.To)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCancelApprove, TagApproveFrom, tx.From.String(), TagApproveTo, tx.To.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeCancelApprove,
+			btypes.NewAttribute(AttributeKeyApproveFrom, tx.From.String()),
+			btypes.NewAttribute(AttributeKeyApproveTo, tx.To.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }

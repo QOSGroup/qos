@@ -66,21 +66,28 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// 4. close inactive  validator(stake),统计新的validator (stake)
 
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+		ctx = ctx.WithEventManager(btypes.NewEventManager())
 		mint.BeginBlocker(ctx, req)
 		distribution.BeginBlocker(ctx, req)
 		stake.BeginBlocker(ctx, req)
 
-		return abci.ResponseBeginBlock{}
+		return abci.ResponseBeginBlock{
+			Events: ctx.EventManager().ABCIEvents(),
+		}
 	})
 
 	//设置endblocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+		ctx = ctx.WithEventManager(btypes.NewEventManager())
 		gov.EndBlocker(ctx)
 		distribution.EndBlocker(ctx, req)
 		stake.EndBlockerByReturnUnbondTokens(ctx)
 		validators := stake.EndBlocker(ctx)
 		confirmDataEveryHeight(ctx)
-		return validators
+		return abci.ResponseEndBlock{
+			ValidatorUpdates: validators,
+			Events:           ctx.EventManager().ABCIEvents(),
+		}
 	})
 
 	//parameter mapper
@@ -176,7 +183,8 @@ func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (
 	if len(genesisState.GenTxs) > 0 {
 		for _, genTx := range genesisState.GenTxs {
 			bz := app.GetCdc().MustMarshalBinaryBare(genTx)
-			res := app.BaseApp.DeliverTx(bz)
+			reqDeliverTx := abci.RequestDeliverTx{Tx: bz}
+			res := app.BaseApp.DeliverTx(reqDeliverTx)
 			if !res.IsOK() {
 				panic(res.Log)
 			}

@@ -11,21 +11,21 @@ import (
 )
 
 //BonusToDelegator 委托者分红辅助方法
-func BonusToDelegator(ctx context.Context, delegatorAddr, validatorAddr btypes.Address, bonusAmount btypes.BigInt, onlyMinusFeePool bool) error {
+func BonusToDelegator(ctx context.Context, delegatorAddr, validatorAddr btypes.Address, bonusAmount btypes.BigInt, onlyMinusFeePool bool) (btypes.BigInt, error) {
 	distriMapper := mapper.GetDistributionMapper(ctx)
 	log := ctx.Logger()
 
 	if !onlyMinusFeePool {
 		err := IncrAccountQOS(ctx, delegatorAddr, bonusAmount)
 		if err != nil {
-			return err
+			return bonusAmount, err
 		}
 	}
 
 	distriMapper.MinusValidatorEcoFeePool(validatorAddr, bonusAmount)
 	log.Debug("bonus To Delegator", "validatorAddr", validatorAddr.String(), "delegatorAddr", delegatorAddr.String(), "amount", bonusAmount)
 
-	return nil
+	return bonusAmount, nil
 }
 
 func IncrAccountQOS(ctx context.Context, addr btypes.Address, amount btypes.BigInt) error {

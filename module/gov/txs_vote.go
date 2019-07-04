@@ -57,9 +57,18 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionVoteProposal,
-		TagProposalID, fmt.Sprintf("%d", tx.ProposalID),
-		TagVoter, tx.Voter.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeVoteProposal,
+			btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", tx.ProposalID)),
+			btypes.NewAttribute(AttributeKeyVoter, tx.Voter.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }

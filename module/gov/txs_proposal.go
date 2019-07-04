@@ -83,10 +83,20 @@ func (tx TxProposal) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
-		TagProposalID, fmt.Sprintf("%d", proposal.ProposalID),
-		TagProposer, tx.Proposer.String(),
-		TagProposalType, tx.ProposalType.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeSubmitProposal,
+			btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
+			btypes.NewAttribute(AttributeKeyProposer, tx.Proposer.String()),
+			btypes.NewAttribute(AttributeKeyDepositor, tx.Proposer.String()),
+			btypes.NewAttribute(AttributeKeyProposalType, tx.ProposalType.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -171,12 +181,22 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
-		TagProposalID, fmt.Sprintf("%d", proposal.ProposalID),
-		TagProposer, tx.Proposer.String(),
-		TagProposalType, tx.ProposalType.String())
-
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeSubmitProposal,
+			btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
+			btypes.NewAttribute(AttributeKeyProposer, tx.Proposer.String()),
+			btypes.NewAttribute(AttributeKeyDepositor, tx.Proposer.String()),
+			btypes.NewAttribute(AttributeKeyProposalType, tx.ProposalType.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -257,11 +277,20 @@ func (tx TxParameterChange) Exec(ctx context.Context) (result btypes.Result, cro
 
 	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionSubmitProposal,
-		TagProposalID, fmt.Sprintf("%d", proposal.ProposalID),
-		TagProposer, tx.Proposer.String(),
-		TagDepositor, tx.Proposer.String(),
-		TagProposalType, tx.ProposalType.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeSubmitProposal,
+			btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
+			btypes.NewAttribute(AttributeKeyProposer, tx.Proposer.String()),
+			btypes.NewAttribute(AttributeKeyDepositor, tx.Proposer.String()),
+			btypes.NewAttribute(AttributeKeyProposalType, tx.ProposalType.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }

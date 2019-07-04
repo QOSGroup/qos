@@ -110,9 +110,18 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 		}
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateQsc,
-		TagQsc, qscInfo.Name,
-		TagCreator, tx.Creator.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeCreateQsc,
+			btypes.NewAttribute(AttributeKeyQsc, qscInfo.Name),
+			btypes.NewAttribute(AttributeKeyCreator, tx.Creator.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -196,9 +205,19 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	banker.MustPlusQSCs(types.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
 	accountMapper.SetAccount(banker)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionIssueQsc,
-		TagQsc, tx.QSCName,
-		TagBanker, tx.Banker.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeIssueQsc,
+			btypes.NewAttribute(AttributeKeyQsc, tx.QSCName),
+			btypes.NewAttribute(AttributeKeyBanker, tx.Banker.String()),
+			btypes.NewAttribute(AttributeKeyTokens, tx.Amount.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }

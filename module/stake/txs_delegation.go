@@ -53,9 +53,18 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateDelegation,
-		TagValidator, validator.GetValidatorAddress().String(),
-		TagDelegator, tx.Delegator.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeCreateDelegation,
+			btypes.NewAttribute(AttributeKeyValidator, validator.GetValidatorAddress().String()),
+			btypes.NewAttribute(AttributeKeyDelegator, tx.Delegator.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -124,9 +133,18 @@ func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, cro
 	info.IsCompound = tx.IsCompound
 	e.DelegationMapper.SetDelegationInfo(info)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionModifyCompound,
-		TagValidator, validator.GetValidatorAddress().String(),
-		TagDelegator, tx.Delegator.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeModifyCompound,
+			btypes.NewAttribute(AttributeKeyValidator, validator.GetValidatorAddress().String()),
+			btypes.NewAttribute(AttributeKeyDelegator, tx.Delegator.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -199,9 +217,18 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionUnbondDelegation,
-		TagValidator, validator.GetValidatorAddress().String(),
-		TagDelegator, tx.Delegator.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeUnbondDelegation,
+			btypes.NewAttribute(AttributeKeyValidator, validator.GetValidatorAddress().String()),
+			btypes.NewAttribute(AttributeKeyDelegator, tx.Delegator.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -287,10 +314,19 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 		return btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}, nil
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateReDelegation,
-		TagValidator, fromValidator.GetValidatorAddress().String(),
-		TagNewValidator, toValidator.GetValidatorAddress().String(),
-		TagDelegator, tx.Delegator.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeCreateReDelegation,
+			btypes.NewAttribute(AttributeKeyValidator, fromValidator.GetValidatorAddress().String()),
+			btypes.NewAttribute(AttributeKeyNewValidator, toValidator.GetValidatorAddress().String()),
+			btypes.NewAttribute(AttributeKeyDelegator, tx.Delegator.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 

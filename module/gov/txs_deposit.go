@@ -63,9 +63,18 @@ func (tx TxDeposit) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDepositProposal,
-		TagProposalID, fmt.Sprintf("%d", tx.ProposalID),
-		TagDepositor, tx.Depositor.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeDepositProposal,
+			btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", tx.ProposalID)),
+			btypes.NewAttribute(AttributeKeyDepositor, tx.Depositor.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }

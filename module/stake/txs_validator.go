@@ -103,10 +103,19 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
 	validatorMapper.CreateValidator(validator)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionCreateValidator,
-		TagValidator, valAddr.String(),
-		TagOwner, tx.Owner.String(),
-		TagDelegator, tx.Owner.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeCreateValidator,
+			btypes.NewAttribute(AttributeKeyValidator, valAddr.String(), ),
+			btypes.NewAttribute(AttributeKeyOwner, tx.Owner.String()),
+			btypes.NewAttribute(AttributeKeyDelegator, tx.Owner.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -185,9 +194,18 @@ func (tx *TxModifyValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	validator.Description = description
 	validatorMapper.Set(ecotypes.BuildValidatorKey(validator.GetValidatorAddress()), validator)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionModifyValidator,
-		TagOwner, tx.Owner.String(),
-		TagDelegator, tx.Owner.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeModifyValidator,
+			btypes.NewAttribute(AttributeKeyOwner, tx.Owner.String()),
+			btypes.NewAttribute(AttributeKeyDelegator, tx.Owner.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -245,9 +263,18 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	valAddr := validator.GetValidatorAddress()
 	mapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.Revoke)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionRevokeValidator,
-		TagValidator, valAddr.String(),
-		TagOwner, tx.Owner.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeRevokeValidator,
+			btypes.NewAttribute(AttributeKeyValidator, valAddr.String(), ),
+			btypes.NewAttribute(AttributeKeyOwner, tx.Owner.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -313,16 +340,18 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	voteInfo := ecotypes.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
 	voteInfoMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 
-	// 更新owner对应的delegator的bondtokens
-	// delegationMapper := ecomapper.GetDelegationMapper(ctx)
-	// info, _ := delegationMapper.GetDelegationInfo(delegatorAddr, valAddr)
-
-	// distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	// distributionMapper.ModifyDelegatorTokens(validator, delegatorAddr, info.Amount, uint64(ctx.BlockHeight()))
-
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionActiveValidator,
-		TagValidator, valAddr.String(),
-		TagOwner, tx.Owner.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeActiveValidator,
+			btypes.NewAttribute(AttributeKeyValidator, valAddr.String(), ),
+			btypes.NewAttribute(AttributeKeyOwner, tx.Owner.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }

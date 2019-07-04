@@ -15,9 +15,8 @@ import (
 )
 
 // Called every block, process inflation, update validator set
-func EndBlocker(ctx context.Context) btypes.Tags {
+func EndBlocker(ctx context.Context) {
 	logger := ctx.Logger().With("module", "module/gov")
-	resTags := btypes.NewTags()
 
 	mapper := GetGovMapper(ctx)
 	inactiveIterator := mapper.InactiveProposalQueueIterator(ctx.BlockHeader().Time)
@@ -34,7 +33,13 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		mapper.DeleteProposal(proposalID)
 		mapper.DeleteDeposits(ctx, proposalID) // delete any associated deposits (burned)
 
-		resTags = resTags.AppendTags(btypes.NewTags(TagProposalID, types.Uint64ToBigEndian(proposalID), TagProposalResult, ProposalResultDropped))
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				EventTypeInactiveProposal,
+				btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", proposalID)),
+				btypes.NewAttribute(AttributeKeyProposalResult, AttributeKeyDropped),
+			),
+		)
 
 		logger.Info(
 			fmt.Sprintf("proposal %d (%s) didn't meet minimum deposit of %d (had only %d); deleted",
@@ -64,18 +69,18 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		case gtypes.PASS:
 			mapper.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = gtypes.StatusPassed
-			tagValue = ProposalResultPassed
+			tagValue = AttributeKeyResultPassed
 			Execute(ctx, activeProposal, logger)
 			break
 		case gtypes.REJECT:
 			mapper.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = gtypes.StatusRejected
-			tagValue = ProposalResultRejected
+			tagValue = AttributeKeyResultRejected
 			break
 		case gtypes.REJECTVETO:
 			mapper.DeleteDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = gtypes.StatusRejected
-			tagValue = ProposalResultRejected
+			tagValue = AttributeKeyResultVetoRejected
 			break
 		}
 
@@ -90,8 +95,14 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 			),
 		)
 
-		resTags = resTags.AppendTags(btypes.NewTags(TagProposalID, types.Uint64ToBigEndian(proposalID), TagProposalResult, tagValue))
-
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				EventTypeActiveProposal,
+				btypes.NewAttribute(AttributeKeyProposalID, fmt.Sprintf("%d", proposalID)),
+				btypes.NewAttribute(AttributeKeyProposalResult, tagValue),
+			),
+		)
+		
 		penalty := mapper.GetParams(ctx).Penalty
 		if penalty.GT(types.ZeroDec()) {
 			validatorMapper := ecomapper.GetValidatorMapper(ctx)
@@ -111,7 +122,6 @@ func EndBlocker(ctx context.Context) btypes.Tags {
 		mapper.DeleteValidatorSet(proposalID)
 	}
 
-	return resTags
 }
 
 // TODO slash

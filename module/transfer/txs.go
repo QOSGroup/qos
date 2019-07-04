@@ -46,12 +46,24 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 
-	var tags btypes.Tags
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
+
 	for _, sender := range tx.Senders {
 		acc := accountMapper.GetAccount(sender.Address).(*types.QOSAccount)
 		acc.MustMinus(sender.QOS, sender.QSCs)
 		accountMapper.SetAccount(acc)
-		tags = tags.AppendTags(btypes.NewTags(TagSender, sender.Address.String()))
+		result.Events = result.Events.AppendEvent(btypes.NewEvent(EventTypeSend,
+			btypes.NewAttribute(AttributeKeyAddress, sender.Address.String()),
+			btypes.NewAttribute(AttributeKeyQOS, sender.QOS.String()),
+			btypes.NewAttribute(AttributeKeyQSCs, sender.QSCs.String()),
+			),
+		)
 	}
 	for _, receiver := range tx.Receivers {
 		a := accountMapper.GetAccount(receiver.Address)
@@ -63,10 +75,15 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		}
 		acc.MustPlus(receiver.QOS, receiver.QSCs)
 		accountMapper.SetAccount(acc)
-		tags = tags.AppendTags(btypes.NewTags(TagReceiver, receiver.Address.String()))
+		result.Events = result.Events.AppendEvent(btypes.NewEvent(EventTypeReceive,
+			btypes.NewAttribute(AttributeKeyAddress, receiver.Address.String()),
+			btypes.NewAttribute(AttributeKeyQOS, receiver.QOS.String()),
+			btypes.NewAttribute(AttributeKeyQSCs, receiver.QSCs.String()),
+		),
+		)
 	}
 
-	return btypes.Result{Code: btypes.CodeOK, Tags: tags}, nil
+	return btypes.Result{Code: btypes.CodeOK, Events: result.Events}, nil
 }
 
 // 所有Senders

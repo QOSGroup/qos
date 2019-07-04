@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qos/module/eco"
 	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
 	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/mint"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -26,15 +27,15 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
 //1. 将所有Inactive到一定期限的validator删除
 //2. 统计新的validator
-func EndBlocker(ctx context.Context) (res abci.ResponseEndBlock) {
+func EndBlocker(ctx context.Context) []abci.ValidatorUpdate {
 
 	validatorMapper := ecomapper.GetValidatorMapper(ctx)
 	survivalSecs := validatorMapper.GetParams(ctx).ValidatorSurvivalSecs
 	maxValidatorCount := uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt)
 
 	closeExpireInactiveValidator(ctx, survivalSecs)
-	res.ValidatorUpdates = GetUpdatedValidators(ctx, maxValidatorCount)
-	return
+
+	return GetUpdatedValidators(ctx, maxValidatorCount)
 }
 
 //unbond的token返还至delegator账户中
@@ -74,6 +75,13 @@ func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
 		key := iterator.Key()
 		valAddress := btypes.Address(key[9:])
 		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				EventTypeCloseValidator,
+				btypes.NewAttribute(mint.AttributeKeyHeight, string(ctx.BlockHeight())),
+				btypes.NewAttribute(AttributeKeyValidator, valAddress.String()),
+			),
+		)
 		e.RemoveValidator(ctx, valAddress)
 	}
 	iterator.Close()
@@ -220,6 +228,13 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 	if voteInfo.MissedBlocksCounter > maxMissedCounter {
 		log.Info("validator gets inactive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
 		validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.MissVoteBlock)
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				EventTypeInactiveValidator,
+				btypes.NewAttribute(mint.AttributeKeyHeight, string(height)),
+				btypes.NewAttribute(AttributeKeyValidator, valAddr.String()),
+			),
+		)
 	}
 
 	voteInfoMapper.SetValidatorVoteInfo(valAddr, voteInfo)

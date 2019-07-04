@@ -60,9 +60,18 @@ func (tx TxAddGuardian) Exec(ctx context.Context) (result btypes.Result, crossTx
 
 	GetGuardianMapper(ctx).AddGuardian(*gtypes.NewGuardian(tx.Description, gtypes.Ordinary, tx.Address, tx.Creator))
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionAddGuardian,
-		TagCreator, tx.Creator.String(),
-		TagGuardian, tx.Address.String())
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeAddGuardian,
+			btypes.NewAttribute(AttributeKeyCreator, tx.Creator.String()),
+			btypes.NewAttribute(AttributeKeyGuardian, tx.Address.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
 
 	return
 }
@@ -135,10 +144,19 @@ func (tx TxDeleteGuardian) Exec(ctx context.Context) (result btypes.Result, cros
 
 	GetGuardianMapper(ctx).DeleteGuardian(tx.Address)
 
-	result.Tags = btypes.NewTags(btypes.TagAction, TagActionDeleteGuardian,
-		TagDeleteBy, tx.DeletedBy.String(),
-		TagGuardian, tx.Address.String())
-
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			EventTypeDeleteGuardian,
+			btypes.NewAttribute(AttributeKeyDeleteBy, tx.DeletedBy.String()),
+			btypes.NewAttribute(AttributeKeyGuardian, tx.Address.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
+	
 	return
 }
 

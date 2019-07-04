@@ -10,7 +10,6 @@ import (
 
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
-	log := ctx.Logger()
 	height := uint64(ctx.BlockHeight())
 	currentBlockTime := ctx.BlockHeader().Time.UTC().Unix()
 
@@ -46,9 +45,16 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
 		if rewardPerBlock > 0 {
 			mintMapper.MintQOS(uint64(currentBlockTime), rewardPerBlock)
-			log.Debug("block mint", "height", height, "mint", rewardPerBlock)
 			distributionMapper := ecomapper.GetDistributionMapper(ctx)
 			distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
+
+			ctx.EventManager().EmitEvent(
+				btypes.NewEvent(
+					EventTypeMint,
+					btypes.NewAttribute(AttributeKeyHeight, string(height)),
+					btypes.NewAttribute(AttributeKeyTokens, string(rewardPerBlock)),
+				),
+			)
 		}
 	}
 }
