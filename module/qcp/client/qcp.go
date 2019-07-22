@@ -7,7 +7,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/module/qcp"
+	qtxs "github.com/QOSGroup/qos/module/qcp/txs"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -43,7 +43,7 @@ func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid crt file")
 				}
 
-				return qcp.TxInitQCP{creatorAddr, &crt}, nil
+				return qtxs.TxInitQCP{creatorAddr, &crt}, nil
 			})
 		},
 	}

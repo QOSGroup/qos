@@ -45,7 +45,7 @@ Example:
 			for _, v := range appState.Accounts {
 				for _, acc := range accounts {
 					if acc.AccountAddress.EqualsTo(v.GetAddress()) {
-						return fmt.Errorf("addr: %s has already exsits", v.AccountAddress.String())
+						return fmt.Errorf("addr: %s has already exists", v.AccountAddress.String())
 					}
 				}
 			}

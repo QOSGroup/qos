@@ -7,7 +7,8 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/approve"
+	"github.com/QOSGroup/qos/module/approve/mapper"
+	atxs "github.com/QOSGroup/qos/module/approve/txs"
 	approvetypes "github.com/QOSGroup/qos/module/approve/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
@@ -48,7 +49,7 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			output, err := cliCtx.Query(queryPath, approve.BuildApproveKey(fromAddr.String(), toAddr.String()))
+			output, err := cliCtx.Query(queryPath, mapper.BuildApproveKey(fromAddr.String(), toAddr.String()))
 			if err != nil {
 				return err
 			}
@@ -175,7 +176,7 @@ func applyApprove(cdc *amino.Codec, operType operateType) error {
 		toAddr := viper.Get(flagTo).(btypes.Address)
 
 		if operType == cancleType {
-			return approve.TxCancelApprove{
+			return atxs.TxCancelApprove{
 				From: fromAddr,
 				To:   toAddr,
 			}, nil
@@ -189,13 +190,13 @@ func applyApprove(cdc *amino.Codec, operType operateType) error {
 
 		switch operType {
 		case createType:
-			return approve.TxCreateApprove{Approve: appr}, nil
+			return atxs.TxCreateApprove{Approve: appr}, nil
 		case increaseType:
-			return approve.TxIncreaseApprove{Approve: appr}, nil
+			return atxs.TxIncreaseApprove{Approve: appr}, nil
 		case decreaseType:
-			return approve.TxDecreaseApprove{Approve: appr}, nil
+			return atxs.TxDecreaseApprove{Approve: appr}, nil
 		case useType:
-			return approve.TxUseApprove{Approve: appr}, nil
+			return atxs.TxUseApprove{Approve: appr}, nil
 		default:
 			return nil, errors.New("operType invalid")
 		}

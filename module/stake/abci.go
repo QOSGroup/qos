@@ -3,20 +3,18 @@ package stake
 import (
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/eco"
-	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
-	ecotypes "github.com/QOSGroup/qos/module/eco/types"
-	"github.com/QOSGroup/qos/module/mint"
+	"github.com/QOSGroup/qos/module/stake/mapper"
+	"github.com/QOSGroup/qos/module/stake/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 //1. 统计validator投票信息, 将不活跃的validator转成Inactive状态
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 
-	validatorMapper := ecomapper.GetValidatorMapper(ctx)
+	sm := mapper.GetMapper(ctx)
 
-	votingWindowLen := uint64(validatorMapper.GetParams(ctx).ValidatorVotingStatusLen)
-	minVotingCounter := uint64(validatorMapper.GetParams(ctx).ValidatorVotingStatusLeast)
+	votingWindowLen := uint64(sm.GetParams(ctx).ValidatorVotingStatusLen)
+	minVotingCounter := uint64(sm.GetParams(ctx).ValidatorVotingStatusLeast)
 
 	for _, signingValidator := range req.LastCommitInfo.Votes {
 		valAddr := btypes.Address(signingValidator.Validator.Address)
@@ -29,89 +27,70 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 //2. 统计新的validator
 func EndBlocker(ctx context.Context) []abci.ValidatorUpdate {
 
-	validatorMapper := ecomapper.GetValidatorMapper(ctx)
-	survivalSecs := validatorMapper.GetParams(ctx).ValidatorSurvivalSecs
-	maxValidatorCount := uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt)
+	sm := mapper.GetMapper(ctx)
+	survivalSecs := sm.GetParams(ctx).ValidatorSurvivalSecs
+	maxValidatorCount := uint64(sm.GetParams(ctx).MaxValidatorCnt)
 
-	closeExpireInactiveValidator(ctx, survivalSecs)
+	CloseInactiveValidator(ctx, int32(survivalSecs))
 
 	return GetUpdatedValidators(ctx, maxValidatorCount)
 }
 
-//unbond的token返还至delegator账户中
-func EndBlockerByReturnUnbondTokens(ctx context.Context) {
-	height := uint64(ctx.BlockHeight())
-	e := eco.GetEco(ctx)
-	log := e.Context.Logger()
-
-	prePrefix := ecotypes.BuildUnbondingDelegationByHeightPrefix(height)
-
-	iter := btypes.KVStorePrefixIterator(e.DelegationMapper.GetStore(), prePrefix)
-	defer iter.Close()
-
-	for ; iter.Valid(); iter.Next() {
-		k := iter.Key()
-		e.DelegationMapper.Del(k)
-
-		var amount uint64
-		e.DelegationMapper.BaseMapper.DecodeObject(iter.Value(), &amount)
-
-		_, deleAddr := ecotypes.GetUnbondingDelegationHeightAddress(k)
-		returnQOSAmount := amount
-		log.Debug("stake end return unbond token", "height", height, "deleAddr", deleAddr, "tokens", returnQOSAmount)
-		eco.IncrAccountQOS(ctx, deleAddr, btypes.NewInt(int64(returnQOSAmount)))
-	}
-}
-
-func closeExpireInactiveValidator(ctx context.Context, survivalSecs uint32) {
-	log := ctx.Logger()
-	e := eco.GetEco(ctx)
+func CloseInactiveValidator(ctx context.Context, survivalSecs int32) {
+	sm := mapper.GetMapper(ctx)
 
 	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
-	lastCloseValidatorSec := blockTimeSec - uint64(survivalSecs)
+	var lastCloseValidatorSec uint64
+	if survivalSecs >= 0 {
+		lastCloseValidatorSec = blockTimeSec - uint64(survivalSecs)
+	} else { // close all
+		lastCloseValidatorSec = blockTimeSec + uint64(survivalSecs)
+	}
 
-	iterator := e.ValidatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
+	iterator := sm.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
 		valAddress := btypes.Address(key[9:])
-		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
-				EventTypeCloseValidator,
-				btypes.NewAttribute(mint.AttributeKeyHeight, string(ctx.BlockHeight())),
-				btypes.NewAttribute(AttributeKeyValidator, valAddress.String()),
+				types.EventTypeCloseValidator,
+				btypes.NewAttribute(types.AttributeKeyHeight, string(ctx.BlockHeight())),
+				btypes.NewAttribute(types.AttributeKeyValidator, valAddress.String()),
 			),
 		)
-		e.RemoveValidator(ctx, valAddress)
+		RemoveValidator(ctx, valAddress)
 	}
 	iterator.Close()
 }
 
-func closeAllInactiveValidator(ctx context.Context) {
-	log := ctx.Logger()
-	e := eco.GetEco(ctx)
+//删除和validator相关数据
+//CONTRACT:
+//delegator当前收益和收益发放信息数据不删除, 只是将bondTokens重置为0
+//发放收益时,若delegator非validator的委托人, 或validator 不存在 则可以将delegator的收益相关数据删除
+//发放收益时,validator的汇总数据可能会不存在
+func RemoveValidator(ctx context.Context, valAddr btypes.Address) error {
 
-	lastCloseValidatorSec := uint64(ctx.BlockHeader().Time.UTC().Unix()) + 1
+	sm := mapper.GetMapper(ctx)
 
-	iterator := e.ValidatorMapper.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
-	for ; iterator.Valid(); iterator.Next() {
-		key := iterator.Key()
-		valAddress := btypes.Address(key[9:])
-		log.Info("close validator", "height", ctx.BlockHeight(), "validator", valAddress.String())
-		e.RemoveValidator(ctx, valAddress)
-	}
-	iterator.Close()
+	// 处理分配逻辑
+	sm.BeforeValidatorRemoved(ctx, valAddr)
+
+	// 删除validator相关数据
+	sm.KickValidator(valAddr)
+	sm.DelValidatorVoteInfo(valAddr)
+	sm.ClearValidatorVoteInfoInWindow(valAddr)
+
+	return nil
 }
 
 func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
-	log := ctx.Logger()
-	validatorMapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*ecomapper.ValidatorMapper)
+	sm := mapper.GetMapper(ctx)
 
 	//获取当前的validator集合
-	var currentValidators []ecotypes.Validator
-	validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
+	var currentValidators []types.Validator
+	sm.Get(types.BuildCurrentValidatorsAddressKey(), &currentValidators)
 
-	currentValidatorMap := make(map[string]ecotypes.Validator)
+	currentValidatorMap := make(map[string]types.Validator)
 	for _, curValidator := range currentValidators {
 		curValidatorAddrString := curValidator.GetValidatorAddress().String()
 		currentValidatorMap[curValidatorAddrString] = curValidator
@@ -121,10 +100,10 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	updateValidators := make([]abci.ValidatorUpdate, 0, len(currentValidatorMap))
 
 	i := uint64(0)
-	newValidatorsMap := make(map[string]ecotypes.Validator)
-	newValidators := make([]ecotypes.Validator, 0, len(currentValidators))
+	newValidatorsMap := make(map[string]types.Validator)
+	newValidators := make([]types.Validator, 0, len(currentValidators))
 
-	iterator := validatorMapper.IteratorValidatorByVoterPower(false)
+	iterator := sm.IteratorValidatorByVoterPower(false)
 	defer iterator.Close()
 
 	var key []byte
@@ -134,11 +113,11 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
-			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
-				validatorMapper.MakeValidatorInactive(validator.GetValidatorAddress(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.MaxValidator)
+			if validator, exists := sm.GetValidator(valAddr); exists {
+				sm.MakeValidatorInactive(validator.GetValidatorAddress(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.MaxValidator)
 			}
 		} else {
-			if validator, exsits := validatorMapper.GetValidator(valAddr); exsits {
+			if validator, exists := sm.GetValidator(valAddr); exists {
 				if !validator.IsActive() {
 					continue
 				}
@@ -149,8 +128,8 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 				newValidators = append(newValidators, validator)
 
 				//新增或修改
-				curValidator, exsits := currentValidatorMap[newValidatorAddressString]
-				if !exsits || (validator.BondTokens != curValidator.BondTokens) {
+				curValidator, exists := currentValidatorMap[newValidatorAddressString]
+				if !exists || (validator.GetBondTokens() != curValidator.BondTokens) {
 					updateValidators = append(updateValidators, validator.ToABCIValidatorUpdate(false))
 				}
 			}
@@ -166,13 +145,11 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	}
 
 	if len(newValidators) == 0 {
-		panic("consens error. no validator exsits")
+		panic("consens error. no validator exists")
 	}
 
 	//存储新的validator
-	validatorMapper.Set(ecotypes.BuildCurrentValidatorsAddressKey(), newValidators)
-
-	log.Info("update Validators", "len", len(updateValidators))
+	sm.Set(types.BuildCurrentValidatorsAddressKey(), newValidators)
 
 	return updateValidators
 }
@@ -181,12 +158,11 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 
 	log := ctx.Logger()
 	height := uint64(ctx.BlockHeight())
-	validatorMapper := ecomapper.GetValidatorMapper(ctx)
-	voteInfoMapper := ecomapper.GetVoteInfoMapper(ctx)
+	sm := mapper.GetMapper(ctx)
 
-	validator, exsits := validatorMapper.GetValidator(valAddr)
-	if !exsits {
-		log.Info("validatorVoteInfo", valAddr.String(), "not exsits,may be closed")
+	validator, exists := sm.GetValidator(valAddr)
+	if !exists {
+		log.Info("validatorVoteInfo", valAddr.String(), "not exists,may be closed")
 		return
 	}
 
@@ -196,22 +172,22 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 		return
 	}
 
-	voteInfo, exsits := voteInfoMapper.GetValidatorVoteInfo(valAddr)
-	if !exsits {
-		voteInfo = ecotypes.NewValidatorVoteInfo(height, 0, 0)
+	voteInfo, exists := sm.GetValidatorVoteInfo(valAddr)
+	if !exists {
+		voteInfo = types.NewValidatorVoteInfo(height, 0, 0)
 	}
 
 	index := voteInfo.IndexOffset % votingWindowLen
 	voteInfo.IndexOffset++
 
-	previousVote := voteInfoMapper.GetVoteInfoInWindow(valAddr, index)
+	previousVote := sm.GetVoteInfoInWindow(valAddr, index)
 
 	switch {
 	case previousVote && !isVote:
-		voteInfoMapper.SetVoteInfoInWindow(valAddr, index, false)
+		sm.SetVoteInfoInWindow(valAddr, index, false)
 		voteInfo.MissedBlocksCounter++
 	case !previousVote && isVote:
-		voteInfoMapper.SetVoteInfoInWindow(valAddr, index, true)
+		sm.SetVoteInfoInWindow(valAddr, index, true)
 		voteInfo.MissedBlocksCounter--
 	default:
 		//nothing
@@ -227,15 +203,15 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 	// if height > minHeight && voteInfo.MissedBlocksCounter > maxMissedCounter
 	if voteInfo.MissedBlocksCounter > maxMissedCounter {
 		log.Info("validator gets inactive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
-		validatorMapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.MissVoteBlock)
+		sm.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.MissVoteBlock)
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
-				EventTypeInactiveValidator,
-				btypes.NewAttribute(mint.AttributeKeyHeight, string(height)),
-				btypes.NewAttribute(AttributeKeyValidator, valAddr.String()),
+				types.EventTypeInactiveValidator,
+				btypes.NewAttribute(types.AttributeKeyHeight, string(height)),
+				btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
 			),
 		)
 	}
 
-	voteInfoMapper.SetValidatorVoteInfo(valAddr, voteInfo)
+	sm.SetValidatorVoteInfo(valAddr, voteInfo)
 }

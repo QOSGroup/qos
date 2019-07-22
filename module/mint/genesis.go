@@ -2,50 +2,30 @@ package mint
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	mintmapper "github.com/QOSGroup/qos/module/eco/mapper"
-	minttypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/mint/mapper"
+	"github.com/QOSGroup/qos/module/mint/types"
 )
 
-type GenesisState struct {
-	Params           minttypes.MintParams `json:"params"`
-	FirstBlockTime   int64                `json:"first_block_time"` //UTC().UNIX()
-	AppliedQOSAmount uint64               `json:"applied_qos_amount"`
-}
-
-func NewGenesisState(params minttypes.MintParams) GenesisState {
-	return GenesisState{
-		Params: params,
-	}
-}
-
-func DefaultGenesisState() GenesisState {
-	return NewGenesisState(minttypes.DefaultMintParams())
-}
-
-func InitGenesis(ctx context.Context, data GenesisState) {
-	mintMapper := ctx.Mapper(minttypes.MintMapperName).(*mintmapper.MintMapper)
-	mintMapper.SetMintParams(data.Params)
+func InitGenesis(ctx context.Context, data types.GenesisState) {
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	mapper.SetMintParams(data.Params)
 
 	if data.FirstBlockTime > 0 {
-		mintMapper.SetFirstBlockTime(data.FirstBlockTime)
+		mapper.SetFirstBlockTime(data.FirstBlockTime)
 	}
 
 	if data.AppliedQOSAmount > 0 {
-		mintMapper.SetAllTotalMintQOSAmount(data.AppliedQOSAmount)
+		mapper.SetAllTotalMintQOSAmount(data.AppliedQOSAmount)
 	}
 
 }
 
-func ExportGenesis(ctx context.Context) GenesisState {
-	mintMapper := ctx.Mapper(minttypes.MintMapperName).(*mintmapper.MintMapper)
-	firstBlockTime := mintMapper.GetFirstBlockTime()
-	return GenesisState{
-		Params:           mintMapper.GetMintParams(),
+func ExportGenesis(ctx context.Context) types.GenesisState {
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	firstBlockTime := mapper.GetFirstBlockTime()
+	return types.GenesisState{
+		Params:           mapper.GetMintParams(),
 		FirstBlockTime:   firstBlockTime,
-		AppliedQOSAmount: mintMapper.GetAllTotalMintQOSAmount(),
+		AppliedQOSAmount: mapper.GetAllTotalMintQOSAmount(),
 	}
-}
-
-func PrepForZeroHeightGenesis(ctx context.Context) {
-	mintmapper.GetMintMapper(ctx).SetFirstBlockTime(0)
 }

@@ -8,7 +8,8 @@ import (
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/params"
-	"github.com/QOSGroup/qos/module/stake"
+	"github.com/QOSGroup/qos/module/stake/mapper"
+	"github.com/QOSGroup/qos/module/stake/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -17,7 +18,6 @@ import (
 	"time"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
-	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	go_amino "github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/crypto"
 )
@@ -33,11 +33,11 @@ const (
 )
 
 type validatorDisplayInfo struct {
-	Owner           btypes.Address       `json:"owner"`
-	ValidatorAddr   string               `json:"validatorAddress"`
-	ValidatorPubKey crypto.PubKey        `json:"validatorPubkey"`
-	BondTokens      uint64               `json:"bondTokens"` //不能超过int64最大值
-	Description     ecotypes.Description `json:"description"`
+	Owner           btypes.Address    `json:"owner"`
+	ValidatorAddr   string            `json:"validatorAddress"`
+	ValidatorPubKey crypto.PubKey     `json:"validatorPubkey"`
+	BondTokens      uint64            `json:"bondTokens"` //不能超过int64最大值
+	Description     types.Description `json:"description"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
@@ -47,7 +47,7 @@ type validatorDisplayInfo struct {
 	BondHeight uint64 `json:"bondHeight"`
 }
 
-func toValidatorDisplayInfo(validator ecotypes.Validator) validatorDisplayInfo {
+func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 	info := validatorDisplayInfo{
 		Owner:           validator.Owner,
 		ValidatorPubKey: validator.ValidatorPubKey,
@@ -58,17 +58,17 @@ func toValidatorDisplayInfo(validator ecotypes.Validator) validatorDisplayInfo {
 		BondHeight:      validator.BondHeight,
 	}
 
-	if validator.Status == ecotypes.Active {
+	if validator.Status == types.Active {
 		info.Status = activeDesc
 	} else {
 		info.Status = inactiveDesc
 	}
 
-	if validator.InactiveCode == ecotypes.Revoke {
+	if validator.InactiveCode == types.Revoke {
 		info.InactiveDesc = inactiveRevokeDesc
-	} else if validator.InactiveCode == ecotypes.MissVoteBlock {
+	} else if validator.InactiveCode == types.MissVoteBlock {
 		info.InactiveDesc = inactiveMissVoteBlockDesc
-	} else if validator.InactiveCode == ecotypes.MaxValidator {
+	} else if validator.InactiveCode == types.MaxValidator {
 		info.InactiveDesc = inactiveMaxValidatorDesc
 	}
 
@@ -120,14 +120,14 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 				delegator = d
 			}
 
-			var path = ecotypes.BuildGetDelegationCustomQueryPath(delegator, owner)
+			var path = types.BuildGetDelegationCustomQueryPath(delegator, owner)
 
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
 			}
 
-			var result stake.DelegationQueryResult
+			var result mapper.DelegationQueryResult
 			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
@@ -157,14 +157,14 @@ func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 				owner = o
 			}
 
-			var path = ecotypes.BuildQueryDelegationsByOwnerCustomQueryPath(owner)
+			var path = types.BuildQueryDelegationsByOwnerCustomQueryPath(owner)
 
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
 			}
 
-			var result []stake.DelegationQueryResult
+			var result []mapper.DelegationQueryResult
 			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
@@ -189,14 +189,14 @@ func queryDelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
 				delegator = d
 			}
 
-			var path = ecotypes.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
+			var path = types.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
 
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
 			}
 
-			var result []stake.DelegationQueryResult
+			var result []mapper.DelegationQueryResult
 			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
@@ -220,7 +220,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			opts := buildQueryOptions()
 
 			subspace := "/store/validator/subspace"
-			result, err := node.ABCIQueryWithOptions(subspace, ecotypes.BulidValidatorPrefixKey(), opts)
+			result, err := node.ABCIQueryWithOptions(subspace, types.BulidValidatorPrefixKey(), opts)
 
 			if err != nil {
 				return err
@@ -236,7 +236,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			var vKVPair []store.KVPair
 			cdc.UnmarshalBinaryLengthPrefixed(valueBz, &vKVPair)
 			for _, kv := range vKVPair {
-				var validator ecotypes.Validator
+				var validator types.Validator
 				cdc.UnmarshalBinaryBare(kv.Value, &validator)
 				validators = append(validators, toValidatorDisplayInfo(validator))
 			}
@@ -246,8 +246,6 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			return nil
 		},
 	}
-
-	// cmd.Flags().Bool(flagActive, false, "only query active status validator")
 
 	return cmd
 }
@@ -358,7 +356,7 @@ func getStakeConfig(ctx context.CLIContext) (uint64, error) {
 	}
 
 	path := "/store/params/key"
-	key := params.BuildParamKey(ecotypes.DistributionParamSpace, ecotypes.KeyValidatorVotingStatusLen)
+	key := params.BuildParamKey(types.ParamSpace, types.KeyValidatorVotingStatusLen)
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
 	if err != nil {
@@ -374,28 +372,30 @@ func getStakeConfig(ctx context.CLIContext) (uint64, error) {
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &length)
 
 	return length, nil
+
+	return 0, nil
 }
 
-func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) (ecotypes.ValidatorVoteInfo, error) {
+func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) (types.ValidatorVoteInfo, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
-		return ecotypes.ValidatorVoteInfo{}, err
+		return types.ValidatorVoteInfo{}, err
 	}
 
-	path := string(ecotypes.BuildVoteInfoStoreQueryPath())
-	key := ecotypes.BuildValidatorVoteInfoKey(validatorAddr)
+	path := string(types.BuildStakeStoreQueryPath())
+	key := types.BuildValidatorVoteInfoKey(validatorAddr)
 
 	result, err := node.ABCIQueryWithOptions(path, key, buildQueryOptions())
 	if err != nil {
-		return ecotypes.ValidatorVoteInfo{}, err
+		return types.ValidatorVoteInfo{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return ecotypes.ValidatorVoteInfo{}, errors.New("response empty value. validatorVoteInfo is empty")
+		return types.ValidatorVoteInfo{}, errors.New("response empty value. validatorVoteInfo is empty")
 	}
 
-	var voteInfo ecotypes.ValidatorVoteInfo
+	var voteInfo types.ValidatorVoteInfo
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &voteInfo)
 
 	return voteInfo, nil
@@ -410,8 +410,8 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 		return voteInWindowInfo, 0, err
 	}
 
-	storePath := "/" + strings.Join([]string{"store", ecotypes.VoteInfoMapperName, "subspace"}, "/")
-	key := ecotypes.BuildValidatorVoteInfoInWindowPrefixKey(validatorAddr)
+	storePath := "/" + strings.Join([]string{"store", types.MapperName, "subspace"}, "/")
+	key := types.BuildValidatorVoteInfoInWindowPrefixKey(validatorAddr)
 
 	result, err := node.ABCIQueryWithOptions(storePath, key, buildQueryOptions())
 	if err != nil {
@@ -437,38 +437,38 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 	return voteInWindowInfo, result.Response.Height, nil
 }
 
-func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (ecotypes.Validator, error) {
+func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (types.Validator, error) {
 
 	node, err := ctx.GetNode()
 	if err != nil {
-		return ecotypes.Validator{}, err
+		return types.Validator{}, err
 	}
 
-	result, err := node.ABCIQueryWithOptions(string(ecotypes.BuildValidatorStoreQueryPath()), ecotypes.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
+	result, err := node.ABCIQueryWithOptions(string(types.BuildStakeStoreQueryPath()), types.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
 	if err != nil {
-		return ecotypes.Validator{}, err
+		return types.Validator{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return ecotypes.Validator{}, errors.New("owner does't have validator")
+		return types.Validator{}, errors.New("owner does't have validator")
 	}
 
 	var address btypes.Address
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &address)
 
-	key := ecotypes.BuildValidatorKey(address)
-	result, err = node.ABCIQueryWithOptions(string(ecotypes.BuildValidatorStoreQueryPath()), key, buildQueryOptions())
+	key := types.BuildValidatorKey(address)
+	result, err = node.ABCIQueryWithOptions(string(types.BuildStakeStoreQueryPath()), key, buildQueryOptions())
 	if err != nil {
-		return ecotypes.Validator{}, err
+		return types.Validator{}, err
 	}
 
 	valueBz = result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return ecotypes.Validator{}, errors.New("response empty value")
+		return types.Validator{}, errors.New("response empty value")
 	}
 
-	var validator ecotypes.Validator
+	var validator types.Validator
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &validator)
 	return validator, nil
 }

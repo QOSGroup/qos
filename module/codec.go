@@ -2,9 +2,10 @@ package module
 
 import (
 	"github.com/QOSGroup/qos/module/approve"
-	"github.com/QOSGroup/qos/module/eco"
+	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/guardian"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/qcp"
 	"github.com/QOSGroup/qos/module/qsc"
@@ -15,12 +16,13 @@ import (
 
 func RegisterCodec(cdc *amino.Codec) {
 	approve.RegisterCodec(cdc)
-	qsc.RegisterCodec(cdc)
-	transfer.RegisterCodec(cdc)
-	params.RegisterCodec(cdc)
-	stake.RegisterCodec(cdc)
-	qcp.RegisterCodec(cdc)
-	eco.RegisterCodec(cdc)
+	distribution.RegisterCodec(cdc)
 	gov.RegisterCodec(cdc)
 	guardian.RegisterCodec(cdc)
+	mint.RegisterCodec(cdc)
+	params.RegisterCodec(cdc)
+	qcp.RegisterCodec(cdc)
+	qsc.RegisterCodec(cdc)
+	stake.RegisterCodec(cdc)
+	transfer.RegisterCodec(cdc)
 }

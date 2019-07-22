@@ -5,10 +5,10 @@ import (
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
-	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/module/transfer"
-	transtypes "github.com/QOSGroup/qos/module/transfer/types"
-	"github.com/QOSGroup/qos/types"
+	btxs "github.com/QOSGroup/qbase/txs"
+	"github.com/QOSGroup/qos/module/transfer/txs"
+	"github.com/QOSGroup/qos/module/transfer/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -25,7 +25,7 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "transfer",
 		Short: "Transfer QOS and QSCs",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 				sendersStr := viper.GetString(flagSenders)
 				senders, err := parseTransItem(ctx, sendersStr)
 				if err != nil {
@@ -38,7 +38,7 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return transfer.TxTransfer{
+				return txs.TxTransfer{
 					Senders:   senders,
 					Receivers: receivers,
 				}, nil
@@ -55,8 +55,8 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 }
 
 // Parse flags from string
-func parseTransItem(cliCtx context.CLIContext, str string) (transtypes.TransItems, error) {
-	items := make(transtypes.TransItems, 0)
+func parseTransItem(cliCtx context.CLIContext, str string) (types.TransItems, error) {
+	items := make(types.TransItems, 0)
 	tis := strings.Split(str, ";")
 	for _, ti := range tis {
 		if ti == "" {
@@ -72,11 +72,11 @@ func parseTransItem(cliCtx context.CLIContext, str string) (transtypes.TransItem
 		if err != nil {
 			return nil, err
 		}
-		qos, qscs, err := types.ParseCoins(strings.Join(addrAndCoins[1:], ","))
+		qos, qscs, err := qtypes.ParseCoins(strings.Join(addrAndCoins[1:], ","))
 		if err != nil {
 			return nil, err
 		}
-		items = append(items, transtypes.TransItem{
+		items = append(items, types.TransItem{
 			Address: addr,
 			QOS:     qos,
 			QSCs:    qscs,

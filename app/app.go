@@ -3,8 +3,6 @@ package app
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
@@ -12,10 +10,7 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve"
 	"github.com/QOSGroup/qos/module/distribution"
-	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
-	ecotypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/gov"
-	gtypes "github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
@@ -28,6 +23,7 @@ import (
 	cmn "github.com/tendermint/tendermint/libs/common"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	"io"
 )
 
 const (
@@ -54,17 +50,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 	// 设置gas处理逻辑
 	app.SetGasHandler(app.gasHandler)
 
-	// abci:
-	// begin blocker:
-	// 1. validator奖励分配(distribution)
-	// 2. 不活跃validator置为inactive(stake)
-	// 3. 计算本块挖出的QOS数量(mint)
-	// end blocker:
-	// 1. delegator收益发放: 计算下一发放周期(distribution)
-	// 2. unbond QOS 返还 (stake)
-	// 3. validator period 旧数据删除(distribution) //TODO
-	// 4. close inactive  validator(stake),统计新的validator (stake)
-
+	// 设置BeginBlocker
 	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
 		ctx = ctx.WithEventManager(btypes.NewEventManager())
 		mint.BeginBlocker(ctx, req)
@@ -76,12 +62,11 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		}
 	})
 
-	//设置endblocker
+	// 设置EndBlocker
 	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 		ctx = ctx.WithEventManager(btypes.NewEventManager())
 		gov.EndBlocker(ctx)
 		distribution.EndBlocker(ctx, req)
-		stake.EndBlockerByReturnUnbondTokens(ctx)
 		validators := stake.EndBlocker(ctx)
 		confirmDataEveryHeight(ctx)
 		return abci.ResponseEndBlock{
@@ -90,60 +75,25 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		}
 	})
 
-	//parameter mapper
-	paramsMapper := params.NewMapper()
-	//config params
-	paramsMapper.RegisterParamSet(&ecotypes.StakeParams{}, &ecotypes.DistributionParams{}, &gov.Params{})
-	app.RegisterMapper(paramsMapper)
+	// 注册mappers
+	app.RegisterMappers()
 
-	// 账户mapper
-	app.RegisterAccountProto(types.ProtoQOSAccount)
-
-	// QCP mapper
-	// qbase 默认已注入
-
-	// QSC mapper
-	app.RegisterMapper(qsc.NewQSCMapper())
-
-	// 预授权mapper
-	app.RegisterMapper(approve.NewApproveMapper())
-
-	// Staking Validator mapper
-	app.RegisterMapper(ecomapper.NewValidatorMapper())
-
-	// Staking mapper
-	app.RegisterMapper(ecomapper.NewVoteInfoMapper())
-
-	// Mint mapper
-	app.RegisterMapper(ecomapper.NewMintMapper())
-
-	//distributionMapper
-	app.RegisterMapper(ecomapper.NewDistributionMapper())
-
-	//delegationMapper
-	app.RegisterMapper(ecomapper.NewDelegationMapper())
-
-	//gov mapper
-	app.RegisterMapper(gov.NewGovMapper())
-
-	//guardian mapper
-	app.RegisterMapper(guardian.NewGuardianMapper())
-
+	// 注册自定义查询处理
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
 
 		if len(route) == 0 {
 			return nil, btypes.ErrInternal("miss custom subquery path")
 		}
 
-		if route[0] == ecotypes.Stake {
+		if route[0] == stake.ModuleName {
 			return stake.Query(ctx, route[1:], req)
 		}
 
-		if route[0] == ecotypes.Distribution {
+		if route[0] == distribution.ModuleName {
 			return distribution.Query(ctx, route[1:], req)
 		}
 
-		if route[0] == gov.GOV {
+		if route[0] == gov.ModuleName {
 			return gov.Query(ctx, route[1:], req)
 		}
 
@@ -156,6 +106,45 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 		cmn.Exit(err.Error())
 	}
 	return app
+}
+
+// 注册mappers
+func (app *QOSApp) RegisterMappers() {
+	//parameter mapper
+	paramsMapper := params.NewMapper()
+	//config params
+	paramsMapper.RegisterParamSet(&stake.Params{}, &distribution.Params{}, &gov.Params{})
+	app.RegisterMapper(paramsMapper)
+
+	// 账户mapper
+	app.RegisterAccountProto(types.ProtoQOSAccount)
+
+	// QCP mapper
+	// qbase 默认已注入
+
+	// QSC mapper
+	app.RegisterMapper(qsc.NewMapper())
+
+	// 预授权mapper
+	app.RegisterMapper(approve.NewMapper)
+
+	// Staking mapper
+	stakeMapper := stake.NewMapper()
+	stakeMapper.SetHooks(distribution.NewStakingHooks())
+	app.RegisterMapper(stakeMapper)
+
+	// Mint mapper
+	app.RegisterMapper(mint.NewMapper())
+
+	//distribution mapper
+	app.RegisterMapper(distribution.NewMapper())
+
+	//gov mapper
+	app.RegisterMapper(gov.NewMapper())
+
+	//guardian mapper
+	app.RegisterMapper(guardian.NewMapper())
+
 }
 
 func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
@@ -235,12 +224,96 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 
 // prepare for fresh start at zero height
 func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
+	/*  reset staking && distribution */
+	sm := stake.GetMapper(ctx)
+	dm := distribution.GetMapper(ctx)
+	am := baseabci.GetAccountMapper(ctx)
+	// close all active validators
+	var validators []stake.Validator
+	var delegations []stake.Delegation
+	var vals = make(map[string]stake.Validator)
+	sm.IterateValidators(func(validator stake.Validator) {
+		val := validator.GetValidatorAddress()
+		vals[validator.GetValidatorAddress().String()] = validator
+		sm.IterateDelegationsValDeleAddr(val, func(val btypes.Address, del btypes.Address) {
+			delegation, exists := sm.GetDelegationInfo(del, val)
+			if !exists {
+				panic(fmt.Sprintf("delegation from %s to %s not exists", del, val))
+			}
+			delegations = append(delegations, delegation)
+		})
+		if validator.Status == stake.Active {
+			sm.MakeValidatorInactive(val, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), stake.Revoke)
+		}
+	})
+	// close all inactive validators
+	stake.CloseInactiveValidator(ctx, -1)
+	for _, delegation := range delegations {
+		var info distribution.DelegatorEarningsStartInfo
+		dm.Get(distribution.BuildDelegatorEarningStartInfoKey(delegation.ValidatorAddr, delegation.DelegatorAddr), &info)
+		delegator := am.GetAccount(delegation.DelegatorAddr).(*types.QOSAccount)
+		delegator.PlusQOS(info.HistoricalRewardFees.NilToZero())
+		am.SetAccount(delegator)
+		dm.MinusValidatorEcoFeePool(delegation.ValidatorAddr, info.HistoricalRewardFees.NilToZero())
+	}
+	// return unbond tokens
+	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + ctx.BlockHeight()); h++ {
+		prePrefix := distribution.BuildUnbondingDelegationByHeightPrefix(uint64(h))
 
-	stake.PrepForZeroHeightGenesis(ctx)
+		iter := btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
+		defer iter.Close()
 
-	mint.PrepForZeroHeightGenesis(ctx)
+		for ; iter.Valid(); iter.Next() {
+			k := iter.Key()
+			dm.Del(k)
 
-	gov.PrepForZeroHeightGenesis(ctx)
+			var amount uint64
+			dm.BaseMapper.DecodeObject(iter.Value(), &amount)
+
+			_, delAddr := distribution.GetUnbondingDelegationHeightAddress(k)
+
+			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
+			delegator.PlusQOS(btypes.NewInt(int64(amount)))
+			am.SetAccount(delegator)
+		}
+	}
+	dm.DeleteDelegatorsIncomeHeight()
+	// reinitialize validators
+	for _, validator := range validators {
+		val := validator.GetValidatorAddress()
+		sm.DelValidatorVoteInfo(val)
+		sm.ClearValidatorVoteInfoInWindow(val)
+		dm.DeleteValidatorPeriodSummaryInfo(val)
+		dm.InitValidatorPeriodSummaryInfo(val)
+		sm.CreateValidator(validator)
+	}
+	// reset block height
+	ctx = ctx.WithBlockHeight(0)
+	// recreate delegations
+	for _, delegation := range delegations {
+		dm.DelDelegatorEarningStartInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
+		sm.DelDelegationInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
+		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, vals[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound))
+	}
+
+	/* reset mint */
+	mint.GetMapper(ctx).SetFirstBlockTime(0)
+
+	/* reset gov */
+	mapper := gov.GetMapper(ctx)
+	proposals := mapper.GetProposalsFiltered(ctx, nil, nil, gov.StatusDepositPeriod, 0)
+	for _, proposal := range proposals {
+		proposalID := proposal.ProposalID
+		mapper.RefundDeposits(ctx, proposalID, false)
+		mapper.DeleteProposal(proposalID)
+	}
+	proposals = mapper.GetProposalsFiltered(ctx, nil, nil, gov.StatusVotingPeriod, 0)
+	for _, proposal := range proposals {
+		proposalID := proposal.ProposalID
+		mapper.RefundDeposits(ctx, proposalID, false)
+		mapper.DeleteVotes(proposalID)
+		mapper.DeleteProposal(proposalID)
+	}
 }
 
 // gas
@@ -252,13 +325,13 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUse
 	}
 
 	// tax free for tx send by guardian
-	if _, exists := guardian.GetGuardianMapper(ctx).GetGuardian(payer); exists {
+	if _, exists := guardian.GetMapper(ctx).GetGuardian(payer); exists {
 		app.Logger.Info("tx send by guardian: %s", payer.String())
 		return
 	}
 
-	distributionMapper := ecomapper.GetDistributionMapper(ctx)
-	uint := distributionMapper.GetParams(ctx).GasPerUnitCost
+	dm := distribution.GetMapper(ctx)
+	uint := dm.GetParams(ctx).GasPerUnitCost
 	gasFeeUsed := btypes.NewInt(int64(gasUsed / uint))
 	gasUsed = gasUsed / uint * uint
 
@@ -276,7 +349,7 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUse
 		app.Logger.Info(fmt.Sprintf("cost %d QOS from %s for gas", gasFeeUsed.Int64(), payer))
 		accountMapper.SetAccount(account)
 
-		distributionMapper.AddPreDistributionQOS(gasFeeUsed)
+		dm.AddPreDistributionQOS(gasFeeUsed)
 	}
 
 	return
@@ -297,13 +370,13 @@ func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
 		preDistributionRemainTotal = preDistributionRemainTotal.Add(data.EcoFeePool.PreDistributeRemainTotalFee)
 	}
 	qosUnbond := btypes.ZeroInt()
-	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
+	for _, unbond := range state.DistributionData.DelegatorsUnbondInfo {
 		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
 	}
 
 	govDeposit := btypes.ZeroInt()
 	for _, proposal := range state.GovData.Proposals {
-		if proposal.Proposal.Status != gtypes.StatusPassed && proposal.Proposal.Status != gtypes.StatusRejected {
+		if proposal.Proposal.Status != gov.StatusPassed && proposal.Proposal.Status != gov.StatusRejected {
 			govDeposit = govDeposit.Add(btypes.NewInt(int64(proposal.Proposal.TotalDeposit)))
 		}
 	}

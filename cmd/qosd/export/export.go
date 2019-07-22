@@ -99,7 +99,7 @@ func ExportCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().Int64(flagHeight, -1, "Export state from a particular height (-1 means latest height)")
 	cmd.Flags().Bool(flagForZeroHeight, false, "Export state to start at height zero (perform preproccessing)")
 	cmd.Flags().String(flagOutput, types.DefaultNodeHome, "directory for exported json file, default $HOME/.qosd")
