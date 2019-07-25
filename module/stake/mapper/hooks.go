@@ -26,8 +26,8 @@ func (mapper *Mapper) AfterDelegationCreated(ctx context.Context, val btypes.Add
 	}
 }
 
-func (mapper *Mapper) BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateTokes uint64) {
+func (mapper *Mapper) BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateTokes uint64, reDelegate bool) {
 	if mapper.hooks != nil {
-		mapper.hooks.BeforeDelegationModified(ctx, val, del, updateTokes)
+		mapper.hooks.BeforeDelegationModified(ctx, val, del, updateTokes, reDelegate)
 	}
 }

@@ -77,7 +77,7 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo) {
 	} else {
 		delegation.Amount += info.Amount
 		delegation.IsCompound = info.IsCompound
-		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount)
+		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount, false)
 		mapper.SetDelegationInfo(delegation)
 	}
 
@@ -85,14 +85,14 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo) {
 
 func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens uint64) {
 	info.Amount = info.Amount - tokens
-	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount)
+	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount, false)
 	mapper.SetDelegationInfo(info)
 }
 
 func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.ReDelegateInfo) {
 	// update origin delegation
 	delegation.Amount -= info.Amount
-	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
+	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount, true)
 	mapper.SetDelegationInfo(delegation)
 
 	// save new delegation
@@ -103,7 +103,7 @@ func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.Delegatio
 	} else {
 		reDelegation.Amount += info.Amount
 		reDelegation.IsCompound = info.IsCompound
-		mapper.BeforeDelegationModified(ctx, reDelegation.ValidatorAddr, reDelegation.DelegatorAddr, reDelegation.Amount)
+		mapper.BeforeDelegationModified(ctx, reDelegation.ValidatorAddr, reDelegation.DelegatorAddr, reDelegation.Amount, false)
 		mapper.SetDelegationInfo(reDelegation)
 	}
 }
