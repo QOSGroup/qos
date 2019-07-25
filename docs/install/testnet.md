@@ -3,6 +3,10 @@
 QOS测试网络以十二星座命名，我们在*2018年12月26日*启动第一个测试网络，以摩羯座命名：`capricorn-1000`。
 最新的测试网信息请查看[qos-testnets](https://github.com/QOSGroup/qos-testnets)。
 
+**视频教程**(v0.0.4参考视频，最新版有些许差异)：
+- [油管](https://youtu.be/-eFdx0rIPb4)
+- [优酷](http://v.youku.com/v_show/id_XNDA4NTA1MDM1Ng==.html)
+
 按下面步骤，可加入我们的测试网络：
 
 ## 安装 QOS

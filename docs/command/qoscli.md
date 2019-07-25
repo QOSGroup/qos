@@ -423,41 +423,13 @@ $ qoscli query store --path /store/acc/subspace --data account --indent
 ]
 ```
 
-## 交易（tx）
-
-QOS支持以下几种交易类型：
-
-* `qoscli tx transfer`         [转账](#转账（transfer）)
-* `qoscli tx create-approve`   [创建预授权](#创建预授权)
-* `qoscli tx increase-approve` [增加预授权](#增加预授权)
-* `qoscli tx decrease-approve` [减少预授权](#减少预授权)
-* `qoscli tx use-approve`      [使用预授权](#使用预授权)
-* `qoscli tx cancel-approve`   [取消预授权](#取消预授权)
-* `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
-* `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
-* `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
-* `qoscli tx create-validator` [成为验证节点](#成为验证节点)
-* `qoscli tx create-validator` [编辑验证节点](#编辑验证节点)
-* `qoscli tx revoke-validator` [撤销验证节点](#撤销验证节点)
-* `qoscli tx active-validator` [激活验证节点](#激活验证节点)
-* `qoscli tx delegate`         [委托](#委托)
-* `qoscli tx modify-compound`  [修改收益复投方式](#修改收益复投方式)
-* `qoscli tx unbond`           [解除委托](#解除委托)
-* `qoscli tx redelegate`       [变更委托验证节点](#变更委托验证节点)
-* `qoscli tx submit-proposal`  [提交提议](#提交提议)
-* `qoscli tx deposit`          [提议抵押](#提议抵押)
-* `qoscli tx vote`             [提议投票](#提议投票)
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
-
-分为[转账](#转账（transfer）)、[预授权](#预授权（approve）)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
-
+### 交易（tx query）
 支持的查询命令：
 
 * `qoscli query tx`            [根据交易hash查询交易信息](#根据交易hash查询交易信息)     
 * `qoscli query txs`           [根据标签查找交易](#根据标签查找交易)
 
-### 根据交易hash查询交易信息
+#### 根据交易hash查询交易信息
 执行交易后会返回交易hash，通过交易hash可查询交易详细信息。
 
 根据hash `f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa12385` 查询交易信息：
@@ -522,7 +494,7 @@ $ qoscli query tx f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa123
 }
 ```
 
-### 根据标签查找交易
+#### 根据标签查找交易
 执行交易后会同时会返回QOS为交易所打tag，通过交易tag可查询交易信息。
 
 根据`approve-from`=`address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk`查询预授权交易信息：
@@ -591,6 +563,35 @@ $ qoscli query txs --tag "approve-from='address1s348wvf49dfy64e6wafc90lcavp4lrd6
 ```
 
 更多交易Tag请查阅[index](../spec/indexing.md)
+
+## 交易（tx）
+
+QOS支持以下几种交易类型：
+
+* `qoscli tx transfer`         [转账](#转账（transfer）)
+* `qoscli tx create-approve`   [创建预授权](#创建预授权)
+* `qoscli tx increase-approve` [增加预授权](#增加预授权)
+* `qoscli tx decrease-approve` [减少预授权](#减少预授权)
+* `qoscli tx use-approve`      [使用预授权](#使用预授权)
+* `qoscli tx cancel-approve`   [取消预授权](#取消预授权)
+* `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
+* `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
+* `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
+* `qoscli tx create-validator` [成为验证节点](#成为验证节点)
+* `qoscli tx create-validator` [编辑验证节点](#编辑验证节点)
+* `qoscli tx revoke-validator` [撤销验证节点](#撤销验证节点)
+* `qoscli tx active-validator` [激活验证节点](#激活验证节点)
+* `qoscli tx delegate`         [委托](#委托)
+* `qoscli tx modify-compound`  [修改收益复投方式](#修改收益复投方式)
+* `qoscli tx unbond`           [解除委托](#解除委托)
+* `qoscli tx redelegate`       [变更委托验证节点](#变更委托验证节点)
+* `qoscli tx submit-proposal`  [提交提议](#提交提议)
+* `qoscli tx deposit`          [提议抵押](#提议抵押)
+* `qoscli tx vote`             [提议投票](#提议投票)
+* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
+* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
+
+分为[转账](#转账（transfer）)、[预授权](#预授权（approve）)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
 
 ### 转账（transfer）
 

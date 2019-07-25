@@ -3,6 +3,10 @@
 QOS testnet is named after 12 constellations, we use Capricorn to start the first testnet named capricorn-1000 at *Dec 26, 2018*.
 The latest information of QOS testnet please see [qos-testnets](https://github.com/QOSGroup/qos-testnets).
 
+**Video**(v0.0.4)：
+- [youtube](https://youtu.be/-eFdx0rIPb4)
+- [youku](http://v.youku.com/v_show/id_XNDA4NTA1MDM1Ng==.html)
+
 To join the QOS testnet, please follow the steps:
 
 ## Install QOS on Your Server
