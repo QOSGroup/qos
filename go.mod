@@ -4,13 +4,13 @@ module github.com/QOSGroup/qos
 
 require (
 	github.com/QOSGroup/kepler v0.6.0
-	github.com/QOSGroup/qbase v0.2.1
+	github.com/QOSGroup/qbase v0.2.2-0.20190725073544-9c9f4bb8ffbf
 	github.com/pkg/errors v0.8.0
 
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/viper v1.3.1
 	github.com/stretchr/testify v1.3.0
 	github.com/tendermint/go-amino v0.15.0
-	github.com/tendermint/tendermint v0.31.5
+	github.com/tendermint/tendermint v0.32.0
 
 )

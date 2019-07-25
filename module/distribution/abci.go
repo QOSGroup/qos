@@ -1,49 +1,42 @@
 package distribution
 
 import (
+	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/eco"
-	"github.com/QOSGroup/qos/module/eco/mapper"
-	"github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/distribution/mapper"
+	"github.com/QOSGroup/qos/module/distribution/types"
+	"github.com/QOSGroup/qos/module/stake"
 	qtypes "github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
-//TODO: 分配时的精度问题
-
-//beginblocker根据Vote信息进行QOS分配: mint+tx fee
+//beginBlocker根据Vote信息进行QOS分配: mint+tx fee
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
-
-	e := eco.GetEco(ctx)
-	log := e.Context.Logger()
+	sm := stake.GetMapper(ctx)
 
 	totalPower, denomTotalPower := int64(0), int64(0)
-	validators := make([]types.Validator, 0, len(req.LastCommitInfo.GetVotes()))
+	validators := make([]stake.Validator, 0, len(req.LastCommitInfo.GetVotes()))
 
 	//获得所有符合分配条件的validator(投票 + active)
 	for _, voteInfo := range req.LastCommitInfo.GetVotes() {
 		totalPower += voteInfo.Validator.Power
 		if !voteInfo.SignedLastBlock {
-			log.Debug("distribution skip", "validatorNotSigned", voteInfo.Validator.Address)
 			continue
 		}
 
 		valAddr := voteInfo.Validator.Address
 
-		v, exsits := e.ValidatorMapper.GetValidator(valAddr)
-		if !(exsits && v.IsActive()) {
-			log.Debug("distribution skip", "validatorNotExsitsorNotActive", voteInfo.Validator.Address)
+		v, exists := sm.GetValidator(valAddr)
+		if !(exists && v.IsActive()) {
 			continue
 		}
 
-		denomTotalPower += int64(v.BondTokens)
+		denomTotalPower += int64(v.GetBondTokens())
 		validators = append(validators, v)
 	}
 
-	log.Debug("distribution begin", "totalPower", totalPower, "denomTotalPower", denomTotalPower, "validators", validators)
-
-	distributionMapper := mapper.GetDistributionMapper(ctx)
+	distributionMapper := mapper.GetMapper(ctx)
 
 	if ctx.BlockHeight() > 1 {
 		previousProposer := distributionMapper.GetLastBlockProposer()
@@ -54,35 +47,50 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	distributionMapper.SetLastBlockProposer(consAddr)
 }
 
-//endblocker对delegator的收益进行发放,并决定是否有下一次收益
+//对delegator的收益进行发放,并决定是否有下一次收益
+//返还到期unbond tokens
 func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
-
 	height := uint64(req.Height)
-	e := eco.GetEco(ctx)
-	log := e.Context.Logger()
+	dm := mapper.GetMapper(ctx)
+	am := baseabci.GetAccountMapper(ctx)
 
 	prefixKey := types.BuildDelegatorPeriodIncomePrefixKey(height)
-
-	iter := btypes.KVStorePrefixIterator(e.DistributionMapper.GetStore(), prefixKey)
+	iter := btypes.KVStorePrefixIterator(dm.GetStore(), prefixKey)
 	validatorMap := make(map[string][]btypes.Address)
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
-		valAddr, deleAddr, _ := types.GetDelegatorPeriodIncomeHeightAddr(key)
+		valAddr, delAddr, _ := types.GetDelegatorPeriodIncomeHeightAddr(key)
 		mapKey := valAddr.String()
-		validatorMap[mapKey] = append(validatorMap[mapKey], deleAddr)
-		e.DistributionMapper.Del(key) //删除当前高度收益发放信息
+		validatorMap[mapKey] = append(validatorMap[mapKey], delAddr)
+		dm.Del(key) //删除当前高度收益发放信息
 	}
 	iter.Close()
 
-	params := e.DistributionMapper.GetParams(ctx)
+	params := dm.GetParams(ctx)
 	for k, delegators := range validatorMap {
 		valAddr, _ := btypes.GetAddrFromBech32(k)
-		distributeEarningByValidator(e, valAddr, delegators, height, params.DelegatorsIncomePeriodHeight)
+		distributeEarningByValidator(ctx, valAddr, delegators, height, params.DelegatorsIncomePeriodHeight)
 
 		//获取validator委托人的最小计费点周期, 删除validator历史计费点周期
-		minPeriod := e.DistributionMapper.GetValidatorMinPeriodFromDelegators(valAddr)
-		log.Debug("distribution end. remove validator history period", "validator", valAddr, "minPeriod", minPeriod)
-		e.DistributionMapper.ClearValidatorHistoryPeroid(valAddr, minPeriod)
+		minPeriod := dm.GetValidatorMinPeriodFromDelegators(valAddr)
+		dm.ClearValidatorHistoryPeroid(valAddr, minPeriod)
+	}
+
+	//unbond的token返还至delegator账户中
+	prePrefix := types.BuildUnbondingDelegationByHeightPrefix(height)
+	iter = btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		k := iter.Key()
+		dm.Del(k)
+
+		var amount uint64
+		dm.BaseMapper.DecodeObject(iter.Value(), &amount)
+
+		_, deleAddr := types.GetUnbondingDelegationHeightAddress(k)
+		delegator := am.GetAccount(deleAddr).(*qtypes.QOSAccount)
+		delegator.PlusQOS(btypes.NewInt(int64(amount)))
+		am.SetAccount(delegator)
 	}
 
 }
@@ -95,30 +103,42 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 //      1. 若不复投,则收益直接返还至delegator账户,生成下一周期收益发放信息
 //      2. 若复投, 则更新委托信息
 //5.  更新validator totalpower信息
-func distributeEarningByValidator(e eco.Eco, valAddr btypes.Address, delegators []btypes.Address, blockHeight, periodHeightParam uint64) {
+func distributeEarningByValidator(ctx context.Context, valAddr btypes.Address, delegators []btypes.Address, blockHeight, periodHeightParam uint64) {
 
-	log := e.Context.Logger()
+	dm := mapper.GetMapper(ctx)
+	sm := stake.GetMapper(ctx)
+	am := baseabci.GetAccountMapper(ctx)
 
 	m := make(map[string]struct{})
 	addCompoundTokens := uint64(0)
 
 	//0. 获取validator
-	validator, exsits := e.ValidatorMapper.GetValidator(valAddr)
-	if !exsits {
-		log.Debug("distribute validator not exsits", "validator", valAddr.String())
+	validator, exists := sm.GetValidator(valAddr)
+	if !exists {
 		//validator不存在时, 获取delegator当前收益信息, 将收益直接返还账户中,并删除当前delegator信息
-		for _, deleAddr := range delegators {
-			if info, _exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, deleAddr); _exsits {
-				eco.BonusToDelegator(e.Context, deleAddr, valAddr, info.HistoricalRewardFees.NilToZero(), false)
-				e.DistributionMapper.DelDelegatorEarningStartInfo(valAddr, deleAddr)
-				e.DelegationMapper.DelDelegationInfo(deleAddr, valAddr)
+		for _, delAddr := range delegators {
+			if info, exists := dm.GetDelegatorEarningStartInfo(valAddr, delAddr); exists {
+				delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
+				delegator.PlusQOS(info.HistoricalRewardFees.NilToZero())
+				am.SetAccount(delegator)
+				dm.MinusValidatorEcoFeePool(valAddr, info.HistoricalRewardFees.NilToZero())
+				ctx.EventManager().EmitEvent(
+					btypes.NewEvent(
+						types.EventTypeDelegatorReward,
+						btypes.NewAttribute(types.AttributeKeyTokens, info.HistoricalRewardFees.NilToZero().String()),
+						btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+						btypes.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
+					),
+				)
+				dm.DelDelegatorEarningStartInfo(valAddr, delAddr)
+				sm.DelDelegationInfo(delAddr, valAddr)
 			}
 		}
 		return
 	}
 
 	//1. validator汇总收益增加计费周期
-	endPeriod := e.DistributionMapper.IncrementValidatorPeriod(validator)
+	endPeriod := dm.IncrementValidatorPeriod(validator)
 
 	//2. 处理delegator收益信息
 	for _, deleAddr := range delegators {
@@ -127,67 +147,103 @@ func distributeEarningByValidator(e eco.Eco, valAddr btypes.Address, delegators 
 		}
 
 		m[deleAddr.String()] = struct{}{}
-		addTokens := distributeDelegatorEarning(e, validator, endPeriod, deleAddr, blockHeight, periodHeightParam)
+		addTokens := distributeDelegatorEarning(ctx, validator, endPeriod, deleAddr, blockHeight, periodHeightParam)
 		addCompoundTokens = addCompoundTokens + addTokens
 	}
 
 	if addCompoundTokens > 0 {
 		//更新validator bondTokens
-		updatedTokens := validator.BondTokens + addCompoundTokens
-		log.Debug("validator incr tokens", "validator", valAddr.String(), "addCompoundTokens", addCompoundTokens, "updatedTokens", updatedTokens)
-		e.ValidatorMapper.ChangeValidatorBondTokens(validator, updatedTokens)
+		updatedTokens := validator.GetBondTokens() + addCompoundTokens
+		sm.ChangeValidatorBondTokens(validator, updatedTokens)
 	}
 }
 
-func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod uint64, deleAddr btypes.Address, blockHeight, periodHeightParam uint64) uint64 {
+func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, endPeriod uint64, delAddr btypes.Address, blockHeight, periodHeightParam uint64) uint64 {
+	sm := stake.GetMapper(ctx)
+	dm := mapper.GetMapper(ctx)
+	am := baseabci.GetAccountMapper(ctx)
 
 	valAddr := validator.GetValidatorAddress()
-
-	log := e.Context.Logger()
-	log.Debug("distribute delegator earning", "delegator", deleAddr.String(), "validator", valAddr.String(), "endPeriod", endPeriod, "height", blockHeight)
-
-	rewards, err := e.DistributionMapper.CalculateDelegatorPeriodRewards(valAddr, deleAddr, endPeriod, blockHeight)
+	rewards, err := dm.CalculateDelegatorPeriodRewards(valAddr, delAddr, endPeriod, blockHeight)
 	if err != nil {
-		log.Error("distribute delegator earning error", "delegator", deleAddr.String(), "error", err.Error())
 		return 0
 	}
 
-	delegationInfo, exsits := e.DelegationMapper.GetDelegationInfo(deleAddr, valAddr)
+	delegationInfo, exists := sm.GetDelegationInfo(delAddr, valAddr)
 
-	if !exsits || delegationInfo.Amount == 0 {
+	if !exists || delegationInfo.Amount == 0 {
 		//已无委托关系,收益直接分配到delegator账户中
-		log.Debug("delegation not exsits. rewards to account", "rewards", rewards)
-		eco.BonusToDelegator(e.Context, deleAddr, valAddr, rewards.NilToZero(), false)
-		e.DistributionMapper.DelDelegatorEarningStartInfo(valAddr, deleAddr)
-		e.DelegationMapper.DelDelegationInfo(deleAddr, valAddr)
+		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
+		delegator.PlusQOS(rewards.NilToZero())
+		am.SetAccount(delegator)
+		dm.MinusValidatorEcoFeePool(valAddr, rewards.NilToZero())
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				types.EventTypeDelegatorReward,
+				btypes.NewAttribute(types.AttributeKeyTokens, rewards.NilToZero().String()),
+				btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+				btypes.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
+			),
+		)
+		dm.DelDelegatorEarningStartInfo(valAddr, delAddr)
+		sm.DelDelegationInfo(delAddr, valAddr)
 		return 0
 	}
 
 	//增加下一周期的收益发放信息
 	nextIncomeHeight := blockHeight + periodHeightParam
-	e.DistributionMapper.Set(types.BuildDelegatorPeriodIncomeKey(valAddr, deleAddr, nextIncomeHeight), true)
+	dm.Set(types.BuildDelegatorPeriodIncomeKey(valAddr, delAddr, nextIncomeHeight), true)
 
 	//非复投,收益直接分配到delegator账户中
 	if !delegationInfo.IsCompound {
-		log.Debug("delegation is not compound. rewards to delegator account", "rewards", rewards)
-		eco.BonusToDelegator(e.Context, deleAddr, valAddr, rewards.NilToZero(), false)
+		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
+		delegator.PlusQOS(rewards.NilToZero())
+		am.SetAccount(delegator)
+		dm.MinusValidatorEcoFeePool(valAddr, rewards.NilToZero())
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				types.EventTypeDelegatorReward,
+				btypes.NewAttribute(types.AttributeKeyTokens, rewards.String()),
+				btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+				btypes.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
+			),
+		)
 		return 0
 	}
 
 	//复投
 	addTokens := uint64(rewards.Int64())
-	log.Debug("delegation is compound. rewards to delegation tokens", "addTokens", addTokens)
 
 	//更新delegation委托信息,更新delegate当前收益信息
-	info, _ := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
+	info, _ := dm.GetDelegatorEarningStartInfo(valAddr, delAddr)
 	info.BondToken = info.BondToken + addTokens
-	e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr), info)
+	dm.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, delAddr), info)
 
 	delegationInfo.Amount = delegationInfo.Amount + addTokens
-	e.DelegationMapper.SetDelegationInfo(delegationInfo)
+	sm.SetDelegationInfo(delegationInfo)
 
 	//复投时validator收益池处理
-	eco.BonusToDelegator(e.Context, deleAddr, valAddr, rewards.NilToZero(), true)
+	delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
+	delegator.PlusQOS(rewards.NilToZero())
+	am.SetAccount(delegator)
+	dm.MinusValidatorEcoFeePool(valAddr, rewards.NilToZero())
+	ctx.EventManager().EmitEvent(
+		btypes.NewEvent(
+			types.EventTypeDelegatorReward,
+			btypes.NewAttribute(types.AttributeKeyTokens, rewards.String()),
+			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+			btypes.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
+		),
+	)
+
+	ctx.EventManager().EmitEvent(
+		btypes.NewEvent(
+			types.EventTypeDelegate,
+			btypes.NewAttribute(types.AttributeKeyTokens, rewards.String()),
+			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+			btypes.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
+		),
+	)
 
 	return addTokens
 }
@@ -200,32 +256,34 @@ func distributeDelegatorEarning(e eco.Eco, validator types.Validator, endPeriod 
 //        * 平分金额Fee由validator,delegator根据各自绑定的stake平均分配
 // 4.  validator的proposer奖励,佣金奖励 均按周期发放
 //
-func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPower int64, validators []types.Validator) {
+func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPower int64, validators []stake.Validator) {
+	dm := mapper.GetMapper(ctx)
+	sm := stake.GetMapper(ctx)
 
-	e := eco.GetEco(ctx)
-	log := ctx.Logger()
-
-	params := e.DistributionMapper.GetParams(ctx)
+	params := dm.GetParams(ctx)
 
 	//获取待分配的QOS总量
-	totalAmount := e.DistributionMapper.GetPreDistributionQOS()
+	totalAmount := dm.GetPreDistributionQOS()
 	remainQOS := totalAmount
-	e.DistributionMapper.ClearPreDistributionQOS()
+	dm.ClearPreDistributionQOS()
 
-	log.Debug("distribution total rewards", "total rewards", totalAmount, "height", ctx.BlockHeight())
 	//proposer奖励,直接归属proposer
 	proposerRewards := params.ProposerRewardRate.MultiBigInt(totalAmount)
-	proposerValidater, validatorExsits := e.ValidatorMapper.GetValidator(proposerAddr)
-	proposerInfo, proposerInfoExsits := e.DistributionMapper.GetDelegatorEarningStartInfo(proposerAddr, proposerValidater.Owner)
+	proposerValidater, validatorExsits := sm.GetValidator(proposerAddr)
+	proposerInfo, proposerInfoExsits := dm.GetDelegatorEarningStartInfo(proposerAddr, proposerValidater.Owner)
 
 	if validatorExsits && proposerInfoExsits {
-		log.Debug("distribution reward proposer", "proposer", proposerAddr.String(), "owner", proposerValidater.Owner.String(), "rewards", proposerRewards)
 		proposerInfo.HistoricalRewardFees = proposerInfo.HistoricalRewardFees.Add(proposerRewards)
 		remainQOS = remainQOS.Sub(proposerRewards)
-		e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), proposerInfo)
-		e.DistributionMapper.AddValidatorEcoFeePool(proposerAddr, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
-	} else {
-		log.Error("distribution proposer validator or earn info not exsits", "validator", proposerAddr, "validatorExsits", validatorExsits, "proposerInfoExsits", proposerInfoExsits)
+		dm.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), proposerInfo)
+		dm.AddValidatorEcoFeePool(proposerAddr, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				types.EventTypeProposerReward,
+				btypes.NewAttribute(types.AttributeKeyTokens, proposerRewards.String()),
+				btypes.NewAttribute(types.AttributeKeyValidator, proposerAddr.String()),
+			),
+		)
 	}
 
 	//vote奖励(漏签和inactive的validator不分配奖励)
@@ -234,44 +292,54 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 		votePowerFrac := qtypes.NewFraction(int64(validator.BondTokens), denomTotalPower)
 		rewards := votePowerFrac.Mul(votePercent).MultiBigInt(totalAmount)
 		remainQOS = remainQOS.Sub(rewards)
-		rewardToValidator(e, validator, rewards, params.ValidatorCommissionRate)
+		rewardToValidator(ctx, validator, rewards, params.ValidatorCommissionRate)
 	}
 
 	//社区奖励
-	communityFeePool := e.DistributionMapper.GetCommunityFeePool()
+	communityFeePool := dm.GetCommunityFeePool()
 	communityFeePool = communityFeePool.Add(remainQOS)
-	log.Debug("distribution reward community", "rewards", remainQOS)
-	e.DistributionMapper.SetCommunityFeePool(communityFeePool)
+	dm.SetCommunityFeePool(communityFeePool)
+	ctx.EventManager().EmitEvent(
+		btypes.NewEvent(
+			types.EventTypeCommunity,
+			btypes.NewAttribute(types.AttributeKeyTokens, communityFeePool.String()),
+		),
+	)
 }
 
-func rewardToValidator(e eco.Eco, validator types.Validator, rewards btypes.BigInt, commissionRate qtypes.Fraction) {
-
-	log := e.Context.Logger()
+func rewardToValidator(ctx context.Context, validator stake.Validator, rewards btypes.BigInt, commissionRate qtypes.Fraction) {
+	dm := mapper.GetMapper(ctx)
 
 	commissionReward := commissionRate.MultiBigInt(rewards)
 	sharedReward := rewards.Sub(commissionReward)
 
 	valAddr := validator.GetValidatorAddress()
-	e.DistributionMapper.AddValidatorEcoFeePool(valAddr, btypes.ZeroInt(), commissionReward, sharedReward)
+	dm.AddValidatorEcoFeePool(valAddr, btypes.ZeroInt(), commissionReward, sharedReward)
 
 	//validator 佣金收益
-	if info, exsits := e.DistributionMapper.GetDelegatorEarningStartInfo(valAddr, validator.Owner); exsits {
+	if info, exists := dm.GetDelegatorEarningStartInfo(valAddr, validator.Owner); exists {
 		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(commissionReward)
-		e.DistributionMapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Owner), info)
+		dm.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Owner), info)
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				types.EventTypeCommission,
+				btypes.NewAttribute(types.AttributeKeyTokens, commissionReward.String()),
+				btypes.NewAttribute(types.AttributeKeyValidator, validator.GetValidatorAddress().String()),
+			),
+		)
 	}
 
 	//delegator 共同收益
-	if vcps, exsits := e.DistributionMapper.GetValidatorCurrentPeriodSummary(valAddr); exsits {
+	if vcps, exists := dm.GetValidatorCurrentPeriodSummary(valAddr); exists {
 		vcps.Fees = vcps.Fees.Add(sharedReward)
-		e.DistributionMapper.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), vcps)
+		dm.Set(types.BuildValidatorCurrentPeriodSummaryKey(valAddr), vcps)
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				types.EventTypeDelegatorRewards,
+				btypes.NewAttribute(types.AttributeKeyTokens, sharedReward.String()),
+				btypes.NewAttribute(types.AttributeKeyValidator, validator.GetValidatorAddress().String()),
+			),
+		)
 	}
-
-	log.Debug("distribution reward validator", "height", e.Context.BlockHeight(),
-		"validator", valAddr.String(),
-		"power", validator.BondTokens,
-		"totalReward", rewards,
-		"commissionReward", commissionReward,
-		"sharedReward", sharedReward,
-	)
 
 }

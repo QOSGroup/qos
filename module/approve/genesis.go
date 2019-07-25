@@ -2,21 +2,12 @@ package approve
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	approvetypes "github.com/QOSGroup/qos/module/approve/types"
+	"github.com/QOSGroup/qos/module/approve/mapper"
+	"github.com/QOSGroup/qos/module/approve/types"
 )
 
-type GenesisState struct {
-	Approves []approvetypes.Approve `json:"approves"`
-}
-
-func NewGenesisState(approves []approvetypes.Approve) GenesisState {
-	return GenesisState{
-		approves,
-	}
-}
-
-func InitGenesis(ctx context.Context, data GenesisState) {
-	approveMapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
+func InitGenesis(ctx context.Context, data types.GenesisState) {
+	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
 	for _, approve := range data.Approves {
 		if approve.IsPositive() {
 			approveMapper.SaveApprove(approve)
@@ -24,7 +15,7 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	}
 }
 
-func ExportGenesis(ctx context.Context) GenesisState {
-	approveMapper := ctx.Mapper(ApproveMapperName).(*ApproveMapper)
-	return NewGenesisState(approveMapper.GetApproves())
+func ExportGenesis(ctx context.Context) types.GenesisState {
+	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	return types.NewGenesisState(approveMapper.GetApproves())
 }

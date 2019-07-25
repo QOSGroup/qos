@@ -3,18 +3,19 @@ package mint
 import (
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	ecomapper "github.com/QOSGroup/qos/module/eco/mapper"
+	"github.com/QOSGroup/qos/module/distribution"
+	"github.com/QOSGroup/qos/module/mint/mapper"
+	"github.com/QOSGroup/qos/module/mint/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
-	log := ctx.Logger()
 	height := uint64(ctx.BlockHeight())
 	currentBlockTime := ctx.BlockHeader().Time.UTC().Unix()
 
-	mintMapper := ecomapper.GetMintMapper(ctx)
+	mintMapper := mapper.GetMapper(ctx)
 	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase(uint64(currentBlockTime))
 	if exist == false || currentInflationPhrase.TotalAmount == 0 {
 		return
@@ -46,9 +47,16 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
 		if rewardPerBlock > 0 {
 			mintMapper.MintQOS(uint64(currentBlockTime), rewardPerBlock)
-			log.Debug("block mint", "height", height, "mint", rewardPerBlock)
-			distributionMapper := ecomapper.GetDistributionMapper(ctx)
+			distributionMapper := distribution.GetMapper(ctx)
 			distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
+
+			ctx.EventManager().EmitEvent(
+				btypes.NewEvent(
+					types.EventTypeMint,
+					btypes.NewAttribute(types.AttributeKeyHeight, string(height)),
+					btypes.NewAttribute(types.AttributeKeyTokens, string(rewardPerBlock)),
+				),
+			)
 		}
 	}
 }

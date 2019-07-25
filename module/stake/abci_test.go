@@ -2,15 +2,18 @@ package stake
 
 import (
 	"encoding/binary"
+	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qos/module/params"
-	"github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qos/module/stake/mapper"
+	"github.com/QOSGroup/qos/module/stake/txs"
+	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
-	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 
@@ -18,39 +21,37 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 
-	stakemapper "github.com/QOSGroup/qos/module/eco/mapper"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
 
 func TestValidatorMapper(t *testing.T) {
 
 	ctx := defaultContext()
-	validatorMapper := stakemapper.GetValidatorMapper(ctx)
+	validatorMapper := mapper.GetMapper(ctx)
 
-	validator := staketypes.Validator{
-		Description:     staketypes.Description{Moniker: "test"},
+	validator := types.Validator{
+		Description:     types.Description{Moniker: "test"},
 		Owner:           btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
 		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
-		Status:          staketypes.Active,
+		Status:          types.Active,
 		MinPeriod:       0,
 		BondHeight:      1,
 	}
 
 	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
-	key := staketypes.BuildValidatorKey(valAddr)
+	key := types.BuildValidatorKey(valAddr)
 	validatorMapper.Set(key, validator)
 
-	v, exsits := validatorMapper.GetValidator(valAddr)
-	require.Equal(t, true, exsits)
-	require.Equal(t, uint64(1), v.BondHeight)
+	v, exists := validatorMapper.GetValidator(valAddr)
+	require.Equal(t, true, exists)
+	require.Equal(t, uint64(1), v.GetBondTokens())
 	require.Equal(t, true, v.IsActive())
 
 	now := uint64(time.Now().UTC().Unix())
 	for i := uint64(0); i <= uint64(100); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(staketypes.BuildInactiveValidatorKey(now+i, addr), i)
+		validatorMapper.Set(types.BuildInactiveValidatorKey(now+i, addr), i)
 	}
 
 	iter := validatorMapper.IteratorInactiveValidator(0, now+20)
@@ -68,7 +69,7 @@ func TestValidatorMapper(t *testing.T) {
 
 	for i := uint64(100); i <= uint64(200); i++ {
 		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-		validatorMapper.Set(staketypes.BuildValidatorByVotePower(i, addr), 1)
+		validatorMapper.Set(types.BuildValidatorByVotePower(i, addr), 1)
 	}
 
 	descIter := validatorMapper.IteratorValidatorByVoterPower(false)
@@ -101,58 +102,51 @@ func TestVoteInfoMapper(t *testing.T) {
 
 	ctx := defaultContext()
 
-	VoteInfoMapper := stakemapper.GetVoteInfoMapper(ctx)
+	sm := mapper.GetMapper(ctx)
 
 	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	voteInfo := staketypes.NewValidatorVoteInfo(1, 1, 1)
+	voteInfo := types.NewValidatorVoteInfo(1, 1, 1)
 
-	VoteInfoMapper.SetValidatorVoteInfo(addr, voteInfo)
+	sm.SetValidatorVoteInfo(addr, voteInfo)
 
-	v, exsits := VoteInfoMapper.GetValidatorVoteInfo(addr)
+	v, exists := sm.GetValidatorVoteInfo(addr)
 	require.Equal(t, uint64(1), v.StartHeight)
 
-	VoteInfoMapper.DelValidatorVoteInfo(addr)
+	sm.DelValidatorVoteInfo(addr)
 
-	v, exsits = VoteInfoMapper.GetValidatorVoteInfo(addr)
-	require.Equal(t, false, exsits)
+	v, exists = sm.GetValidatorVoteInfo(addr)
+	require.Equal(t, false, exists)
 
 	for i := uint64(0); i <= 10; i++ {
-		VoteInfoMapper.SetVoteInfoInWindow(addr, i, false)
+		sm.SetVoteInfoInWindow(addr, i, false)
 	}
 
-	vote := VoteInfoMapper.GetVoteInfoInWindow(addr, 11)
+	vote := sm.GetVoteInfoInWindow(addr, 11)
 	require.Equal(t, true, vote)
 
-	vote = VoteInfoMapper.GetVoteInfoInWindow(addr, 10)
+	vote = sm.GetVoteInfoInWindow(addr, 10)
 	require.Equal(t, false, vote)
 
-	VoteInfoMapper.ClearValidatorVoteInfoInWindow(addr)
+	sm.ClearValidatorVoteInfoInWindow(addr)
 
-	vote = VoteInfoMapper.GetVoteInfoInWindow(addr, 10)
+	vote = sm.GetVoteInfoInWindow(addr, 10)
 	require.Equal(t, true, vote)
 
 }
 
 func defaultContext() context.Context {
 
-	mapperMap := make(map[string]mapper.IMapper)
+	mapperMap := make(map[string]bmapper.IMapper)
 
 	paramsMapper := params.NewMapper()
 	mapperMap[params.MapperName] = paramsMapper
 
-	mainMapper := stakemapper.NewMintMapper()
-	mapperMap[staketypes.MintMapperName] = mainMapper
-
-	accountMapper := account.NewAccountMapper(cdc, types.ProtoQOSAccount)
+	accountMapper := account.NewAccountMapper(txs.Cdc, qtypes.ProtoQOSAccount)
 	mapperMap[account.AccountMapperName] = accountMapper
 
-	validatorMapper := stakemapper.NewValidatorMapper()
-	validatorMapper.SetCodec(cdc)
-	mapperMap[staketypes.ValidatorMapperName] = validatorMapper
-
-	signInfoMapper := stakemapper.NewVoteInfoMapper()
-	signInfoMapper.SetCodec(cdc)
-	mapperMap[staketypes.VoteInfoMapperName] = signInfoMapper
+	sm := mapper.NewMapper()
+	sm.SetCodec(txs.Cdc)
+	mapperMap[types.MapperName] = sm
 
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)

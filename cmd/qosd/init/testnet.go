@@ -6,7 +6,6 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/module/distribution"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
 	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
@@ -28,7 +27,6 @@ import (
 	"github.com/spf13/cobra"
 
 	btypes "github.com/QOSGroup/qbase/types"
-	gtypes "github.com/QOSGroup/qos/module/guardian/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	ttypes "github.com/tendermint/tendermint/types"
 )
@@ -140,7 +138,7 @@ Example:
 
 				// create gentx file
 				owner := ed25519.GenPrivKey()
-				desc := staketypes.Description{Moniker: nodeDirName}
+				desc := stake.Description{Moniker: nodeDirName}
 				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
@@ -167,7 +165,7 @@ Example:
 			}
 
 			// guardians
-			var guardians []gtypes.Guardian
+			var guardians []guardian.Guardian
 			if len(guardianAddresses) != 0 {
 				addressArr := strings.Split(guardianAddresses, ",")
 				for _, address := range addressArr {
@@ -175,7 +173,7 @@ Example:
 					if err != nil {
 						return err
 					}
-					guardians = append(guardians, *gtypes.NewGuardian("genesis guardian", gtypes.Genesis, addr, nil))
+					guardians = append(guardians, *guardian.NewGuardian("genesis guardian", guardian.Genesis, addr, nil))
 				}
 			}
 			guardianState := guardian.NewGenesisState(guardians)
@@ -191,7 +189,7 @@ Example:
 			appState := app.GenesisState{
 				Accounts:         genesisAccounts,
 				MintData:         mint.DefaultGenesisState(),
-				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), nil, nil, nil, nil, nil, nil),
+				StakeData:        stake.NewGenesisState(stake.DefaultParams(), nil, nil, nil, nil, nil),
 				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
 				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
 				DistributionData: distribution.DefaultGenesisState(),

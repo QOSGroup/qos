@@ -5,7 +5,7 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/app"
-	gtypes "github.com/QOSGroup/qos/module/guardian/types"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -48,7 +48,7 @@ func AddGuardian(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 				}
 			}
 
-			guardian := gtypes.NewGuardian(description, gtypes.Genesis, addr, nil)
+			guardian := guardian.NewGuardian(description, guardian.Genesis, addr, nil)
 			appState.GuardianData.Guardians = append(appState.GuardianData.Guardians, *guardian)
 
 			rawMessage, _ := cdc.MarshalJSON(appState)

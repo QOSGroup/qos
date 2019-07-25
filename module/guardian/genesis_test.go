@@ -6,6 +6,8 @@ import (
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/guardian/mapper"
+	"github.com/QOSGroup/qos/module/guardian/txs"
 	gtypes "github.com/QOSGroup/qos/module/guardian/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
@@ -19,13 +21,13 @@ import (
 func defaultContext() context.Context {
 	mapperMap := make(map[string]bmapper.IMapper)
 
-	approveMapper := NewGuardianMapper()
-	approveMapper.SetCodec(cdc)
+	approveMapper := mapper.NewMapper()
+	approveMapper.SetCodec(txs.Cdc)
 	approveKey := approveMapper.GetStoreKey()
-	mapperMap[MapperName] = approveMapper
+	mapperMap[mapper.MapperName] = approveMapper
 
 	accountMapper := bacc.NewAccountMapper(nil, types.ProtoQOSAccount)
-	accountMapper.SetCodec(cdc)
+	accountMapper.SetCodec(txs.Cdc)
 	acountKey := accountMapper.GetStoreKey()
 	mapperMap[bacc.AccountMapperName] = accountMapper
 

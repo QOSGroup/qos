@@ -6,7 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/module/gov"
+	gtxs "github.com/QOSGroup/qos/module/gov/txs"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -33,7 +33,7 @@ func DepositCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("deposit must be positive")
 				}
 
-				return gov.NewTxDeposit(uint64(proposalID), proposer, uint64(deposit)), nil
+				return gtxs.NewTxDeposit(uint64(proposalID), proposer, uint64(deposit)), nil
 			})
 		},
 	}

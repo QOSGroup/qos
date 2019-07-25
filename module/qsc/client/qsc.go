@@ -8,11 +8,12 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/client/keys"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
-	"github.com/QOSGroup/qbase/txs"
+	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/qsc"
-	qsctypes "github.com/QOSGroup/qos/module/qsc/types"
-	"github.com/QOSGroup/qos/types"
+	"github.com/QOSGroup/qos/module/qsc/mapper"
+	"github.com/QOSGroup/qos/module/qsc/txs"
+	"github.com/QOSGroup/qos/module/qsc/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -38,7 +39,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "create-qsc",
 		Short: "create qsc",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 				//flag args
 				extrate := viper.GetString(flagExtrate)
 				pathqsc := viper.GetString(flagPathqsc)
@@ -61,7 +62,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid crt file")
 				}
 
-				var acs []*types.QOSAccount
+				var acs []*qtypes.QOSAccount
 				if len(accountStr) > 0 {
 					accArrs := strings.Split(accountStr, ";")
 					for _, accArrStr := range accArrs {
@@ -74,14 +75,14 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 						if err != nil {
 							return nil, err
 						}
-						acc := types.QOSAccount{
+						acc := qtypes.QOSAccount{
 							BaseAccount: bacc.BaseAccount{
 								info.GetAddress(),
 								nil,
 								0,
 							},
 							QOS: btypes.ZeroInt(),
-							QSCs: types.QSCs{
+							QSCs: qtypes.QSCs{
 								{
 									subj.Name,
 									btypes.NewInt(amount),
@@ -92,7 +93,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					}
 				}
 
-				return qsc.TxCreateQSC{
+				return txs.TxCreateQSC{
 					creatorAddr,
 					extrate,
 					&crt,
@@ -123,7 +124,7 @@ func QueryQscCmd(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			result, err := cliCtx.Client.ABCIQuery("store/qsc/key", qsc.BuildQSCKey(args[0]))
+			result, err := cliCtx.Client.ABCIQuery("store/qsc/key", mapper.BuildQSCKey(args[0]))
 			if err != nil {
 				return err
 			}
@@ -132,7 +133,7 @@ func QueryQscCmd(cdc *amino.Codec) *cobra.Command {
 				return fmt.Errorf("%s not exists.", args[0])
 			}
 
-			var info qsctypes.QSCInfo
+			var info types.Info
 			err = cdc.UnmarshalBinaryBare(result.Response.GetValue(), &info)
 			if err != nil {
 				return err
@@ -150,14 +151,14 @@ func IssueQSCCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "issue-qsc",
 		Short: "issue qsc",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 				amount := viper.GetInt64(flagAmount)
 				qscName := viper.GetString(flagQscname)
 				bankerAddr, err := qcliacc.GetAddrFromFlag(ctx, flagBanker)
 				if err != nil {
 					return nil, err
 				}
-				return qsc.TxIssueQSC{qscName, btypes.NewInt(amount), bankerAddr}, nil
+				return txs.TxIssueQSC{qscName, btypes.NewInt(amount), bankerAddr}, nil
 			})
 		},
 	}

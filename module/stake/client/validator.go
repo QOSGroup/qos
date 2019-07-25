@@ -4,10 +4,10 @@ import (
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
-	"github.com/QOSGroup/qbase/txs"
-	ecotyps "github.com/QOSGroup/qos/module/eco/types"
-	"github.com/QOSGroup/qos/module/stake"
-	"github.com/QOSGroup/qos/types"
+	btxs "github.com/QOSGroup/qbase/txs"
+	"github.com/QOSGroup/qos/module/stake/txs"
+	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -51,7 +51,7 @@ example:
 	cmd.Flags().String(flagOwner, "", "keystore name or account address")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
-	cmd.Flags().String(flagNodeHome, types.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
+	cmd.Flags().String(flagNodeHome, qtypes.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
 	cmd.Flags().String(flagMoniker, "", "The validator's name")
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
@@ -69,12 +69,12 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "modify-validator",
 		Short: "modify an existing validator account",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (tx txs.ITx, e error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (tx btxs.ITx, e error) {
 				name := viper.GetString(flagMoniker)
 				logo := viper.GetString(flagLogo)
 				website := viper.GetString(flagWebsite)
 				details := viper.GetString(flagDetails)
-				desc := ecotyps.Description{
+				desc := types.Description{
 					name, logo, website, details,
 				}
 
@@ -83,7 +83,7 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return stake.NewModifyValidatorTx(owner, desc), nil
+				return txs.NewModifyValidatorTx(owner, desc), nil
 			})
 		},
 	}
@@ -104,13 +104,13 @@ func RevokeValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "revoke-validator",
 		Short: "Revoke validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 				if err != nil {
 					return nil, err
 				}
 
-				return stake.NewRevokeValidatorTx(owner), nil
+				return txs.NewRevokeValidatorTx(owner), nil
 			})
 
 		},
@@ -128,13 +128,13 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "active-validator",
 		Short: "Active validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 				if err != nil {
 					return nil, err
 				}
 
-				return stake.NewActiveValidatorTx(owner), nil
+				return txs.NewActiveValidatorTx(owner), nil
 			})
 
 		},
@@ -147,7 +147,7 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
-func TxCreateValidatorBuilder(ctx context.CLIContext) (txs.ITx, error) {
+func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	name := viper.GetString(flagMoniker)
 	if len(name) == 0 {
 		return nil, errors.New("moniker is empty")
@@ -159,7 +159,7 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (txs.ITx, error) {
 	logo := viper.GetString(flagLogo)
 	website := viper.GetString(flagWebsite)
 	details := viper.GetString(flagDetails)
-	desc := ecotyps.Description{
+	desc := types.Description{
 		name, logo, website, details,
 	}
 
@@ -172,5 +172,5 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (txs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return stake.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
+	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
 }
