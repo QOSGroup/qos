@@ -134,15 +134,22 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return txs.NewActiveValidatorTx(owner), nil
+				tokens := uint64(viper.GetInt64(flagBondTokens))
+				if tokens <= 0 {
+					return nil, errors.New("tokens lte zero")
+				}
+
+				return txs.NewActiveValidatorTx(owner, tokens), nil
 			})
 
 		},
 	}
 
 	cmd.Flags().String(flagOwner, "", "owner keystore or address")
+	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount to increase")
 
 	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd
 }
