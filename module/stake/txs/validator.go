@@ -2,14 +2,14 @@ package txs
 
 import (
 	"fmt"
-	"github.com/QOSGroup/qos/module/stake/mapper"
-	"github.com/QOSGroup/qos/module/stake/types"
-	qtypes "github.com/QOSGroup/qos/types"
-
 	bacc "github.com/QOSGroup/qbase/account"
+	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/stake/mapper"
+	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
 )
 
@@ -96,7 +96,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	result.Events = btypes.Events{
 		btypes.NewEvent(
 			types.EventTypeCreateValidator,
-			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String(), ),
+			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
 			btypes.NewAttribute(types.AttributeKeyOwner, tx.Owner.String()),
 			btypes.NewAttribute(types.AttributeKeyDelegator, tx.Owner.String()),
 		),
@@ -256,7 +256,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	result.Events = btypes.Events{
 		btypes.NewEvent(
 			types.EventTypeRevokeValidator,
-			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String(), ),
+			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
 			btypes.NewAttribute(types.AttributeKeyOwner, tx.Owner.String()),
 		),
 		btypes.NewEvent(
@@ -288,21 +288,29 @@ func (tx *TxRevokeValidator) GetSignData() (ret []byte) {
 }
 
 type TxActiveValidator struct {
-	Owner btypes.Address //操作者
+	Owner      btypes.Address //操作者
+	BondTokens uint64         //绑定Token数量
 }
 
 var _ txs.ITx = (*TxActiveValidator)(nil)
 
-func NewActiveValidatorTx(owner btypes.Address) *TxActiveValidator {
+func NewActiveValidatorTx(owner btypes.Address, bondTokens uint64) *TxActiveValidator {
 	return &TxActiveValidator{
-		Owner: owner,
+		Owner:      owner,
+		BondTokens: bondTokens,
 	}
 }
 
 func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 
-	if len(tx.Owner) == 0 {
+	if len(tx.Owner) == 0 ||
+		tx.BondTokens == 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+	}
+
+	err = validateQOSAccount(ctx, tx.Owner, tx.BondTokens)
+	if nil != err {
+		return err
 	}
 
 	_, err = validateValidator(ctx, tx.Owner, true, types.Inactive, true)
@@ -316,23 +324,48 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	result = btypes.Result{Code: btypes.CodeOK}
 
-	sm := mapper.GetMapper(ctx)
-	validator, exists := sm.GetValidatorByOwner(tx.Owner)
+	// 准备 Mapper
+	stakeMapper := mapper.GetMapper(ctx)
+	accountMapper := baseabci.GetAccountMapper(ctx)
+
+	// 获取 Owner 对应的 Validator
+	validator, exists := stakeMapper.GetValidatorByOwner(tx.Owner)
 	if !exists {
 		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 
-	valAddr := validator.GetValidatorAddress()
-	// delegatorAddr := tx.Owner
-	sm.MakeValidatorActive(valAddr)
+	// 激活 Validator
+	validatorAddr := validator.GetValidatorAddress()
+	stakeMapper.MakeValidatorActive(validatorAddr)
 
+	// 重置 ValidatorVoteInfo
 	voteInfo := types.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
-	mapper.GetMapper(ctx).ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
+	stakeMapper.ResetValidatorVoteInfo(validator.ValidatorPubKey.Address().Bytes(), voteInfo)
 
+	// 获取 Owner 对应的 Delegator 账户
+	delegatorAddr := tx.Owner
+	delegator := accountMapper.GetAccount(delegatorAddr).(*qtypes.QOSAccount)
+
+	// 从 delegator 账户, 扣去增加的自委托token数量
+	delegator.MustMinusQOS(btypes.NewInt(int64(tx.BondTokens)))
+	accountMapper.SetAccount(delegator)
+
+	// 获取 delegationInfo
+	delegationInfo, exists := stakeMapper.GetDelegationInfo(delegatorAddr, validatorAddr)
+	if !exists {
+		return btypes.Result{Code: btypes.CodeInternal}, nil
+	}
+
+	// 修改 delegationInfo 中的token amount, 并保存.
+	delegationInfo.Amount += tx.BondTokens
+	stakeMapper.BeforeDelegationModified(ctx, validatorAddr, delegatorAddr, delegationInfo.Amount, false)
+	stakeMapper.SetDelegationInfo(delegationInfo)
+
+	// 设置Events
 	result.Events = btypes.Events{
 		btypes.NewEvent(
 			types.EventTypeActiveValidator,
-			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String(), ),
+			btypes.NewAttribute(types.AttributeKeyValidator, validatorAddr.String()),
 			btypes.NewAttribute(types.AttributeKeyOwner, tx.Owner.String()),
 		),
 		btypes.NewEvent(
@@ -358,9 +391,7 @@ func (tx *TxActiveValidator) GetGasPayer() btypes.Address {
 }
 
 func (tx *TxActiveValidator) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Owner...)
-
-	return
+	return Cdc.MustMarshalJSON(*tx)
 }
 
 func validateQOSAccount(ctx context.Context, addr btypes.Address, toPay uint64) error {
