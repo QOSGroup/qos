@@ -43,8 +43,6 @@ func (mapper *Mapper) IterateDelegationsValDeleAddr(valAddr btypes.Address, fn f
 	}
 }
 
-//------------------------------genesisi export
-
 func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.Address, fn func(types.DelegationInfo)) {
 
 	var prefixKey []byte
@@ -77,7 +75,7 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo) {
 	} else {
 		delegation.Amount += info.Amount
 		delegation.IsCompound = info.IsCompound
-		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount, false)
+		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount)
 		mapper.SetDelegationInfo(delegation)
 	}
 
@@ -85,14 +83,16 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo) {
 
 func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens uint64) {
 	info.Amount = info.Amount - tokens
-	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount, false)
+	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount)
+	unbondHeight := uint64(mapper.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
+	mapper.AddDelegatorUnbondingQOSatHeight(unbondHeight, info.DelegatorAddr, tokens)
 	mapper.SetDelegationInfo(info)
 }
 
 func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.ReDelegateInfo) {
 	// update origin delegation
 	delegation.Amount -= info.Amount
-	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount, true)
+	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
 	mapper.SetDelegationInfo(delegation)
 
 	// save new delegation
@@ -103,7 +103,40 @@ func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.Delegatio
 	} else {
 		reDelegation.Amount += info.Amount
 		reDelegation.IsCompound = info.IsCompound
-		mapper.BeforeDelegationModified(ctx, reDelegation.ValidatorAddr, reDelegation.DelegatorAddr, reDelegation.Amount, false)
+		mapper.BeforeDelegationModified(ctx, reDelegation.ValidatorAddr, reDelegation.DelegatorAddr, reDelegation.Amount)
 		mapper.SetDelegationInfo(reDelegation)
 	}
+}
+
+func (mapper *Mapper) IterateDelegationsUnbondInfo(fn func(btypes.Address, uint64, uint64)) {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.DelegatorUnbondingQOSatHeightKey)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		height, delAddr := types.GetUnbondingDelegationHeightAddress(key)
+		var amount uint64
+		mapper.DecodeObject(iter.Value(), &amount)
+		fn(delAddr, height, amount)
+	}
+}
+
+func (mapper *Mapper) SetDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, amount uint64) {
+	mapper.Set(types.BuildUnbondingDelegationByHeightDelKey(height, delAddr), amount)
+}
+
+func (mapper *Mapper) GetDelegatorUnbondingQOSatHeight(height uint64, delAdd btypes.Address) (amount uint64, exist bool) {
+	exist = mapper.Get(types.BuildUnbondingDelegationByHeightDelKey(height, delAdd), &amount)
+	return
+}
+
+func (mapper *Mapper) AddDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, add_amount uint64) {
+	amount, exist := mapper.GetDelegatorUnbondingQOSatHeight(height, delAddr)
+	if exist {
+		add_amount += amount
+	}
+	mapper.SetDelegatorUnbondingQOSatHeight(height, delAddr, add_amount)
+}
+
+func (mapper *Mapper) RemoveDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address) {
+	mapper.Del(types.BuildUnbondingDelegationByHeightDelKey(height, delAddr))
 }

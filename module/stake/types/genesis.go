@@ -14,6 +14,7 @@ type GenesisState struct {
 	ValidatorsVoteInfo     []ValidatorVoteInfoState         `json:"val_votes_info"`      //validatorVoteInfoKey
 	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"` //validatorVoteInfoInWindowKey
 	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`     //DelegationByDelValKey, DelegationByValDelKey
+	DelegatorsUnbondInfo   []DelegatorUnbondState           `json:"delegator_unbond_info"` //DelegatorUnbondingQOSatHeightKey
 	CurrentValidators      []Validator                      `json:"current_validators"`  // currentValidatorsAddressKey
 }
 
@@ -22,6 +23,7 @@ func NewGenesisState(params Params,
 	validatorsVoteInfo []ValidatorVoteInfoState,
 	validatorsVoteInWindow []ValidatorVoteInWindowInfoState,
 	delegatorsInfo []DelegationInfoState,
+	delegatorsUnbondInfo []DelegatorUnbondState,
 	currentValidators []Validator) GenesisState {
 	return GenesisState{
 		Params:                 params,
@@ -29,6 +31,7 @@ func NewGenesisState(params Params,
 		ValidatorsVoteInfo:     validatorsVoteInfo,
 		ValidatorsVoteInWindow: validatorsVoteInWindow,
 		DelegatorsInfo:         delegatorsInfo,
+		DelegatorsUnbondInfo:   delegatorsUnbondInfo,
 		CurrentValidators:      currentValidators,
 	}
 }
@@ -91,4 +94,10 @@ type DelegationInfoState struct {
 	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
 	Amount          uint64         `json:"delegate_amount"`
 	IsCompound      bool           `json:"is_compound"`
+}
+
+type DelegatorUnbondState struct {
+	DeleAddress btypes.Address `json:"delegator_address"`
+	Height      uint64         `json:"height"`
+	Amount      uint64         `json:"tokens"`
 }

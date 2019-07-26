@@ -11,5 +11,5 @@ type Hooks interface {
 	BeforeValidatorRemoved(ctx context.Context, val btypes.Address)
 
 	AfterDelegationCreated(ctx context.Context, val btypes.Address, del btypes.Address)
-	BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateTokes uint64, reDelegate bool)
+	BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateTokes uint64)
 }

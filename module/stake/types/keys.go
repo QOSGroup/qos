@@ -34,6 +34,7 @@ var (
 
 	DelegationByDelValKey = []byte{0x31} // key: delegator add + validator owner add, value: delegationInfo
 	DelegationByValDelKey = []byte{0x32} // key: validator owner add + delegator add, value: nil
+	DelegatorUnbondingQOSatHeightKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
 
 	currentValidatorsAddressKey = []byte("currentValidatorsAddressKey")
 )
@@ -159,6 +160,32 @@ func GetValidatorVoteInfoInWindowIndexAddr(key []byte) (uint64, btypes.Address) 
 	addr := btypes.Address(key[1 : AddrLen+1])
 	index := binary.LittleEndian.Uint64(key[AddrLen+1:])
 	return index, addr
+}
+
+func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
+	return append(bz, delAdd...)
+}
+
+func BuildUnbondingDelegationByHeightPrefix(height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	return append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
+}
+
+func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid UnbondingDelegationByHeightDelKey length")
+	}
+
+	height = binary.BigEndian.Uint64(key[1:9])
+	deleAddr = btypes.Address(key[9:])
+	return
 }
 
 //-------------------------query path

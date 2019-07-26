@@ -48,11 +48,9 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 }
 
 //对delegator的收益进行发放,并决定是否有下一次收益
-//返还到期unbond tokens
 func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 	height := uint64(req.Height)
 	dm := mapper.GetMapper(ctx)
-	am := baseabci.GetAccountMapper(ctx)
 
 	prefixKey := types.BuildDelegatorPeriodIncomePrefixKey(height)
 	iter := btypes.KVStorePrefixIterator(dm.GetStore(), prefixKey)
@@ -75,24 +73,6 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 		minPeriod := dm.GetValidatorMinPeriodFromDelegators(valAddr)
 		dm.ClearValidatorHistoryPeroid(valAddr, minPeriod)
 	}
-
-	//unbond的token返还至delegator账户中
-	prePrefix := types.BuildUnbondingDelegationByHeightPrefix(height)
-	iter = btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		k := iter.Key()
-		dm.Del(k)
-
-		var amount uint64
-		dm.BaseMapper.DecodeObject(iter.Value(), &amount)
-
-		_, deleAddr := types.GetUnbondingDelegationHeightAddress(k)
-		delegator := am.GetAccount(deleAddr).(*qtypes.QOSAccount)
-		delegator.PlusQOS(btypes.NewInt(int64(amount)))
-		am.SetAccount(delegator)
-	}
-
 }
 
 //按周期分配收益:

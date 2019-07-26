@@ -1,10 +1,12 @@
 package stake
 
 import (
+	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 )
 
@@ -23,17 +25,44 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	}
 }
 
-//1. 将所有Inactive到一定期限的validator删除
-//2. 统计新的validator
+//1. 返还到期unbond tokens
+//2. 将所有Inactive到一定期限的validator删除
+//3. 统计新的validator
 func EndBlocker(ctx context.Context) []abci.ValidatorUpdate {
 
+	// return unbond tokens
+	returnUnBondTokens(ctx)
+
+	// close inactive validators
 	sm := mapper.GetMapper(ctx)
 	survivalSecs := sm.GetParams(ctx).ValidatorSurvivalSecs
-	maxValidatorCount := uint64(sm.GetParams(ctx).MaxValidatorCnt)
-
 	CloseInactiveValidator(ctx, int32(survivalSecs))
 
+	// return updated validators
+	maxValidatorCount := uint64(sm.GetParams(ctx).MaxValidatorCnt)
 	return GetUpdatedValidators(ctx, maxValidatorCount)
+}
+
+func returnUnBondTokens(ctx context.Context) {
+	sm := mapper.GetMapper(ctx)
+	am := baseabci.GetAccountMapper(ctx)
+	prePrefix := types.BuildUnbondingDelegationByHeightPrefix(uint64(ctx.BlockHeight()))
+	iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		k := iter.Key()
+		sm.Del(k)
+
+		var amount uint64
+		sm.BaseMapper.DecodeObject(iter.Value(), &amount)
+
+		height, delAddr := types.GetUnbondingDelegationHeightAddress(k)
+		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
+		delegator.PlusQOS(btypes.NewInt(int64(amount)))
+		am.SetAccount(delegator)
+
+		sm.RemoveDelegatorUnbondingQOSatHeight(height, delAddr)
+	}
 }
 
 func CloseInactiveValidator(ctx context.Context, survivalSecs int32) {

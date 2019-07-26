@@ -13,10 +13,12 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis
 
-	MapperName = types.MapperName
-	NewMapper  = mapper.NewMapper
-	GetMapper  = mapper.GetMapper
-	Query      = mapper.Query
+	MapperName                             = types.MapperName
+	NewMapper                              = mapper.NewMapper
+	GetMapper                              = mapper.GetMapper
+	Query                                  = mapper.Query
+	BuildUnbondingDelegationByHeightPrefix = types.BuildUnbondingDelegationByHeightPrefix
+	GetUnbondingDelegationHeightAddress    = types.GetUnbondingDelegationHeightAddress
 
 	NewCreateValidatorTx = txs.NewCreateValidatorTx
 

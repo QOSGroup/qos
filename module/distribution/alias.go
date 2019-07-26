@@ -15,9 +15,7 @@ var (
 	GetMapper  = mapper.GetMapper
 	Query      = mapper.Query
 
-	BuildDelegatorEarningStartInfoKey      = types.BuildDelegatorEarningStartInfoKey
-	BuildUnbondingDelegationByHeightPrefix = types.BuildUnbondingDelegationByHeightPrefix
-	GetUnbondingDelegationHeightAddress    = types.GetUnbondingDelegationHeightAddress
+	BuildDelegatorEarningStartInfoKey = types.BuildDelegatorEarningStartInfoKey
 
 	ParamsSpace = types.ParamSpace
 

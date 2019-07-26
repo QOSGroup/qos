@@ -48,10 +48,6 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 		key := types.BuildValidatorEcoFeePoolKey(validatorFeePoolState.ValidatorAddress)
 		distributionMapper.Set(key, validatorFeePoolState.EcoFeePool)
 	}
-
-	for _, info := range data.DelegatorsUnbondInfo {
-		distributionMapper.SetDelegatorUnbondingQOSatHeight(info.Height, info.DeleAddress, info.Amount)
-	}
 }
 
 func ExportGenesis(ctx context.Context) types.GenesisState {
@@ -127,15 +123,6 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		})
 	})
 
-	var delegatorsUnbondInfo []types.DelegatorUnbondState
-	distributionMapper.IterateDelegationsUnbondInfo(func(deleAddr btypes.Address, height uint64, amount uint64) {
-		delegatorsUnbondInfo = append(delegatorsUnbondInfo, types.DelegatorUnbondState{
-			DeleAddress: deleAddr,
-			Height:      height,
-			Amount:      amount,
-		})
-	})
-
 	return types.NewGenesisState(feePool,
 		lastBlockProposer,
 		preDistributionQOS,
@@ -144,7 +131,6 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		delegatorEarningInfos,
 		delegatorIncomeHeights,
 		validatorEcoFeePools,
-		delegatorsUnbondInfo,
 		params,
 	)
 	return types.GenesisState{}

@@ -258,7 +258,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	}
 	// return unbond tokens
 	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + ctx.BlockHeight()); h++ {
-		prePrefix := distribution.BuildUnbondingDelegationByHeightPrefix(uint64(h))
+		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(uint64(h))
 
 		iter := btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
 		defer iter.Close()
@@ -270,7 +270,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			var amount uint64
 			dm.BaseMapper.DecodeObject(iter.Value(), &amount)
 
-			_, delAddr := distribution.GetUnbondingDelegationHeightAddress(k)
+			_, delAddr := stake.GetUnbondingDelegationHeightAddress(k)
 
 			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
 			delegator.PlusQOS(btypes.NewInt(int64(amount)))
@@ -370,7 +370,7 @@ func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
 		preDistributionRemainTotal = preDistributionRemainTotal.Add(data.EcoFeePool.PreDistributeRemainTotalFee)
 	}
 	qosUnbond := btypes.ZeroInt()
-	for _, unbond := range state.DistributionData.DelegatorsUnbondInfo {
+	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
 		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
 	}
 
