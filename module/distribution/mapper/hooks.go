@@ -59,7 +59,7 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 
 		//unbond height
 		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-		sm.AddDelegatorUnbondingQOSatHeight(unbondHeight, delAddr, unbondToken)
+		sm.AddUnbondingDelegation(unbondHeight, stake.NewUnbondingInfo(delAddr, val, uint64(ctx.BlockHeight()), unbondToken))
 	}
 
 	//删除validator汇总收益数据

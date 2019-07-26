@@ -53,15 +53,17 @@ func returnUnBondTokens(ctx context.Context) {
 		k := iter.Key()
 		sm.Del(k)
 
-		var amount uint64
-		sm.BaseMapper.DecodeObject(iter.Value(), &amount)
+		var unbondings []types.UnbondingDelegationInfo
+		sm.BaseMapper.DecodeObject(iter.Value(), &unbondings)
 
 		height, delAddr := types.GetUnbondingDelegationHeightAddress(k)
-		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
-		delegator.PlusQOS(btypes.NewInt(int64(amount)))
-		am.SetAccount(delegator)
+		for _, unbonding := range unbondings {
+			delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
+			delegator.PlusQOS(btypes.NewInt(int64(unbonding.Amount)))
+			am.SetAccount(delegator)
+		}
 
-		sm.RemoveDelegatorUnbondingQOSatHeight(height, delAddr)
+		sm.RemoveUnbondingDelegations(height, delAddr)
 	}
 }
 

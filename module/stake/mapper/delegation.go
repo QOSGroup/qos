@@ -1,6 +1,7 @@
 package mapper
 
 import (
+	"bytes"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -85,11 +86,11 @@ func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInf
 	info.Amount = info.Amount - tokens
 	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount)
 	unbondHeight := uint64(mapper.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-	mapper.AddDelegatorUnbondingQOSatHeight(unbondHeight, info.DelegatorAddr, tokens)
+	mapper.AddUnbondingDelegation(unbondHeight, types.NewUnbondingDelegationInfo(info.DelegatorAddr, info.ValidatorAddr, uint64(ctx.BlockHeight()), tokens))
 	mapper.SetDelegationInfo(info)
 }
 
-func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.ReDelegateInfo) {
+func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.ReDelegationInfo) {
 	// update origin delegation
 	delegation.Amount -= info.Amount
 	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
@@ -108,35 +109,89 @@ func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.Delegatio
 	}
 }
 
-func (mapper *Mapper) IterateDelegationsUnbondInfo(fn func(btypes.Address, uint64, uint64)) {
-	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.DelegatorUnbondingQOSatHeightKey)
+func (mapper *Mapper) IterateUnbondingDelegations(fn func(btypes.Address, uint64, []types.UnbondingDelegationInfo)) {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.UnbondingHeightDelegatorKey)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
 		height, delAddr := types.GetUnbondingDelegationHeightAddress(key)
+		var unbondings []types.UnbondingDelegationInfo
+		mapper.DecodeObject(iter.Value(), &unbondings)
+		fn(delAddr, height, unbondings)
+	}
+}
+
+func (mapper *Mapper) setUnbondingDelegations(height uint64, delAddr btypes.Address, unbondings []types.UnbondingDelegationInfo) {
+	mapper.Set(types.BuildUnbondingHeightDelegatorKey(height, delAddr), unbondings)
+	mapper.Set(types.BuildUnbondingDelegatorHeightKey(delAddr, height), true)
+}
+
+func (mapper *Mapper) getUnbondingDelegations(height uint64, delAdd btypes.Address) (unbondings []types.UnbondingDelegationInfo, exist bool) {
+	exist = mapper.Get(types.BuildUnbondingHeightDelegatorKey(height, delAdd), &unbondings)
+	return
+}
+
+func (mapper *Mapper) AddUnbondingDelegation(height uint64, unbonding types.UnbondingDelegationInfo) {
+	unbondings := []types.UnbondingDelegationInfo{}
+	origins, exist := mapper.getUnbondingDelegations(height, unbonding.DelegatorAddr)
+	if exist {
+		added := false
+		for _, ub := range origins {
+			if bytes.Equal(ub.ValidatorAddr, unbonding.ValidatorAddr) {
+				ub.Amount += unbonding.Amount
+				added = true
+			}
+			unbondings = append(unbondings, ub)
+		}
+		if !added {
+			unbondings = append(unbondings, unbonding)
+		}
+	} else {
+		unbondings = append(unbondings, unbonding)
+	}
+	mapper.setUnbondingDelegations(height, unbonding.DelegatorAddr, unbondings)
+}
+
+func (mapper *Mapper) AddUnbondingDelegations(height uint64, unbondingsAdd []types.UnbondingDelegationInfo) {
+	for _, unbonding := range unbondingsAdd {
+		mapper.AddUnbondingDelegation(height, unbonding)
+	}
+}
+
+func (mapper *Mapper) RemoveUnbondingDelegations(height uint64, delAddr btypes.Address) {
+	mapper.Del(types.BuildUnbondingHeightDelegatorKey(height, delAddr))
+	mapper.Del(types.BuildUnbondingDelegatorHeightKey(delAddr, height))
+}
+
+func (mapper *Mapper) IterateRedelegationsInfo(fn func(btypes.Address, uint64, uint64)) {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.RedelegationHeightDelegatorKey)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		height, delAddr := types.GetRedelegationHeightAddress(key)
 		var amount uint64
 		mapper.DecodeObject(iter.Value(), &amount)
 		fn(delAddr, height, amount)
 	}
 }
 
-func (mapper *Mapper) SetDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, amount uint64) {
-	mapper.Set(types.BuildUnbondingDelegationByHeightDelKey(height, delAddr), amount)
+func (mapper *Mapper) setRedelegationsAtHeight(height uint64, delAddr btypes.Address, amount uint64) {
+	mapper.Set(types.BuildRedelegationHeightDelegatorKey(height, delAddr), amount)
 }
 
-func (mapper *Mapper) GetDelegatorUnbondingQOSatHeight(height uint64, delAdd btypes.Address) (amount uint64, exist bool) {
-	exist = mapper.Get(types.BuildUnbondingDelegationByHeightDelKey(height, delAdd), &amount)
+func (mapper *Mapper) getRedelegationsAtHeight(height uint64, delAdd btypes.Address) (amount uint64, exist bool) {
+	exist = mapper.Get(types.BuildRedelegationHeightDelegatorKey(height, delAdd), &amount)
 	return
 }
 
-func (mapper *Mapper) AddDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, add_amount uint64) {
-	amount, exist := mapper.GetDelegatorUnbondingQOSatHeight(height, delAddr)
+func (mapper *Mapper) AddRedelegationAtHeight(height uint64, delAddr btypes.Address, add_amount uint64) {
+	amount, exist := mapper.getRedelegationsAtHeight(height, delAddr)
 	if exist {
 		add_amount += amount
 	}
-	mapper.SetDelegatorUnbondingQOSatHeight(height, delAddr, add_amount)
+	mapper.setRedelegationsAtHeight(height, delAddr, add_amount)
 }
 
-func (mapper *Mapper) RemoveDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address) {
-	mapper.Del(types.BuildUnbondingDelegationByHeightDelKey(height, delAddr))
+func (mapper *Mapper) RemoveRedelegationsAtHeight(height uint64, delAddr btypes.Address) {
+	mapper.Del(types.BuildUnbondingHeightDelegatorKey(height, delAddr))
 }

@@ -24,6 +24,8 @@ var (
 
 	NewDelegationInfo = types.NewDelegationInfo
 
+	NewUnbondingInfo = types.NewUnbondingDelegationInfo
+
 	ParamSpace    = types.ParamSpace
 	DefaultParams = types.DefaultParams
 

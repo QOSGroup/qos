@@ -50,7 +50,7 @@ func initValidatorsVotesInfo(ctx context.Context, voteInfos []types.ValidatorVot
 	}
 }
 
-func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState, delegatorsUnbondInfo []types.DelegatorUnbondState) {
+func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState, delegatorsUnbondInfo []types.UnbondingDelegationInfo) {
 	sm := mapper.GetMapper(ctx)
 
 	for _, info := range delegatorsInfo {
@@ -63,7 +63,7 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 	}
 
 	for _, info := range delegatorsUnbondInfo {
-		sm.SetDelegatorUnbondingQOSatHeight(info.Height, info.DeleAddress, info.Amount)
+		sm.AddUnbondingDelegations(info.Height, []types.UnbondingDelegationInfo{info})
 	}
 }
 
@@ -129,13 +129,9 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		})
 	})
 
-	var delegatorsUnbondInfo []types.DelegatorUnbondState
-	sm.IterateDelegationsUnbondInfo(func(deleAddr btypes.Address, height uint64, amount uint64) {
-		delegatorsUnbondInfo = append(delegatorsUnbondInfo, types.DelegatorUnbondState{
-			DeleAddress: deleAddr,
-			Height:      height,
-			Amount:      amount,
-		})
+	var delegatorsUnbondInfo []types.UnbondingDelegationInfo
+	sm.IterateUnbondingDelegations(func(deleAddr btypes.Address, height uint64, unbondings []types.UnbondingDelegationInfo) {
+		delegatorsUnbondInfo = append(delegatorsUnbondInfo, unbondings...)
 	})
 
 	return GenesisState{

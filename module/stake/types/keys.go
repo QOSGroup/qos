@@ -34,7 +34,9 @@ var (
 
 	DelegationByDelValKey = []byte{0x31} // key: delegator add + validator owner add, value: delegationInfo
 	DelegationByValDelKey = []byte{0x32} // key: validator owner add + delegator add, value: nil
-	DelegatorUnbondingQOSatHeightKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
+
+	UnbondingHeightDelegatorKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
+	UnbondingDelegatorHeightKey = []byte{0x42} // key: delegator + height add, value: nil
 
 	currentValidatorsAddressKey = []byte("currentValidatorsAddressKey")
 )
@@ -162,11 +164,11 @@ func GetValidatorVoteInfoInWindowIndexAddr(key []byte) (uint64, btypes.Address) 
 	return index, addr
 }
 
-func BuildUnbondingDelegationByHeightDelKey(height uint64, delAdd btypes.Address) []byte {
+func BuildUnbondingHeightDelegatorKey(height uint64, delAdd btypes.Address) []byte {
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, height)
 
-	bz := append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
+	bz := append(UnbondingHeightDelegatorKey, heightBytes...)
 	return append(bz, delAdd...)
 }
 
@@ -174,7 +176,7 @@ func BuildUnbondingDelegationByHeightPrefix(height uint64) []byte {
 	heightBytes := make([]byte, 8)
 	binary.BigEndian.PutUint64(heightBytes, height)
 
-	return append(DelegatorUnbondingQOSatHeightKey, heightBytes...)
+	return append(UnbondingHeightDelegatorKey, heightBytes...)
 }
 
 func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
@@ -186,6 +188,19 @@ func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr bt
 	height = binary.BigEndian.Uint64(key[1:9])
 	deleAddr = btypes.Address(key[9:])
 	return
+}
+
+func BuildUnbondingDelegatorHeightKey(delAddr btypes.Address, height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(UnbondingDelegatorHeightKey, delAddr...)
+	return append(bz, heightBytes...)
+}
+
+func BuildUnbondingByDelegatorPrefix(delAddr btypes.Address) []byte {
+
+	return append(UnbondingDelegatorHeightKey, delAddr...)
 }
 
 //-------------------------query path
