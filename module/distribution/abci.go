@@ -148,19 +148,20 @@ func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, 
 	if err != nil {
 		return 0
 	}
+	rewards = rewards.NilToZero()
 
 	delegationInfo, exists := sm.GetDelegationInfo(delAddr, valAddr)
 
 	if !exists || delegationInfo.Amount == 0 {
 		//已无委托关系,收益直接分配到delegator账户中
 		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
-		delegator.PlusQOS(rewards.NilToZero())
+		delegator.PlusQOS(rewards)
 		am.SetAccount(delegator)
-		dm.MinusValidatorEcoFeePool(valAddr, rewards.NilToZero())
+		dm.MinusValidatorEcoFeePool(valAddr, rewards)
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
 				types.EventTypeDelegatorReward,
-				btypes.NewAttribute(types.AttributeKeyTokens, rewards.NilToZero().String()),
+				btypes.NewAttribute(types.AttributeKeyTokens, rewards.String()),
 				btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
 				btypes.NewAttribute(types.AttributeKeyDelegator, delAddr.String()),
 			),
@@ -177,9 +178,9 @@ func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, 
 	//非复投,收益直接分配到delegator账户中
 	if !delegationInfo.IsCompound {
 		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
-		delegator.PlusQOS(rewards.NilToZero())
+		delegator.PlusQOS(rewards)
 		am.SetAccount(delegator)
-		dm.MinusValidatorEcoFeePool(valAddr, rewards.NilToZero())
+		dm.MinusValidatorEcoFeePool(valAddr, rewards)
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
 				types.EventTypeDelegatorReward,
@@ -203,10 +204,7 @@ func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, 
 	sm.SetDelegationInfo(delegationInfo)
 
 	//复投时validator收益池处理
-	delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
-	delegator.PlusQOS(rewards.NilToZero())
-	am.SetAccount(delegator)
-	dm.MinusValidatorEcoFeePool(valAddr, rewards.NilToZero())
+	dm.MinusValidatorEcoFeePool(valAddr, rewards)
 	ctx.EventManager().EmitEvent(
 		btypes.NewEvent(
 			types.EventTypeDelegatorReward,
