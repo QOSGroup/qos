@@ -19,6 +19,8 @@ var (
 	Query                                  = mapper.Query
 	BuildUnbondingDelegationByHeightPrefix = types.BuildUnbondingDelegationByHeightPrefix
 	GetUnbondingDelegationHeightAddress    = types.GetUnbondingDelegationHeightAddress
+	BuildRedelegationByHeightPrefix        = types.BuildRedelegationByHeightPrefix
+	GetRedelegationHeightAddress           = types.GetRedelegationHeightAddress
 
 	NewCreateValidatorTx = txs.NewCreateValidatorTx
 
@@ -48,4 +50,7 @@ type (
 	Hooks = types.Hooks
 
 	TxCreateValidator = txs.TxCreateValidator
+
+	UnbondingDelegationInfo = types.UnbondingDelegationInfo
+	ReDelegationInfo = types.RedelegationInfo
 )

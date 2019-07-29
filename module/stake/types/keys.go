@@ -38,6 +38,9 @@ var (
 	UnbondingHeightDelegatorKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
 	UnbondingDelegatorHeightKey = []byte{0x42} // key: delegator + height add, value: nil
 
+	RedelegationHeightDelegatorKey = []byte{0x51} // key: height + delegator add, value: redelegations going to be complete on this height
+	RedelegationDelegatorHeightKey = []byte{0x52} // key: delegator + height add, value: nil
+
 	currentValidatorsAddressKey = []byte("currentValidatorsAddressKey")
 )
 
@@ -201,6 +204,45 @@ func BuildUnbondingDelegatorHeightKey(delAddr btypes.Address, height uint64) []b
 func BuildUnbondingByDelegatorPrefix(delAddr btypes.Address) []byte {
 
 	return append(UnbondingDelegatorHeightKey, delAddr...)
+}
+
+func BuildRedelegationHeightDelegatorKey(height uint64, delAdd btypes.Address) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(RedelegationHeightDelegatorKey, heightBytes...)
+	return append(bz, delAdd...)
+}
+
+func BuildRedelegationByHeightPrefix(height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	return append(RedelegationHeightDelegatorKey, heightBytes...)
+}
+
+func GetRedelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid UnbondingDelegationByHeightDelKey length")
+	}
+
+	height = binary.BigEndian.Uint64(key[1:9])
+	deleAddr = btypes.Address(key[9:])
+	return
+}
+
+func BuildRedelegationDelegatorHeightKey(delAddr btypes.Address, height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(RedelegationDelegatorHeightKey, delAddr...)
+	return append(bz, heightBytes...)
+}
+
+func BuildRedelegationByDelegatorPrefix(delAddr btypes.Address) []byte {
+
+	return append(RedelegationDelegatorHeightKey, delAddr...)
 }
 
 //-------------------------query path

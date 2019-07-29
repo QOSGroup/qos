@@ -134,6 +134,11 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		delegatorsUnbondInfo = append(delegatorsUnbondInfo, unbondings...)
 	})
 
+	var reDelegationsInfo []types.RedelegationInfo
+	sm.IterateRedelegationsInfo(func(deleAddr btypes.Address, height uint64, reDelegations []types.RedelegationInfo) {
+		reDelegationsInfo = append(reDelegationsInfo, reDelegations...)
+	})
+
 	return GenesisState{
 		Params:                 params,
 		Validators:             validators,
@@ -141,6 +146,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		ValidatorsVoteInWindow: validatorsVoteInWindow,
 		DelegatorsInfo:         delegatorsInfo,
 		DelegatorsUnbondInfo:   delegatorsUnbondInfo,
+		ReDelegationsInfo:      reDelegationsInfo,
 		CurrentValidators:      currentValidators,
 	}
 }

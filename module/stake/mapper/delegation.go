@@ -63,11 +63,13 @@ func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.Address, fn func(ty
 	}
 }
 
-func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo) {
-	am := baseabci.GetAccountMapper(ctx)
-	delegator := am.GetAccount(info.DelegatorAddr).(*qtypes.QOSAccount)
-	delegator.MustMinusQOS(btypes.NewInt(int64(info.Amount)))
-	am.SetAccount(delegator)
+func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, reDelegate bool) {
+	if !reDelegate {
+		am := baseabci.GetAccountMapper(ctx)
+		delegator := am.GetAccount(info.DelegatorAddr).(*qtypes.QOSAccount)
+		delegator.MustMinusQOS(btypes.NewInt(int64(info.Amount)))
+		am.SetAccount(delegator)
+	}
 
 	delegation, exists := mapper.GetDelegationInfo(info.DelegatorAddr, info.ValidatorAddr)
 	if !exists {
@@ -90,23 +92,15 @@ func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInf
 	mapper.SetDelegationInfo(info)
 }
 
-func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.ReDelegationInfo) {
+func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.RedelegationInfo) {
 	// update origin delegation
 	delegation.Amount -= info.Amount
 	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
 	mapper.SetDelegationInfo(delegation)
 
-	// save new delegation
-	reDelegation, exists := mapper.GetDelegationInfo(info.DelegatorAddr, info.ToValidator)
-	if !exists {
-		mapper.SetDelegationInfo(types.NewDelegationInfo(info.DelegatorAddr, info.ToValidator, info.Amount, info.IsCompound))
-		mapper.AfterDelegationCreated(ctx, info.ToValidator, info.DelegatorAddr)
-	} else {
-		reDelegation.Amount += info.Amount
-		reDelegation.IsCompound = info.IsCompound
-		mapper.BeforeDelegationModified(ctx, reDelegation.ValidatorAddr, reDelegation.DelegatorAddr, reDelegation.Amount)
-		mapper.SetDelegationInfo(reDelegation)
-	}
+	// save redelegation
+	redelegateHeight := uint64(mapper.GetParams(ctx).DelegatorRedelegationHeight) + uint64(ctx.BlockHeight())
+	mapper.AddRedelegation(redelegateHeight, info)
 }
 
 func (mapper *Mapper) IterateUnbondingDelegations(fn func(btypes.Address, uint64, []types.UnbondingDelegationInfo)) {
@@ -163,35 +157,56 @@ func (mapper *Mapper) RemoveUnbondingDelegations(height uint64, delAddr btypes.A
 	mapper.Del(types.BuildUnbondingDelegatorHeightKey(delAddr, height))
 }
 
-func (mapper *Mapper) IterateRedelegationsInfo(fn func(btypes.Address, uint64, uint64)) {
+func (mapper *Mapper) IterateRedelegationsInfo(fn func(btypes.Address, uint64, []types.RedelegationInfo)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.RedelegationHeightDelegatorKey)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
 		height, delAddr := types.GetRedelegationHeightAddress(key)
-		var amount uint64
-		mapper.DecodeObject(iter.Value(), &amount)
-		fn(delAddr, height, amount)
+		var infos []types.RedelegationInfo
+		mapper.DecodeObject(iter.Value(), &infos)
+		fn(delAddr, height, infos)
 	}
 }
 
-func (mapper *Mapper) setRedelegationsAtHeight(height uint64, delAddr btypes.Address, amount uint64) {
-	mapper.Set(types.BuildRedelegationHeightDelegatorKey(height, delAddr), amount)
+func (mapper *Mapper) setRedelegations(height uint64, delAddr btypes.Address, reDelegations []types.RedelegationInfo) {
+	mapper.Set(types.BuildRedelegationHeightDelegatorKey(height, delAddr), reDelegations)
+	mapper.Set(types.BuildRedelegationDelegatorHeightKey(delAddr, height), true)
 }
 
-func (mapper *Mapper) getRedelegationsAtHeight(height uint64, delAdd btypes.Address) (amount uint64, exist bool) {
-	exist = mapper.Get(types.BuildRedelegationHeightDelegatorKey(height, delAdd), &amount)
+func (mapper *Mapper) getRedelegations(height uint64, delAdd btypes.Address) (reDelegations []types.RedelegationInfo, exist bool) {
+	exist = mapper.Get(types.BuildRedelegationHeightDelegatorKey(height, delAdd), &reDelegations)
 	return
 }
 
-func (mapper *Mapper) AddRedelegationAtHeight(height uint64, delAddr btypes.Address, add_amount uint64) {
-	amount, exist := mapper.getRedelegationsAtHeight(height, delAddr)
+func (mapper *Mapper) AddRedelegation(height uint64, reDelegation types.RedelegationInfo) {
+	unbondings := []types.RedelegationInfo{}
+	origins, exist := mapper.getRedelegations(height, reDelegation.DelegatorAddr)
 	if exist {
-		add_amount += amount
+		added := false
+		for _, ub := range origins {
+			if bytes.Equal(ub.ToValidator, reDelegation.ToValidator) {
+				ub.Amount += reDelegation.Amount
+				added = true
+			}
+			unbondings = append(unbondings, ub)
+		}
+		if !added {
+			unbondings = append(unbondings, reDelegation)
+		}
+	} else {
+		unbondings = append(unbondings, reDelegation)
 	}
-	mapper.setRedelegationsAtHeight(height, delAddr, add_amount)
+	mapper.setRedelegations(height, reDelegation.DelegatorAddr, unbondings)
 }
 
-func (mapper *Mapper) RemoveRedelegationsAtHeight(height uint64, delAddr btypes.Address) {
-	mapper.Del(types.BuildUnbondingHeightDelegatorKey(height, delAddr))
+func (mapper *Mapper) AddRedelegations(height uint64, reDelegations []types.RedelegationInfo) {
+	for _, reDelegation := range reDelegations {
+		mapper.AddRedelegation(height, reDelegation)
+	}
+}
+
+func (mapper *Mapper) RemoveRedelegations(height uint64, delAddr btypes.Address) {
+	mapper.Del(types.BuildRedelegationHeightDelegatorKey(height, delAddr))
+	mapper.Del(types.BuildRedelegationDelegatorHeightKey(delAddr, height))
 }

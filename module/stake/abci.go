@@ -26,12 +26,16 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 }
 
 //1. 返还到期unbond tokens
+//1. 处理到期redelegations
 //2. 将所有Inactive到一定期限的validator删除
 //3. 统计新的validator
 func EndBlocker(ctx context.Context) []abci.ValidatorUpdate {
 
 	// return unbond tokens
 	returnUnBondTokens(ctx)
+
+	// redelegations
+	handlerReDelegations(ctx)
 
 	// close inactive validators
 	sm := mapper.GetMapper(ctx)
@@ -64,6 +68,29 @@ func returnUnBondTokens(ctx context.Context) {
 		}
 
 		sm.RemoveUnbondingDelegations(height, delAddr)
+	}
+}
+
+func handlerReDelegations(ctx context.Context) {
+	sm := mapper.GetMapper(ctx)
+	prePrefix := types.BuildRedelegationByHeightPrefix(uint64(ctx.BlockHeight()))
+	iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		k := iter.Key()
+		sm.Del(k)
+
+		var reDelegations []types.RedelegationInfo
+		sm.BaseMapper.DecodeObject(iter.Value(), &reDelegations)
+
+		height, delAddr := types.GetRedelegationHeightAddress(k)
+		for _, reDelegation := range reDelegations {
+			validator, _ := sm.GetValidator(reDelegation.ToValidator)
+			sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()+reDelegation.Amount)
+			sm.Delegate(ctx, NewDelegationInfo(reDelegation.DelegatorAddr, reDelegation.ToValidator, reDelegation.Amount, reDelegation.IsCompound), true)
+		}
+
+		sm.RemoveRedelegations(height, delAddr)
 	}
 }
 

@@ -15,6 +15,7 @@ type GenesisState struct {
 	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"`   //validatorVoteInfoInWindowKey
 	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`       //DelegationByDelValKey, DelegationByValDelKey
 	DelegatorsUnbondInfo   []UnbondingDelegationInfo        `json:"delegator_unbond_info"` //UnbondingHeightDelegatorKey
+	ReDelegationsInfo      []RedelegationInfo               `json:"redelegations_info"`    //ReDelegationHeightDelegatorKey
 	CurrentValidators      []Validator                      `json:"current_validators"`    // currentValidatorsAddressKey
 }
 
@@ -24,6 +25,7 @@ func NewGenesisState(params Params,
 	validatorsVoteInWindow []ValidatorVoteInWindowInfoState,
 	delegatorsInfo []DelegationInfoState,
 	delegatorsUnbondInfo []UnbondingDelegationInfo,
+	reDelegationsInfo []RedelegationInfo,
 	currentValidators []Validator) GenesisState {
 	return GenesisState{
 		Params:                 params,
@@ -32,6 +34,7 @@ func NewGenesisState(params Params,
 		ValidatorsVoteInWindow: validatorsVoteInWindow,
 		DelegatorsInfo:         delegatorsInfo,
 		DelegatorsUnbondInfo:   delegatorsUnbondInfo,
+		ReDelegationsInfo:      reDelegationsInfo,
 		CurrentValidators:      currentValidators,
 	}
 }

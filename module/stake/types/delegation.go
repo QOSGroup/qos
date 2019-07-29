@@ -26,7 +26,7 @@ func NewUnbondingDelegationInfo(delAddr btypes.Address, valAddr btypes.Address, 
 }
 
 // re delegate
-type ReDelegationInfo struct {
+type RedelegationInfo struct {
 	DelegatorAddr btypes.Address `json:"delegator_addr"`
 	FromValidator btypes.Address `json:"from_validator"`
 	ToValidator   btypes.Address `json:"to_validator"`
@@ -34,6 +34,6 @@ type ReDelegationInfo struct {
 	IsCompound    bool           `json:"is_compound"` // 是否复投
 }
 
-func NewReDelegateInfo(delAddr btypes.Address, fromValAddr btypes.Address, toValAddr btypes.Address, amount uint64, isCompound bool) ReDelegationInfo {
-	return ReDelegationInfo{delAddr, fromValAddr, toValAddr, amount, isCompound}
+func NewRedelegateInfo(delAddr btypes.Address, fromValAddr btypes.Address, toValAddr btypes.Address, amount uint64, isCompound bool) RedelegationInfo {
+	return RedelegationInfo{delAddr, fromValAddr, toValAddr, amount, isCompound}
 }

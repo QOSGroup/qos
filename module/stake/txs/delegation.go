@@ -51,7 +51,7 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 
 	// delegation
 	info := types.NewDelegationInfo(tx.Delegator, validator.GetValidatorAddress(), tx.Amount, tx.IsCompound)
-	sm.Delegate(ctx, info)
+	sm.Delegate(ctx, info, false)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -316,7 +316,7 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 	sm.ChangeValidatorBondTokens(fromValidator, fromValidator.GetBondTokens()-tx.Amount)
 
 	// redelegate
-	sm.ReDelegate(ctx, delegation, types.NewReDelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, tx.IsCompound))
+	sm.ReDelegate(ctx, delegation, types.NewRedelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, tx.IsCompound))
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
