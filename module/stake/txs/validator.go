@@ -358,7 +358,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	// 修改 delegationInfo 中的token amount, 并保存.
 	delegationInfo.Amount += tx.BondTokens
-	stakeMapper.BeforeDelegationModified(ctx, validatorAddr, delegatorAddr, delegationInfo.Amount, false)
+	stakeMapper.BeforeDelegationModified(ctx, validatorAddr, delegatorAddr, delegationInfo.Amount)
 	stakeMapper.SetDelegationInfo(delegationInfo)
 
 	// 设置Events
