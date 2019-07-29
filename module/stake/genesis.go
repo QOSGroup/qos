@@ -19,7 +19,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	initValidators(ctx, data.Validators)
 	initParams(ctx, data.Params)
 	initValidatorsVotesInfo(ctx, data.ValidatorsVoteInfo, data.ValidatorsVoteInWindow)
-	initDelegatorsInfo(ctx, data.DelegatorsInfo, data.DelegatorsUnbondInfo)
+	initDelegatorsInfo(ctx, data.DelegatorsInfo, data.DelegatorsUnbondInfo, data.ReDelegationsInfo)
 }
 
 func initValidators(ctx context.Context, validators []types.Validator) {
@@ -50,7 +50,7 @@ func initValidatorsVotesInfo(ctx context.Context, voteInfos []types.ValidatorVot
 	}
 }
 
-func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState, delegatorsUnbondInfo []types.UnbondingDelegationInfo) {
+func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState, delegatorsUnbondInfo []types.UnbondingDelegationInfo, redelegationInfo []types.RedelegationInfo) {
 	sm := mapper.GetMapper(ctx)
 
 	for _, info := range delegatorsInfo {
@@ -62,9 +62,9 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 		})
 	}
 
-	for _, info := range delegatorsUnbondInfo {
-		sm.AddUnbondingDelegations(info.Height, []types.UnbondingDelegationInfo{info})
-	}
+	sm.AddUnbondingDelegations(delegatorsUnbondInfo)
+
+	sm.AddRedelegations(redelegationInfo)
 }
 
 func initParams(ctx context.Context, params types.Params) {
@@ -130,12 +130,12 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var delegatorsUnbondInfo []types.UnbondingDelegationInfo
-	sm.IterateUnbondingDelegations(func(deleAddr btypes.Address, height uint64, unbondings []types.UnbondingDelegationInfo) {
+	sm.IterateUnbondingDelegations(func(unbondings []types.UnbondingDelegationInfo) {
 		delegatorsUnbondInfo = append(delegatorsUnbondInfo, unbondings...)
 	})
 
 	var reDelegationsInfo []types.RedelegationInfo
-	sm.IterateRedelegationsInfo(func(deleAddr btypes.Address, height uint64, reDelegations []types.RedelegationInfo) {
+	sm.IterateRedelegationsInfo(func(reDelegations []types.RedelegationInfo) {
 		reDelegationsInfo = append(reDelegationsInfo, reDelegations...)
 	})
 

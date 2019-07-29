@@ -132,7 +132,6 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 	log.Debug("slash validator", "proposalId", proposalID, "validator", validator.GetValidatorAddress().String())
 
 	sm := stake.GetMapper(ctx)
-	dm := distribution.GetMapper(ctx)
 	var delegations []stake.Delegation
 	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.Address, delAddr btypes.Address) {
 		if delegation, exists := sm.GetDelegationInfo(delAddr, valAddr); exists {
@@ -141,8 +140,6 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 	})
 
 	totalSlashTokens := int64(0)
-	height := uint64(ctx.BlockHeight())
-
 	log.Debug("slash delegations", "delegations", delegations)
 
 	for _, delegation := range delegations {
@@ -150,24 +147,20 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 
 		// 计算惩罚
 		tokenSlashed := qtypes.NewDec(bondTokens).Mul(penalty).TruncateInt64()
-
 		if tokenSlashed >= bondTokens {
 			tokenSlashed = bondTokens
 		}
+		totalSlashTokens += tokenSlashed
 
 		// 修改delegator绑定收益
 		remainTokens := uint64(bondTokens - tokenSlashed)
-		if err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, remainTokens, height); err != nil {
-			return err
-		}
 		delegation.Amount = remainTokens
+		sm.BeforeDelegationModified(ctx, validator.GetValidatorAddress(), delegation.DelegatorAddr, delegation.Amount)
 
 		// 更新delegation
 		sm.SetDelegationInfo(delegation)
 
 		log.Debug("slash validator's delegators", "delegator", delegation.DelegatorAddr.String(), "preToken", bondTokens, "slashToken", tokenSlashed, "remainTokens", remainTokens)
-
-		totalSlashTokens += tokenSlashed
 	}
 
 	if uint64(totalSlashTokens) > validator.BondTokens {
@@ -175,13 +168,11 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 	}
 
 	// 更新validator
-	updatedValidatorTokens := validator.BondTokens - uint64(totalSlashTokens)
-	sm.ChangeValidatorBondTokens(validator, updatedValidatorTokens)
-
-	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", updatedValidatorTokens)
+	sm.ChangeValidatorBondTokens(validator, validator.BondTokens-uint64(totalSlashTokens))
+	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", validator.BondTokens-uint64(totalSlashTokens))
 
 	// slash放入社区费池
-	dm.AddToCommunityFeePool(btypes.NewInt(totalSlashTokens))
+	sm.AfterValidatorSlashed(ctx, uint64(totalSlashTokens))
 
 	return nil
 }

@@ -30,6 +30,7 @@ const (
 	inactiveRevokeDesc        = "Revoked"
 	inactiveMissVoteBlockDesc = "Kicked"
 	inactiveMaxValidatorDesc  = "Replaced"
+	inactiveDoubleDesc        = "DoubleSign"
 )
 
 type validatorDisplayInfo struct {
@@ -70,6 +71,8 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 		info.InactiveDesc = inactiveMissVoteBlockDesc
 	} else if validator.InactiveCode == types.MaxValidator {
 		info.InactiveDesc = inactiveMaxValidatorDesc
+	} else if validator.InactiveCode == types.DoubleSign {
+		info.InactiveDesc = inactiveDoubleDesc
 	}
 
 	info.ValidatorAddr = strings.ToUpper(hex.EncodeToString(validator.ValidatorPubKey.Address()))

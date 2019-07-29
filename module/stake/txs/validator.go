@@ -303,8 +303,7 @@ func NewActiveValidatorTx(owner btypes.Address, bondTokens uint64) *TxActiveVali
 
 func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 
-	if len(tx.Owner) == 0 ||
-		tx.BondTokens == 0 {
+	if len(tx.Owner) == 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
@@ -336,7 +335,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	// 激活 Validator
 	validatorAddr := validator.GetValidatorAddress()
-	stakeMapper.MakeValidatorActive(validatorAddr)
+	stakeMapper.MakeValidatorActive(validatorAddr, tx.BondTokens)
 
 	// 重置 ValidatorVoteInfo
 	voteInfo := types.NewValidatorVoteInfo(validator.BondHeight+1, 0, 0)
@@ -346,20 +345,24 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	delegatorAddr := tx.Owner
 	delegator := accountMapper.GetAccount(delegatorAddr).(*qtypes.QOSAccount)
 
-	// 从 delegator 账户, 扣去增加的自委托token数量
-	delegator.MustMinusQOS(btypes.NewInt(int64(tx.BondTokens)))
-	accountMapper.SetAccount(delegator)
+	// 当增加委托的tokens大于0时
+	if tx.BondTokens > 0 {
 
-	// 获取 delegationInfo
-	delegationInfo, exists := stakeMapper.GetDelegationInfo(delegatorAddr, validatorAddr)
-	if !exists {
-		return btypes.Result{Code: btypes.CodeInternal}, nil
+		// 从 delegator 账户, 扣去增加的自委托token数量
+		delegator.MustMinusQOS(btypes.NewInt(int64(tx.BondTokens)))
+		accountMapper.SetAccount(delegator)
+
+		// 获取 delegationInfo
+		delegationInfo, exists := stakeMapper.GetDelegationInfo(delegatorAddr, validatorAddr)
+		if !exists {
+			return btypes.Result{Code: btypes.CodeInternal}, nil
+		}
+
+		// 修改 delegationInfo 中的token amount, 并保存.
+		delegationInfo.Amount += tx.BondTokens
+		stakeMapper.BeforeDelegationModified(ctx, validatorAddr, delegatorAddr, delegationInfo.Amount)
+		stakeMapper.SetDelegationInfo(delegationInfo)
 	}
-
-	// 修改 delegationInfo 中的token amount, 并保存.
-	delegationInfo.Amount += tx.BondTokens
-	stakeMapper.BeforeDelegationModified(ctx, validatorAddr, delegatorAddr, delegationInfo.Amount)
-	stakeMapper.SetDelegationInfo(delegationInfo)
 
 	// 设置Events
 	result.Events = btypes.Events{

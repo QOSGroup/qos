@@ -149,7 +149,6 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount to increase")
 
 	cmd.MarkFlagRequired(flagOwner)
-	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd
 }

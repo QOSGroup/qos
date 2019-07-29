@@ -23,6 +23,7 @@ const (
 	Revoke        InactiveCode = iota // 2
 	MissVoteBlock                     // 3
 	MaxValidator                      // 4
+	DoubleSign                        // 5
 )
 
 // Description - description fields for a validator
