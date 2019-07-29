@@ -59,7 +59,7 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 
 		//unbond height
 		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-		dm.AddDelegatorUnbondingQOSatHeight(unbondHeight, delAddr, unbondToken)
+		sm.AddUnbondingDelegation(unbondHeight, stake.NewUnbondingInfo(delAddr, val, uint64(ctx.BlockHeight()), unbondToken))
 	}
 
 	//删除validator汇总收益数据
@@ -76,7 +76,7 @@ func (hooks *StakingHooks) AfterDelegationCreated(ctx context.Context, val btype
 }
 
 // 更新绑定tokens时分配处理逻辑
-func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateAmount uint64, reDelegate bool) {
+func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateAmount uint64) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 	validator, exists := sm.GetValidator(val)
@@ -87,13 +87,8 @@ func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val bty
 	if !exists {
 		panic(fmt.Sprintf("delegation from %s to %s not exists", del, val))
 	}
-	originTokens, err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, updateAmount, uint64(ctx.BlockHeight()))
+	err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, updateAmount, uint64(ctx.BlockHeight()))
 	if err != nil {
 		panic(fmt.Sprintf("modify delegation from %s to %s error: %v", del, val, err))
-	}
-
-	if !reDelegate && updateAmount < originTokens {
-		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-		dm.AddDelegatorUnbondingQOSatHeight(unbondHeight, del, originTokens-updateAmount)
 	}
 }

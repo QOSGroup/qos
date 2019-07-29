@@ -35,7 +35,7 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 		}
 	}()
 
-	if len(route) < 3 {
+	if len(route) < 2 {
 		return nil, btypes.ErrInternal("custom query miss parameters")
 	}
 
@@ -54,6 +54,14 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	} else if route[0] == types.Delegations && route[1] == types.Delegator {
 		deleAddr, _ := btypes.GetAddrFromBech32(route[2])
 		data, e = getDelegationsByDelegator(ctx, deleAddr)
+
+	} else if route[0] == types.Unbondings {
+		deleAddr, _ := btypes.GetAddrFromBech32(route[1])
+		data, e = getUnbondingsByDelegator(ctx, deleAddr)
+
+	} else if route[0] == types.Redelegations {
+		deleAddr, _ := btypes.GetAddrFromBech32(route[1])
+		data, e = getRedelegationsByDelegator(ctx, deleAddr)
 
 	} else {
 		data = nil
@@ -133,4 +141,18 @@ func NewDelegationQueryResult(deleAddr, ownerAddr btypes.Address, valPubkey cryp
 		Amount:          amount,
 		IsCompound:      compound,
 	}
+}
+
+func getUnbondingsByDelegator(ctx context.Context, delegator btypes.Address) ([]byte, error) {
+	sm := GetMapper(ctx)
+	result := sm.GetUnbondingDelegationsByDelegator(delegator)
+
+	return sm.GetCodec().MarshalJSON(result)
+}
+
+func getRedelegationsByDelegator(ctx context.Context, delegator btypes.Address) ([]byte, error) {
+	sm := GetMapper(ctx)
+	result := sm.GetRedelegationsByDelegator(delegator)
+
+	return sm.GetCodec().MarshalJSON(result)
 }

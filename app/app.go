@@ -258,24 +258,41 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	}
 	// return unbond tokens
 	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + ctx.BlockHeight()); h++ {
-		prePrefix := distribution.BuildUnbondingDelegationByHeightPrefix(uint64(h))
+		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(uint64(h))
 
 		iter := btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
-		defer iter.Close()
-
 		for ; iter.Valid(); iter.Next() {
 			k := iter.Key()
 			dm.Del(k)
-
-			var amount uint64
-			dm.BaseMapper.DecodeObject(iter.Value(), &amount)
-
-			_, delAddr := distribution.GetUnbondingDelegationHeightAddress(k)
-
-			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-			delegator.PlusQOS(btypes.NewInt(int64(amount)))
-			am.SetAccount(delegator)
+			var unbonds []stake.UnbondingDelegationInfo
+			dm.BaseMapper.DecodeObject(iter.Value(), &unbonds)
+			for _, unbond := range unbonds {
+				_, delAddr := stake.GetUnbondingDelegationHeightAddress(k)
+				delegator := am.GetAccount(delAddr).(*types.QOSAccount)
+				delegator.PlusQOS(btypes.NewInt(int64(unbond.Amount)))
+				am.SetAccount(delegator)
+			}
 		}
+		iter.Close()
+	}
+	// return redelegation tokens
+	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationHeight) + ctx.BlockHeight()); h++ {
+		prePrefix := stake.BuildRedelegationByHeightPrefix(uint64(h))
+
+		iter := btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
+		for ; iter.Valid(); iter.Next() {
+			k := iter.Key()
+			dm.Del(k)
+			var reDelegations []stake.ReDelegationInfo
+			dm.BaseMapper.DecodeObject(iter.Value(), &reDelegations)
+			for _, reDelegation := range reDelegations {
+				_, delAddr := stake.GetRedelegationHeightAddress(k)
+				delegator := am.GetAccount(delAddr).(*types.QOSAccount)
+				delegator.PlusQOS(btypes.NewInt(int64(reDelegation.Amount)))
+				am.SetAccount(delegator)
+			}
+		}
+		iter.Close()
 	}
 	dm.DeleteDelegatorsIncomeHeight()
 	// reinitialize validators
@@ -292,8 +309,10 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	// recreate delegations
 	for _, delegation := range delegations {
 		dm.DelDelegatorEarningStartInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
-		sm.DelDelegationInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
-		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, vals[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound))
+		sm.DelDelegationInfo(delegation.DelegatorAddr, delegation.ValidatorAddr)
+		validator, _ := sm.GetValidator(delegation.ValidatorAddr)
+		sm.ChangeValidatorBondTokens(validator, validator.BondTokens+delegation.Amount)
+		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, vals[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound), false)
 	}
 
 	/* reset mint */
@@ -370,10 +389,13 @@ func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
 		preDistributionRemainTotal = preDistributionRemainTotal.Add(data.EcoFeePool.PreDistributeRemainTotalFee)
 	}
 	qosUnbond := btypes.ZeroInt()
-	for _, unbond := range state.DistributionData.DelegatorsUnbondInfo {
+	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
 		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
 	}
-
+	redelegations := btypes.ZeroInt()
+	for _, reDelegation := range state.StakeData.ReDelegationsInfo {
+		redelegations = redelegations.Add(btypes.NewInt(int64(reDelegation.Amount)))
+	}
 	govDeposit := btypes.ZeroInt()
 	for _, proposal := range state.GovData.Proposals {
 		if proposal.Proposal.Status != gov.StatusPassed && proposal.Proposal.Status != gov.StatusRejected {
@@ -384,7 +406,7 @@ func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
 	qosFeePool := state.DistributionData.CommunityFeePool
 	qosPreQOS := state.DistributionData.PreDistributionQOSAmount
 
-	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal).Add(govDeposit)
+	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(redelegations).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal).Add(govDeposit)
 	qosApplied := state.MintData.AppliedQOSAmount
 	diff := qosTotal.Sub(btypes.NewInt(int64(qosApplied)))
 
@@ -393,6 +415,7 @@ func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
 		"accounts", qosInAccounts,
 		"delegations", qosInDelegation,
 		"unbond", qosUnbond,
+		"redelegation", redelegations,
 		"feepool", qosFeePool,
 		"pre", qosPreQOS,
 		"valshared", preDistributionRemainTotal,

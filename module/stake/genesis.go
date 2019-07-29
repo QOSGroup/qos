@@ -19,7 +19,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	initValidators(ctx, data.Validators)
 	initParams(ctx, data.Params)
 	initValidatorsVotesInfo(ctx, data.ValidatorsVoteInfo, data.ValidatorsVoteInWindow)
-	initDelegatorsInfo(ctx, data.DelegatorsInfo)
+	initDelegatorsInfo(ctx, data.DelegatorsInfo, data.DelegatorsUnbondInfo)
 }
 
 func initValidators(ctx context.Context, validators []types.Validator) {
@@ -50,7 +50,7 @@ func initValidatorsVotesInfo(ctx context.Context, voteInfos []types.ValidatorVot
 	}
 }
 
-func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState) {
+func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState, delegatorsUnbondInfo []types.UnbondingDelegationInfo) {
 	sm := mapper.GetMapper(ctx)
 
 	for _, info := range delegatorsInfo {
@@ -60,6 +60,10 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 			Amount:        info.Amount,
 			IsCompound:    info.IsCompound,
 		})
+	}
+
+	for _, info := range delegatorsUnbondInfo {
+		sm.AddUnbondingDelegations(info.Height, []types.UnbondingDelegationInfo{info})
 	}
 }
 
@@ -109,7 +113,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		}
 	})
 
-	var delegatorInfo []types.DelegationInfoState
+	var delegatorsInfo []types.DelegationInfoState
 	sm.IterateDelegationsInfo(btypes.Address{}, func(info types.DelegationInfo) {
 
 		validator, exists := validatorMapper.GetValidator(info.ValidatorAddr)
@@ -117,7 +121,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 			panic(fmt.Sprintf("validator:%s not exists", info.ValidatorAddr.String()))
 		}
 
-		delegatorInfo = append(delegatorInfo, DelegationInfoState{
+		delegatorsInfo = append(delegatorsInfo, DelegationInfoState{
 			DelegatorAddr:   info.DelegatorAddr,
 			ValidatorPubKey: validator.GetValidatorPubKey(),
 			Amount:          info.Amount,
@@ -125,12 +129,24 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		})
 	})
 
-	return types.GenesisState{
+	var delegatorsUnbondInfo []types.UnbondingDelegationInfo
+	sm.IterateUnbondingDelegations(func(deleAddr btypes.Address, height uint64, unbondings []types.UnbondingDelegationInfo) {
+		delegatorsUnbondInfo = append(delegatorsUnbondInfo, unbondings...)
+	})
+
+	var reDelegationsInfo []types.RedelegationInfo
+	sm.IterateRedelegationsInfo(func(deleAddr btypes.Address, height uint64, reDelegations []types.RedelegationInfo) {
+		reDelegationsInfo = append(reDelegationsInfo, reDelegations...)
+	})
+
+	return GenesisState{
 		Params:                 params,
 		Validators:             validators,
 		ValidatorsVoteInfo:     validatorsVoteInfo,
 		ValidatorsVoteInWindow: validatorsVoteInWindow,
-		DelegatorsInfo:         delegatorInfo,
+		DelegatorsInfo:         delegatorsInfo,
+		DelegatorsUnbondInfo:   delegatorsUnbondInfo,
+		ReDelegationsInfo:      reDelegationsInfo,
 		CurrentValidators:      currentValidators,
 	}
 }

@@ -15,7 +15,6 @@ type GenesisState struct {
 	DelegatorEarningInfos    []DelegatorEarningStartState  `json:"delegator_earning_info"`
 	DelegatorIncomeHeights   []DelegatorIncomeHeightState  `json:"delegator_income_height"`
 	ValidatorEcoFeePools     []ValidatorEcoFeePoolState    `json:"validator_eco_fee_pools"`
-	DelegatorsUnbondInfo     []DelegatorUnbondState        `json:"delegator_unbond_info"`
 	Params                   Params                        `json:"params"`
 }
 
@@ -27,7 +26,6 @@ func NewGenesisState(communityFeePool btypes.BigInt,
 	delegatorEarningInfos []DelegatorEarningStartState,
 	delegatorIncomeHeights []DelegatorIncomeHeightState,
 	validatorEcoFeePools []ValidatorEcoFeePoolState,
-	delegatorsUnbondInfo []DelegatorUnbondState,
 	params Params) GenesisState {
 	return GenesisState{
 		CommunityFeePool:         communityFeePool,
@@ -38,7 +36,6 @@ func NewGenesisState(communityFeePool btypes.BigInt,
 		DelegatorEarningInfos:    delegatorEarningInfos,
 		DelegatorIncomeHeights:   delegatorIncomeHeights,
 		ValidatorEcoFeePools:     validatorEcoFeePools,
-		DelegatorsUnbondInfo:     delegatorsUnbondInfo,
 		Params:                   params,
 	}
 }
@@ -77,10 +74,4 @@ type DelegatorIncomeHeightState struct {
 type ValidatorEcoFeePoolState struct {
 	ValidatorAddress btypes.Address      `json:"validator_address"`
 	EcoFeePool       ValidatorEcoFeePool `json:"eco_fee_pool"`
-}
-
-type DelegatorUnbondState struct {
-	DeleAddress btypes.Address `json:"delegator_address"`
-	Height      uint64         `json:"height"`
-	Amount      uint64         `json:"tokens"`
 }

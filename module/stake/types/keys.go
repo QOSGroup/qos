@@ -14,11 +14,13 @@ const (
 	MapperName = "validator"
 
 	//------query-------
-	Stake       = "stake"
-	Delegation  = "delegation"
-	Delegations = "delegations"
-	Owner       = "owner"
-	Delegator   = "delegator"
+	Stake         = "stake"
+	Delegation    = "delegation"
+	Delegations   = "delegations"
+	Owner         = "owner"
+	Delegator     = "delegator"
+	Unbondings    = "Unbondings"
+	Redelegations = "Redelegations"
 )
 
 var (
@@ -34,6 +36,12 @@ var (
 
 	DelegationByDelValKey = []byte{0x31} // key: delegator add + validator owner add, value: delegationInfo
 	DelegationByValDelKey = []byte{0x32} // key: validator owner add + delegator add, value: nil
+
+	UnbondingHeightDelegatorKey = []byte{0x41} // key: height + delegator add, value: the amount of qos going to be unbonded on this height
+	UnbondingDelegatorHeightKey = []byte{0x42} // key: delegator + height add, value: nil
+
+	RedelegationHeightDelegatorKey = []byte{0x51} // key: height + delegator add, value: redelegations going to be complete on this height
+	RedelegationDelegatorHeightKey = []byte{0x52} // key: delegator + height add, value: nil
 
 	currentValidatorsAddressKey = []byte("currentValidatorsAddressKey")
 )
@@ -161,6 +169,106 @@ func GetValidatorVoteInfoInWindowIndexAddr(key []byte) (uint64, btypes.Address) 
 	return index, addr
 }
 
+func BuildUnbondingHeightDelegatorKey(height uint64, delAdd btypes.Address) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(UnbondingHeightDelegatorKey, heightBytes...)
+	return append(bz, delAdd...)
+}
+
+func BuildUnbondingDelegationByHeightPrefix(height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	return append(UnbondingHeightDelegatorKey, heightBytes...)
+}
+
+func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid UnbondingHeightDelegatorKey length")
+	}
+
+	height = binary.BigEndian.Uint64(key[1:9])
+	deleAddr = btypes.Address(key[9:])
+	return
+}
+
+func GetUnbondingDelegationAddressHeight(key []byte) (deleAddr btypes.Address, height uint64) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid UnbondingDelegatorHeightKey length")
+	}
+
+	deleAddr = btypes.Address(key[1 : AddrLen+1])
+	height = binary.BigEndian.Uint64(key[AddrLen+1:])
+	return
+}
+
+func BuildUnbondingDelegatorHeightKey(delAddr btypes.Address, height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(UnbondingDelegatorHeightKey, delAddr...)
+	return append(bz, heightBytes...)
+}
+
+func BuildUnbondingByDelegatorPrefix(delAddr btypes.Address) []byte {
+
+	return append(UnbondingDelegatorHeightKey, delAddr...)
+}
+
+func BuildRedelegationHeightDelegatorKey(height uint64, delAdd btypes.Address) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(RedelegationHeightDelegatorKey, heightBytes...)
+	return append(bz, delAdd...)
+}
+
+func BuildRedelegationByHeightPrefix(height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	return append(RedelegationHeightDelegatorKey, heightBytes...)
+}
+
+func GetRedelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid RedelegationHeightDelegatorKey length")
+	}
+
+	height = binary.BigEndian.Uint64(key[1:9])
+	deleAddr = btypes.Address(key[9:])
+	return
+}
+
+func GetRedelegationAddressHeight(key []byte) (deleAddr btypes.Address, height uint64) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid RedelegationDelegatorHeightKey length")
+	}
+
+	deleAddr = btypes.Address(key[1 : AddrLen+1])
+	height = binary.BigEndian.Uint64(key[AddrLen+1:])
+	return
+}
+
+func BuildRedelegationDelegatorHeightKey(delAddr btypes.Address, height uint64) []byte {
+	heightBytes := make([]byte, 8)
+	binary.BigEndian.PutUint64(heightBytes, height)
+
+	bz := append(RedelegationDelegatorHeightKey, delAddr...)
+	return append(bz, heightBytes...)
+}
+
+func BuildRedelegationByDelegatorPrefix(delAddr btypes.Address) []byte {
+
+	return append(RedelegationDelegatorHeightKey, delAddr...)
+}
+
 //-------------------------query path
 
 func BuildGetDelegationCustomQueryPath(deleAddr, owner btypes.Address) string {
@@ -173,4 +281,12 @@ func BuildQueryDelegationsByOwnerCustomQueryPath(owner btypes.Address) string {
 
 func BuildQueryDelegationsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
 	return fmt.Sprintf("custom/%s/%s/%s/%s", Stake, Delegations, Delegator, deleAddr.String())
+}
+
+func BuildQueryUnbondingsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s", Stake, Unbondings, deleAddr.String())
+}
+
+func BuildQueryRedelegationsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s", Stake, Redelegations, deleAddr.String())
 }

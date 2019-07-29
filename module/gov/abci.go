@@ -157,7 +157,7 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 
 		// 修改delegator绑定收益
 		remainTokens := uint64(bondTokens - tokenSlashed)
-		if _, err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, remainTokens, height); err != nil {
+		if err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, remainTokens, height); err != nil {
 			return err
 		}
 		delegation.Amount = remainTokens

@@ -152,6 +152,8 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query delegations-to`         [验证节点委托列表](#验证节点委托列表)
 * `qoscli query delegations`            [代理用户委托列表](#代理用户委托列表)
 * `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
+* `qoscli query unbondings`             [待返还委托](#待返还委托)
+* `qoscli query redelegations`          [待执行委托变更](#待执行委托变更)
 * `qoscli query community-fee-pool`     [社区费池](#社区费池)         
 * `qoscli query proposal`               [提议查询](#提议查询)
 * `qoscli query proposals`              [提议列表](#提议列表)   
@@ -1104,7 +1106,9 @@ $ qoscli tx active-validator --owner Arya
 * `qoscli query delegator-income`   [委托收益查询](#委托收益查询)
 * `qoscli tx modify-compound`       [修改收益复投方式](#修改收益复投方式)
 * `qoscli tx unbond`                [解除委托](#解除委托)
+* `qoscli query unbondings`         [待返还委托](#待返还委托)
 * `qoscli tx redelegate`            [变更委托验证节点](#变更委托验证节点)
+* `qoscli query redelegations`      [待执行委托变更](#待执行委托变更)
 
 #### 委托
 
@@ -1286,6 +1290,17 @@ $ qoscli tx modify-compound --owner Arya --delegator Sansa --compound
 $ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
 ```
 
+#### 待返还委托
+
+`qoscli query unbondings <delegator_key_name_or_account_address>`
+
+根据质押用户地址查询该用户下所有待返还质押
+
+查询未返还`Sansa`的质押数据：
+```bash
+$ qoscli query unbondings Sansa
+```
+
 #### 变更委托验证节点
 
 `qoscli tx redelegate --from-owner <validator_key_name_or_account_address> --to-owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
@@ -1303,6 +1318,16 @@ $ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
 ```bash
 $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tokens 10
 ```
+
+#### 待执行委托变更
+
+`qoscli query redelegations <delegator_key_name_or_account_address>`
+
+根据质押用户地址查询该用户下所有待执行委托变更
+
+查询未返还`Sansa`的待执行委托变更：
+```bash
+$ qoscli query redelegations Sansa
 
 ### 治理（governance）
 

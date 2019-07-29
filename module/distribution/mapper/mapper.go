@@ -147,14 +147,13 @@ func (mapper *Mapper) IncrementValidatorPeriod(validator stake.Validator) uint64
 //1. 增加validator的计费点
 //2. 计算delegator在两次计费点间的收益
 //3. 追加该收益到delegator 收益计算信息中
-func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr btypes.Address, updatedToken, blockHeight uint64) (uint64, error) {
+func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr btypes.Address, updatedToken, blockHeight uint64) error {
 	valAddr := validator.GetValidatorAddress()
 	info, exists := mapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
 	if !exists {
-		return 0, fmt.Errorf("DelegatorEarningStartInfo not exsist. deleAddr: %s, valAddr: %s ", deleAddr, valAddr)
+		return fmt.Errorf("DelegatorEarningStartInfo not exsist. deleAddr: %s, valAddr: %s ", deleAddr, valAddr)
 	}
 
-	originTokens := info.BondToken
 	endPeriod := mapper.IncrementValidatorPeriod(validator)
 	rewards := mapper.CalculateRewardsBetweenPeriod(valAddr, info.PreviousPeriod, endPeriod, info.BondToken)
 
@@ -166,7 +165,7 @@ func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr 
 	info.HistoricalRewardFees = info.HistoricalRewardFees.Add(rewards)
 
 	mapper.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr), info)
-	return originTokens, nil
+	return nil
 }
 
 func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.Address) uint64 {
@@ -471,37 +470,4 @@ func (mapper *Mapper) GetValidatorEcoFeePool(validatorAddr btypes.Address) (pool
 		pool = types.NewValidatorEcoFeePool()
 	}
 	return
-}
-
-func (mapper *Mapper) IterateDelegationsUnbondInfo(fn func(btypes.Address, uint64, uint64)) {
-	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.DelegatorUnbondingQOSatHeightKey)
-	defer iter.Close()
-	for ; iter.Valid(); iter.Next() {
-		key := iter.Key()
-		height, delAddr := types.GetUnbondingDelegationHeightAddress(key)
-		var amount uint64
-		mapper.DecodeObject(iter.Value(), &amount)
-		fn(delAddr, height, amount)
-	}
-}
-
-func (mapper *Mapper) SetDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, amount uint64) {
-	mapper.Set(types.BuildUnbondingDelegationByHeightDelKey(height, delAddr), amount)
-}
-
-func (mapper *Mapper) GetDelegatorUnbondingQOSatHeight(height uint64, delAdd btypes.Address) (amount uint64, exist bool) {
-	exist = mapper.Get(types.BuildUnbondingDelegationByHeightDelKey(height, delAdd), &amount)
-	return
-}
-
-func (mapper *Mapper) AddDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address, add_amount uint64) {
-	amount, exist := mapper.GetDelegatorUnbondingQOSatHeight(height, delAddr)
-	if exist {
-		add_amount += amount
-	}
-	mapper.SetDelegatorUnbondingQOSatHeight(height, delAddr, add_amount)
-}
-
-func (mapper *Mapper) RemoveDelegatorUnbondingQOSatHeight(height uint64, delAddr btypes.Address) {
-	mapper.Del(types.BuildUnbondingDelegationByHeightDelKey(height, delAddr))
 }

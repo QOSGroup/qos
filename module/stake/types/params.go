@@ -16,6 +16,7 @@ var (
 	KeyValidatorVotingStatusLeast  = []byte("voting_status_least")
 	KeyValidatorSurvivalSecs       = []byte("survival_secs")
 	KeyDelegatorUnbondReturnHeight = []byte("unbond_return_height")
+	KeyDelegatorRedelegationHeight = []byte("redelegation_height")
 )
 
 type Params struct {
@@ -24,6 +25,7 @@ type Params struct {
 	ValidatorVotingStatusLeast  uint32 `json:"voting_status_least"`
 	ValidatorSurvivalSecs       uint32 `json:"survival_secs"`
 	DelegatorUnbondReturnHeight uint32 `json:"unbond_return_height"`
+	DelegatorRedelegationHeight uint32 `json:"redelegation_height"`
 }
 
 func (p *Params) KeyValuePairs() params.KeyValuePairs {
@@ -33,6 +35,7 @@ func (p *Params) KeyValuePairs() params.KeyValuePairs {
 		{KeyValidatorVotingStatusLeast, &p.ValidatorVotingStatusLeast},
 		{KeyValidatorSurvivalSecs, &p.ValidatorSurvivalSecs},
 		{KeyDelegatorUnbondReturnHeight, &p.DelegatorUnbondReturnHeight},
+		{KeyDelegatorRedelegationHeight, &p.DelegatorRedelegationHeight},
 	}
 }
 
@@ -42,9 +45,10 @@ func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) 
 		string(KeyValidatorVotingStatusLen),
 		string(KeyValidatorVotingStatusLeast),
 		string(KeyValidatorSurvivalSecs),
-		string(KeyDelegatorUnbondReturnHeight):
+		string(KeyDelegatorUnbondReturnHeight),
+		string(KeyDelegatorRedelegationHeight):
 		v, err := strconv.ParseUint(value, 10, 32)
-		if err != nil {
+		if err != nil || v <= 0 {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
 		return v, nil
@@ -57,7 +61,7 @@ func (p *Params) GetParamSpace() string {
 	return ParamSpace
 }
 
-func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs, delegatorUnbondReturnHeight uint32) Params {
+func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs, delegatorUnbondReturnHeight uint32, delegatorRedelegationHeight uint32) Params {
 
 	return Params{
 		MaxValidatorCnt:             maxValidatorCnt,
@@ -65,9 +69,10 @@ func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusL
 		ValidatorVotingStatusLeast:  validatorVotingStatusLeast,
 		ValidatorSurvivalSecs:       validatorSurvivalSecs,
 		DelegatorUnbondReturnHeight: delegatorUnbondReturnHeight,
+		DelegatorRedelegationHeight: delegatorRedelegationHeight,
 	}
 }
 
 func DefaultParams() Params {
-	return NewParams(10, 100, 50, 600, 10)
+	return NewParams(10, 100, 50, 600, 10, 10)
 }

@@ -32,5 +32,7 @@ func QueryCommands(cdc *amino.Codec) []*cobra.Command {
 		queryDelegationInfoCommand(cdc),
 		queryDelegationsCommand(cdc),
 		queryDelegationsToCommand(cdc),
+		queryUnbondingsCommand(cdc),
+		queryRedelegationsCommand(cdc),
 	)
 }

@@ -13,14 +13,20 @@ var (
 	DefaultGenesisState = types.DefaultGenesisState
 	ValidateGenesis     = types.ValidateGenesis
 
-	MapperName = types.MapperName
-	NewMapper  = mapper.NewMapper
-	GetMapper  = mapper.GetMapper
-	Query      = mapper.Query
+	MapperName                             = types.MapperName
+	NewMapper                              = mapper.NewMapper
+	GetMapper                              = mapper.GetMapper
+	Query                                  = mapper.Query
+	BuildUnbondingDelegationByHeightPrefix = types.BuildUnbondingDelegationByHeightPrefix
+	GetUnbondingDelegationHeightAddress    = types.GetUnbondingDelegationHeightAddress
+	BuildRedelegationByHeightPrefix        = types.BuildRedelegationByHeightPrefix
+	GetRedelegationHeightAddress           = types.GetRedelegationHeightAddress
 
 	NewCreateValidatorTx = txs.NewCreateValidatorTx
 
 	NewDelegationInfo = types.NewDelegationInfo
+
+	NewUnbondingInfo = types.NewUnbondingDelegationInfo
 
 	ParamSpace    = types.ParamSpace
 	DefaultParams = types.DefaultParams
@@ -44,4 +50,7 @@ type (
 	Hooks = types.Hooks
 
 	TxCreateValidator = txs.TxCreateValidator
+
+	UnbondingDelegationInfo = types.UnbondingDelegationInfo
+	ReDelegationInfo = types.RedelegationInfo
 )

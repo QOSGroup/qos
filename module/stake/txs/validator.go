@@ -91,7 +91,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	// 初始化self-delegation
 	delegationInfo := types.NewDelegationInfo(delegatorAddr, valAddr, tx.BondTokens, tx.IsCompound)
-	sm.Delegate(ctx, delegationInfo)
+	sm.Delegate(ctx, delegationInfo, false)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
