@@ -486,3 +486,67 @@ func buildQueryOptions() client.ABCIQueryOptions {
 		Prove:  trust,
 	}
 }
+
+func queryUnbondingsCommand(cdc *go_amino.Codec) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "unbondings [delegator]",
+		Short: "Query all unbonding delegations by delegator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			var delegator btypes.Address
+
+			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
+				delegator = o
+			}
+
+			var path = types.BuildQueryUnbondingsByDelegatorCustomQueryPath(delegator)
+
+			res, err := cliCtx.Query(path, []byte(""))
+			if err != nil {
+				return err
+			}
+
+			var result []types.UnbondingDelegationInfo
+			cliCtx.Codec.UnmarshalJSON(res, &result)
+			return cliCtx.PrintResult(result)
+		},
+	}
+
+	return cmd
+}
+
+func queryRedelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
+
+	cmd := &cobra.Command{
+		Use:   "redelegations [delegator]",
+		Short: "Query all redelegations by delegator",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			var delegator btypes.Address
+
+			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
+				delegator = o
+			}
+
+			var path = types.BuildQueryRedelegationsByDelegatorCustomQueryPath(delegator)
+
+			res, err := cliCtx.Query(path, []byte(""))
+			if err != nil {
+				return err
+			}
+
+			var result []types.RedelegationInfo
+			cliCtx.Codec.UnmarshalJSON(res, &result)
+			return cliCtx.PrintResult(result)
+		},
+	}
+
+	return cmd
+}

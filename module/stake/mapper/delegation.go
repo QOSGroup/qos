@@ -115,6 +115,22 @@ func (mapper *Mapper) IterateUnbondingDelegations(fn func(btypes.Address, uint64
 	}
 }
 
+func (mapper *Mapper) GetUnbondingDelegationsByDelegator(delegator btypes.Address) (unbondings []types.UnbondingDelegationInfo) {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildUnbondingByDelegatorPrefix(delegator))
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		delAddr, height := types.GetUnbondingDelegationAddressHeight(key)
+		ubs, exists := mapper.getUnbondingDelegations(height, delAddr)
+		if exists {
+			unbondings = append(unbondings, ubs...)
+		}
+	}
+
+	return
+}
+
 func (mapper *Mapper) setUnbondingDelegations(height uint64, delAddr btypes.Address, unbondings []types.UnbondingDelegationInfo) {
 	mapper.Set(types.BuildUnbondingHeightDelegatorKey(height, delAddr), unbondings)
 	mapper.Set(types.BuildUnbondingDelegatorHeightKey(delAddr, height), true)
@@ -167,6 +183,22 @@ func (mapper *Mapper) IterateRedelegationsInfo(fn func(btypes.Address, uint64, [
 		mapper.DecodeObject(iter.Value(), &infos)
 		fn(delAddr, height, infos)
 	}
+}
+
+func (mapper *Mapper) GetRedelegationsByDelegator(delegator btypes.Address) (redelegations []types.RedelegationInfo) {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildRedelegationByDelegatorPrefix(delegator))
+	defer iter.Close()
+
+	for ; iter.Valid(); iter.Next() {
+		key := iter.Key()
+		delAddr, height := types.GetRedelegationAddressHeight(key)
+		rds, exists := mapper.getRedelegations(height, delAddr)
+		if exists {
+			redelegations = append(redelegations, rds...)
+		}
+	}
+
+	return
 }
 
 func (mapper *Mapper) setRedelegations(height uint64, delAddr btypes.Address, reDelegations []types.RedelegationInfo) {

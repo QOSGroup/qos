@@ -14,11 +14,13 @@ const (
 	MapperName = "validator"
 
 	//------query-------
-	Stake       = "stake"
-	Delegation  = "delegation"
-	Delegations = "delegations"
-	Owner       = "owner"
-	Delegator   = "delegator"
+	Stake         = "stake"
+	Delegation    = "delegation"
+	Delegations   = "delegations"
+	Owner         = "owner"
+	Delegator     = "delegator"
+	Unbondings    = "Unbondings"
+	Redelegations = "Redelegations"
 )
 
 var (
@@ -185,11 +187,22 @@ func BuildUnbondingDelegationByHeightPrefix(height uint64) []byte {
 func GetUnbondingDelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
 
 	if len(key) != (1 + 8 + AddrLen) {
-		panic("invalid UnbondingDelegationByHeightDelKey length")
+		panic("invalid UnbondingHeightDelegatorKey length")
 	}
 
 	height = binary.BigEndian.Uint64(key[1:9])
 	deleAddr = btypes.Address(key[9:])
+	return
+}
+
+func GetUnbondingDelegationAddressHeight(key []byte) (deleAddr btypes.Address, height uint64) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid UnbondingDelegatorHeightKey length")
+	}
+
+	deleAddr = btypes.Address(key[1 : AddrLen+1])
+	height = binary.BigEndian.Uint64(key[AddrLen+1:])
 	return
 }
 
@@ -224,11 +237,22 @@ func BuildRedelegationByHeightPrefix(height uint64) []byte {
 func GetRedelegationHeightAddress(key []byte) (height uint64, deleAddr btypes.Address) {
 
 	if len(key) != (1 + 8 + AddrLen) {
-		panic("invalid UnbondingDelegationByHeightDelKey length")
+		panic("invalid RedelegationHeightDelegatorKey length")
 	}
 
 	height = binary.BigEndian.Uint64(key[1:9])
 	deleAddr = btypes.Address(key[9:])
+	return
+}
+
+func GetRedelegationAddressHeight(key []byte) (deleAddr btypes.Address, height uint64) {
+
+	if len(key) != (1 + 8 + AddrLen) {
+		panic("invalid RedelegationDelegatorHeightKey length")
+	}
+
+	deleAddr = btypes.Address(key[1 : AddrLen+1])
+	height = binary.BigEndian.Uint64(key[AddrLen+1:])
 	return
 }
 
@@ -257,4 +281,12 @@ func BuildQueryDelegationsByOwnerCustomQueryPath(owner btypes.Address) string {
 
 func BuildQueryDelegationsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
 	return fmt.Sprintf("custom/%s/%s/%s/%s", Stake, Delegations, Delegator, deleAddr.String())
+}
+
+func BuildQueryUnbondingsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s", Stake, Unbondings, deleAddr.String())
+}
+
+func BuildQueryRedelegationsByDelegatorCustomQueryPath(deleAddr btypes.Address) string {
+	return fmt.Sprintf("custom/%s/%s/%s", Stake, Redelegations, deleAddr.String())
 }
