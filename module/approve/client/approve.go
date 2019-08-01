@@ -7,7 +7,6 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/approve/mapper"
 	atxs "github.com/QOSGroup/qos/module/approve/txs"
 	approvetypes "github.com/QOSGroup/qos/module/approve/types"
 	"github.com/QOSGroup/qos/types"
@@ -49,7 +48,7 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			output, err := cliCtx.Query(queryPath, mapper.BuildApproveKey(fromAddr.String(), toAddr.String()))
+			output, err := cliCtx.Query(queryPath, approvetypes.BuildApproveKey(fromAddr, toAddr))
 			if err != nil {
 				return err
 			}

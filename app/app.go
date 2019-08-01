@@ -25,6 +25,7 @@ import (
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
 	"io"
+	"time"
 )
 
 const (
@@ -51,9 +52,13 @@ type QOSApp struct {
 
 	// module manager
 	mm *types.Manager
+
+	// invariants
+	invarRoutes    []types.InvarRoute
+	invCheckPeriod uint
 }
 
-func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
+func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod uint) *QOSApp {
 
 	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec,
 		baseabci.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))))
@@ -73,7 +78,11 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 			qsc.NewAppModule(),
 			stake.NewAppModule(),
 		),
+		invCheckPeriod: invCheckPeriod,
 	}
+
+	// 注册invariants
+	app.mm.RegisterInvariants(app)
 
 	// 注册mappers
 	app.RegisterMappers()
@@ -182,7 +191,12 @@ func (app *QOSApp) BeginBlocker(ctx context.Context, req abci.RequestBeginBlock)
 }
 
 func (app *QOSApp) EndBlocker(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-	return app.mm.EndBlock(ctx, req)
+	res := app.mm.EndBlock(ctx, req)
+
+	if app.invCheckPeriod == 0 || ctx.BlockHeight()%int64(app.invCheckPeriod) == 0 {
+		app.AssertInvariants(ctx)
+	}
+	return res
 }
 
 func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage, err error) {
@@ -354,4 +368,34 @@ func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.Address) (gasUse
 	}
 
 	return
+}
+
+func (app *QOSApp) RegisterInvarRoute(module string, route string, invar types.Invariant) {
+	invarRoute := types.NewInvarRoute(module, route, invar)
+	app.invarRoutes = append(app.invarRoutes, invarRoute)
+}
+
+func (app *QOSApp) AssertInvariants(ctx context.Context) {
+	logger := app.Logger
+
+	start := time.Now()
+
+	totalCoins := btypes.BaseCoins{}
+	for _, invarRoute := range app.invarRoutes {
+		msg, coins, stop := invarRoute.Invar(ctx)
+		if stop {
+			panic(msg)
+		}
+		totalCoins = totalCoins.Plus(coins)
+		logger.Info(fmt.Sprintf("invariant check %s\t%s:\t%s", invarRoute.ModuleName, invarRoute.Route, coins.String()))
+	}
+
+	if !totalCoins.IsZero() {
+		panic("invariant check not pass")
+	}
+
+	end := time.Now()
+	diff := end.Sub(start)
+
+	logger.Info("asserted all invariants", "duration", diff, "height", ctx.BlockHeight())
 }

@@ -133,6 +133,10 @@ func BuildDelegationByValDelKey(valAdd btypes.Address, delAdd btypes.Address) []
 	return append(bz, delAdd...)
 }
 
+func BuildDelegationByValidatorPrefix(valAdd btypes.Address) []byte {
+	return append(DelegationByValDelKey, valAdd...)
+}
+
 func GetDelegationValDelKeyAddress(key []byte) (valAddr btypes.Address, deleAddr btypes.Address) {
 	if len(key) != 1+2*AddrLen {
 		panic("invalid DelegationValDelKey length")

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/bank/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
@@ -70,7 +71,9 @@ func (am AppModule) ExportGenesis(ctx context.Context) json.RawMessage {
 	return Cdc.MustMarshalJSON(gs)
 }
 
-func (am AppModule) RegisterInvariants(types.InvariantRegistry) {}
+func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
+	ir.RegisterInvarRoute(ModuleName, "account", mapper.AccountInvariant(ModuleName))
+}
 
 func (am AppModule) BeginBlock(context.Context, abci.RequestBeginBlock) {}
 

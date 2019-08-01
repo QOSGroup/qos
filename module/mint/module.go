@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/mint/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
@@ -53,7 +54,9 @@ type AppModule struct {
 }
 
 func NewAppModule() types.AppModule {
-	return types.NewGenesisOnlyAppModule(AppModule{})
+	return AppModule{
+		AppModuleBasic{},
+	}
 }
 
 func (am AppModule) InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data json.RawMessage) []abci.ValidatorUpdate {
@@ -68,8 +71,8 @@ func (am AppModule) ExportGenesis(ctx context.Context) json.RawMessage {
 	return Cdc.MustMarshalJSON(gs)
 }
 
-func (am AppModule) RegisterInvariants(types.InvariantRegistry) {
-	panic("implement me")
+func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
+	ir.RegisterInvarRoute(ModuleName, "total-applied", mapper.TotalAppliedInvariant(ModuleName))
 }
 
 func (am AppModule) BeginBlock(ctx context.Context, req abci.RequestBeginBlock) {

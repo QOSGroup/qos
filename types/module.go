@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/json"
+	"fmt"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -173,7 +174,8 @@ func (m *Manager) SetOrderEndBlockers(moduleNames ...string) {
 
 // register all module routes and module querier routes
 func (m *Manager) RegisterInvariants(ir InvariantRegistry) {
-	for _, module := range m.Modules {
+	for key, module := range m.Modules {
+		fmt.Println(key)
 		module.RegisterInvariants(ir)
 	}
 }

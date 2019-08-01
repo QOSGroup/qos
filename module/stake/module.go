@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
@@ -69,9 +70,10 @@ func (am AppModule) ExportGenesis(ctx context.Context) json.RawMessage {
 	return Cdc.MustMarshalJSON(gs)
 }
 
-func (am AppModule) RegisterInvariants(types.InvariantRegistry) {
-	//TODO
-	panic("implement me")
+func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
+	ir.RegisterInvarRoute(ModuleName, "delegation", mapper.DelegationInvariant(ModuleName))
+	ir.RegisterInvarRoute(ModuleName, "unbonding", mapper.UnbondingInvariant(ModuleName))
+	ir.RegisterInvarRoute(ModuleName, "redelegation", mapper.RedelegationInvariant(ModuleName))
 }
 
 func (am AppModule) BeginBlock(ctx context.Context, req abci.RequestBeginBlock) {

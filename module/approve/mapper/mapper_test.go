@@ -25,7 +25,7 @@ func defaultContext() context.Context {
 	approveMapper := NewApproveMapper()
 	approveMapper.SetCodec(cdc)
 	approveKey := approveMapper.GetStoreKey()
-	mapperMap[MapperName] = approveMapper
+	mapperMap[types.MapperName] = approveMapper
 
 	accountMapper := bacc.NewAccountMapper(nil, qtypes.ProtoQOSAccount)
 	accountMapper.SetCodec(cdc)

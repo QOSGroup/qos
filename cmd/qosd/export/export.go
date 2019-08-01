@@ -134,7 +134,7 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 }
 
 func exportAppState(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool) (int64, json.RawMessage, error) {
-	qApp := app.NewApp(logger, db, traceStore)
+	qApp := app.NewApp(logger, db, traceStore, 0)
 	if height != -1 {
 		qApp.LoadVersion(height)
 	}

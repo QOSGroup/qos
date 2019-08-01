@@ -17,6 +17,10 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
+const flagInvCheckPeriod = "inv-check-period"
+
+var invCheckPeriod uint
+
 func main() {
 	cdc := app.MakeCodec()
 	ctx := server.NewDefaultContext()
@@ -44,7 +48,8 @@ func main() {
 	server.AddCommands(ctx, cdc, rootCmd, newApp)
 
 	executor := cli.PrepareBaseCmd(rootCmd, "qos", types.DefaultNodeHome)
-
+	rootCmd.PersistentFlags().UintVar(&invCheckPeriod, flagInvCheckPeriod,
+		0, "Assert registered invariants every N blocks")
 	// go http.ListenAndServe(":1234", nil)
 
 	err := executor.Execute()
@@ -54,5 +59,5 @@ func main() {
 }
 
 func newApp(logger log.Logger, db dbm.DB, storeTracer io.Writer) abci.Application {
-	return app.NewApp(logger, db, storeTracer)
+	return app.NewApp(logger, db, storeTracer, invCheckPeriod)
 }

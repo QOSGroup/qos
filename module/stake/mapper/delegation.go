@@ -23,6 +23,19 @@ func (mapper *Mapper) DelDelegationInfo(delAddr btypes.Address, valAddr btypes.A
 	mapper.Del(types.BuildDelegationByValDelKey(valAddr, delAddr))
 }
 
+func (mapper *Mapper) GetDelegationsByValidator(valAddr btypes.Address) (infos []types.DelegationInfo) {
+	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildDelegationByValidatorPrefix(valAddr))
+	defer iter.Close()
+	for ; iter.Valid(); iter.Next() {
+		valAddr, delAddr := types.GetDelegationValDelKeyAddress(iter.Key())
+		if info, exists := mapper.GetDelegationInfo(delAddr, valAddr); exists {
+			infos = append(infos, info)
+		}
+	}
+
+	return
+}
+
 func (mapper *Mapper) IterateDelegationsValDeleAddr(valAddr btypes.Address, fn func(btypes.Address, btypes.Address)) {
 
 	var prefixKey []byte

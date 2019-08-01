@@ -15,7 +15,7 @@ var (
 	ValidateGenesis = types.ValidateGenesis
 
 	NewMapper  = mapper.NewApproveMapper
-	MapperName = mapper.MapperName
+	MapperName = types.MapperName
 
 	QueryCommands = client.QueryCommands
 	TxCommands    = client.TxCommands
