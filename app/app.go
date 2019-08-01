@@ -9,6 +9,7 @@ import (
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/guardian"
@@ -30,8 +31,26 @@ const (
 	appName = "QOS"
 )
 
+var (
+	ModuleBasics = types.NewBasicManager(
+		approve.AppModuleBasic{},
+		distribution.AppModuleBasic{},
+		gov.AppModuleBasic{},
+		guardian.AppModuleBasic{},
+		mint.AppModuleBasic{},
+		params.AppModuleBasic{},
+		qcp.AppModuleBasic{},
+		qsc.AppModuleBasic{},
+		stake.AppModuleBasic{},
+		bank.AppModuleBasic{},
+	)
+)
+
 type QOSApp struct {
 	*baseabci.BaseApp
+
+	// module manager
+	mm *types.Manager
 }
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
@@ -42,41 +61,38 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer) *QOSApp {
 
 	app := &QOSApp{
 		BaseApp: baseApp,
+		mm: types.NewManager(
+			bank.NewAppModule(),
+			approve.NewAppModule(),
+			distribution.NewAppModule(),
+			gov.NewAppModule(),
+			guardian.NewAppModule(),
+			mint.NewAppModule(),
+			params.NewAppModule(),
+			qcp.NewAppModule(),
+			qsc.NewAppModule(),
+			stake.NewAppModule(),
+		),
 	}
-
-	// 设置 InitChainer
-	app.SetInitChainer(app.initChainer)
-
-	// 设置gas处理逻辑
-	app.SetGasHandler(app.gasHandler)
-
-	// 设置BeginBlocker
-	app.SetBeginBlocker(func(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
-		ctx = ctx.WithEventManager(btypes.NewEventManager())
-		mint.BeginBlocker(ctx, req)
-		distribution.BeginBlocker(ctx, req)
-		stake.BeginBlocker(ctx, req)
-
-		return abci.ResponseBeginBlock{
-			Events: ctx.EventManager().ABCIEvents(),
-		}
-	})
-
-	// 设置EndBlocker
-	app.SetEndBlocker(func(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
-		ctx = ctx.WithEventManager(btypes.NewEventManager())
-		gov.EndBlocker(ctx)
-		distribution.EndBlocker(ctx, req)
-		validators := stake.EndBlocker(ctx)
-		confirmDataEveryHeight(ctx)
-		return abci.ResponseEndBlock{
-			ValidatorUpdates: validators,
-			Events:           ctx.EventManager().ABCIEvents(),
-		}
-	})
 
 	// 注册mappers
 	app.RegisterMappers()
+
+	// 设置gas处理逻辑
+	app.SetGasHandler(app.GasHandler)
+
+	// 设置BeginBlocker
+	app.mm.SetOrderBeginBlockers(mint.ModuleName, distribution.ModuleName, stake.ModuleName)
+	app.SetBeginBlocker(app.BeginBlocker)
+
+	// 设置EndBlocker
+	app.mm.SetOrderEndBlockers(gov.ModuleName, distribution.ModuleName, stake.ModuleName)
+	app.SetEndBlocker(app.EndBlocker)
+
+	// 设置 InitChainer
+	// !!! accounts first, stake last
+	app.mm.SetOrderInitGenesis(bank.ModuleName, gov.ModuleName, guardian.ModuleName, mint.ModuleName, qcp.ModuleName, qsc.ModuleName, approve.ModuleName, distribution.ModuleName, stake.ModuleName)
+	app.SetInitChainer(app.InitChainer)
 
 	// 注册自定义查询处理
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
@@ -126,7 +142,7 @@ func (app *QOSApp) RegisterMappers() {
 	app.RegisterMapper(qsc.NewMapper())
 
 	// 预授权mapper
-	app.RegisterMapper(approve.NewMapper)
+	app.RegisterMapper(approve.NewMapper())
 
 	// Staking mapper
 	stakeMapper := stake.NewMapper()
@@ -147,42 +163,26 @@ func (app *QOSApp) RegisterMappers() {
 
 }
 
-func (app *QOSApp) initChainer(ctx context.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
+func (app *QOSApp) InitChainer(ctx context.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
 
 	stateJSON := req.AppStateBytes
-	genesisState := GenesisState{}
+	genesisState := types.GenesisState{}
 	err := app.GetCdc().UnmarshalJSON(stateJSON, &genesisState)
 	if err != nil {
 		panic(err)
 	}
 
-	if err = ValidGenesis(genesisState); err != nil {
-		panic(err)
-	}
-
-	initAccounts(ctx, genesisState.Accounts)
-	gov.InitGenesis(ctx, genesisState.GovData)
-	guardian.InitGenesis(ctx, genesisState.GuardianData)
-	mint.InitGenesis(ctx, genesisState.MintData)
-	stake.InitGenesis(ctx, genesisState.StakeData)
-	qcp.InitGenesis(ctx, genesisState.QCPData)
-	qsc.InitGenesis(ctx, genesisState.QSCData)
-	approve.InitGenesis(ctx, genesisState.ApproveData)
-	distribution.InitGenesis(ctx, genesisState.DistributionData)
-	if len(genesisState.GenTxs) > 0 {
-		for _, genTx := range genesisState.GenTxs {
-			bz := app.GetCdc().MustMarshalBinaryBare(genTx)
-			reqDeliverTx := abci.RequestDeliverTx{Tx: bz}
-			res := app.BaseApp.DeliverTx(reqDeliverTx)
-			if !res.IsOK() {
-				panic(res.Log)
-			}
-		}
-	}
-
-	res.Validators = stake.GetUpdatedValidators(ctx, uint64(genesisState.StakeData.Params.MaxValidatorCnt))
+	res = app.mm.InitGenesis(ctx, app.BaseApp, genesisState)
 
 	return
+}
+
+func (app *QOSApp) BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) abci.ResponseBeginBlock {
+	return app.mm.BeginBlock(ctx, req)
+}
+
+func (app *QOSApp) EndBlocker(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
+	return app.mm.EndBlock(ctx, req)
 }
 
 func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage, err error) {
@@ -193,26 +193,9 @@ func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage
 		app.prepForZeroHeightGenesis(ctx)
 	}
 
-	accounts := []*types.QOSAccount{}
-	appendAccount := func(acc account.Account) (stop bool) {
-		accounts = append(accounts, acc.(*types.QOSAccount))
-		return false
-	}
-	ctx.Mapper(account.AccountMapperName).(*account.AccountMapper).IterateAccounts(appendAccount)
+	genState := app.mm.ExportGenesis(ctx)
 
-	genState := NewGenesisState(
-		accounts,
-		mint.ExportGenesis(ctx),
-		stake.ExportGenesis(ctx),
-		qcp.ExportGenesis(ctx),
-		qsc.ExportGenesis(ctx),
-		approve.ExportGenesis(ctx),
-		distribution.ExportGenesis(ctx),
-		gov.ExportGenesis(ctx),
-		guardian.ExportGenesis(ctx),
-	)
-
-	stateDataConsistencyCheck(ctx, genState)
+	//TODO imuge 数据校验
 
 	appState, err = app.GetCdc().MarshalJSONIndent(genState, "", " ")
 	if err != nil {
@@ -243,6 +226,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			delegations = append(delegations, delegation)
 		})
 		if validator.Status == stake.Active {
+			validators = append(validators, validator)
 			sm.MakeValidatorInactive(val, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), stake.Revoke)
 		}
 	})
@@ -310,9 +294,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	for _, delegation := range delegations {
 		dm.DelDelegatorEarningStartInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
 		sm.DelDelegationInfo(delegation.DelegatorAddr, delegation.ValidatorAddr)
-		validator, _ := sm.GetValidator(delegation.ValidatorAddr)
 		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, vals[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound), false)
-		sm.ChangeValidatorBondTokens(validator, validator.BondTokens+delegation.Amount)
 	}
 
 	/* reset mint */
@@ -336,7 +318,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 }
 
 // gas
-func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
+func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
 	gasUsed = ctx.GasMeter().GasConsumed()
 	// gas free for txs in the first block
 	if ctx.BlockHeight() == 0 {
@@ -372,80 +354,4 @@ func (app *QOSApp) gasHandler(ctx context.Context, payer btypes.Address) (gasUse
 	}
 
 	return
-}
-
-func stateDataConsistencyCheck(ctx context.Context, state GenesisState) bool {
-
-	qosInAccounts := btypes.ZeroInt()
-	for _, account := range state.Accounts {
-		qosInAccounts = qosInAccounts.Add(account.QOS)
-	}
-	qosInDelegation := btypes.ZeroInt()
-	for _, delegation := range state.StakeData.DelegatorsInfo {
-		qosInDelegation = qosInDelegation.Add(btypes.NewInt(int64(delegation.Amount)))
-	}
-	preDistributionRemainTotal := btypes.ZeroInt()
-	for _, data := range state.DistributionData.ValidatorEcoFeePools {
-		preDistributionRemainTotal = preDistributionRemainTotal.Add(data.EcoFeePool.PreDistributeRemainTotalFee)
-	}
-	qosUnbond := btypes.ZeroInt()
-	for _, unbond := range state.StakeData.DelegatorsUnbondInfo {
-		qosUnbond = qosUnbond.Add(btypes.NewInt(int64(unbond.Amount)))
-	}
-	redelegations := btypes.ZeroInt()
-	for _, reDelegation := range state.StakeData.ReDelegationsInfo {
-		redelegations = redelegations.Add(btypes.NewInt(int64(reDelegation.Amount)))
-	}
-	govDeposit := btypes.ZeroInt()
-	for _, proposal := range state.GovData.Proposals {
-		if proposal.Proposal.Status != gov.StatusPassed && proposal.Proposal.Status != gov.StatusRejected {
-			govDeposit = govDeposit.Add(btypes.NewInt(int64(proposal.Proposal.TotalDeposit)))
-		}
-	}
-
-	qosFeePool := state.DistributionData.CommunityFeePool
-	qosPreQOS := state.DistributionData.PreDistributionQOSAmount
-
-	qosTotal := qosInAccounts.Add(qosInDelegation).Add(qosUnbond).Add(redelegations).Add(qosFeePool).Add(qosPreQOS).Add(preDistributionRemainTotal).Add(govDeposit)
-	qosApplied := state.MintData.AppliedQOSAmount
-	diff := qosTotal.Sub(btypes.NewInt(int64(qosApplied)))
-
-	ctx.Logger().Info("DATA CONFIRM",
-		"height", ctx.BlockHeight(),
-		"accounts", qosInAccounts,
-		"delegations", qosInDelegation,
-		"unbond", qosUnbond,
-		"redelegation", redelegations,
-		"feepool", qosFeePool,
-		"pre", qosPreQOS,
-		"valshared", preDistributionRemainTotal,
-		"total", qosTotal,
-		"applied", qosApplied,
-		"diff", diff)
-
-	return diff.Equal(btypes.ZeroInt())
-}
-
-func confirmDataEveryHeight(ctx context.Context) {
-	accounts := []*types.QOSAccount{}
-	ctx.Mapper(account.AccountMapperName).(*account.AccountMapper).IterateAccounts(func(acc account.Account) (stop bool) {
-		accounts = append(accounts, acc.(*types.QOSAccount))
-		return false
-	})
-	genState := NewGenesisState(
-		accounts,
-		mint.ExportGenesis(ctx),
-		stake.ExportGenesis(ctx),
-		qcp.ExportGenesis(ctx),
-		qsc.ExportGenesis(ctx),
-		approve.ExportGenesis(ctx),
-		distribution.ExportGenesis(ctx),
-		gov.ExportGenesis(ctx),
-		guardian.ExportGenesis(ctx),
-	)
-
-	isSame := stateDataConsistencyCheck(ctx, genState)
-	if !isSame {
-		panic("DATA NOT CONSISTENCY")
-	}
 }

@@ -6,14 +6,6 @@ import (
 	"github.com/QOSGroup/qbase/client/config"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/module/approve/client"
-	"github.com/QOSGroup/qos/module/distribution/client"
-	"github.com/QOSGroup/qos/module/gov/client"
-	"github.com/QOSGroup/qos/module/guardian/client"
-	"github.com/QOSGroup/qos/module/qcp/client"
-	"github.com/QOSGroup/qos/module/qsc/client"
-	"github.com/QOSGroup/qos/module/stake/client"
-	"github.com/QOSGroup/qos/module/transfer/client"
 	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
 	"github.com/spf13/cobra"
@@ -39,36 +31,13 @@ func main() {
 
 	// query commands
 	queryCommands := bcli.QueryCommand(cdc)
-	queryCommands.AddCommand(qsc.QueryCommands(cdc)...)
-	queryCommands.AddCommand(approve.QueryCommands(cdc)...)
-	queryCommands.AddCommand(bctypes.LineBreak)
-	queryCommands.AddCommand(staking.QueryCommands(cdc)...)
-	queryCommands.AddCommand(bctypes.LineBreak)
-	queryCommands.AddCommand(distribution.QueryCommands(cdc)...)
-	queryCommands.AddCommand(bctypes.LineBreak)
-	queryCommands.AddCommand(gov.QueryCommands(cdc)...)
-	queryCommands.AddCommand(bctypes.LineBreak)
-	queryCommands.AddCommand(guardian.QueryCommands(cdc)...)
+	app.ModuleBasics.AddQueryCommands(queryCommands, cdc)
 	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(block.BlockCommand(cdc)...)
 
 	// txs commands
 	txsCommands := bcli.TxCommand()
-	txsCommands.AddCommand(qsc.TxCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(qcp.TxCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(transfer.TxCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(approve.TxCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(staking.TxValidatorCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(staking.TxDelegationCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(gov.TxCommands(cdc)...)
-	txsCommands.AddCommand(bctypes.LineBreak)
-	txsCommands.AddCommand(guardian.TxCommands(cdc)...)
+	app.ModuleBasics.AddTxCommands(queryCommands, cdc)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),

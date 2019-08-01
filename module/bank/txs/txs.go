@@ -5,7 +5,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/transfer/types"
+	"github.com/QOSGroup/qos/module/bank/types"
 	qtypes "github.com/QOSGroup/qos/types"
 )
 

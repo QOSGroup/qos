@@ -35,6 +35,10 @@ func NewGenesisState(guardians []Guardian) GenesisState {
 	}
 }
 
+func DefaultGenesisState() GenesisState {
+	return GenesisState{}
+}
+
 func ValidateGenesis(gs GenesisState) error {
 	addrs := map[string]bool{}
 	for _, g := range gs.Guardians {

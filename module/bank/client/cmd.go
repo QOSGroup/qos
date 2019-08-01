@@ -1,4 +1,4 @@
-package transfer
+package client
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"

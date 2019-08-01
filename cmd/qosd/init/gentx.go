@@ -9,8 +9,8 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/module/stake/client"
+	"github.com/QOSGroup/qos/module/bank"
+	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -43,7 +43,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 			if err != nil {
 				return err
 			}
-			genesisState := app.GenesisState{}
+			genesisState := types.GenesisState{}
 			if err = cdc.UnmarshalJSON(genDoc.AppState, &genesisState); err != nil {
 				return err
 			}
@@ -78,9 +78,9 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 				return errors.New("tokens lte zero")
 			}
 
-			validGenesisAccount(genesisState, info.GetAddress(), btypes.NewInt(tokens))
+			validGenesisAccount(cdc, genesisState, info.GetAddress(), btypes.NewInt(tokens))
 
-			itx, err := staking.TxCreateValidatorBuilder(cliCtx)
+			itx, err := stake.TxCreateValidatorBuilder(cliCtx)
 			if err != nil {
 				return err
 			}
@@ -126,10 +126,12 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	return cmd
 }
 
-func validGenesisAccount(genesisState app.GenesisState, address btypes.Address, amount btypes.BigInt) error {
+func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, address btypes.Address, amount btypes.BigInt) error {
 	accountIsInGenesis := false
 
-	for _, acc := range genesisState.Accounts {
+	var bankState bank.GenesisState
+	cdc.MustUnmarshalJSON(genesisState[bank.ModuleName], &bankState)
+	for _, acc := range bankState.Accounts {
 		if acc.AccountAddress.EqualsTo(address) {
 
 			if !acc.EnoughOfQOS(amount) {

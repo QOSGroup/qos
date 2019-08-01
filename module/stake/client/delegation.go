@@ -1,4 +1,4 @@
-package staking
+package client
 
 import (
 	qcliacc "github.com/QOSGroup/qbase/client/account"

@@ -2,11 +2,12 @@ package init
 
 import (
 	"github.com/QOSGroup/qbase/server"
+	"github.com/QOSGroup/qos/module/qcp"
+	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
 	"github.com/tendermint/tendermint/crypto"
 
-	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
@@ -51,13 +52,20 @@ func ConfigRootCA(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			var appState app.GenesisState
+			var appState types.GenesisState
 			if err = cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
 				return err
 			}
 
-			appState.QSCData.RootPubKey = qcpPubKey
-			appState.QCPData.RootPubKey = qscPubKey
+			var qscState qsc.GenesisState
+			cdc.MustUnmarshalJSON(appState[qsc.ModuleName], &qscState)
+			qscState.RootPubKey = qscPubKey
+			var qcpState qcp.GenesisState
+			cdc.MustUnmarshalJSON(appState[qcp.ModuleName], &qcpState)
+			qcpState.RootPubKey = qcpPubKey
+
+			appState[qsc.ModuleName] = cdc.MustMarshalJSON(qscState)
+			appState[qcp.ModuleName] = cdc.MustMarshalJSON(qcpState)
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage

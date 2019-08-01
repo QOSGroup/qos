@@ -1,4 +1,4 @@
-package qcp
+package client
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
@@ -10,4 +10,8 @@ func TxCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.PostCommands(
 		InitQCPCmd(cdc),
 	)
+}
+
+func QueryCommands(cdc *amino.Codec) []*cobra.Command {
+	return bctypes.PostCommands()
 }

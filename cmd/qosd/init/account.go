@@ -2,11 +2,11 @@ package init
 
 import (
 	"fmt"
-
 	"github.com/QOSGroup/qbase/server"
+	"github.com/QOSGroup/qos/module/bank"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/spf13/viper"
 
-	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
@@ -37,12 +37,18 @@ Example:
 				return err
 			}
 
-			var appState app.GenesisState
+			var appState types.GenesisState
 			if err = cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
 				return err
 			}
 
-			for _, v := range appState.Accounts {
+			var bankState bank.GenesisState
+			cdc.MustUnmarshalJSON(appState[bank.ModuleName], &bankState)
+
+			var mintState mint.GenesisState
+			cdc.MustUnmarshalJSON(appState[mint.ModuleName], &mintState)
+
+			for _, v := range bankState.Accounts {
 				for _, acc := range accounts {
 					if acc.AccountAddress.EqualsTo(v.GetAddress()) {
 						return fmt.Errorf("addr: %s has already exists", v.AccountAddress.String())
@@ -50,10 +56,13 @@ Example:
 				}
 			}
 
-			appState.Accounts = append(appState.Accounts, accounts...)
+			bankState.Accounts = append(bankState.Accounts, accounts...)
 			for _, acc := range accounts {
-				appState.MintData.AppliedQOSAmount = appState.MintData.AppliedQOSAmount + uint64(acc.QOS.Int64())
+				mintState.AppliedQOSAmount = mintState.AppliedQOSAmount + uint64(acc.QOS.Int64())
 			}
+
+			appState[bank.ModuleName] = cdc.MustMarshalJSON(bankState)
+			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage

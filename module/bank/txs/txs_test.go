@@ -6,7 +6,7 @@ import (
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/transfer/types"
+	"github.com/QOSGroup/qos/module/bank/types"
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"

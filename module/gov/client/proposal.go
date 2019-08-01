@@ -1,4 +1,4 @@
-package gov
+package client
 
 import (
 	"errors"

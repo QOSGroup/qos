@@ -1,4 +1,4 @@
-package distribution
+package client
 
 import (
 	"fmt"
