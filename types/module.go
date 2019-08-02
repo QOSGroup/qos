@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/QOSGroup/qbase/baseabci"
+	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/spf13/cobra"
@@ -66,6 +67,7 @@ func (bm BasicManager) AddTxCommands(rootTxCmd *cobra.Command, cdc *amino.Codec)
 	for _, b := range bm {
 		if cmd := b.GetTxCmds(cdc); cmd != nil {
 			rootTxCmd.AddCommand(cmd...)
+			rootTxCmd.AddCommand(bctypes.LineBreak)
 		}
 	}
 }
@@ -75,6 +77,7 @@ func (bm BasicManager) AddQueryCommands(rootQueryCmd *cobra.Command, cdc *amino.
 	for _, b := range bm {
 		if cmd := b.GetQueryCmds(cdc); cmd != nil {
 			rootQueryCmd.AddCommand(cmd...)
+			rootQueryCmd.AddCommand(bctypes.LineBreak)
 		}
 	}
 }

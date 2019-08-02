@@ -32,12 +32,11 @@ func main() {
 	// query commands
 	queryCommands := bcli.QueryCommand(cdc)
 	app.ModuleBasics.AddQueryCommands(queryCommands, cdc)
-	queryCommands.AddCommand(bctypes.LineBreak)
 	queryCommands.AddCommand(block.BlockCommand(cdc)...)
 
 	// txs commands
 	txsCommands := bcli.TxCommand()
-	app.ModuleBasics.AddTxCommands(queryCommands, cdc)
+	app.ModuleBasics.AddTxCommands(txsCommands, cdc)
 
 	rootCmd.AddCommand(
 		bcli.KeysCommand(cdc),
