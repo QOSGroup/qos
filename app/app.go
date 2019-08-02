@@ -113,7 +113,11 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 		if len(route) == 0 {
 			return nil, btypes.ErrInternal("miss custom subquery path")
 		}
-		return app.queryRoutes[route[0]](ctx, route[1:], req)
+		if querier, ok := app.queryRoutes[route[0]]; ok {
+			return querier(ctx, route[1:], req)
+		} else {
+			return nil, nil
+		}
 	})
 
 	// Mount stores and load the latest state.
