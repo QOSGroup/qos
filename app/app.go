@@ -88,8 +88,8 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 	// 注册invariants
 	app.mm.RegisterInvariants(app)
 
-	// 注册mappers
-	app.RegisterMappers()
+	// 注册mappers and hooks
+	app.mm.RegisterMapperAndHooks(app)
 
 	// 设置gas处理逻辑
 	app.SetGasHandler(app.GasHandler)
@@ -122,45 +122,6 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 		cmn.Exit(err.Error())
 	}
 	return app
-}
-
-// 注册mappers
-func (app *QOSApp) RegisterMappers() {
-	//parameter mapper
-	paramsMapper := params.NewMapper()
-	//config params
-	paramsMapper.RegisterParamSet(&stake.Params{}, &distribution.Params{}, &gov.Params{})
-	app.RegisterMapper(paramsMapper)
-
-	// 账户mapper
-	app.RegisterAccountProto(types.ProtoQOSAccount)
-
-	// QCP mapper
-	// qbase 默认已注入
-
-	// QSC mapper
-	app.RegisterMapper(qsc.NewMapper())
-
-	// 预授权mapper
-	app.RegisterMapper(approve.NewMapper())
-
-	// Staking mapper
-	stakeMapper := stake.NewMapper()
-	stakeMapper.SetHooks(distribution.NewStakingHooks())
-	app.RegisterMapper(stakeMapper)
-
-	// Mint mapper
-	app.RegisterMapper(mint.NewMapper())
-
-	//distribution mapper
-	app.RegisterMapper(distribution.NewMapper())
-
-	//gov mapper
-	app.RegisterMapper(gov.NewMapper())
-
-	//guardian mapper
-	app.RegisterMapper(guardian.NewMapper())
-
 }
 
 func (app *QOSApp) InitChainer(ctx context.Context, req abci.RequestInitChain) (res abci.ResponseInitChain) {
@@ -393,4 +354,16 @@ func (app *QOSApp) AssertInvariants(ctx context.Context) {
 
 func (app *QOSApp) RegisterQueryRoute(module string, query types.Querier) {
 	app.queryRoutes[module] = query
+}
+
+func (app *QOSApp) RegisterHooksMapper(mhs map[string]types.MapperWithHooks) {
+	for _, mh := range mhs {
+		// register mapper hooks
+		if mh.Hooks != nil {
+			mhs[mh.Hooks.HookMapper()].Mapper.(types.HooksMapper).SetHooks(mh.Hooks)
+		}
+		// register mapper
+		app.BaseApp.RegisterMapper(mh.Mapper)
+	}
+
 }

@@ -47,6 +47,11 @@ func (amb AppModuleBasic) GetQueryCmds(cdc *amino.Codec) []*cobra.Command {
 	return QueryCommands(cdc)
 }
 
+func (amb AppModuleBasic) GetMapperAndHooks() types.MapperWithHooks {
+	// qcp 默认在baseApp已注入
+	return types.MapperWithHooks{}
+}
+
 // app module
 type AppModule struct {
 	AppModuleBasic

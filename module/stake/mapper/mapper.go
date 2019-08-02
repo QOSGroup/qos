@@ -4,6 +4,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
 )
 
 type Mapper struct {
@@ -30,9 +31,9 @@ func (mapper *Mapper) Copy() mapper.IMapper {
 	return validatorMapper
 }
 
-func (mapper *Mapper) SetHooks(sh types.Hooks) {
+func (mapper *Mapper) SetHooks(sh qtypes.Hooks) {
 	if mapper.hooks != nil {
 		panic("cannot set validator hooks twice")
 	}
-	mapper.hooks = sh
+	mapper.hooks = sh.(types.Hooks)
 }

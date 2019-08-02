@@ -48,6 +48,10 @@ func (amb AppModuleBasic) GetQueryCmds(cdc *amino.Codec) []*cobra.Command {
 	return []*cobra.Command{}
 }
 
+func (amb AppModuleBasic) GetMapperAndHooks() types.MapperWithHooks {
+	return types.NewMapperWithHooks(NewMapper(), nil)
+}
+
 // app module
 type AppModule struct {
 	AppModuleBasic

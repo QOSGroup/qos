@@ -16,6 +16,10 @@ func NewStakingHooks() *StakingHooks {
 	return &StakingHooks{}
 }
 
+func (hooks *StakingHooks) HookMapper() string {
+	return stake.ModuleName
+}
+
 // 创建validator时初始化分配信息
 func (hooks *StakingHooks) AfterValidatorCreated(ctx context.Context, val btypes.Address) {
 	GetMapper(ctx).InitValidatorPeriodSummaryInfo(val)

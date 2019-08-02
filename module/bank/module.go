@@ -2,6 +2,7 @@ package bank
 
 import (
 	"encoding/json"
+	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qos/module/bank/mapper"
@@ -46,6 +47,10 @@ func (amb AppModuleBasic) GetTxCmds(cdc *amino.Codec) []*cobra.Command {
 
 func (amb AppModuleBasic) GetQueryCmds(cdc *amino.Codec) []*cobra.Command {
 	return []*cobra.Command{}
+}
+
+func (amb AppModuleBasic) GetMapperAndHooks() types.MapperWithHooks {
+	return types.NewMapperWithHooks(account.NewAccountMapper(Cdc, types.ProtoQOSAccount), nil)
 }
 
 // app module

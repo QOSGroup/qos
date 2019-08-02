@@ -19,6 +19,9 @@ type AppModuleBasic interface {
 	DefaultGenesis() json.RawMessage
 	ValidateGenesis(json.RawMessage) error
 
+	// mapper and hooks
+	GetMapperAndHooks() MapperWithHooks
+
 	// client functionality
 	GetTxCmds(*amino.Codec) []*cobra.Command
 	GetQueryCmds(*amino.Codec) []*cobra.Command
@@ -190,6 +193,18 @@ func (m *Manager) RegisterQueriers(qr QueryRegistry) {
 	for _, module := range m.Modules {
 		module.RegisterQuerier(qr)
 	}
+}
+
+// register all module mapper and hooks routes
+func (m *Manager) RegisterMapperAndHooks(hmr HooksMapperRegistry) {
+	mhs := make(map[string]MapperWithHooks)
+	for _, module := range m.Modules {
+		mh := module.GetMapperAndHooks()
+		if !mh.IsNil() {
+			mhs[module.Name()] = mh
+		}
+	}
+	hmr.RegisterHooksMapper(mhs)
 }
 
 // perform init genesis functionality for modules
