@@ -53,9 +53,7 @@ func (mapper *Mapper) GetApproves() []types.Approve {
 	mapper.Iterator(types.GetApprovePrefixKey(), func(bz []byte) (stop bool) {
 		approve := types.Approve{}
 		mapper.DecodeObject(bz, &approve)
-		if approve.IsPositive() {
-			approves = append(approves, approve)
-		}
+		approves = append(approves, approve)
 		return false
 	})
 

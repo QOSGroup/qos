@@ -8,6 +8,7 @@ import (
 )
 
 func TotalAppliedInvariant(module string) qtypes.Invariant {
+	// always return negative coins
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		coins := btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, btypes.NewInt(int64(GetMapper(ctx).GetAllTotalMintQOSAmount())))}
 		var broken bool

@@ -8,6 +8,10 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
+func GetMapper(ctx context.Context) *account.AccountMapper {
+	return baseabci.GetAccountMapper(ctx)
+}
+
 func GetAccount(ctx context.Context, addr btypes.Address) *qtypes.QOSAccount {
 	account := baseabci.GetAccountMapper(ctx).GetAccount(addr)
 	if account != nil {
@@ -19,11 +23,10 @@ func GetAccount(ctx context.Context, addr btypes.Address) *qtypes.QOSAccount {
 
 func GetAccounts(ctx context.Context) []*qtypes.QOSAccount {
 	accounts := []*qtypes.QOSAccount{}
-	appendAccount := func(acc account.Account) (stop bool) {
+	baseabci.GetAccountMapper(ctx).IterateAccounts(func(acc account.Account) (stop bool) {
 		accounts = append(accounts, acc.(*qtypes.QOSAccount))
 		return false
-	}
-	baseabci.GetAccountMapper(ctx).IterateAccounts(appendAccount)
+	})
 
 	return accounts
 }

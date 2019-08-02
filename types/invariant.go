@@ -8,7 +8,7 @@ import (
 
 // An Invariant is a function which tests a particular invariant.
 // The invariant returns a descriptive message about what happened
-// and total tokens
+// and total tokens, the mint module always return a negative value
 // and a boolean indicating whether the invariant has been broken.
 // The simulator will then halt and print the logs.
 type Invariant func(ctx context.Context) (string, types.BaseCoins, bool)

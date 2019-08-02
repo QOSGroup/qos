@@ -7,7 +7,6 @@ import (
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/approve/types"
-	"github.com/QOSGroup/qos/module/qsc"
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/go-amino"
@@ -32,16 +31,10 @@ func defaultContext() context.Context {
 	acountKey := accountMapper.GetStoreKey()
 	mapperMap[bacc.AccountMapperName] = accountMapper
 
-	qscMapper := qsc.NewMapper()
-	qscMapper.SetCodec(cdc)
-	qscKey := qscMapper.GetStoreKey()
-	mapperMap[qsc.MapperName] = qscMapper
-
 	db := dbm.NewMemDB()
 	cms := store.NewCommitMultiStore(db)
 	cms.MountStoreWithDB(approveKey, btypes.StoreTypeIAVL, db)
 	cms.MountStoreWithDB(acountKey, btypes.StoreTypeIAVL, db)
-	cms.MountStoreWithDB(qscKey, btypes.StoreTypeIAVL, db)
 	cms.LoadLatestVersion()
 	ctx := context.NewContext(cms, abci.Header{}, false, log.NewNopLogger(), mapperMap)
 	return ctx
@@ -50,15 +43,15 @@ func defaultContext() context.Context {
 var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
 var testToAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
 
-func genTestApprove() types.Approve {
+func genTestApprove(from, to btypes.Address, qos, qsc int64) types.Approve {
 	return types.Approve{
-		From: testFromAddr,
-		To:   testToAddr,
-		QOS:  btypes.NewInt(100),
+		From: from,
+		To:   to,
+		QOS:  btypes.NewInt(qos),
 		QSCs: qtypes.QSCs{
 			{
 				Name:   "qstar",
-				Amount: btypes.NewInt(100),
+				Amount: btypes.NewInt(qsc),
 			},
 		},
 	}
@@ -68,7 +61,7 @@ func TestSaveApprove(t *testing.T) {
 	ctx := defaultContext()
 	approveMapper := GetMapper(ctx)
 
-	approve := genTestApprove()
+	approve := genTestApprove(testFromAddr, testToAddr, 100, 100)
 	approveMapper.SaveApprove(approve)
 
 	recover, exists := approveMapper.GetApprove(approve.From, approve.To)
@@ -80,7 +73,7 @@ func TestDeleteApprove(t *testing.T) {
 	ctx := defaultContext()
 	approveMapper := GetMapper(ctx)
 
-	approve := genTestApprove()
+	approve := genTestApprove(testFromAddr, testToAddr, 100, 100)
 	approveMapper.SaveApprove(approve)
 
 	recover, exists := approveMapper.GetApprove(approve.From, approve.To)
