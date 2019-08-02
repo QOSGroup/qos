@@ -80,3 +80,5 @@ func (am AppModule) BeginBlock(context.Context, abci.RequestBeginBlock) {}
 func (am AppModule) EndBlock(context.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
 	return []abci.ValidatorUpdate{}
 }
+
+func (am AppModule) RegisterQuerier(types.QueryRegistry) {}

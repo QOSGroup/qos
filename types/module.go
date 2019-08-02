@@ -2,7 +2,6 @@ package types
 
 import (
 	"encoding/json"
-	"fmt"
 	"github.com/QOSGroup/qbase/baseabci"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/context"
@@ -96,6 +95,7 @@ type AppModule interface {
 
 	// registers
 	RegisterInvariants(InvariantRegistry)
+	RegisterQuerier(QueryRegistry)
 
 	BeginBlock(context.Context, abci.RequestBeginBlock)
 	EndBlock(context.Context, abci.RequestEndBlock) []abci.ValidatorUpdate
@@ -116,6 +116,9 @@ func NewGenesisOnlyAppModule(amg AppModuleGenesis) AppModule {
 
 // register invariants
 func (GenesisOnlyAppModule) RegisterInvariants(_ InvariantRegistry) {}
+
+// register querier
+func (GenesisOnlyAppModule) RegisterQuerier(_ QueryRegistry) {}
 
 // module begin-block
 func (gam GenesisOnlyAppModule) BeginBlock(ctx context.Context, req abci.RequestBeginBlock) {}
@@ -175,11 +178,17 @@ func (m *Manager) SetOrderEndBlockers(moduleNames ...string) {
 	m.OrderEndBlockers = moduleNames
 }
 
-// register all module routes and module querier routes
+// register all module routes and module invariant routes
 func (m *Manager) RegisterInvariants(ir InvariantRegistry) {
-	for key, module := range m.Modules {
-		fmt.Println(key)
+	for _, module := range m.Modules {
 		module.RegisterInvariants(ir)
+	}
+}
+
+// register all module querier routes
+func (m *Manager) RegisterQueriers(qr QueryRegistry) {
+	for _, module := range m.Modules {
+		module.RegisterQuerier(qr)
 	}
 }
 

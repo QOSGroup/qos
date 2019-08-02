@@ -67,3 +67,5 @@ func (am AppModule) ExportGenesis(ctx context.Context) json.RawMessage {
 	gs := ExportGenesis(ctx)
 	return Cdc.MustMarshalJSON(gs)
 }
+
+func (am AppModule) RegisterQuerier(types.QueryRegistry) {}

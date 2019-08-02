@@ -85,3 +85,7 @@ func (am AppModule) EndBlock(ctx context.Context, req abci.RequestEndBlock) []ab
 	EndBlocker(ctx, req)
 	return []abci.ValidatorUpdate{}
 }
+
+func (am AppModule) RegisterQuerier(qr types.QueryRegistry) {
+	qr.RegisterQueryRoute(ModuleName, mapper.Query)
+}

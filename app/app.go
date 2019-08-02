@@ -56,6 +56,9 @@ type QOSApp struct {
 	// invariants
 	invarRoutes    []types.InvarRoute
 	invCheckPeriod uint
+
+	// query router
+	queryRoutes map[string]types.Querier
 }
 
 func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod uint) *QOSApp {
@@ -79,6 +82,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 			stake.NewAppModule(),
 		),
 		invCheckPeriod: invCheckPeriod,
+		queryRoutes:    make(map[string]types.Querier),
 	}
 
 	// 注册invariants
@@ -104,25 +108,12 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 	app.SetInitChainer(app.InitChainer)
 
 	// 注册自定义查询处理
+	app.mm.RegisterQueriers(app)
 	app.RegisterCustomQueryHandler(func(ctx context.Context, route []string, req abci.RequestQuery) (res []byte, err btypes.Error) {
-
 		if len(route) == 0 {
 			return nil, btypes.ErrInternal("miss custom subquery path")
 		}
-
-		if route[0] == stake.ModuleName {
-			return stake.Query(ctx, route[1:], req)
-		}
-
-		if route[0] == distribution.ModuleName {
-			return distribution.Query(ctx, route[1:], req)
-		}
-
-		if route[0] == gov.ModuleName {
-			return gov.Query(ctx, route[1:], req)
-		}
-
-		return nil, nil
+		return app.queryRoutes[route[0]](ctx, route[1:], req)
 	})
 
 	// Mount stores and load the latest state.
@@ -398,4 +389,8 @@ func (app *QOSApp) AssertInvariants(ctx context.Context) {
 	diff := end.Sub(start)
 
 	logger.Info("asserted all invariants", "duration", diff, "height", ctx.BlockHeight())
+}
+
+func (app *QOSApp) RegisterQueryRoute(module string, query types.Querier) {
+	app.queryRoutes[module] = query
 }
