@@ -267,7 +267,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			var unbonds []stake.UnbondingDelegationInfo
 			dm.BaseMapper.DecodeObject(iter.Value(), &unbonds)
 			for _, unbond := range unbonds {
-				_, delAddr := stake.GetUnbondingDelegationHeightAddress(k)
+				_, delAddr, _ := stake.GetUnbondingDelegationHeightAddress(k)
 				delegator := am.GetAccount(delAddr).(*types.QOSAccount)
 				delegator.PlusQOS(btypes.NewInt(int64(unbond.Amount)))
 				am.SetAccount(delegator)
@@ -286,7 +286,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			var reDelegations []stake.ReDelegationInfo
 			dm.BaseMapper.DecodeObject(iter.Value(), &reDelegations)
 			for _, reDelegation := range reDelegations {
-				_, delAddr := stake.GetRedelegationHeightAddress(k)
+				_, delAddr, _ := stake.GetRedelegationHeightAddress(k)
 				delegator := am.GetAccount(delAddr).(*types.QOSAccount)
 				delegator.PlusQOS(btypes.NewInt(int64(reDelegation.Amount)))
 				am.SetAccount(delegator)
@@ -311,8 +311,8 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 		dm.DelDelegatorEarningStartInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
 		sm.DelDelegationInfo(delegation.DelegatorAddr, delegation.ValidatorAddr)
 		validator, _ := sm.GetValidator(delegation.ValidatorAddr)
-		sm.ChangeValidatorBondTokens(validator, validator.BondTokens+delegation.Amount)
 		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, vals[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound), false)
+		sm.ChangeValidatorBondTokens(validator, validator.BondTokens+delegation.Amount)
 	}
 
 	/* reset mint */

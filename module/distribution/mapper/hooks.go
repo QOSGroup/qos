@@ -59,7 +59,7 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 
 		//unbond height
 		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-		sm.AddUnbondingDelegation(unbondHeight, stake.NewUnbondingInfo(delAddr, val, uint64(ctx.BlockHeight()), unbondToken))
+		sm.AddUnbondingDelegation(stake.NewUnbondingInfo(delAddr, val, uint64(ctx.BlockHeight()), unbondHeight, unbondToken))
 	}
 
 	//删除validator汇总收益数据
@@ -91,4 +91,9 @@ func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val bty
 	if err != nil {
 		panic(fmt.Sprintf("modify delegation from %s to %s error: %v", del, val, err))
 	}
+}
+
+// validator惩罚后操作
+func (hooks *StakingHooks) AfterValidatorSlashed(ctx context.Context, slashedTokens uint64) {
+	GetMapper(ctx).AddToCommunityFeePool(btypes.NewInt(int64(slashedTokens)))
 }

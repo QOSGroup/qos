@@ -31,3 +31,9 @@ func (mapper *Mapper) BeforeDelegationModified(ctx context.Context, val btypes.A
 		mapper.hooks.BeforeDelegationModified(ctx, val, del, updateTokes)
 	}
 }
+
+func (mapper *Mapper) AfterValidatorSlashed(ctx context.Context, slashedTokes uint64) {
+	if mapper.hooks != nil {
+		mapper.hooks.AfterValidatorSlashed(ctx, slashedTokes)
+	}
+}

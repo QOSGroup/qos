@@ -46,12 +46,12 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	sm := mapper.GetMapper(ctx)
 	validator, _ := sm.GetValidatorByOwner(tx.ValidatorOwner)
 
-	// update validator
-	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()+tx.Amount)
-
 	// delegation
 	info := types.NewDelegationInfo(tx.Delegator, validator.GetValidatorAddress(), tx.Amount, tx.IsCompound)
 	sm.Delegate(ctx, info, false)
+
+	// update validator
+	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()+tx.Amount)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -218,11 +218,11 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 		tx.UnbondAmount = delegation.Amount
 	}
 
-	// update validator
-	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()-tx.UnbondAmount)
-
 	// unBond delegation tokens
 	sm.UnbondTokens(ctx, delegation, tx.UnbondAmount)
+
+	// update validator
+	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()-tx.UnbondAmount)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -312,11 +312,12 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 		tx.Amount = delegation.Amount
 	}
 
+	// redelegate
+	redelegateHeight := uint64(sm.GetParams(ctx).DelegatorRedelegationHeight) + uint64(ctx.BlockHeight())
+	sm.ReDelegate(ctx, delegation, types.NewRedelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, uint64(ctx.BlockHeight()), redelegateHeight, tx.IsCompound))
+
 	// update validator
 	sm.ChangeValidatorBondTokens(fromValidator, fromValidator.GetBondTokens()-tx.Amount)
-
-	// redelegate
-	sm.ReDelegate(ctx, delegation, types.NewRedelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, tx.IsCompound))
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(

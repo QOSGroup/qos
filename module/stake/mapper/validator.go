@@ -108,12 +108,13 @@ func (mapper *Mapper) GetActiveValidatorSet(ascending bool) (validators []btypes
 	return validators
 }
 
-func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address) {
+func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address, addTokens uint64) {
 	validator, exists := mapper.GetValidator(valAddress)
 	if !exists {
 		return
 	}
 	validator.Status = types.Active
+	validator.BondTokens += addTokens
 
 	mapper.Set(types.BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
 	mapper.Del(types.BuildInactiveValidatorKey(uint64(validator.InactiveTime.UTC().Unix()), valAddress))

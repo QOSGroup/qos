@@ -18,9 +18,9 @@ var (
 	GetMapper                              = mapper.GetMapper
 	Query                                  = mapper.Query
 	BuildUnbondingDelegationByHeightPrefix = types.BuildUnbondingDelegationByHeightPrefix
-	GetUnbondingDelegationHeightAddress    = types.GetUnbondingDelegationHeightAddress
+	GetUnbondingDelegationHeightAddress    = types.GetUnbondingDelegationHeightDelegatorValidator
 	BuildRedelegationByHeightPrefix        = types.BuildRedelegationByHeightPrefix
-	GetRedelegationHeightAddress           = types.GetRedelegationHeightAddress
+	GetRedelegationHeightAddress           = types.GetRedelegationHeightDelegatorFromValidator
 
 	NewCreateValidatorTx = txs.NewCreateValidatorTx
 
