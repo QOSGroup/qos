@@ -15,3 +15,11 @@ func NewGenesisState(pubKey crypto.PubKey, qscs []Info) GenesisState {
 		QSCs:       qscs,
 	}
 }
+
+func DefaultGenesisState() GenesisState {
+	return GenesisState{}
+}
+
+func ValidateGenesis(gs GenesisState) error {
+	return nil
+}

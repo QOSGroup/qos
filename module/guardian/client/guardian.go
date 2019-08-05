@@ -1,4 +1,4 @@
-package guardian
+package client
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package qcp
+package client
 
 import (
 	"errors"

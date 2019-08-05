@@ -1,4 +1,4 @@
-package staking
+package client
 
 import (
 	"encoding/binary"

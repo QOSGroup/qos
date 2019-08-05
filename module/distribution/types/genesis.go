@@ -75,3 +75,5 @@ type ValidatorEcoFeePoolState struct {
 	ValidatorAddress btypes.Address      `json:"validator_address"`
 	EcoFeePool       ValidatorEcoFeePool `json:"eco_fee_pool"`
 }
+
+func ValidateGenesis(_ GenesisState) error { return nil }

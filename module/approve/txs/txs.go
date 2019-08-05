@@ -23,7 +23,7 @@ func (tx TxCreateApprove) ValidateData(ctx context.Context) error {
 	}
 
 	// 授权必须不存在
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if exists {
 		return types.ErrApproveExists(types.DefaultCodeSpace, "")
@@ -50,7 +50,7 @@ func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, cross
 	}
 
 	// 创建授权
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SaveApprove(tx.Approve)
 
 	result.Events = btypes.Events{
@@ -96,7 +96,7 @@ func (tx TxIncreaseApprove) ValidateData(ctx context.Context) error {
 	}
 
 	// 授权必须存在
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
 		return types.ErrApproveNotExists(types.DefaultCodeSpace, "")
@@ -110,7 +110,7 @@ func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 		Code: btypes.CodeOK,
 	}
 
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approve, _ := mapper.GetApprove(tx.From, tx.To)
 	approve = approve.Plus(tx.QOS, tx.QSCs)
 
@@ -160,7 +160,7 @@ func (tx TxDecreaseApprove) ValidateData(ctx context.Context) error {
 	}
 
 	// 授权必须存在
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approve, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
 		return types.ErrApproveNotExists(types.DefaultCodeSpace, "")
@@ -178,7 +178,7 @@ func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 		Code: btypes.CodeOK,
 	}
 
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approve, _ := mapper.GetApprove(tx.From, tx.To)
 	approve = approve.Minus(tx.QOS, tx.QSCs)
 
@@ -228,7 +228,7 @@ func (tx TxUseApprove) ValidateData(ctx context.Context) error {
 	}
 
 	// 校验授权信息
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approve, exisit := approveMapper.GetApprove(tx.From, tx.To)
 	if !exisit {
 		return types.ErrApproveNotExists(types.DefaultCodeSpace, "")
@@ -260,7 +260,7 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 	from := accountMapper.GetAccount(tx.From).(*qtypes.QOSAccount)
 	to := accountMapper.GetAccount(tx.To).(*qtypes.QOSAccount)
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approve, _ := approveMapper.GetApprove(tx.From, tx.To)
 
 	// 更新授权用户状态
@@ -317,7 +317,7 @@ func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
 	}
 
 	// 授权是否存在
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	_, exists := mapper.GetApprove(tx.From, tx.To)
 	if !exists {
 		return types.ErrApproveNotExists(types.DefaultCodeSpace, "")
@@ -331,7 +331,7 @@ func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, cross
 		Code: btypes.CodeOK,
 	}
 
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.DeleteApprove(tx.From, tx.To)
 
 	result.Events = btypes.Events{

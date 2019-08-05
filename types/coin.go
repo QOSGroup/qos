@@ -5,6 +5,7 @@ import (
 )
 
 const (
+	QOSCoinName = "QOS"
 	Qos         = int64(1e8)
 	BlockReward = int64(0 * Qos)
 )

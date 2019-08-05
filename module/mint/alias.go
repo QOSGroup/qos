@@ -6,9 +6,12 @@ import (
 )
 
 var (
-	ModuleName          = "mint"
-	RegisterCodec       = types.RegisterCodec
-	DefaultGenesisState = types.DefaultGenesisState
+	ModuleName      = "mint"
+	Cdc             = types.Cdc
+	RegisterCodec   = types.RegisterCodec
+	NewGenesisState = types.NewGenesisState
+	DefaultGenesis  = types.DefaultGenesisState
+	ValidateGenesis = types.ValidateGenesis
 
 	MapperName = types.MapperName
 	NewMapper  = mapper.NewMapper

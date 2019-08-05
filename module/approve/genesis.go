@@ -7,7 +7,7 @@ import (
 )
 
 func InitGenesis(ctx context.Context, data types.GenesisState) {
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	for _, approve := range data.Approves {
 		if approve.IsPositive() {
 			approveMapper.SaveApprove(approve)
@@ -16,6 +16,6 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 }
 
 func ExportGenesis(ctx context.Context) types.GenesisState {
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	return types.NewGenesisState(approveMapper.GetApproves())
 }

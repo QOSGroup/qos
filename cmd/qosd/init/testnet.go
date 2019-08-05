@@ -5,12 +5,9 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/module/distribution"
-	"github.com/QOSGroup/qos/module/gov"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
-	"github.com/QOSGroup/qos/module/qcp"
-	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/viper"
@@ -186,17 +183,13 @@ Example:
 			for _, account := range genesisAccounts {
 				appliedQOSAmount = appliedQOSAmount.Add(account.QOS)
 			}
-			appState := app.GenesisState{
-				Accounts:         genesisAccounts,
-				MintData:         mint.DefaultGenesisState(),
-				StakeData:        stake.DefaultGenesisState(),
-				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
-				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
-				DistributionData: distribution.DefaultGenesisState(),
-				GovData:          gov.DefaultGenesisState(),
-				GuardianData:     guardianState,
-			}
-			appState.MintData.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
+
+			appState := app.ModuleBasics.DefaultGenesis()
+			appState[bank.ModuleName] = cdc.MustMarshalJSON(bank.NewGenesisState(genesisAccounts))
+			appState[guardian.ModuleName] = cdc.MustMarshalJSON(guardianState)
+			mintState := mint.DefaultGenesis()
+			mintState.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
+			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
 
 			rawState, _ := cdc.MarshalJSON(appState)
 			genDoc := &ttypes.GenesisDoc{
