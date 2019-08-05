@@ -7,5 +7,5 @@ import (
 )
 
 func TxCommands(cdc *amino.Codec) []*cobra.Command {
-	return bctypes.PostCommands(TransferCmd(cdc))
+	return bctypes.PostCommands(TransferCmd(cdc), InvariantCheckCmd(cdc))
 }

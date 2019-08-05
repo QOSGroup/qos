@@ -82,7 +82,8 @@ func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
 
 func (am AppModule) BeginBlock(context.Context, abci.RequestBeginBlock) {}
 
-func (am AppModule) EndBlock(context.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
+func (am AppModule) EndBlock(ctx context.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
+	EndBlocker(ctx, req)
 	return []abci.ValidatorUpdate{}
 }
 

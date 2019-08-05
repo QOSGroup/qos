@@ -99,7 +99,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 	app.SetBeginBlocker(app.BeginBlocker)
 
 	// 设置EndBlocker
-	app.mm.SetOrderEndBlockers(gov.ModuleName, distribution.ModuleName, stake.ModuleName)
+	app.mm.SetOrderEndBlockers(gov.ModuleName, distribution.ModuleName, stake.ModuleName, bank.ModuleName)
 	app.SetEndBlocker(app.EndBlocker)
 
 	// 设置 InitChainer
@@ -149,9 +149,18 @@ func (app *QOSApp) BeginBlocker(ctx context.Context, req abci.RequestBeginBlock)
 func (app *QOSApp) EndBlocker(ctx context.Context, req abci.RequestEndBlock) abci.ResponseEndBlock {
 	res := app.mm.EndBlock(ctx, req)
 
-	if app.invCheckPeriod == 0 || ctx.BlockHeight()%int64(app.invCheckPeriod) == 0 {
+	// 收到检查事件或固定时间间隔进行数据检查
+	check := false
+	for _, event := range res.Events {
+		if event.Type == types.EventTypeInvariantCheck {
+			check = true
+			break
+		}
+	}
+	if check || app.invCheckPeriod == 0 || ctx.BlockHeight()%int64(app.invCheckPeriod) == 0 {
 		app.AssertInvariants(ctx)
 	}
+
 	return res
 }
 

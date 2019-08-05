@@ -17,6 +17,8 @@ var (
 	ValidateGenesis = types.ValidateGenesis
 
 	TxCommands = client.TxCommands
+
+	NeedInvariantCheck = mapper.NeedInvariantCheck
 )
 
 type (

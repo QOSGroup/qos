@@ -6,6 +6,11 @@ import (
 	"github.com/QOSGroup/qbase/types"
 )
 
+var (
+	// event type for invariant checking
+	EventTypeInvariantCheck = "invariant_check"
+)
+
 // An Invariant is a function which tests a particular invariant.
 // The invariant returns a descriptive message about what happened
 // and total tokens, the mint module always return a negative value
