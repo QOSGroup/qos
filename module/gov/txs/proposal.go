@@ -9,8 +9,10 @@ import (
 	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/guardian"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
 	qtypes "github.com/QOSGroup/qos/types"
+	"time"
 )
 
 const (
@@ -313,5 +315,98 @@ func (tx TxParameterChange) GetSignData() (ret []byte) {
 	for _, param := range tx.Params {
 		ret = append(ret, param.String()...)
 	}
+	return
+}
+
+type TxAddInflationPhrase struct {
+	TxProposal
+	EndTime     time.Time `json:"end_time"`
+	TotalAmount uint64    `json:"total_amount"`
+}
+
+func NewTxAddInflationPhrase(title, description string, proposer btypes.Address, deposit uint64, endTime time.Time, totalAmount uint64) *TxAddInflationPhrase {
+	return &TxAddInflationPhrase{
+		TxProposal: TxProposal{
+			Title:          title,
+			Description:    description,
+			ProposalType:   types.ProposalTypeParameterChange,
+			Proposer:       proposer,
+			InitialDeposit: deposit,
+		},
+		EndTime:     endTime,
+		TotalAmount: totalAmount,
+	}
+}
+
+func (tx TxAddInflationPhrase) ValidateData(ctx context.Context) error {
+	err := tx.TxProposal.ValidateData(ctx)
+	if err != nil {
+		return err
+	}
+
+	// valid end time
+	mapper := mint.GetMapper(ctx)
+	for _, phrase := range mapper.GetMintParams().Phrases {
+		if phrase.EndTime.After(tx.EndTime) {
+			return types.ErrInvalidInput("EndTime must after phrases that already exist")
+		}
+	}
+
+	// valid total amount
+	if tx.TotalAmount <= 0 {
+		return types.ErrInvalidInput("TotalAmount must be positive")
+	}
+
+	return nil
+}
+
+func (tx TxAddInflationPhrase) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{
+		Code: btypes.CodeOK,
+	}
+
+	govMapper := mapper.GetMapper(ctx)
+
+	textContent := types.NewAddInflationPhrase(tx.Title, tx.Description, tx.InitialDeposit, tx.EndTime, tx.TotalAmount)
+	proposal, err := govMapper.SubmitProposal(ctx, textContent)
+
+	if err != nil {
+		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
+	}
+
+	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			types.EventTypeSubmitProposal,
+			btypes.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
+			btypes.NewAttribute(types.AttributeKeyProposer, tx.Proposer.String()),
+			btypes.NewAttribute(types.AttributeKeyDepositor, tx.Proposer.String()),
+			btypes.NewAttribute(types.AttributeKeyProposalType, tx.ProposalType.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
+
+	return
+}
+
+func (tx TxAddInflationPhrase) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Proposer}
+}
+
+func (tx TxAddInflationPhrase) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx TxAddInflationPhrase) GetGasPayer() btypes.Address {
+	return tx.Proposer
+}
+
+func (tx TxAddInflationPhrase) GetSignData() (ret []byte) {
+	ret, _ = Cdc.MarshalBinaryBare(tx)
 	return
 }

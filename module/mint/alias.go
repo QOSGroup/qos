@@ -20,4 +20,6 @@ var (
 
 type (
 	GenesisState = types.GenesisState
+
+	InflationPhrase = types.InflationPhrase
 )

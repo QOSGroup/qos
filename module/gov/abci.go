@@ -5,6 +5,7 @@ import (
 	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/QOSGroup/qos/module/gov/types"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
 
@@ -183,6 +184,8 @@ func Execute(ctx context.Context, proposal types.Proposal, logger log.Logger) er
 		return executeParameterChange(ctx, proposal, logger)
 	case types.ProposalTypeTaxUsage:
 		return executeTaxUsage(ctx, proposal, logger)
+	case types.ProposalTypeAddInflationPhrase:
+		return executeAddInflationPhrase(ctx, proposal, logger)
 	}
 
 	return nil
@@ -224,6 +227,21 @@ func executeTaxUsage(ctx context.Context, proposal types.Proposal, logger log.Lo
 	dm.SetCommunityFeePool(feePool.Sub(qos))
 
 	logger.Info("execute taxUsage", "proposal", proposal.ProposalID)
+
+	return nil
+}
+
+func executeAddInflationPhrase(ctx context.Context, proposal types.Proposal, logger log.Logger) error {
+	proposalContent := proposal.ProposalContent.(*types.AddInflationPhraseProposal)
+	mintMapper := mint.GetMapper(ctx)
+	phrase := mint.InflationPhrase{
+		EndTime:       proposalContent.EndTime,
+		TotalAmount:   proposalContent.TotalAmount,
+		AppliedAmount: uint64(0),
+	}
+	mintMapper.AddInflationPhrase(phrase)
+
+	logger.Info("execute addInflationPhrase, proposal: %d", proposal.ProposalID)
 
 	return nil
 }
