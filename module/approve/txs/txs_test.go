@@ -1,6 +1,8 @@
 package txs
 
 import (
+	"testing"
+
 	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	bmapper "github.com/QOSGroup/qbase/mapper"
@@ -15,7 +17,6 @@ import (
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"testing"
 )
 
 var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
@@ -88,7 +89,7 @@ func defaultContext() context.Context {
 	approveMapper := mapper.NewApproveMapper()
 	approveMapper.SetCodec(Cdc)
 	approveKey := approveMapper.GetStoreKey()
-	mapperMap[mapper.MapperName] = approveMapper
+	mapperMap[types.MapperName] = approveMapper
 
 	accountMapper := bacc.NewAccountMapper(nil, qtypes.ProtoQOSAccount)
 	accountMapper.SetCodec(Cdc)
@@ -131,7 +132,7 @@ func TestTxApproveCreate_ValidateData(t *testing.T) {
 	}
 	require.Nil(t, tx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(tx.Approve)
 
 	require.NotNil(t, tx.ValidateData(ctx))
@@ -147,7 +148,7 @@ func TestTxApproveCreate_Exec(t *testing.T) {
 	require.Nil(t, cross)
 	require.Equal(t, result.Code, btypes.CodeOK)
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approve, exists := approveMapper.GetApprove(tx.From, tx.To)
 	require.True(t, exists)
 	require.True(t, tx.Approve.Equals(approve))
@@ -164,7 +165,7 @@ func TestTxApproveIncrease_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, increaseTx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	require.Nil(t, increaseTx.ValidateData(ctx))
@@ -180,7 +181,7 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 		genTestApprove(),
 	}
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	result, cross := increaseTx.Exec(ctx)
@@ -203,7 +204,7 @@ func TestTxApproveDecrease_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, decreaseTx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	require.Nil(t, decreaseTx.ValidateData(ctx))
@@ -224,7 +225,7 @@ func TestTxApproveDecrease_Exec(t *testing.T) {
 	decreaseTx := TxDecreaseApprove{
 		genTestApprove(),
 	}
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	result, cross := decreaseTx.Exec(ctx)
@@ -247,7 +248,7 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, useTx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
 	require.NotNil(t, useTx.ValidateData(ctx))
 
@@ -289,7 +290,7 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.From)))
 	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.To)))
 
-	approveMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	result, cross := useTx.Exec(ctx)
@@ -313,7 +314,7 @@ func TestTxApproveCancel_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, cancelTx.ValidateData(ctx))
 
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SaveApprove(createTx.Approve)
 
 	require.Nil(t, cancelTx.ValidateData(ctx))
@@ -329,7 +330,7 @@ func TestTxApproveCancel_Exec(t *testing.T) {
 		createTx.To,
 	}
 
-	mapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SaveApprove(createTx.Approve)
 
 	result, _ := cancelTx.Exec(ctx)
