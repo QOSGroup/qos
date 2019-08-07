@@ -84,7 +84,7 @@ func TestMintMapper_GetAllTotalMintQOSAmount(t *testing.T) {
 	amount = mapper.GetAllTotalMintQOSAmount()
 	require.Equal(t, amount, uint64(100))
 
-	mapper.addAllTotalMintQOSAmount(uint64(100))
+	mapper.AddAllTotalMintQOSAmount(uint64(100))
 
 	amount = mapper.GetAllTotalMintQOSAmount()
 	require.Equal(t, amount, uint64(200))
