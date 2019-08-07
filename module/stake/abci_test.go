@@ -2,6 +2,9 @@ package stake
 
 import (
 	"encoding/binary"
+	"testing"
+	"time"
+
 	bmapper "github.com/QOSGroup/qbase/mapper"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake/mapper"
@@ -9,8 +12,6 @@ import (
 	"github.com/QOSGroup/qos/module/stake/types"
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
-	"testing"
-	"time"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
@@ -45,7 +46,7 @@ func TestValidatorMapper(t *testing.T) {
 
 	v, exists := validatorMapper.GetValidator(valAddr)
 	require.Equal(t, true, exists)
-	require.Equal(t, uint64(1), v.GetBondTokens())
+	require.Equal(t, uint64(500), v.GetBondTokens())
 	require.Equal(t, true, v.IsActive())
 
 	now := uint64(time.Now().UTC().Unix())
