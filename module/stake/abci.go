@@ -108,7 +108,7 @@ func CloseInactiveValidator(ctx context.Context, survivalSecs int32) {
 	if survivalSecs >= 0 {
 		lastCloseValidatorSec = blockTimeSec - uint64(survivalSecs)
 	} else { // close all
-		lastCloseValidatorSec = blockTimeSec + uint64(survivalSecs)
+		lastCloseValidatorSec = blockTimeSec + uint64(-survivalSecs)
 	}
 
 	iterator := sm.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)

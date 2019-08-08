@@ -167,6 +167,7 @@ func (app *QOSApp) EndBlocker(ctx context.Context, req abci.RequestEndBlock) abc
 func (app *QOSApp) ExportAppStates(forZeroHeight bool) (appState json.RawMessage, err error) {
 
 	ctx := app.NewContext(true, abci.Header{Height: app.LastBlockHeight()})
+	ctx = ctx.WithEventManager(btypes.NewEventManager())
 
 	if forZeroHeight {
 		app.prepForZeroHeightGenesis(ctx)
@@ -189,91 +190,79 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	/*  reset staking && distribution */
 	sm := stake.GetMapper(ctx)
 	dm := distribution.GetMapper(ctx)
-	am := baseabci.GetAccountMapper(ctx)
+	am := bank.GetMapper(ctx)
+
 	// close all active validators
-	var validators []stake.Validator
 	var delegations []stake.Delegation
-	var vals = make(map[string]stake.Validator)
-	sm.IterateValidators(func(validator stake.Validator) {
-		val := validator.GetValidatorAddress()
-		vals[validator.GetValidatorAddress().String()] = validator
-		sm.IterateDelegationsValDeleAddr(val, func(val btypes.Address, del btypes.Address) {
-			delegation, exists := sm.GetDelegationInfo(del, val)
-			if !exists {
-				panic(fmt.Sprintf("delegation from %s to %s not exists", del, val))
-			}
-			delegations = append(delegations, delegation)
-		})
-		if validator.Status == stake.Active {
-			validators = append(validators, validator)
-			sm.MakeValidatorInactive(val, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), stake.Revoke)
+	var validators = make(map[string]stake.Validator)
+	iterator := sm.IteratorValidatorByVoterPower(false)
+	defer iterator.Close()
+	var key []byte
+	for ; iterator.Valid(); iterator.Next() {
+		key = iterator.Key()
+		valAddr := btypes.Address(key[9:])
+		if validator, exists := sm.GetValidator(valAddr); exists {
+			validators[valAddr.String()] = validator
+			delegations = append(delegations, sm.GetDelegationsByValidator(valAddr)...)
+			sm.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), stake.Revoke)
 		}
-	})
+	}
+
 	// close all inactive validators
 	stake.CloseInactiveValidator(ctx, -1)
-	for _, delegation := range delegations {
-		var info distribution.DelegatorEarningsStartInfo
-		dm.Get(distribution.BuildDelegatorEarningStartInfoKey(delegation.ValidatorAddr, delegation.DelegatorAddr), &info)
-		delegator := am.GetAccount(delegation.DelegatorAddr).(*types.QOSAccount)
-		delegator.PlusQOS(info.HistoricalRewardFees.NilToZero())
-		am.SetAccount(delegator)
-		dm.MinusValidatorEcoFeePool(delegation.ValidatorAddr, info.HistoricalRewardFees.NilToZero())
-	}
+
 	// return unbond tokens
 	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + ctx.BlockHeight()); h++ {
 		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(uint64(h))
 
-		iter := btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
+		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 		for ; iter.Valid(); iter.Next() {
 			k := iter.Key()
-			dm.Del(k)
-			var unbonds []stake.UnbondingDelegationInfo
-			dm.BaseMapper.DecodeObject(iter.Value(), &unbonds)
-			for _, unbond := range unbonds {
-				_, delAddr, _ := stake.GetUnbondingDelegationHeightAddress(k)
-				delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-				delegator.PlusQOS(btypes.NewInt(int64(unbond.Amount)))
-				am.SetAccount(delegator)
-			}
+			sm.Del(k)
+			var unbond stake.UnbondingDelegationInfo
+			sm.BaseMapper.DecodeObject(iter.Value(), &unbond)
+			_, delAddr, _ := stake.GetUnbondingDelegationHeightAddress(k)
+			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
+			delegator.PlusQOS(btypes.NewInt(int64(unbond.Amount)))
+			am.SetAccount(delegator)
 		}
 		iter.Close()
 	}
+
 	// return redelegation tokens
 	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationHeight) + ctx.BlockHeight()); h++ {
 		prePrefix := stake.BuildRedelegationByHeightPrefix(uint64(h))
 
-		iter := btypes.KVStorePrefixIterator(dm.GetStore(), prePrefix)
+		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 		for ; iter.Valid(); iter.Next() {
 			k := iter.Key()
-			dm.Del(k)
-			var reDelegations []stake.ReDelegationInfo
-			dm.BaseMapper.DecodeObject(iter.Value(), &reDelegations)
-			for _, reDelegation := range reDelegations {
-				_, delAddr, _ := stake.GetRedelegationHeightAddress(k)
-				delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-				delegator.PlusQOS(btypes.NewInt(int64(reDelegation.Amount)))
-				am.SetAccount(delegator)
-			}
+			sm.Del(k)
+			var reDelegation stake.ReDelegationInfo
+			sm.BaseMapper.DecodeObject(iter.Value(), &reDelegation)
+			_, delAddr, _ := stake.GetRedelegationHeightAddress(k)
+			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
+			delegator.PlusQOS(btypes.NewInt(int64(reDelegation.Amount)))
+			am.SetAccount(delegator)
 		}
 		iter.Close()
 	}
-	dm.DeleteDelegatorsIncomeHeight()
+
 	// reinitialize validators
 	for _, validator := range validators {
 		val := validator.GetValidatorAddress()
-		sm.DelValidatorVoteInfo(val)
-		sm.ClearValidatorVoteInfoInWindow(val)
 		dm.DeleteValidatorPeriodSummaryInfo(val)
 		dm.InitValidatorPeriodSummaryInfo(val)
 		sm.CreateValidator(validator)
 	}
+
 	// reset block height
 	ctx = ctx.WithBlockHeight(0)
+
 	// recreate delegations
 	for _, delegation := range delegations {
 		dm.DelDelegatorEarningStartInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
 		sm.DelDelegationInfo(delegation.DelegatorAddr, delegation.ValidatorAddr)
-		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, vals[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound), false)
+		sm.Delegate(ctx, stake.NewDelegationInfo(delegation.DelegatorAddr, validators[delegation.ValidatorAddr.String()].GetValidatorAddress(), delegation.Amount, delegation.IsCompound), false)
 	}
 
 	/* reset mint */
@@ -355,6 +344,7 @@ func (app *QOSApp) AssertInvariants(ctx context.Context) {
 		logger.Info(fmt.Sprintf("invariant check %s\t%s:\t%s", invarRoute.ModuleName, invarRoute.Route, coins.String()))
 	}
 
+	logger.Info(fmt.Sprintf("invariant check invariant:\t%s", totalCoins.String()))
 	if !totalCoins.IsZero() {
 		panic("invariant check not pass")
 	}
