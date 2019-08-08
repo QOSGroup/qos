@@ -1328,6 +1328,7 @@ $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tok
 查询未返还`Sansa`的待执行委托变更：
 ```bash
 $ qoscli query redelegations Sansa
+```
 
 ### 治理（governance）
 
@@ -1373,7 +1374,7 @@ $ qoscli query redelegations Sansa
 
 `ParameterChange`类型提议特有参数：
 
-- `--params`            参数列表，格式：'module:key_name:value,module:key_name:value，如：gov:min_deposit:10000
+- `--params`            参数列表，格式：`module:key_name:value,module:key_name:value`，如：gov:min_deposit:10000
 
 
 `Arya`提交一个文本提议：
