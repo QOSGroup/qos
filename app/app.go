@@ -95,7 +95,7 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 	app.SetGasHandler(app.GasHandler)
 
 	// 设置BeginBlocker
-	app.mm.SetOrderBeginBlockers(mint.ModuleName, distribution.ModuleName, stake.ModuleName)
+	app.mm.SetOrderBeginBlockers(guardian.ModuleName, mint.ModuleName, distribution.ModuleName, stake.ModuleName)
 	app.SetBeginBlocker(app.BeginBlocker)
 
 	// 设置EndBlocker
