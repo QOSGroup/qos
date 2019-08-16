@@ -42,6 +42,8 @@ var (
 	QueryCommands            = client.QueryCommands
 	TxCommands               = client.TxCommands
 	TxCreateValidatorBuilder = client.TxCreateValidatorBuilder
+	BuildCommissionRates     = client.BuildCommissionRates
+	NewCommissionRates       = types.NewCommissionRates
 )
 
 type (

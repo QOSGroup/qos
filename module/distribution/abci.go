@@ -270,7 +270,7 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 		votePowerFrac := qtypes.NewFraction(int64(validator.BondTokens), denomTotalPower)
 		rewards := votePowerFrac.Mul(votePercent).MultiBigInt(totalAmount)
 		remainQOS = remainQOS.Sub(rewards)
-		rewardToValidator(ctx, validator, rewards, params.ValidatorCommissionRate)
+		rewardToValidator(ctx, validator, rewards)
 	}
 
 	//社区奖励
@@ -285,10 +285,10 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 	)
 }
 
-func rewardToValidator(ctx context.Context, validator stake.Validator, rewards btypes.BigInt, commissionRate qtypes.Fraction) {
+func rewardToValidator(ctx context.Context, validator stake.Validator, rewards btypes.BigInt) {
 	dm := mapper.GetMapper(ctx)
 
-	commissionReward := commissionRate.MultiBigInt(rewards)
+	commissionReward := btypes.NewInt(validator.Commission.Rate.MulInt(rewards).Int64())
 	sharedReward := rewards.Sub(commissionReward)
 
 	valAddr := validator.GetValidatorAddress()

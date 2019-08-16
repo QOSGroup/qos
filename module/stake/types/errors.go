@@ -17,6 +17,13 @@ const (
 	CodeValidatorIsActive       btypes.CodeType = 507 // Validator处于激活状态
 	CodeValidatorIsInactive     btypes.CodeType = 508 // Validator处于非激活状态
 	CodeValidatorInactiveIncome btypes.CodeType = 509 // Validator处于非激活状态时收益非法
+	CodeErrCommissionNegative            btypes.CodeType = 510 // Negative commission
+	CodeErrCommissionHuge                btypes.CodeType = 511 // Validator处于非激活状态时收益非法
+	CodeErrCommissionGTMaxRate           btypes.CodeType = 512 // Validator处于非激活状态时收益非法
+	CodeErrCommissionChangeRateNegative  btypes.CodeType = 513 // Validator处于非激活状态时收益非法
+	CodeErrCommissionChangeRateGTMaxRate btypes.CodeType = 514 // Validator处于非激活状态时收益非法
+	CodeErrCommissionUpdateTime          btypes.CodeType = 515 // Validator处于非激活状态时收益非法
+	CodeErrCommissionGTMaxChangeRate     btypes.CodeType = 516 // Validator处于非激活状态时收益非法
 )
 
 func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
@@ -52,6 +59,20 @@ func codeToDefaultMsg(code btypes.CodeType) string {
 		return "validator is inactive"
 	case CodeValidatorInactiveIncome:
 		return "vaidator in inactive and got fees"
+	case CodeErrCommissionNegative:
+		return "commission must be positive"
+	case CodeErrCommissionHuge:
+		return "commission cannot be more than 100%"
+	case CodeErrCommissionGTMaxRate:
+		return "commission cannot be more than the max rate"
+	case CodeErrCommissionChangeRateNegative:
+		return "commission change rate must be positive"
+	case CodeErrCommissionChangeRateGTMaxRate:
+		return "commission change rate cannot be more than the max rate"
+	case CodeErrCommissionUpdateTime:
+		return "commission cannot be changed more than once in 24h"
+	case CodeErrCommissionGTMaxChangeRate:
+		return "commission cannot be changed more than max change rate"
 	default:
 		return btypes.CodeToDefaultMsg(code)
 	}
@@ -91,4 +112,32 @@ func ErrValidatorIsInactive(codeSpace btypes.CodespaceType, msg string) btypes.E
 
 func ErrCodeValidatorInactiveIncome(codeSpace btypes.CodespaceType, msg string) btypes.Error {
 	return newError(codeSpace, CodeValidatorInactiveIncome, msg)
+}
+
+func ErrCommissionNegative(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionNegative, "")
+}
+
+func ErrCommissionHuge(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionHuge, "")
+}
+
+func ErrCommissionGTMaxRate(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionGTMaxRate, "")
+}
+
+func ErrCommissionChangeRateNegative(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionChangeRateNegative, "")
+}
+
+func ErrCommissionChangeRateGTMaxRate(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionChangeRateGTMaxRate, "")
+}
+
+func ErrCommissionUpdateTime(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionUpdateTime, "")
+}
+
+func ErrCommissionGTMaxChangeRate(codeSpace btypes.CodespaceType) btypes.Error {
+	return newError(codeSpace, CodeErrCommissionGTMaxChangeRate, "")
 }

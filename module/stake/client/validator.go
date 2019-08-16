@@ -1,6 +1,7 @@
 package client
 
 import (
+	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
@@ -29,6 +30,10 @@ const (
 	flagLogo    = "logo"
 	flagWebsite = "website"
 	flagDetails = "details"
+
+	flagCommissionRate          = "commission-rate"
+	flagCommissionMaxRate       = "commission-max-rate"
+	flagCommissionMaxChangeRate = "commission-max-change-rate"
 )
 
 func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
@@ -56,10 +61,16 @@ example:
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
+	cmd.Flags().String(flagCommissionRate, "", "The initial commission rate percentage")
+	cmd.Flags().String(flagCommissionMaxRate, "", "The maximum commission rate percentage")
+	cmd.Flags().String(flagCommissionMaxChangeRate, "", "The maximum commission change rate percentage (per day)")
 
 	cmd.MarkFlagRequired(flagMoniker)
 	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagBondTokens)
+	cmd.MarkFlagRequired(flagCommissionRate)
+	cmd.MarkFlagRequired(flagCommissionMaxRate)
+	cmd.MarkFlagRequired(flagCommissionMaxChangeRate)
 
 	return cmd
 }
@@ -83,7 +94,18 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return txs.NewModifyValidatorTx(owner, desc), nil
+				var newRate *qtypes.Dec
+				commissionRate := viper.GetString(flagCommissionRate)
+				if commissionRate != "" {
+					rate, err := qtypes.NewDecFromStr(commissionRate)
+					if err != nil {
+						return nil, fmt.Errorf("invalid new commission rate: %v", err)
+					}
+
+					newRate = &rate
+				}
+
+				return txs.NewModifyValidatorTx(owner, desc, newRate), nil
 			})
 		},
 	}
@@ -93,6 +115,7 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
+	cmd.Flags().String(flagCommissionRate, "", "The initial commission rate percentage")
 
 	cmd.MarkFlagRequired(flagOwner)
 
@@ -169,6 +192,11 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 		name, logo, website, details,
 	}
 
+	commission, err := BuildCommissionRates()
+	if err != nil {
+		return nil, err
+	}
+
 	privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()),
 		filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()))
 
@@ -178,5 +206,29 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc), nil
+	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission), nil
+}
+
+func BuildCommissionRates() (*types.CommissionRates, error) {
+	rateStr := viper.GetString(flagCommissionRate)
+	maxRateStr := viper.GetString(flagCommissionMaxRate)
+	maxChangeRateStr := viper.GetString(flagCommissionMaxChangeRate)
+	if rateStr == "" || maxRateStr == "" || maxChangeRateStr == "" {
+		return nil, errors.New("must specify all validator commission parameters")
+	}
+	rate, err := qtypes.NewDecFromStr(rateStr)
+	if err != nil {
+		return nil, err
+	}
+	maxRate, err := qtypes.NewDecFromStr(maxRateStr)
+	if err != nil {
+		return nil, err
+	}
+	maxChangeRate, err := qtypes.NewDecFromStr(maxChangeRateStr)
+	if err != nil {
+		return nil, err
+	}
+	commission := types.NewCommissionRates(rate, maxRate, maxChangeRate)
+
+	return &commission, nil
 }
