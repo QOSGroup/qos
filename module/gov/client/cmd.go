@@ -46,6 +46,9 @@ const (
 
 	flagParams = "params"
 
+	flagInflationPhrases = "inflation-phrases"
+	flagTotalAmount      = "total-amount"
+
 	flagStatus   = "status"
 	flagNumLimit = "limit"
 

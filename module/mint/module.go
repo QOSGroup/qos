@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/mint/client"
 	"github.com/QOSGroup/qos/module/mint/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
@@ -45,7 +46,7 @@ func (amb AppModuleBasic) GetTxCmds(cdc *amino.Codec) []*cobra.Command {
 }
 
 func (amb AppModuleBasic) GetQueryCmds(cdc *amino.Codec) []*cobra.Command {
-	return []*cobra.Command{}
+	return client.QueryCommands(cdc)
 }
 
 func (amb AppModuleBasic) GetMapperAndHooks() types.MapperWithHooks {
@@ -87,4 +88,6 @@ func (am AppModule) EndBlock(context.Context, abci.RequestEndBlock) []abci.Valid
 	return []abci.ValidatorUpdate{}
 }
 
-func (am AppModule) RegisterQuerier(types.QueryRegistry) {}
+func (am AppModule) RegisterQuerier(qr types.QueryRegistry) {
+	qr.RegisterQueryRoute(ModuleName, mapper.Query)
+}
