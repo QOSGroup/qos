@@ -100,7 +100,8 @@ func TestProposalType_String(t *testing.T) {
 		{ProposalTypeParameterChange, "Parameter"},
 		{ProposalTypeTaxUsage, "TaxUsage"},
 		{ProposalTypeModifyInflation, "ModifyInflation"},
-		{0x05, ""},
+		{ProposalTypeSoftwareUpgrade, "SoftwareUpgrade"},
+		{0x06, ""},
 	}
 
 	for tcIndex, tc := range cases {

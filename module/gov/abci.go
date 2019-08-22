@@ -8,13 +8,39 @@ import (
 	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
+	"github.com/QOSGroup/qos/version"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	qtypes "github.com/QOSGroup/qos/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
+
+func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
+	logger := ctx.Logger().With("module", "module/gov")
+	if ctx.BlockHeight() > 1 {
+		// software upgrade
+		proposal := types.Proposal{}
+		exists := GetMapper(ctx).Get(types.KeySoftUpgradeProposal, &proposal)
+		if exists {
+			proposalContent := proposal.ProposalContent.(*types.SoftwareUpgradeProposal)
+
+			if proposalContent.ForZeroHeight {
+				panic(fmt.Sprintf("PLEASE INSTALL VERSION: %s, THEN SET THE CORRECT `genesis.json`(DataHeight:%d, MD5:%s) FOR UPGRADING TO %s, YOU CAN DOWNLOAD THE `genesis.json` FROM %s",
+					proposalContent.Version, proposalContent.DataHeight, proposalContent.GenesisMD5, proposalContent.Version, proposalContent.GenesisFile))
+			}
+
+			if version.Version != proposalContent.Version {
+				panic(fmt.Sprintf("PLEASE INSTALL VERSION: %s , THEN RESTART YOUR NODE FOR THE SOFTWARE UPGRADING", proposalContent.Version))
+			}
+
+			GetMapper(ctx).Del(types.KeySoftUpgradeProposal)
+			logger.Info("software upgrade completed", "proposal", proposal.ProposalID)
+		}
+	}
+}
 
 // Called every block, process inflation, update validator set
 func EndBlocker(ctx context.Context) {
@@ -186,6 +212,9 @@ func Execute(ctx context.Context, proposal types.Proposal, logger log.Logger) er
 		return executeTaxUsage(ctx, proposal, logger)
 	case types.ProposalTypeModifyInflation:
 		return executeModifyInflation(ctx, proposal, logger)
+	case types.ProposalTypeSoftwareUpgrade:
+		GetMapper(ctx).Set(types.KeySoftUpgradeProposal, proposal)
+		return nil
 	}
 
 	return nil

@@ -175,6 +175,7 @@ const (
 	ProposalTypeParameterChange ProposalType = 0x02
 	ProposalTypeTaxUsage        ProposalType = 0x03
 	ProposalTypeModifyInflation ProposalType = 0x04
+	ProposalTypeSoftwareUpgrade ProposalType = 0x05
 )
 
 // String to proposalType byte. Returns 0xff if invalid.
@@ -188,6 +189,8 @@ func ProposalTypeFromString(str string) (ProposalType, error) {
 		return ProposalTypeTaxUsage, nil
 	case "modifyinflation":
 		return ProposalTypeModifyInflation, nil
+	case "softwareupgrade":
+		return ProposalTypeSoftwareUpgrade, nil
 	default:
 		return ProposalType(0xff), fmt.Errorf("'%s' is not a valid proposal type", str)
 	}
@@ -204,6 +207,8 @@ func (pt ProposalType) String() string {
 		return "TaxUsage"
 	case ProposalTypeModifyInflation:
 		return "ModifyInflation"
+	case ProposalTypeSoftwareUpgrade:
+		return "SoftwareUpgrade"
 	default:
 		return ""
 	}
@@ -214,7 +219,8 @@ func ValidProposalType(pt ProposalType) bool {
 	if pt == ProposalTypeText ||
 		pt == ProposalTypeParameterChange ||
 		pt == ProposalTypeTaxUsage ||
-		pt == ProposalTypeModifyInflation {
+		pt == ProposalTypeModifyInflation ||
+		pt == ProposalTypeSoftwareUpgrade {
 		return true
 	}
 	return false
@@ -348,3 +354,37 @@ func (param Param) String() string {
   Key:    	  %s
   Value:      %s`, param.Module, param.Key, param.Value)
 }
+
+type SoftwareUpgradeProposal struct {
+	TextProposal
+	Version       string `json:"version"`
+	DataHeight    uint64 `json:"data_height"`
+	GenesisFile   string `json:"genesis_file"`
+	GenesisMD5    string `json:"genesis_md5"`
+	ForZeroHeight bool   `json:"for_zero_height"`
+}
+
+func NewSoftwareUpgradeProposal(title, description string, deposit uint64,
+	version string, dataHeight uint64, genesisFile string, genesisMd5 string, forZeroHeight bool) SoftwareUpgradeProposal {
+	return SoftwareUpgradeProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		Version:     version,
+		DataHeight:  dataHeight,
+		GenesisFile: genesisFile,
+		GenesisMD5:  genesisMd5,
+		ForZeroHeight:  forZeroHeight,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = SoftwareUpgradeProposal{}
+
+// nolint
+func (tp SoftwareUpgradeProposal) GetTitle() string              { return tp.Title }
+func (tp SoftwareUpgradeProposal) GetDescription() string        { return tp.Description }
+func (tp SoftwareUpgradeProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp SoftwareUpgradeProposal) GetProposalType() ProposalType { return ProposalTypeSoftwareUpgrade }
