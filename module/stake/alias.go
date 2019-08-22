@@ -48,6 +48,8 @@ var (
 	DefaultCommissionRate          = client.DefaultCommissionRate
 	DefaultCommissionMaxRate       = client.DefaultCommissionMaxRate
 	DefaultCommissionMaxChangeRate = client.DefaultCommissionMaxChangeRate
+
+	BuildCurrentValidatorsAddressKey = types.BuildCurrentValidatorsAddressKey
 )
 
 type (

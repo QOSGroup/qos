@@ -17,6 +17,10 @@ const (
 	MaxNameLen        = 300
 	MaxLinkLen        = 255
 	MaxDescriptionLen = 1000
+
+	GasForCreateValidator = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
+	GasForModifyValidator = uint64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+	GasForRevokeValidator = uint64(18*qtypes.QOSUnit) * qtypes.GasPerUnitCost   // 18 QOS
 )
 
 type TxCreateValidator struct {
@@ -123,7 +127,7 @@ func (tx *TxCreateValidator) GetSigner() []btypes.Address {
 }
 
 func (tx *TxCreateValidator) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForCreateValidator))
 }
 
 func (tx *TxCreateValidator) GetGasPayer() btypes.Address {
@@ -225,7 +229,7 @@ func (tx *TxModifyValidator) GetSigner() []btypes.Address {
 }
 
 func (tx *TxModifyValidator) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForModifyValidator))
 }
 
 func (tx *TxModifyValidator) GetGasPayer() btypes.Address {
@@ -294,7 +298,7 @@ func (tx *TxRevokeValidator) GetSigner() []btypes.Address {
 }
 
 func (tx *TxRevokeValidator) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForRevokeValidator))
 }
 
 func (tx *TxRevokeValidator) GetGasPayer() btypes.Address {

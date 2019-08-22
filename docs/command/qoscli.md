@@ -1382,6 +1382,14 @@ $ qoscli query redelegations Sansa
 - `end-time`            通胀结束时间，格式：'yyyy-MM-dd'
 - `total-amount`        发行量
 
+`SoftwareUpgrade`类型提议特有参数：
+
+- `--version`           QOS软件版本
+- `--data-height`       数据版本
+- `--genesis-file`      genesis.json文件url
+- `--genesis-md5`       genesis.json文件md5
+- `--for-zero-height`   清除本地数据，从第0高度重新开始
+
 `Arya`提交一个文本提议：
 ```bash
 $ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer Arya --deposit 10000000 --description 'this is the description'
@@ -1401,6 +1409,12 @@ Arya`提交一个增加通胀阶段提议：
 ```bash
 $ qoscli tx submit-proposal --title 'add inflation phrase' --proposal-type AddInflationPhrase --proposer Arya --deposit 10000000 --description 'this is the description' --end-time 2100-10-01 --total-amount 1000000000
 ```
+
+`Arya`提交一个软件升级提议：
+```bash
+$ qoscli tx submit-proposal --title 'update qos' --proposal-type SoftwareUpgrade --proposer Arya --deposit 10000000 --description 'upgrade qos to v0.0.6 with genesis file exporting in height 100' --genesis-file "https://.../genesis.json" --data-height 110 --version "0.0.6" --genesis-md5 88c4827158d194116b66b561691e83ef
+```
+提议通过后，会在下一块`BeginBlock`执行下载`genesis.json`，重置本地数据（如需历史数据，请做好备份），等待安装提议版本qos重启网络。
 
 #### 提议查询
 

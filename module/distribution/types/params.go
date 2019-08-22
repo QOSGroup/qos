@@ -27,10 +27,10 @@ type Params struct {
 
 func DefaultParams() Params {
 	return Params{
-		ProposerRewardRate:           qtypes.NewFraction(int64(4), int64(100)), // 4%
-		CommunityRewardRate:          qtypes.NewFraction(int64(1), int64(100)), // 1%
-		DelegatorsIncomePeriodHeight: uint64(10),
-		GasPerUnitCost:               uint64(10),
+		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)),      // 1%
+		CommunityRewardRate:          qtypes.NewFraction(int64(2), int64(100)),      // 2%
+		DelegatorsIncomePeriodHeight: uint64(60 * 60 / qtypes.DefaultBlockInterval), // 1 hour
+		GasPerUnitCost:               qtypes.GasPerUnitCost,
 	}
 }
 

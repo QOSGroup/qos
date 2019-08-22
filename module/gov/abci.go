@@ -91,22 +91,32 @@ func EndBlocker(ctx context.Context) {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
 
-		proposalResult, tallyResults, votingValidators := mapper.Tally(ctx, gm, activeProposal)
+		proposalResult, tallyResults, votingValidators, deductOprion := mapper.Tally(ctx, gm, activeProposal)
+
+		switch deductOprion {
+		case types.DepositDeductNone:
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, false)
+			break
+		case types.DepositDeductPart:
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
+			break
+		case types.DepositDeductAll:
+			gm.DeleteDeposits(ctx, activeProposal.ProposalID)
+			break
+		}
+
 		var tagValue string
 		switch proposalResult {
 		case types.PASS:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = types.StatusPassed
 			tagValue = types.AttributeKeyResultPassed
 			Execute(ctx, activeProposal, logger)
 			break
 		case types.REJECT:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = types.StatusRejected
 			tagValue = types.AttributeKeyResultRejected
 			break
 		case types.REJECTVETO:
-			gm.DeleteDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = types.StatusRejected
 			tagValue = types.AttributeKeyResultVetoRejected
 			break
@@ -134,10 +144,11 @@ func EndBlocker(ctx context.Context) {
 		penalty := gm.GetParams(ctx).Penalty
 		if penalty.GT(qtypes.ZeroDec()) {
 			sm := stake.GetMapper(ctx)
-			validators := sm.GetActiveValidatorSet(false)
+			var validators []stake.Validator
+			sm.Get(stake.BuildCurrentValidatorsAddressKey(), &validators)
 			for _, val := range validators {
-				if _, ok := votingValidators[val.String()]; !ok {
-					if validator, exists := sm.GetValidator(val); exists && validator.BondHeight < activeProposal.VotingStartHeight {
+				if _, ok := votingValidators[val.GetValidatorAddress().String()]; !ok {
+					if validator, exists := sm.GetValidator(val.GetValidatorAddress()); exists && validator.BondHeight < activeProposal.VotingStartHeight {
 						e := slash(ctx, validator, penalty, activeProposal.ProposalID)
 						if e != nil {
 							logger.Error("slash validator error", "e", e, "validator", validator.GetValidatorAddress().String())
