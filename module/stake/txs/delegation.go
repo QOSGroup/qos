@@ -7,7 +7,10 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
 )
+
+const GasForUnbond = uint64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
 
 type TxCreateDelegation struct {
 	Delegator      btypes.Address //委托人
@@ -245,7 +248,7 @@ func (tx *TxUnbondDelegation) GetSigner() []btypes.Address {
 }
 
 func (tx *TxUnbondDelegation) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForUnbond))
 }
 
 func (tx *TxUnbondDelegation) GetGasPayer() btypes.Address {

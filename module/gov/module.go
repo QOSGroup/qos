@@ -79,7 +79,9 @@ func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
 	ir.RegisterInvarRoute(ModuleName, "deposit", mapper.DepositInvariant(ModuleName))
 }
 
-func (am AppModule) BeginBlock(ctx context.Context, req abci.RequestBeginBlock) {}
+func (am AppModule) BeginBlock(ctx context.Context, req abci.RequestBeginBlock) {
+	BeginBlocker(ctx, req)
+}
 
 func (am AppModule) EndBlock(ctx context.Context, req abci.RequestEndBlock) []abci.ValidatorUpdate {
 	EndBlocker(ctx)

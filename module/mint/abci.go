@@ -13,41 +13,49 @@ import (
 //BeginBlocker: 挖矿奖励
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	height := uint64(ctx.BlockHeight())
-	currentBlockTime := ctx.BlockHeader().Time.UTC().Unix()
+	currentBlockTime := ctx.BlockHeader().Time.UTC()
 
 	mintMapper := mapper.GetMapper(ctx)
-	currentInflationPhrase, exist := mintMapper.GetCurrentInflationPhrase(uint64(currentBlockTime))
-	if exist == false || currentInflationPhrase.TotalAmount == 0 {
+	distributionMapper := distribution.GetMapper(ctx)
+
+	phrases := mintMapper.MustGetInflationPhrases()
+
+	// 当前通胀校验
+	currentPhrase, exists := phrases.GetPhrase(currentBlockTime)
+	if !exists || currentPhrase.TotalAmount == 0 || currentPhrase.AppliedAmount == currentPhrase.TotalAmount {
 		return
 	}
 
-	if height == uint64(1) {
-		mintMapper.SetFirstBlockTime(currentBlockTime)
+	// 处理前一通胀阶段未完整发行情况，剩余转到社区账户
+	if currentPhrase.AppliedAmount == 0 {
+		if prePhrase, exists := phrases.GetPrePhrase(currentBlockTime); exists {
+			if prePhrase.AppliedAmount != prePhrase.TotalAmount {
+				prePhraseLeft := prePhrase.TotalAmount - prePhrase.AppliedAmount
+				phrases = phrases.ApplyQOS(prePhrase.EndTime, prePhraseLeft)
+				distributionMapper.AddToCommunityFeePool(btypes.NewInt(int64(prePhraseLeft)))
+			}
+		}
+
 	}
 
-	// for the first block, assuming average block time is 5s
-	blockTimeAvg := uint64(5)
-	if height > 1 {
+	if height == 1 {
+		mintMapper.SetFirstBlockTime(currentBlockTime.Unix())
+	} else {
+		// 计算出快时间
 		firstBlockTime := mintMapper.GetFirstBlockTime()
-		blockTimeAvg = uint64(currentBlockTime-firstBlockTime) / (height - 1)
-	}
+		blockTimeAvg := uint64(currentBlockTime.Unix()-firstBlockTime) / (height - 1)
 
-	totalQOSAmount := currentInflationPhrase.TotalAmount
-	blocks := (uint64(currentInflationPhrase.EndTime.UTC().Unix()) - uint64(currentBlockTime)) / blockTimeAvg
-	appliedQOSAmount := currentInflationPhrase.AppliedAmount
+		// 计算挖矿奖励
+		blocks := uint64(currentPhrase.EndTime.Sub(currentBlockTime).Seconds()) / blockTimeAvg
+		rewardPerBlock := (currentPhrase.TotalAmount - currentPhrase.AppliedAmount) / blocks
 
-	if appliedQOSAmount >= totalQOSAmount {
-		return
-	}
-	if blocks <= 0 {
-		return
-	}
-
-	if ctx.BlockHeight() > 1 {
-		rewardPerBlock := (totalQOSAmount - appliedQOSAmount) / blocks
 		if rewardPerBlock > 0 {
-			mintMapper.MintQOS(uint64(currentBlockTime), rewardPerBlock)
-			distributionMapper := distribution.GetMapper(ctx)
+			// 保存通胀发行更新
+			mintMapper.AddAllTotalMintQOSAmount(rewardPerBlock)
+			phrases := phrases.ApplyQOS(currentPhrase.EndTime, rewardPerBlock)
+			mintMapper.SetInflationPhrases(phrases)
+
+			// 挖矿奖励保存至待分配
 			distributionMapper.AddPreDistributionQOS(btypes.NewInt(int64(rewardPerBlock)))
 
 			ctx.EventManager().EmitEvent(

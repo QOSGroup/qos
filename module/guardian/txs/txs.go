@@ -179,3 +179,78 @@ func (tx TxDeleteGuardian) GetSignData() (ret []byte) {
 
 	return
 }
+
+type TxHaltNetwork struct {
+	Guardian btypes.Address `json:"guardian"` // guardian's address
+	Reason   string         `json:"reason"`   // reason for halting the network
+}
+
+func NewTxHaltNetwork(address btypes.Address, reason string) *TxHaltNetwork {
+	return &TxHaltNetwork{
+		Guardian: address,
+		Reason:   reason,
+	}
+}
+
+var _ txs.ITx = (*TxHaltNetwork)(nil)
+
+func (tx TxHaltNetwork) ValidateData(ctx context.Context) error {
+	if len(tx.Guardian) == 0 {
+		return types.ErrInvalidInput("guardian is empty")
+	}
+	if len(tx.Reason) == 0 {
+		return types.ErrInvalidInput("reason is empty")
+	}
+	mapper := mapper.GetMapper(ctx)
+	guardian, exists := mapper.GetGuardian(tx.Guardian)
+	if !exists {
+		return types.ErrUnKnownGuardian("")
+	}
+
+	if guardian.GuardianType != types.Genesis {
+		return types.ErrInvalidInput("can not halt the network")
+	}
+
+	return nil
+}
+
+func (tx TxHaltNetwork) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{
+		Code: btypes.CodeOK,
+	}
+
+	mapper.GetMapper(ctx).SetHalt(tx.Reason)
+
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			types.EventTypeHaltNetwork,
+			btypes.NewAttribute(types.AttributeKeyGuardian, tx.Guardian.String()),
+			btypes.NewAttribute(types.AttributeKeyReason, tx.Reason),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
+
+	return
+}
+
+func (tx TxHaltNetwork) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Guardian}
+}
+
+func (tx TxHaltNetwork) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx TxHaltNetwork) GetGasPayer() btypes.Address {
+	return tx.Guardian
+}
+
+func (tx TxHaltNetwork) GetSignData() (ret []byte) {
+	ret = Cdc.MustMarshalBinaryBare(tx)
+
+	return
+}

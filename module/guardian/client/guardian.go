@@ -158,3 +158,32 @@ func QueryGuardiansCmd(cdc *amino.Codec) *cobra.Command {
 
 	return cmd
 }
+
+func HaltCmd(cdc *amino.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "halt-network",
+		Short: "Halt the network",
+		RunE: func(cmd *cobra.Command, args []string) error {
+			return qcltx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+				address, err := qcliacc.GetAddrFromFlag(ctx, flagAddress)
+				if err != nil {
+					return nil, err
+				}
+
+				description := viper.GetString(flagDescription)
+				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
+
+				}
+
+				return gtxs.NewTxHaltNetwork(address, description), nil
+			})
+		},
+	}
+
+	cmd.Flags().String(flagAddress, "", "address of guardian")
+	cmd.Flags().String(flagDescription, "", "description for this operation")
+	cmd.MarkFlagRequired(flagAddress)
+	cmd.MarkFlagRequired(flagDescription)
+
+	return cmd
+}

@@ -39,6 +39,7 @@ type validatorDisplayInfo struct {
 	ValidatorPubKey crypto.PubKey     `json:"validatorPubkey"`
 	BondTokens      uint64            `json:"bondTokens"` //不能超过int64最大值
 	Description     types.Description `json:"description"`
+	Commission      types.Commission  `json:"commission"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
@@ -57,6 +58,7 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 		InactiveTime:    validator.InactiveTime,
 		InactiveHeight:  validator.InactiveHeight,
 		BondHeight:      validator.BondHeight,
+		Commission:      validator.Commission,
 	}
 
 	if validator.Status == types.Active {

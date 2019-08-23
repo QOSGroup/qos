@@ -1,11 +1,14 @@
 package types
 
 import (
+	"crypto/md5"
 	"encoding/binary"
+	"encoding/hex"
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/viper"
+	"io"
 	"os"
 	"regexp"
 	"strconv"
@@ -73,4 +76,19 @@ func Uint64ToBigEndian(i uint64) []byte {
 	b := make([]byte, 8)
 	binary.BigEndian.PutUint64(b, i)
 	return b
+}
+
+func FileMD5(filepath string) (string, error) {
+	f, err := os.Open(filepath)
+	if err != nil {
+		return "", err
+	}
+	defer f.Close()
+
+	h := md5.New()
+	if _, err := io.Copy(h, f); err != nil {
+		return "", err
+	}
+
+	return hex.EncodeToString(h.Sum(nil)), nil
 }

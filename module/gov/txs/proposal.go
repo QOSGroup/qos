@@ -9,6 +9,7 @@ import (
 	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/guardian"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
 	qtypes "github.com/QOSGroup/qos/types"
 )
@@ -313,5 +314,216 @@ func (tx TxParameterChange) GetSignData() (ret []byte) {
 	for _, param := range tx.Params {
 		ret = append(ret, param.String()...)
 	}
+	return
+}
+
+type TxModifyInflation struct {
+	TxProposal
+	TotalAmount      uint64                `json:"total_amount"`      // 总发行量
+	InflationPhrases mint.InflationPhrases `json:"inflation_phrases"` // 通胀阶段
+}
+
+func NewTxModifyInflation(title, description string, proposer btypes.Address, deposit uint64, totalAmount uint64, phrases []mint.InflationPhrase) *TxModifyInflation {
+	return &TxModifyInflation{
+		TxProposal: TxProposal{
+			Title:          title,
+			Description:    description,
+			ProposalType:   types.ProposalTypeParameterChange,
+			Proposer:       proposer,
+			InitialDeposit: deposit,
+		},
+		TotalAmount:      totalAmount,
+		InflationPhrases: phrases,
+	}
+}
+
+func (tx TxModifyInflation) ValidateData(ctx context.Context) error {
+	err := tx.TxProposal.ValidateData(ctx)
+	if err != nil {
+		return err
+	}
+
+	// 校验QOS发行总量
+	if tx.TotalAmount <= 0 {
+		return types.ErrInvalidInput("TotalAmount must be positive")
+	}
+
+	// 校验通胀
+	err = tx.InflationPhrases.Valid()
+	if err != nil {
+		return types.ErrInvalidInput(err.Error())
+	}
+	applied := mint.GetMapper(ctx).GetAllTotalMintQOSAmount()
+	phrases := mint.GetMapper(ctx).MustGetInflationPhrases()
+	// 校验当前通胀时间， 当前通胀结束时间 > 当前时间+质押期+投票期 或 当前无通胀
+	currentPhrase, exists := phrases.GetPhrase(ctx.BlockHeader().Time.UTC())
+	params := mapper.GetMapper(ctx).GetParams(ctx)
+	if exists && currentPhrase.EndTime.UTC().Before(ctx.BlockHeader().Time.UTC().Add(params.MaxDepositPeriod).Add(params.VotingPeriod)) {
+		return types.ErrInvalidInput("cannot submit proposal at current time")
+	}
+	err = phrases.ValidNewPhrases(tx.TotalAmount, applied, tx.InflationPhrases)
+	if err != nil {
+		return types.ErrInvalidInput(err.Error())
+	}
+
+	return nil
+}
+
+func (tx TxModifyInflation) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{
+		Code: btypes.CodeOK,
+	}
+
+	govMapper := mapper.GetMapper(ctx)
+
+	textContent := types.NewAddInflationPhrase(tx.Title, tx.Description, tx.InitialDeposit, tx.TotalAmount, tx.InflationPhrases)
+	proposal, err := govMapper.SubmitProposal(ctx, textContent)
+
+	if err != nil {
+		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
+	}
+
+	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			types.EventTypeSubmitProposal,
+			btypes.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
+			btypes.NewAttribute(types.AttributeKeyProposer, tx.Proposer.String()),
+			btypes.NewAttribute(types.AttributeKeyDepositor, tx.Proposer.String()),
+			btypes.NewAttribute(types.AttributeKeyProposalType, tx.ProposalType.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
+
+	return
+}
+
+func (tx TxModifyInflation) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Proposer}
+}
+
+func (tx TxModifyInflation) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx TxModifyInflation) GetGasPayer() btypes.Address {
+	return tx.Proposer
+}
+
+func (tx TxModifyInflation) GetSignData() (ret []byte) {
+	ret, _ = Cdc.MarshalBinaryBare(tx)
+	return
+}
+
+type TxSoftwareUpgrade struct {
+	TxProposal
+	Version       string `json:"version"`         // qosd version
+	DataHeight    uint64 `json:"data_height"`     // data version
+	GenesisFile   string `json:"genesis_file"`    // url of genesis file
+	GenesisMD5    string `json:"genesis_md5"`     // signature of genesis.json
+	ForZeroHeight bool   `json:"for_zero_height"` // restart from zero height
+}
+
+func NewTxSoftwareUpgrade(title, description string, proposer btypes.Address, deposit uint64,
+	version string, dataHeight uint64, genesisFile string, genesisMd5 string, forZeroHeight bool) *TxSoftwareUpgrade {
+	return &TxSoftwareUpgrade{
+		TxProposal: TxProposal{
+			Title:          title,
+			Description:    description,
+			ProposalType:   types.ProposalTypeSoftwareUpgrade,
+			Proposer:       proposer,
+			InitialDeposit: deposit,
+		},
+		Version:       version,
+		DataHeight:    dataHeight,
+		GenesisFile:   genesisFile,
+		GenesisMD5:    genesisMd5,
+		ForZeroHeight: forZeroHeight,
+	}
+}
+
+var _ txs.ITx = (*TxSoftwareUpgrade)(nil)
+
+func (tx TxSoftwareUpgrade) ValidateData(ctx context.Context) error {
+	err := tx.TxProposal.ValidateData(ctx)
+	if err != nil {
+		return err
+	}
+
+	if len(tx.Version) == 0 {
+		return types.ErrInvalidInput("Version is empty")
+	}
+
+	if tx.ForZeroHeight {
+		if tx.DataHeight <= 0 {
+			return types.ErrInvalidInput("DataHeight must be positive")
+		}
+
+		if len(tx.GenesisFile) == 0 {
+			return types.ErrInvalidInput("GenesisFile is empty")
+		}
+
+		if len(tx.GenesisMD5) == 0 {
+			return types.ErrInvalidInput("GenesisFileMD5 is empty")
+		}
+	}
+
+	return nil
+}
+
+func (tx TxSoftwareUpgrade) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
+	result = btypes.Result{
+		Code: btypes.CodeOK,
+	}
+
+	govMapper := mapper.GetMapper(ctx)
+
+	textContent := types.NewSoftwareUpgradeProposal(tx.Title, tx.Description, tx.InitialDeposit,
+		tx.Version, tx.DataHeight, tx.GenesisFile, tx.GenesisMD5, tx.ForZeroHeight)
+	proposal, err := govMapper.SubmitProposal(ctx, textContent)
+
+	if err != nil {
+		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
+	}
+
+	govMapper.AddDeposit(ctx, proposal.ProposalID, tx.Proposer, tx.InitialDeposit)
+
+	result.Events = btypes.Events{
+		btypes.NewEvent(
+			types.EventTypeSubmitProposal,
+			btypes.NewAttribute(types.AttributeKeyProposalID, fmt.Sprintf("%d", proposal.ProposalID)),
+			btypes.NewAttribute(types.AttributeKeyProposer, tx.Proposer.String()),
+			btypes.NewAttribute(types.AttributeKeyDepositor, tx.Proposer.String()),
+			btypes.NewAttribute(types.AttributeKeyProposalType, tx.ProposalType.String()),
+		),
+		btypes.NewEvent(
+			btypes.EventTypeMessage,
+			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
+		),
+	}
+
+	return
+}
+
+func (tx TxSoftwareUpgrade) GetSigner() []btypes.Address {
+	return []btypes.Address{tx.Proposer}
+}
+
+func (tx TxSoftwareUpgrade) CalcGas() btypes.BigInt {
+	return btypes.ZeroInt()
+}
+
+func (tx TxSoftwareUpgrade) GetGasPayer() btypes.Address {
+	return tx.Proposer
+}
+
+func (tx TxSoftwareUpgrade) GetSignData() (ret []byte) {
+	Cdc.MustMarshalBinaryBare(tx)
 	return
 }

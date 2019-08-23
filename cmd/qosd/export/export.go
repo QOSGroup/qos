@@ -96,6 +96,10 @@ func ExportCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			}
 			fmt.Printf("export success: %s", export)
 			fmt.Println()
+
+			md5, _ := types.FileMD5(export)
+			fmt.Printf("genesis md5: %s", md5)
+			fmt.Println()
 			return nil
 		},
 	}

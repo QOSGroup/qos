@@ -9,6 +9,8 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
+const GasForTransfer = uint64(0.018*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.018 QOS
+
 type TxTransfer struct {
 	Senders   types.TransItems `json:"senders"`   // 发送集合
 	Receivers types.TransItems `json:"receivers"` // 接收集合
@@ -96,9 +98,9 @@ func (tx TxTransfer) GetSigner() []btypes.Address {
 	return addrs
 }
 
-// Gas TODO
+// Gas
 func (tx TxTransfer) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForTransfer))
 }
 
 // Senders[0]

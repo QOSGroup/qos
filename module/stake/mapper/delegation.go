@@ -262,7 +262,7 @@ func (mapper *Mapper) AddRedelegations(reDelegations []types.RedelegationInfo) {
 func (mapper *Mapper) RemoveRedelegation(height uint64, delAddr btypes.Address, valAddr btypes.Address) {
 	mapper.Del(types.BuildRedelegationHeightDelegatorFromValidatorKey(height, delAddr, valAddr))
 	mapper.Del(types.BuildRedelegationDelegatorHeightFromValidatorKey(delAddr, height, valAddr))
-	mapper.Del(types.BuildRedelegationFromValidatorHeightDelegatorKey(delAddr, height, valAddr))
+	mapper.Del(types.BuildRedelegationFromValidatorHeightDelegatorKey(valAddr, height, delAddr))
 }
 
 func (mapper *Mapper) SlashUnbondings(valAddr btypes.Address, infractionHeight int64, fraction qtypes.Dec, maxSlash int64) int64 {
