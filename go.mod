@@ -4,7 +4,7 @@ module github.com/QOSGroup/qos
 
 require (
 	github.com/QOSGroup/kepler v0.6.0
-	github.com/QOSGroup/qbase v0.2.2-0.20190805085823-089bc9ffee6b
+	github.com/QOSGroup/qbase v0.2.2
 	github.com/ethereum/go-ethereum v1.8.23 // indirect
 	github.com/pkg/errors v0.8.0
 
