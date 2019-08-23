@@ -2,24 +2,12 @@ package qsc
 
 import (
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/qsc/mapper"
 	"github.com/QOSGroup/qos/module/qsc/types"
-	"github.com/tendermint/tendermint/crypto"
 )
 
-type GenesisState struct {
-	RootPubKey crypto.PubKey   `json:"ca_root_pub_key"`
-	QSCs       []types.QSCInfo `json:"qscs"`
-}
-
-func NewGenesisState(pubKey crypto.PubKey, qscs []types.QSCInfo) GenesisState {
-	return GenesisState{
-		RootPubKey: pubKey,
-		QSCs:       qscs,
-	}
-}
-
-func InitGenesis(ctx context.Context, data GenesisState) {
-	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
+func InitGenesis(ctx context.Context, data types.GenesisState) {
+	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
 	if data.RootPubKey != nil {
 		qscMapper.SetQSCRootCA(data.RootPubKey)
 	}
@@ -29,8 +17,8 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	}
 }
 
-func ExportGenesis(ctx context.Context) GenesisState {
-	qscMapper := ctx.Mapper(QSCMapperName).(*QSCMapper)
+func ExportGenesis(ctx context.Context) types.GenesisState {
+	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
 
-	return NewGenesisState(qscMapper.GetQSCRootCA(), qscMapper.GetQSCs())
+	return types.NewGenesisState(qscMapper.GetQSCRootCA(), qscMapper.GetQSCs())
 }

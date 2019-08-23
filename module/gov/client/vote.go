@@ -1,4 +1,4 @@
-package gov
+package client
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/module/gov"
+	gtxs "github.com/QOSGroup/qos/module/gov/txs"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -34,7 +34,7 @@ func VoteCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid option")
 				}
 
-				return gov.NewTxVote(uint64(proposalID), voter, option), nil
+				return gtxs.NewTxVote(uint64(proposalID), voter, option), nil
 			})
 		},
 	}

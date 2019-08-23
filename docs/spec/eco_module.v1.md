@@ -88,7 +88,7 @@ QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的�
 :--:|:--:|:--:|:--:|:--:|:--:|:--:|:--:
 新铸币数量（亿）|25.5|12.75|6.375|3.1875|1.59375|0.796875|0.796875
 
-我们将其中每个四年定义为一个inflation_phrase通胀阶段，由endtime和total_amount组成，applied_amount标识本阶段已经分发的QOS，一个阶段结束，即进入下一阶段。
+我们将其中每个四年定义为一个inflation_phrase通胀阶段，由endtime和total_amount组成，applied_amount标识本阶段已铸的QOS，一个阶段结束，即进入下一阶段。
 测试网通胀依照测试目的另外制定，详情可见[测试网的genesis.json文件配置](https://github.com/QOSGroup/qos-testnets)中的"mint"-"params"-"inflation_phrases"，例如：
 
 ```
@@ -134,7 +134,9 @@ QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的�
 
 QOS公链中有一个验证人节点的集合，验证人节点担当了BFT共识算法的具体实现——网络中的每一块都需要收集至少2/3的验证人节点签名。QOS公链中的每一块包含零到多条交易，验证人节点对块中的交易进行校验，对校验通过的块用自己的私钥签名，并广播到网络中去。
 
-每一块都有一个验证人来进行打块（proposer），该验证人会有4%的额外收益：
+##### 验证人的权益
+
+每一块都有一个验证人来进行打块（proposer），该验证人会有$proposer_reward_rate的额外收益：
 
 ![出块验证人收益](https://github.com/QOSGroup/static/blob/master/proposerReward.png?raw=true)
 
@@ -145,6 +147,10 @@ QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的�
 ![验证人（及其委托人）单块总收益](https://github.com/QOSGroup/static/blob/master/validatorReward.png?raw=true)
 
 希望了解更多验证人节点的信息或希望成为QOS验证人，请查阅[验证人节点详解](validators/all_about_validators.md)
+
+##### 验证人的惩罚
+
+QOS规定，过去的$ValidatorVotingStatusLen块中，验证人需要至少验证并签名$ValidatorVotingStatusLeast，否则验证人和委托该验证人所绑定的Token会受到同比例的惩罚，惩罚比例$SlashFractionDowntime
 
 #### 委托人
 
@@ -182,7 +188,7 @@ QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的�
 
 ```
 
-unbond后，对应的validator将会增加一个计费点，unbond金额将在`unbond周期`之后返还至delegator账户。
+unbond后，对应的validator将会增加一个计费点，unbond金额将在`unbond周期$unbond_return_height`之后返还至delegator账户。
 
 unbond操作立即生效，先统计出当前收益，并追加到下次收益发放总额中。
 

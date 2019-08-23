@@ -3,7 +3,7 @@ package init
 import (
 	"errors"
 	"github.com/QOSGroup/qbase/server"
-	"github.com/QOSGroup/qos/app"
+	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -45,7 +45,7 @@ func updateGenesisStateFromGenTxs(config *cfg.Config, cdc *amino.Codec, nodeID, 
 		return err
 	}
 
-	genTxs, persistentPeers, err := app.CollectStdTxs(cdc, nodeID, genTxsDir, genDoc)
+	genTxs, persistentPeers, err := stake.CollectStdTxs(cdc, nodeID, genTxsDir, genDoc)
 	if err != nil {
 		return err
 	}
@@ -58,11 +58,14 @@ func updateGenesisStateFromGenTxs(config *cfg.Config, cdc *amino.Codec, nodeID, 
 	cfg.WriteConfigFile(filepath.Join(config.RootDir, "config", "config.toml"), config)
 
 	// update genesis.json
-	var genesisState app.GenesisState
+	var genesisState types.GenesisState
 	if err = cdc.UnmarshalJSON(genDoc.AppState, &genesisState); err != nil {
 		return err
 	}
-	genesisState.GenTxs = genTxs
+	var stakeState stake.GenesisState
+	cdc.MustUnmarshalJSON(genesisState[stake.ModuleName], &stakeState)
+	stakeState.GenTxs = genTxs
+	genesisState[stake.ModuleName] = cdc.MustMarshalJSON(stakeState)
 	genDoc.AppState, err = server.MarshalJSONIndent(cdc, genesisState)
 	if err != nil {
 		return

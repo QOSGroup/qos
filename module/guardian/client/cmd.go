@@ -1,4 +1,4 @@
-package guardian
+package client
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
@@ -17,6 +17,7 @@ func TxCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.PostCommands(
 		AddGuardianCmd(cdc),
 		DeleteGuardianCmd(cdc),
+		HaltCmd(cdc),
 	)
 }
 

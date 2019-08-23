@@ -4,8 +4,7 @@ import (
 	"fmt"
 	"github.com/QOSGroup/qbase/server"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/app"
-	gtypes "github.com/QOSGroup/qos/module/guardian/types"
+	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -37,19 +36,23 @@ func AddGuardian(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			var appState app.GenesisState
+			var appState types.GenesisState
 			if err = cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
 				return err
 			}
 
-			for _, v := range appState.GuardianData.Guardians {
+			var guardianState guardian.GenesisState
+			cdc.MustUnmarshalJSON(appState[guardian.ModuleName], &guardianState)
+
+			for _, v := range guardianState.Guardians {
 				if v.Address.EqualsTo(addr) {
 					return fmt.Errorf("guardian: %s has already exists", v.Address.String())
 				}
 			}
 
-			guardian := gtypes.NewGuardian(description, gtypes.Genesis, addr, nil)
-			appState.GuardianData.Guardians = append(appState.GuardianData.Guardians, *guardian)
+			gd := guardian.NewGuardian(description, guardian.Genesis, addr, nil)
+			guardianState.Guardians = append(guardianState.Guardians, *gd)
+			appState[guardian.ModuleName] = cdc.MustMarshalJSON(guardianState)
 
 			rawMessage, _ := cdc.MarshalJSON(appState)
 			genDoc.AppState = rawMessage

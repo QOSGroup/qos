@@ -1,12 +1,12 @@
-package distribution
+package client
 
 import (
 	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/distribution"
-	ecotypes "github.com/QOSGroup/qos/module/eco/types"
+	"github.com/QOSGroup/qos/module/distribution/mapper"
+	"github.com/QOSGroup/qos/module/distribution/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 )
@@ -29,13 +29,13 @@ func queryValidatorPeriodCommand(cdc *amino.Codec) *cobra.Command {
 				owner = o
 			}
 
-			path := ecotypes.BuildQueryValidatorPeriodInfoCustomQueryPath(owner)
+			path := types.BuildQueryValidatorPeriodInfoCustomQueryPath(owner)
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
 			}
 
-			var result distribution.ValidatorPeriodInfoQueryResult
+			var result mapper.ValidatorPeriodInfoQueryResult
 			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
@@ -65,13 +65,13 @@ func queryDelegatorIncomeInfoCommand(cdc *amino.Codec) *cobra.Command {
 				delegator = d
 			}
 
-			path := ecotypes.BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, owner)
+			path := types.BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, owner)
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
 			}
 
-			var result distribution.DelegatorIncomeInfoQueryResult
+			var result mapper.DelegatorIncomeInfoQueryResult
 			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
@@ -93,7 +93,7 @@ func queryCommunityFeePoolCommand(cdc *amino.Codec) *cobra.Command {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			res, err := cliCtx.Query(fmt.Sprintf("/store/%s/key", ecotypes.DistributionMapperName), ecotypes.BuildCommunityFeePoolKey())
+			res, err := cliCtx.Query(fmt.Sprintf("/store/%s/key", types.MapperName), types.BuildCommunityFeePoolKey())
 			if err != nil {
 				return err
 			}

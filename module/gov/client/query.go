@@ -1,9 +1,10 @@
-package gov
+package client
 
 import (
 	"errors"
 	"fmt"
-	ptypes "github.com/QOSGroup/qos/module/params/types"
+	"github.com/QOSGroup/qos/module/gov/mapper"
+	"github.com/QOSGroup/qos/module/params"
 	"strconv"
 	"strings"
 
@@ -13,7 +14,6 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 
 	"github.com/QOSGroup/qbase/client/context"
-	"github.com/QOSGroup/qos/module/gov"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/spf13/cobra"
 	go_amino "github.com/tendermint/go-amino"
@@ -31,7 +31,7 @@ func queryProposalCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := gov.BuildQueryProposalPath(pID)
+			path := mapper.BuildQueryProposalPath(pID)
 			res, err := cliCtx.Query(path, []byte{})
 
 			if err != nil {
@@ -79,7 +79,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 
 			status = toProposalStatus(viper.GetString(flagStatus))
 
-			queryParam := gov.QueryProposalsParam{
+			queryParam := mapper.QueryProposalsParam{
 				Depositor: depositorAddr,
 				Voter:     voterAddr,
 				Status:    status,
@@ -91,7 +91,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 				return err
 			}
 
-			path := gov.BuildQueryProposalsPath()
+			path := mapper.BuildQueryProposalsPath()
 			res, err := cliCtx.Query(path, data)
 
 			if len(res) == 0 {
@@ -105,7 +105,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 			}
 
 			if len(result) == 0 {
-				return fmt.Errorf("No matching proposals found")
+				return fmt.Errorf("no matching proposals found")
 			}
 
 			return cliCtx.PrintResult(result)
@@ -153,7 +153,7 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("voter %s is not a valid address value", args[1])
 			}
 
-			path := gov.BuildQueryVotePath(pID, addr.String())
+			path := mapper.BuildQueryVotePath(pID, addr.String())
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -185,7 +185,7 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := gov.BuildQueryVotesPath(pID)
+			path := mapper.BuildQueryVotesPath(pID)
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -227,7 +227,7 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("depositer %s is not a valid address value", args[1])
 			}
 
-			path := gov.BuildQueryDepositPath(pID, addr.String())
+			path := mapper.BuildQueryDepositPath(pID, addr.String())
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -259,7 +259,7 @@ func queryDepositsCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := gov.BuildQueryDepositsPath(pID)
+			path := mapper.BuildQueryDepositsPath(pID)
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -291,7 +291,7 @@ func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := gov.BuildQueryTallyPath(pID)
+			path := mapper.BuildQueryTallyPath(pID)
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
 				return err
@@ -328,13 +328,13 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 			mod := 0
 			var path string
 			if len(module) == 0 {
-				path = gov.BuildQueryParamsPath()
+				path = mapper.BuildQueryParamsPath()
 			} else if len(key) == 0 {
 				mod = 1
-				path = gov.BuildQueryModuleParamsPath(module)
+				path = mapper.BuildQueryModuleParamsPath(module)
 			} else {
 				mod = 2
-				path = gov.BuildQueryParamPath(module, key)
+				path = mapper.BuildQueryParamPath(module, key)
 			}
 			res, err := cliCtx.Query(path, []byte{})
 			if err != nil {
@@ -346,13 +346,13 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 			}
 
 			if mod == 0 {
-				var result []ptypes.ParamSet
+				var result []params.ParamSet
 				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
 					return err
 				}
 				return cliCtx.PrintResult(result)
 			} else if mod == 1 {
-				var result ptypes.ParamSet
+				var result params.ParamSet
 				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
 					return err
 				}

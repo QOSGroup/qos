@@ -12,18 +12,18 @@ QOS的链上治理提案类型包括以下几种：
 ### 提案抵押
 
 为了避免攻击，每个提案都需要抵押一定的QOS作为`Deposit`。
-提交提议者至少抵押`$MinDeposit * $MinProposerDepositRate`，当抵押金超过`$MinDeposit`，才能进入投票阶段。该提议超过`$MaxDepositPeriod`，还未进超过`$MinDeposit`，则提议会被删除，且押金不会返还。
+提交提议者至少抵押`$min_deposit * $min_proposer_deposit_rate`，当抵押金超过`$min_deposit`，才能进入投票阶段。该提议超过`$max_deposit_period`，总抵押还未超过`$min_deposit`，则提议会被删除，且押金不会返还。
 提议进入投票阶段后，依然可以进行抵押。
 
-* `MinDeposit` QOS最小抵押
-* `MinProposerDepositRate` 提议者最小抵押比例
-* `MaxDepositPeriod` 抵押最大时长
-* `VotingPeriod` 投票时长
-* `Quorum` voting power最小比例
-* `Threshold` 判定通过需要的`Yes`比例
-* `Veto` 判定强烈不同意需要的`Veto`比例
-* `Penalty` 不投票验证节点的惩罚比例
-* `BurnRate` 提议通过(`PASS`)或不通过(`REJECT`)抵押燃比例
+* `min_deposit` QOS最小抵押
+* `min_proposer_deposit_rate` 提议者最小抵押比例
+* `max_deposit_period` 抵押最大时长
+* `voting_period` 投票时长
+* `quorum` voting power最小比例
+* `threshold` 判定通过需要的`Yes`比例
+* `veto` 判定强烈不同意需要的`Veto`比例
+* `penalty` 不投票验证节点的惩罚比例
+* `burn_rate` 提议通过(`PASS`)或不通过(`REJECT`)抵押销毁比例
 
 ### 投票
 
@@ -43,21 +43,25 @@ QOS的链上治理提案类型包括以下几种：
 
 计票会产生以下几种结果：
 
-* 无效：参与投票的voting power/总voting power < `$participation`
+* 无效：参与投票的voting power/总voting power < `$quorum`
 
-* 通过：投`Yes`的voting power/总voting power > `$Threshold`
+* 通过：投`Yes`的voting power/总voting power > `$threshold`
 
-* 强烈反对：投`NoWithVeto`的voting power/总voting power > `$Veto`
+* 强烈反对：投`NoWithVeto`的voting power/总voting power > `$veto`
 
 * 未通过：除以上以外其他结果
 
 ### 销毁机制
 
-提案`通过`或`未通过`，都要销毁抵押`Deposit * $BurnRate`，作为治理的费用，把剩余的`Deposit`原路返回。
+提案`通过`或`未通过`，都要销毁抵押`Deposit * $burn_rate`，作为治理的费用，把剩余的`Deposit`原路返回。
 
-但如果投票结果为`强烈反对``，则抵押`Deposit`会被全部收入到社区基金账户。
+但如果投票结果为`强烈反对`，则抵押`Deposit`会被全部收入到社区基金账户。
 
 ### 惩罚机制
 
-如果一个账户提议进入投票阶段，他是验证人，然后该提议进入统计阶段，他还是验证人，但是他并没有投票，则会按`Penalty`的比例被惩罚。一个验证节点上的任何一个验证人或委托人投过票就算该验证节点参与过投票。
+如果一个节点在同一议案的进入投票阶段和计票统计阶段的块高度上，都是验证人，但并没有参与过该议案的投票，则其上绑定的token会按`Penalty`的比例被惩罚。
+
+需要注意，判断验证人是否投票的标准，含绑定该验证人的委托人，一个验证节点上的验证人或任何一个委托人投过票就算该验证节点参与过投票。反之，如果该验证人因为未投票而受到惩罚，绑定该验证人的委托人的token会受到同比例惩罚。
+
+
 

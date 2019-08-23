@@ -1,4 +1,4 @@
-package staking
+package client
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
@@ -6,17 +6,13 @@ import (
 	"github.com/tendermint/go-amino"
 )
 
-func TxValidatorCommands(cdc *amino.Codec) []*cobra.Command {
+func TxCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.PostCommands(
 		CreateValidatorCmd(cdc),
 		ModifyValidatorCmd(cdc),
 		RevokeValidatorCmd(cdc),
 		ActiveValidatorCmd(cdc),
-	)
-}
-
-func TxDelegationCommands(cdc *amino.Codec) []*cobra.Command {
-	return bctypes.PostCommands(
+		bctypes.LineBreak,
 		CreateDelegationCommand(cdc),
 		CreateModifyCompoundCommand(cdc),
 		CreateUnbondDelegationCommand(cdc),
@@ -32,5 +28,7 @@ func QueryCommands(cdc *amino.Codec) []*cobra.Command {
 		queryDelegationInfoCommand(cdc),
 		queryDelegationsCommand(cdc),
 		queryDelegationsToCommand(cdc),
+		queryUnbondingsCommand(cdc),
+		queryRedelegationsCommand(cdc),
 	)
 }

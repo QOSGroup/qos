@@ -96,10 +96,14 @@ func ExportCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			}
 			fmt.Printf("export success: %s", export)
 			fmt.Println()
+
+			md5, _ := types.FileMD5(export)
+			fmt.Printf("genesis md5: %s", md5)
+			fmt.Println()
 			return nil
 		},
 	}
-	
+
 	cmd.Flags().Int64(flagHeight, -1, "Export state from a particular height (-1 means latest height)")
 	cmd.Flags().Bool(flagForZeroHeight, false, "Export state to start at height zero (perform preproccessing)")
 	cmd.Flags().String(flagOutput, types.DefaultNodeHome, "directory for exported json file, default $HOME/.qosd")
@@ -134,7 +138,7 @@ func openTraceWriter(traceWriterFile string) (w io.Writer, err error) {
 }
 
 func exportAppState(logger log.Logger, db dbm.DB, traceStore io.Writer, height int64, forZeroHeight bool) (int64, json.RawMessage, error) {
-	qApp := app.NewApp(logger, db, traceStore)
+	qApp := app.NewApp(logger, db, traceStore, 0)
 	if height != -1 {
 		qApp.LoadVersion(height)
 	}

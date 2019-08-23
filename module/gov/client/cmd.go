@@ -1,4 +1,4 @@
-package gov
+package client
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"
@@ -46,9 +46,18 @@ const (
 
 	flagParams = "params"
 
+	flagInflationPhrases = "inflation-phrases"
+	flagTotalAmount      = "total-amount"
+
 	flagStatus   = "status"
 	flagNumLimit = "limit"
 
 	flagModule   = "module"
 	flagParamKey = "key"
+
+	flagVersion       = "version"
+	flagDataHeight    = "data-height"
+	flagGenesisFile   = "genesis-file"
+	flagGenesisMD5    = "genesis-md5"
+	flagForZeroHeight = "for-zero-height"
 )

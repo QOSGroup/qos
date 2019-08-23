@@ -1,15 +1,15 @@
-package staking
+package client
 
 import (
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
-	"github.com/QOSGroup/qbase/txs"
-	"github.com/QOSGroup/qos/module/stake"
+	btxs "github.com/QOSGroup/qbase/txs"
+	"github.com/QOSGroup/qos/module/stake/txs"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
-	amino "github.com/tendermint/go-amino"
+	"github.com/tendermint/go-amino"
 )
 
 const (
@@ -24,7 +24,7 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 		Use:   "delegate",
 		Short: "delegate QOS to a validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
 				tokens := viper.GetInt64(flagBondTokens)
 				if tokens <= 0 {
@@ -41,7 +41,7 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return &stake.TxCreateDelegation{
+				return &txs.TxCreateDelegation{
 					Delegator:      delegator,
 					ValidatorOwner: owner,
 					Amount:         uint64(tokens),
@@ -68,7 +68,7 @@ func CreateModifyCompoundCommand(cdc *amino.Codec) *cobra.Command {
 		Use:   "modify-compound",
 		Short: "modify compound info in a delegation",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
 				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 				if err != nil {
@@ -80,7 +80,7 @@ func CreateModifyCompoundCommand(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return &stake.TxModifyCompound{
+				return &txs.TxModifyCompound{
 					Delegator:      delegator,
 					ValidatorOwner: owner,
 					IsCompound:     viper.GetBool(flagCompound),
@@ -104,7 +104,7 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 		Use:   "unbond",
 		Short: "unbond QOS from a validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
 				tokens := viper.GetInt64(flagBondTokens)
 				isUnbondAll := viper.GetBool(flagAll)
@@ -122,7 +122,7 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return &stake.TxUnbondDelegation{
+				return &txs.TxUnbondDelegation{
 					Delegator:      delegator,
 					ValidatorOwner: owner,
 					UnbondAmount:   uint64(tokens),
@@ -148,7 +148,7 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 		Use:   "redelegate",
 		Short: "redelegate QOS from a validator to another",
 		RunE: func(cmd *cobra.Command, args []string) error {
-			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
+			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
 				tokens := viper.GetInt64(flagBondTokens)
 				all := viper.GetBool(flagAll)
@@ -171,7 +171,7 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return &stake.TxCreateReDelegation{
+				return &txs.TxCreateReDelegation{
 					Delegator:          delegator,
 					FromValidatorOwner: fromValidatorOwner,
 					ToValidatorOwner:   toValidatorOwner,

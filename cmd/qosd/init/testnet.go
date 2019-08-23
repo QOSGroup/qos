@@ -5,13 +5,9 @@ import (
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qbase/txs"
 	"github.com/QOSGroup/qos/app"
-	"github.com/QOSGroup/qos/module/distribution"
-	staketypes "github.com/QOSGroup/qos/module/eco/types"
-	"github.com/QOSGroup/qos/module/gov"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/guardian"
 	"github.com/QOSGroup/qos/module/mint"
-	"github.com/QOSGroup/qos/module/qcp"
-	"github.com/QOSGroup/qos/module/qsc"
 	"github.com/QOSGroup/qos/module/stake"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/viper"
@@ -28,7 +24,6 @@ import (
 	"github.com/spf13/cobra"
 
 	btypes "github.com/QOSGroup/qbase/types"
-	gtypes "github.com/QOSGroup/qos/module/guardian/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
 	ttypes "github.com/tendermint/tendermint/types"
 )
@@ -50,6 +45,10 @@ var (
 	accounts  string
 
 	guardianAddresses string
+
+	commissionRate          string
+	commissionMaxRate       string
+	commissionMaxChangeRate string
 )
 
 const (
@@ -140,8 +139,12 @@ Example:
 
 				// create gentx file
 				owner := ed25519.GenPrivKey()
-				desc := staketypes.Description{Moniker: nodeDirName}
-				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc)
+				desc := stake.Description{Moniker: nodeDirName}
+				commission, err := stake.BuildCommissionRates()
+				if err != nil {
+					return err
+				}
+				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
 				if err != nil {
@@ -167,7 +170,7 @@ Example:
 			}
 
 			// guardians
-			var guardians []gtypes.Guardian
+			var guardians []guardian.Guardian
 			if len(guardianAddresses) != 0 {
 				addressArr := strings.Split(guardianAddresses, ",")
 				for _, address := range addressArr {
@@ -175,7 +178,7 @@ Example:
 					if err != nil {
 						return err
 					}
-					guardians = append(guardians, *gtypes.NewGuardian("genesis guardian", gtypes.Genesis, addr, nil))
+					guardians = append(guardians, *guardian.NewGuardian("genesis guardian", guardian.Genesis, addr, nil))
 				}
 			}
 			guardianState := guardian.NewGenesisState(guardians)
@@ -188,17 +191,13 @@ Example:
 			for _, account := range genesisAccounts {
 				appliedQOSAmount = appliedQOSAmount.Add(account.QOS)
 			}
-			appState := app.GenesisState{
-				Accounts:         genesisAccounts,
-				MintData:         mint.DefaultGenesisState(),
-				StakeData:        stake.NewGenesisState(staketypes.DefaultStakeParams(), nil, nil, nil, nil, nil, nil),
-				QCPData:          qcp.NewGenesisState(qcpPubKey, nil),
-				QSCData:          qsc.NewGenesisState(qscPubKey, nil),
-				DistributionData: distribution.DefaultGenesisState(),
-				GovData:          gov.DefaultGenesisState(),
-				GuardianData:     guardianState,
-			}
-			appState.MintData.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
+
+			appState := app.ModuleBasics.DefaultGenesis()
+			appState[bank.ModuleName] = cdc.MustMarshalJSON(bank.NewGenesisState(genesisAccounts))
+			appState[guardian.ModuleName] = cdc.MustMarshalJSON(guardianState)
+			mintState := mint.DefaultGenesis()
+			mintState.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
+			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
 
 			rawState, _ := cdc.MarshalJSON(appState)
 			genDoc := &ttypes.GenesisDoc{
@@ -244,6 +243,9 @@ Example:
 	cmd.Flags().BoolVar(&compound, "compound", true, "whether the validator's income is calculated as compound interest, default: true")
 	cmd.Flags().StringVar(&guardianAddresses, "guardians", "", "addresses for guardian. Multiple addresses separated by ','")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
+	cmd.Flags().StringVar(&commissionRate, "commission-rate", "0", "The initial commission rate percentage")
+	cmd.Flags().StringVar(&commissionMaxRate, "commission-max-rate", "0", "The maximum commission rate percentage")
+	cmd.Flags().StringVar(&commissionMaxChangeRate, "commission-max-change-rate", "0", "The maximum commission change rate percentage (per day)")
 
 	return cmd
 }

@@ -1,67 +1,72 @@
 package stake
 
 import (
+	"errors"
 	"fmt"
-
-	"github.com/QOSGroup/qos/module/eco"
-
+	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/eco/mapper"
-	ecotypes "github.com/QOSGroup/qos/module/eco/types"
-	"github.com/QOSGroup/qos/types"
-	"github.com/tendermint/tendermint/crypto"
+	"github.com/QOSGroup/qos/module/bank"
+	"github.com/QOSGroup/qos/module/stake/mapper"
+	"github.com/QOSGroup/qos/module/stake/txs"
+	"github.com/QOSGroup/qos/module/stake/types"
+	qtypes "github.com/QOSGroup/qos/types"
+	"github.com/tendermint/go-amino"
+	abci "github.com/tendermint/tendermint/abci/types"
+	tmtypes "github.com/tendermint/tendermint/types"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
 )
 
-type GenesisState struct {
-	Params                 ecotypes.StakeParams             `json:"params"`
-	Validators             []ecotypes.Validator             `json:"validators"`            //validatorKey, validatorByOwnerKey,validatorByInactiveKey,validatorByVotePowerKey
-	ValidatorsVoteInfo     []ValidatorVoteInfoState         `json:"val_votes_info"`        //validatorVoteInfoKey
-	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"`   //validatorVoteInfoInWindowKey
-	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`       //DelegationByDelValKey, DelegationByValDelKey
-	DelegatorsUnbondInfo   []DelegatorUnbondState           `json:"delegator_unbond_info"` //DelegatorUnbondingQOSatHeightKey
-	CurrentValidators      []ecotypes.Validator             `json:"current_validators"`    // currentValidatorsAddressKey
-}
-
-func NewGenesisState(params ecotypes.StakeParams,
-	validators []ecotypes.Validator,
-	validatorsVoteInfo []ValidatorVoteInfoState,
-	validatorsVoteInWindow []ValidatorVoteInWindowInfoState,
-	delegatorsInfo []DelegationInfoState,
-	delegatorsUnbondInfo []DelegatorUnbondState,
-	currentValidators []ecotypes.Validator) GenesisState {
-	return GenesisState{
-		Params:                 params,
-		Validators:             validators,
-		ValidatorsVoteInfo:     validatorsVoteInfo,
-		ValidatorsVoteInWindow: validatorsVoteInWindow,
-		DelegatorsInfo:         delegatorsInfo,
-		DelegatorsUnbondInfo:   delegatorsUnbondInfo,
-		CurrentValidators:      currentValidators,
-	}
-}
-
-func DefaultGenesisState() GenesisState {
-	return GenesisState{
-		Params: ecotypes.DefaultStakeParams(),
-	}
-}
-
-func InitGenesis(ctx context.Context, data GenesisState) {
-	validatorMapper := mapper.GetValidatorMapper(ctx)
+func InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data types.GenesisState) []abci.ValidatorUpdate {
+	validatorMapper := mapper.GetMapper(ctx)
 
 	if len(data.CurrentValidators) > 0 {
-		validatorMapper.Set(ecotypes.BuildCurrentValidatorsAddressKey(), data.CurrentValidators)
+		validatorMapper.Set(types.BuildCurrentValidatorsAddressKey(), data.CurrentValidators)
 	}
 
 	initValidators(ctx, data.Validators)
 	initParams(ctx, data.Params)
 	initValidatorsVotesInfo(ctx, data.ValidatorsVoteInfo, data.ValidatorsVoteInWindow)
-	initDelegatorsInfo(ctx, data.DelegatorsInfo, data.DelegatorsUnbondInfo)
+	initDelegatorsInfo(ctx, data.DelegatorsInfo, data.DelegatorsUnbondInfo, data.ReDelegationsInfo)
+
+	if len(data.GenTxs) > 0 || ctx.BlockHeight() == 0 {
+		return initGentxs(ctx, bapp, data.GenTxs)
+	} else {
+		return GetUpdatedValidators(ctx, uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt))
+	}
 }
 
-func initValidators(ctx context.Context, validators []ecotypes.Validator) {
-	validatorMapper := mapper.GetValidatorMapper(ctx)
+func initGentxs(ctx context.Context, bapp *baseabci.BaseApp, gentxs []btxs.TxStd) []abci.ValidatorUpdate {
+	for _, genTx := range gentxs {
+		bz := Cdc.MustMarshalBinaryBare(genTx)
+		reqDeliverTx := abci.RequestDeliverTx{Tx: bz}
+		res := bapp.DeliverTx(reqDeliverTx)
+		if !res.IsOK() {
+			panic(res.Log)
+		}
+	}
+
+	validatorSet := []abci.ValidatorUpdate{}
+	sm := GetMapper(ctx)
+	iterator := sm.IteratorValidatorByVoterPower(false)
+	defer iterator.Close()
+	for ; iterator.Valid(); iterator.Next() {
+		key := iterator.Key()
+		valAddr := btypes.Address(key[9:])
+		validator, _ := sm.GetValidator(valAddr)
+		validatorSet = append(validatorSet, validator.ToABCIValidatorUpdate(false))
+	}
+
+	return validatorSet
+}
+
+func initValidators(ctx context.Context, validators []types.Validator) {
+	validatorMapper := mapper.GetMapper(ctx)
 	for _, v := range validators {
 
 		if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
@@ -77,22 +82,22 @@ func initValidators(ctx context.Context, validators []ecotypes.Validator) {
 	}
 }
 
-func initValidatorsVotesInfo(ctx context.Context, voteInfos []ValidatorVoteInfoState, voteWindowInfos []ValidatorVoteInWindowInfoState) {
-	voteMapper := mapper.GetVoteInfoMapper(ctx)
+func initValidatorsVotesInfo(ctx context.Context, voteInfos []types.ValidatorVoteInfoState, voteWindowInfos []types.ValidatorVoteInWindowInfoState) {
+	sm := mapper.GetMapper(ctx)
 	for _, voteInfo := range voteInfos {
-		voteMapper.SetValidatorVoteInfo(btypes.Address(voteInfo.ValidatorPubKey.Address()), voteInfo.VoteInfo)
+		sm.SetValidatorVoteInfo(btypes.Address(voteInfo.ValidatorPubKey.Address()), voteInfo.VoteInfo)
 	}
 
 	for _, voteWindowInfo := range voteWindowInfos {
-		voteMapper.SetVoteInfoInWindow(btypes.Address(voteWindowInfo.ValidatorPubKey.Address()), voteWindowInfo.Index, voteWindowInfo.Vote)
+		sm.SetVoteInfoInWindow(btypes.Address(voteWindowInfo.ValidatorPubKey.Address()), voteWindowInfo.Index, voteWindowInfo.Vote)
 	}
 }
 
-func initDelegatorsInfo(ctx context.Context, delegatorsInfo []DelegationInfoState, delegatorsUnbondInfo []DelegatorUnbondState) {
-	delegationMapper := mapper.GetDelegationMapper(ctx)
+func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationInfoState, delegatorsUnbondInfo []types.UnbondingDelegationInfo, redelegationInfo []types.RedelegationInfo) {
+	sm := mapper.GetMapper(ctx)
 
 	for _, info := range delegatorsInfo {
-		delegationMapper.SetDelegationInfo(ecotypes.DelegationInfo{
+		sm.SetDelegationInfo(types.DelegationInfo{
 			DelegatorAddr: info.DelegatorAddr,
 			ValidatorAddr: btypes.Address(info.ValidatorPubKey.Address()),
 			Amount:        info.Amount,
@@ -100,117 +105,81 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []DelegationInfoStat
 		})
 	}
 
-	for _, info := range delegatorsUnbondInfo {
-		delegationMapper.SetDelegatorUnbondingQOSatHeight(info.Height, info.DeleAddress, info.Amount)
-	}
+	sm.AddUnbondingDelegations(delegatorsUnbondInfo)
+
+	sm.AddRedelegations(redelegationInfo)
 }
 
-func initParams(ctx context.Context, params ecotypes.StakeParams) {
-	mapper := ctx.Mapper(ecotypes.ValidatorMapperName).(*mapper.ValidatorMapper)
+func initParams(ctx context.Context, params types.Params) {
+	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SetParams(ctx, params)
 }
 
-func ValidateGenesis(genesisAccounts []*types.QOSAccount, data GenesisState) error {
-	err := validateValidators(genesisAccounts, data.Validators)
-	if err != nil {
-		return err
-	}
+func ExportGenesis(ctx context.Context) types.GenesisState {
 
-	return nil
-}
+	validatorMapper := mapper.GetMapper(ctx)
+	sm := mapper.GetMapper(ctx)
 
-func validateValidators(genesisAccounts []*types.QOSAccount, validators []ecotypes.Validator) (err error) {
-	addrMap := make(map[string]bool, len(validators))
-	for i := 0; i < len(validators); i++ {
-		val := validators[i]
-		strKey := string(val.ValidatorPubKey.Bytes())
-		if _, ok := addrMap[strKey]; ok {
-			return fmt.Errorf("duplicate validator in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
-		}
-		if val.Status != ecotypes.Active {
-			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
-		}
-		addrMap[strKey] = true
-
-		var ownerExists bool
-		for _, acc := range genesisAccounts {
-			if acc.AccountAddress.EqualsTo(val.Owner) {
-				ownerExists = true
-			}
-		}
-
-		if !ownerExists {
-			return fmt.Errorf("owner of %s not exists", val.Description.Moniker)
-		}
-	}
-	return nil
-}
-
-func ExportGenesis(ctx context.Context) GenesisState {
-
-	validatorMapper := mapper.GetValidatorMapper(ctx)
-	voteMapper := mapper.GetVoteInfoMapper(ctx)
-	delegationMapper := mapper.GetDelegationMapper(ctx)
-
-	var currentValidators []ecotypes.Validator
-	validatorMapper.Get(ecotypes.BuildCurrentValidatorsAddressKey(), &currentValidators)
+	var currentValidators []types.Validator
+	validatorMapper.Get(types.BuildCurrentValidatorsAddressKey(), &currentValidators)
 
 	params := validatorMapper.GetParams(ctx)
 
-	var validators []ecotypes.Validator
-	validatorMapper.IterateValidators(func(validator ecotypes.Validator) {
+	var validators []types.Validator
+	validatorMapper.IterateValidators(func(validator types.Validator) {
 		validators = append(validators, validator)
 	})
 
-	var validatorsVoteInfo []ValidatorVoteInfoState
-	voteMapper.IterateVoteInfos(func(valAddr btypes.Address, info ecotypes.ValidatorVoteInfo) {
+	var validatorsVoteInfo []types.ValidatorVoteInfoState
+	sm.IterateVoteInfos(func(valAddr btypes.Address, info types.ValidatorVoteInfo) {
 
-		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if exsits {
+		validator, exists := validatorMapper.GetValidator(valAddr)
+		if exists {
 			vvis := ValidatorVoteInfoState{
-				ValidatorPubKey: validator.ValidatorPubKey,
+				ValidatorPubKey: validator.GetValidatorPubKey(),
 				VoteInfo:        info,
 			}
 			validatorsVoteInfo = append(validatorsVoteInfo, vvis)
 		}
 	})
 
-	var validatorsVoteInWindow []ValidatorVoteInWindowInfoState
-	voteMapper.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.Address, vote bool) {
+	var validatorsVoteInWindow []types.ValidatorVoteInWindowInfoState
+	sm.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.Address, vote bool) {
 
-		validator, exsits := validatorMapper.GetValidator(valAddr)
-		if exsits {
+		validator, exists := validatorMapper.GetValidator(valAddr)
+		if exists {
 			validatorsVoteInWindow = append(validatorsVoteInWindow, ValidatorVoteInWindowInfoState{
-				ValidatorPubKey: validator.ValidatorPubKey,
+				ValidatorPubKey: validator.GetValidatorPubKey(),
 				Index:           index,
 				Vote:            vote,
 			})
 		}
 	})
 
-	var delegatorsInfo []DelegationInfoState
-	delegationMapper.IterateDelegationsInfo(btypes.Address{}, func(info ecotypes.DelegationInfo) {
+	var delegatorsInfo []types.DelegationInfoState
+	sm.IterateDelegationsInfo(btypes.Address{}, func(info types.DelegationInfo) {
 
 		validator, exists := validatorMapper.GetValidator(info.ValidatorAddr)
 		if !exists {
-			panic(fmt.Sprintf("validator:%s not exsits", info.ValidatorAddr.String()))
+			panic(fmt.Sprintf("validator:%s not exists", info.ValidatorAddr.String()))
 		}
 
 		delegatorsInfo = append(delegatorsInfo, DelegationInfoState{
 			DelegatorAddr:   info.DelegatorAddr,
-			ValidatorPubKey: validator.ValidatorPubKey,
+			ValidatorPubKey: validator.GetValidatorPubKey(),
 			Amount:          info.Amount,
 			IsCompound:      info.IsCompound,
 		})
 	})
 
-	var delegatorsUnbondInfo []DelegatorUnbondState
-	delegationMapper.IterateDelegationsUnbondInfo(func(deleAddr btypes.Address, height uint64, amount uint64) {
-		delegatorsUnbondInfo = append(delegatorsUnbondInfo, DelegatorUnbondState{
-			DeleAddress: deleAddr,
-			Height:      height,
-			Amount:      amount,
-		})
+	var delegatorsUnbondInfo []types.UnbondingDelegationInfo
+	sm.IterateUnbondingDelegations(func(unbondings []types.UnbondingDelegationInfo) {
+		delegatorsUnbondInfo = append(delegatorsUnbondInfo, unbondings...)
+	})
+
+	var reDelegationsInfo []types.RedelegationInfo
+	sm.IterateRedelegationsInfo(func(reDelegations []types.RedelegationInfo) {
+		reDelegationsInfo = append(reDelegationsInfo, reDelegations...)
 	})
 
 	return GenesisState{
@@ -220,90 +189,119 @@ func ExportGenesis(ctx context.Context) GenesisState {
 		ValidatorsVoteInWindow: validatorsVoteInWindow,
 		DelegatorsInfo:         delegatorsInfo,
 		DelegatorsUnbondInfo:   delegatorsUnbondInfo,
+		ReDelegationsInfo:      reDelegationsInfo,
 		CurrentValidators:      currentValidators,
 	}
 }
 
-type ValidatorVoteInfoState struct {
-	ValidatorPubKey crypto.PubKey              `json:"validator_pub_key"`
-	VoteInfo        ecotypes.ValidatorVoteInfo `json:"vote_info"`
-}
+func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tmtypes.GenesisDoc) (
+	genTxs []btxs.TxStd, persistentPeers string, err error) {
 
-type ValidatorVoteInWindowInfoState struct {
-	ValidatorPubKey crypto.PubKey `json:"validator_pub_key"`
-	Index           uint64        `json:"index"`
-	Vote            bool          `json:"vote"`
-}
+	var fos []os.FileInfo
+	fos, err = ioutil.ReadDir(genTxsDir)
+	if err != nil {
+		return genTxs, persistentPeers, err
+	}
 
-type DelegationInfoState struct {
-	DelegatorAddr   btypes.Address `json:"delegator_addr"`
-	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
-	Amount          uint64         `json:"delegate_amount"`
-	IsCompound      bool           `json:"is_compound"`
-}
+	var appState qtypes.GenesisState
+	if err := cdc.UnmarshalJSON(genDoc.AppState, &appState); err != nil {
+		return genTxs, persistentPeers, err
+	}
+	var bankState bank.GenesisState
+	cdc.MustUnmarshalJSON(appState[bank.ModuleName], &bankState)
 
-type DelegatorUnbondState struct {
-	DeleAddress btypes.Address `json:"delegator_address"`
-	Height      uint64         `json:"height"`
-	Amount      uint64         `json:"tokens"`
-}
+	addrMap := make(map[string]*qtypes.QOSAccount, len(bankState.Accounts))
+	for i := 0; i < len(bankState.Accounts); i++ {
+		acc := bankState.Accounts[i]
+		addrMap[acc.AccountAddress.String()] = acc
+	}
 
-func PrepForZeroHeightGenesis(ctx context.Context) {
+	// addresses and IPs (and port) validator server info
+	var addressesIPs []string
 
-	e := eco.GetEco(ctx)
+	var invalidFileNames []string
+	var invalidTxFiles []string
+	var accsNotInGenesis []string
+	var accsNoEnoughQOS []string
 
-	// close all active validators
-	var validators []ecotypes.Validator
-	var delegations []ecotypes.DelegationInfo
-	var vals = make(map[string]ecotypes.Validator)
-	e.ValidatorMapper.IterateValidators(func(validator ecotypes.Validator) {
-		val := validator.GetValidatorAddress()
-		vals[validator.GetValidatorAddress().String()] = validator
-		e.DelegationMapper.IterateDelegationsValDeleAddr(val, func(val btypes.Address, del btypes.Address) {
-			delegation, exists := e.DelegationMapper.GetDelegationInfo(del, val)
-			if !exists {
-				panic(fmt.Sprintf("delegation from %s to %s should exists", del, val))
-			}
-
-			delegations = append(delegations, delegation)
-		})
-
-		if validator.Status == ecotypes.Active {
-			e.ValidatorMapper.MakeValidatorInactive(val, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), ecotypes.Revoke)
+	for _, fo := range fos {
+		filename := filepath.Join(genTxsDir, fo.Name())
+		ext := filepath.Ext(filename)
+		simpleName := strings.TrimSuffix(fo.Name(), ext)
+		if !fo.IsDir() && (ext != ".json") {
+			invalidFileNames = append(invalidFileNames, simpleName)
+			continue
 		}
-	})
 
-	// close all inactive validators
-	closeAllInactiveValidator(ctx)
+		// validate file name, nodeid@ip
+		nodeIdAndIp := strings.Split(simpleName, "@")
+		if len(nodeIdAndIp) != 2 {
+			//TODO valid ip
+			invalidFileNames = append(invalidFileNames, simpleName)
+			continue
+		}
+		nodeId := nodeIdAndIp[0]
 
-	for _, delegation := range delegations {
-		var info ecotypes.DelegatorEarningsStartInfo
-		e.DistributionMapper.Get(ecotypes.BuildDelegatorEarningStartInfoKey(delegation.ValidatorAddr, delegation.DelegatorAddr), &info)
-		eco.BonusToDelegator(e.Context, delegation.DelegatorAddr, delegation.ValidatorAddr, info.HistoricalRewardFees, false)
-		// eco.IncrAccountQOS(e.Context, delegation.DelegatorAddr, info.HistoricalRewardFees)
+		// get the genStdTx
+		var jsonRawTx []byte
+		if jsonRawTx, err = ioutil.ReadFile(filename); err != nil {
+			invalidTxFiles = append(invalidTxFiles, simpleName)
+			continue
+		}
+		var txStd btxs.TxStd
+		if err = cdc.UnmarshalJSON(jsonRawTx, &txStd); err != nil {
+			invalidTxFiles = append(invalidTxFiles, simpleName)
+			continue
+		}
+		genTxs = append(genTxs, txStd)
+
+		// genesis transactions must be single-message
+		itxs := txStd.ITxs
+		if len(itxs) != 1 {
+			invalidTxFiles = append(invalidTxFiles, simpleName)
+			continue
+		}
+
+		txCreateValidator := itxs[0].(*txs.TxCreateValidator)
+		// validate delegator and validator addresses and funds against the accounts in the state
+		ownerAddr := txCreateValidator.Owner
+
+		delAcc, delOk := addrMap[ownerAddr.String()]
+
+		if !delOk {
+			accsNotInGenesis = append(accsNotInGenesis, simpleName+"-"+ownerAddr.String())
+			continue
+		} else if !delAcc.EnoughOfQOS(btypes.NewInt(int64(txCreateValidator.BondTokens))) {
+			accsNoEnoughQOS = append(accsNoEnoughQOS, simpleName+"-"+ownerAddr.String())
+			continue
+		}
+
+		// exclude itself from persistent peers
+		if nodeID != nodeId {
+			addressesIPs = append(addressesIPs, fmt.Sprintf("%s:26656", simpleName))
+		}
 	}
 
-	// return unbond tokens
-	eco.ReturnAllUnbondTokens(ctx)
-
-	// reinitialize all validators
-	for _, validator := range validators {
-		val := validator.GetValidatorAddress()
-		e.VoteInfoMapper.DelValidatorVoteInfo(val)
-		e.VoteInfoMapper.ClearValidatorVoteInfoInWindow(val)
-		e.DistributionMapper.DeleteValidatorPeriodSummaryInfo(val)
-		e.DistributionMapper.InitValidatorPeriodSummaryInfo(val)
-		e.ValidatorMapper.CreateValidator(validator)
+	var errorInfo string
+	if len(invalidFileNames) != 0 {
+		errorInfo += fmt.Sprintf("file(s) %v name invalid \n", strings.Join(invalidFileNames, " "))
+	}
+	if len(invalidTxFiles) != 0 {
+		errorInfo += fmt.Sprintf("file(s) %v tx invalid \n", strings.Join(invalidTxFiles, " "))
+	}
+	if len(accsNotInGenesis) != 0 {
+		errorInfo += fmt.Sprintf("account(s) %v not in genesis.json \n", strings.Join(accsNotInGenesis, " "))
+	}
+	if len(accsNoEnoughQOS) != 0 {
+		errorInfo += fmt.Sprintf("account(s) %v no enough QOS in genesis.json \n", strings.Join(accsNoEnoughQOS, " "))
 	}
 
-	// reinitialize all delegations
-	e.DistributionMapper.DeleteDelegatorsIncomeHeight()
-	// reset block height
-	ctx = ctx.WithBlockHeight(0)
-	e = eco.GetEco(ctx)
-	for _, delegation := range delegations {
-		e.DistributionMapper.DelDelegatorEarningStartInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
-		e.DelegationMapper.DelDelegationInfo(delegation.ValidatorAddr, delegation.DelegatorAddr)
-		e.DelegateValidator(ctx, vals[delegation.ValidatorAddr.String()], delegation.DelegatorAddr, delegation.Amount, delegation.IsCompound, true)
+	if len(errorInfo) != 0 {
+		return genTxs, persistentPeers, errors.New(errorInfo)
 	}
+
+	sort.Strings(addressesIPs)
+	persistentPeers = strings.Join(addressesIPs, ",")
+
+	return genTxs, persistentPeers, nil
 }

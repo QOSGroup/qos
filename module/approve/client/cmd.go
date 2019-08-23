@@ -1,4 +1,4 @@
-package approve
+package client
 
 import (
 	bctypes "github.com/QOSGroup/qbase/client/types"

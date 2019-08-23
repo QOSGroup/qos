@@ -2,28 +2,16 @@ package qcp
 
 import (
 	"github.com/QOSGroup/qbase/context"
-	qcptypes "github.com/QOSGroup/qos/module/qcp/types"
-	"github.com/tendermint/tendermint/crypto"
+	"github.com/QOSGroup/qos/module/qcp/mapper"
+	"github.com/QOSGroup/qos/module/qcp/types"
 )
 
-type GenesisState struct {
-	RootPubKey crypto.PubKey      `json:"ca_root_pub_key"`
-	QCPs       []qcptypes.QCPInfo `json:"qcps""`
-}
-
-func NewGenesisState(pubKey crypto.PubKey, qcps []qcptypes.QCPInfo) GenesisState {
-	return GenesisState{
-		RootPubKey: pubKey,
-		QCPs:       qcps,
-	}
-}
-
-func InitGenesis(ctx context.Context, data GenesisState) {
+func InitGenesis(ctx context.Context, data types.GenesisState) {
 	if data.RootPubKey != nil {
-		SetQCPRootCA(ctx, data.RootPubKey)
+		mapper.SetQCPRootCA(ctx, data.RootPubKey)
 	}
 
-	qcpMapper := GetQCPMapper(ctx)
+	qcpMapper := mapper.GetMapper(ctx)
 	for _, qcp := range data.QCPs {
 		qcpMapper.SetMaxChainInSequence(qcp.ChainId, qcp.SequenceIn)
 		qcpMapper.SetMaxChainOutSequence(qcp.ChainId, qcp.SequenceOut)
@@ -34,6 +22,6 @@ func InitGenesis(ctx context.Context, data GenesisState) {
 	}
 }
 
-func ExportGenesis(ctx context.Context) GenesisState {
-	return NewGenesisState(GetQCPRootCA(ctx), ExportQCPs(ctx))
+func ExportGenesis(ctx context.Context) types.GenesisState {
+	return types.NewGenesisState(mapper.GetQCPRootCA(ctx), mapper.ExportQCPs(ctx))
 }
