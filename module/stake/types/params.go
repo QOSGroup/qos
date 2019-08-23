@@ -5,8 +5,21 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"strconv"
 	"time"
+)
+
+var (
+	defaultMaxValidatorCnt             = uint32(21)
+	defaultValidatorVotingStatusLen    = uint32(10000)
+	defaultValidatorVotingStatusLeast  = uint32(7000)
+	defaultValidatorSurvivalSecs       = uint32(8 * 60 * 60)
+	defaultDelegatorUnbondReturnHeight = uint32(15 * 24 * 60 * 60 / qtypes.DefaultBlockInterval) // 1 day
+	defaultDelegatorRedelegationHeight = uint32(24 * 60 * 60 / qtypes.DefaultBlockInterval)      // 15 days
+	defaultMaxEvidenceAge              = time.Duration(1814400000000000)                         // ~= 21 days
+	defaultSlashFractionDoubleSign     = types.NewDecWithPrec(2, 1)                              // 0.2
+	defaultSlashFractionDowntime       = types.NewDecWithPrec(1, 4)                              // 0.0001
 )
 
 var (
@@ -91,5 +104,5 @@ func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusL
 }
 
 func DefaultParams() Params {
-	return NewParams(10, 100, 50, 600, 10, 10, 600000000, types.NewDecWithPrec(2, 1), types.NewDecWithPrec(1, 1))
+	return NewParams(defaultMaxValidatorCnt, defaultValidatorVotingStatusLen, defaultValidatorVotingStatusLeast, defaultValidatorSurvivalSecs, defaultDelegatorUnbondReturnHeight, defaultDelegatorRedelegationHeight, defaultMaxEvidenceAge, defaultSlashFractionDoubleSign, defaultSlashFractionDowntime)
 }

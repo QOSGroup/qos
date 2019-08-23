@@ -54,4 +54,10 @@ const (
 
 	flagModule   = "module"
 	flagParamKey = "key"
+
+	flagVersion       = "version"
+	flagDataHeight    = "data-height"
+	flagGenesisFile   = "genesis-file"
+	flagGenesisMD5    = "genesis-md5"
+	flagForZeroHeight = "for-zero-height"
 )

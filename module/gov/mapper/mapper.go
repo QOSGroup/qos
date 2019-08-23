@@ -337,7 +337,7 @@ func (mapper Mapper) GetDeposits(proposalID uint64) store.Iterator {
 }
 
 // Refunds and deletes all the deposits on a specific proposal
-func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, burnDeposit bool) {
+func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, deductDeposit bool) {
 
 	log := ctx.Logger()
 	params := mapper.GetParams(ctx)
@@ -352,7 +352,7 @@ func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, burn
 
 		//需要扣除部分押金时
 		burnAmount := int64(0)
-		if burnDeposit {
+		if deductDeposit {
 			burnAmount = params.BurnRate.Mul(qtypes.NewDec(depositAmount)).TruncateInt64()
 		}
 
@@ -364,7 +364,7 @@ func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, burn
 		accountMapper.SetAccount(depositor)
 
 		// burn deposit
-		if burnDeposit {
+		if deductDeposit {
 			distribution.GetMapper(ctx).AddToCommunityFeePool(btypes.NewInt(burnAmount))
 		}
 

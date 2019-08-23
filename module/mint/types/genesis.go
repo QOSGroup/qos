@@ -2,10 +2,9 @@ package types
 
 import (
 	"errors"
+	qtypes "github.com/QOSGroup/qos/types"
 	"time"
 )
-
-var TotalQOSAmount = uint64(3e6)
 
 type GenesisState struct {
 	InflationPhrases InflationPhrases `json:"inflation_phrases"`
@@ -24,7 +23,7 @@ func NewGenesisState(inflationPhrases InflationPhrases, firstBlockTime int64, ap
 }
 
 func DefaultGenesisState() GenesisState {
-	return NewGenesisState(DefaultInflationPhrases(), time.Now().Unix(), 0, TotalQOSAmount)
+	return NewGenesisState(DefaultInflationPhrases(), time.Now().Unix(), 0, qtypes.TotalQOSAmount)
 }
 
 func ValidateGenesis(gs GenesisState) error {

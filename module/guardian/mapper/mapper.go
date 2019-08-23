@@ -14,6 +14,7 @@ const (
 
 var (
 	guardianKey = []byte{0x00}
+	haltKey     = []byte{0x01}
 )
 
 func KeyGuardian(address btypes.Address) []byte {
@@ -61,4 +62,14 @@ func (mapper Mapper) GetGuardian(address btypes.Address) (guardian types.Guardia
 
 func (mapper Mapper) GuardiansIterator() store.Iterator {
 	return btypes.KVStorePrefixIterator(mapper.GetStore(), KeyGuardiansSubspace())
+}
+
+func (mapper Mapper) SetHalt(halt string) {
+	mapper.Set(haltKey, halt)
+}
+
+func (mapper Mapper) NeedHalt(height uint64) bool {
+	var halt string
+	exists := mapper.Get(haltKey, &halt)
+	return exists
 }

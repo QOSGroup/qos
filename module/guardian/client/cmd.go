@@ -17,6 +17,7 @@ func TxCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.PostCommands(
 		AddGuardianCmd(cdc),
 		DeleteGuardianCmd(cdc),
+		HaltCmd(cdc),
 	)
 }
 

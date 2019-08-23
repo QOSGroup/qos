@@ -21,13 +21,38 @@ type InflationPhrases []InflationPhrase
 func DefaultInflationPhrases() InflationPhrases {
 	return InflationPhrases{
 		{
-			time.Date(2019, 8, 13, 12, 10, 0, 0, time.UTC),
-			1e6, //mul(10^4),
+			time.Date(2023, 10, 20, 0, 0, 0, 0, time.UTC),
+			25.5e12,
 			0,
 		},
 		{
-			time.Date(2019, 8, 13, 12, 30, 0, 0, time.UTC),
-			1e6, //mul(10^4),
+			time.Date(2027, 10, 20, 0, 0, 0, 0, time.UTC),
+			12.75e12,
+			0,
+		},
+		{
+			time.Date(2031, 10, 20, 0, 0, 0, 0, time.UTC),
+			6.375e12,
+			0,
+		},
+		{
+			time.Date(2035, 10, 20, 0, 0, 0, 0, time.UTC),
+			3.1875e12,
+			0,
+		},
+		{
+			time.Date(2039, 10, 20, 0, 0, 0, 0, time.UTC),
+			1.59375e12,
+			0,
+		},
+		{
+			time.Date(2043, 10, 20, 0, 0, 0, 0, time.UTC),
+			0.796875e12,
+			0,
+		},
+		{
+			time.Date(2047, 10, 20, 0, 0, 0, 0, time.UTC),
+			0.796875e12,
 			0,
 		},
 	}

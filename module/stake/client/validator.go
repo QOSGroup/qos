@@ -34,6 +34,10 @@ const (
 	flagCommissionRate          = "commission-rate"
 	flagCommissionMaxRate       = "commission-max-rate"
 	flagCommissionMaxChangeRate = "commission-max-change-rate"
+
+	DefaultCommissionRate          = "0.1"
+	DefaultCommissionMaxRate       = "0.2"
+	DefaultCommissionMaxChangeRate = "0.01"
 )
 
 func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
@@ -61,16 +65,13 @@ example:
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
-	cmd.Flags().String(flagCommissionRate, "", "The initial commission rate percentage")
-	cmd.Flags().String(flagCommissionMaxRate, "", "The maximum commission rate percentage")
-	cmd.Flags().String(flagCommissionMaxChangeRate, "", "The maximum commission change rate percentage (per day)")
+	cmd.Flags().String(flagCommissionRate, DefaultCommissionRate, "The initial commission rate percentage")
+	cmd.Flags().String(flagCommissionMaxRate, DefaultCommissionMaxRate, "The maximum commission rate percentage")
+	cmd.Flags().String(flagCommissionMaxChangeRate, DefaultCommissionMaxChangeRate, "The maximum commission change rate percentage (per day)")
 
 	cmd.MarkFlagRequired(flagMoniker)
 	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagBondTokens)
-	cmd.MarkFlagRequired(flagCommissionRate)
-	cmd.MarkFlagRequired(flagCommissionMaxRate)
-	cmd.MarkFlagRequired(flagCommissionMaxChangeRate)
 
 	return cmd
 }

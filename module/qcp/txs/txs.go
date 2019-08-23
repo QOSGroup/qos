@@ -9,8 +9,11 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/qcp/mapper"
 	"github.com/QOSGroup/qos/module/qcp/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/crypto"
 )
+
+const GasForCreateQCP = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.8 QOS
 
 // init QCP
 type TxInitQCP struct {
@@ -83,7 +86,7 @@ func (tx TxInitQCP) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
 		),
 	}
-	
+
 	return
 }
 
@@ -92,7 +95,7 @@ func (tx TxInitQCP) GetSigner() []btypes.Address {
 }
 
 func (tx TxInitQCP) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForCreateQCP))
 }
 
 func (tx TxInitQCP) GetGasPayer() btypes.Address {

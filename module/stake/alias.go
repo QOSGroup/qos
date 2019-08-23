@@ -44,6 +44,12 @@ var (
 	TxCreateValidatorBuilder = client.TxCreateValidatorBuilder
 	BuildCommissionRates     = client.BuildCommissionRates
 	NewCommissionRates       = types.NewCommissionRates
+
+	DefaultCommissionRate          = client.DefaultCommissionRate
+	DefaultCommissionMaxRate       = client.DefaultCommissionMaxRate
+	DefaultCommissionMaxChangeRate = client.DefaultCommissionMaxChangeRate
+
+	BuildCurrentValidatorsAddressKey = types.BuildCurrentValidatorsAddressKey
 )
 
 type (
