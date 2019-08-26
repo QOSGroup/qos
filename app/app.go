@@ -88,8 +88,8 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 	// 注册invariants
 	app.mm.RegisterInvariants(app)
 
-	// 注册mappers and hooks
-	app.mm.RegisterMapperAndHooks(app)
+	// 注册mappers and hooks, 初始化参数配置
+	app.mm.RegisterMapperAndHooks(app, params.ModuleName, &stake.Params{}, &distribution.Params{}, &gov.Params{})
 
 	// 设置gas处理逻辑
 	app.SetGasHandler(app.GasHandler)
