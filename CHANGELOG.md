@@ -1,4 +1,14 @@
 # Changelog
+## v0.0.7
+2019.08.26
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [bug] fix参数查询bug
+
 ## v0.0.6
 2019.08.23
 
