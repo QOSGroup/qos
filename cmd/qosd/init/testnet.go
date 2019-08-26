@@ -45,6 +45,10 @@ var (
 	accounts  string
 
 	guardianAddresses string
+
+	commissionRate          string
+	commissionMaxRate       string
+	commissionMaxChangeRate string
 )
 
 const (
@@ -136,7 +140,11 @@ Example:
 				// create gentx file
 				owner := ed25519.GenPrivKey()
 				desc := stake.Description{Moniker: nodeDirName}
-				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc)
+				commission, err := stake.BuildCommissionRates()
+				if err != nil {
+					return err
+				}
+				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
 				if err != nil {
@@ -235,6 +243,9 @@ Example:
 	cmd.Flags().BoolVar(&compound, "compound", true, "whether the validator's income is calculated as compound interest, default: true")
 	cmd.Flags().StringVar(&guardianAddresses, "guardians", "", "addresses for guardian. Multiple addresses separated by ','")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
+	cmd.Flags().StringVar(&commissionRate, "commission-rate", "0", "The initial commission rate percentage")
+	cmd.Flags().StringVar(&commissionMaxRate, "commission-max-rate", "0", "The maximum commission rate percentage")
+	cmd.Flags().StringVar(&commissionMaxChangeRate, "commission-max-change-rate", "0", "The maximum commission change rate percentage (per day)")
 
 	return cmd
 }

@@ -8,7 +8,7 @@ import (
 
 func InitGenesis(ctx context.Context, data types.GenesisState) {
 	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
-	mapper.SetMintParams(data.Params)
+	mapper.SetInflationPhrases(data.InflationPhrases)
 
 	if data.FirstBlockTime > 0 {
 		mapper.SetFirstBlockTime(data.FirstBlockTime)
@@ -18,14 +18,19 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 		mapper.SetAllTotalMintQOSAmount(data.AppliedQOSAmount)
 	}
 
+	if data.TotalQOSAmount > 0 {
+		mapper.SetTotalQOSAmount(data.TotalQOSAmount)
+	}
+
 }
 
 func ExportGenesis(ctx context.Context) types.GenesisState {
 	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	firstBlockTime := mapper.GetFirstBlockTime()
 	return types.GenesisState{
-		Params:           mapper.GetMintParams(),
+		InflationPhrases: mapper.MustGetInflationPhrases(),
 		FirstBlockTime:   firstBlockTime,
 		AppliedQOSAmount: mapper.GetAllTotalMintQOSAmount(),
+		TotalQOSAmount:   mapper.GetTotalQOSAmount(),
 	}
 }

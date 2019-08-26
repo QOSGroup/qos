@@ -15,6 +15,7 @@ var (
 	KeyNextProposalID           = []byte("newProposalID")
 	PrefixActiveProposalQueue   = []byte("activeProposalQueue")
 	PrefixInactiveProposalQueue = []byte("inactiveProposalQueue")
+	KeySoftUpgradeProposal      = []byte("upgradeProposal")
 )
 
 func KeyProposalSubspace() []byte {

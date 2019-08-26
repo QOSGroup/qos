@@ -14,7 +14,6 @@ var (
 	// keys for distribution p
 	KeyProposerRewardRate           = []byte("proposer_reward_rate")
 	KeyCommunityRewardRate          = []byte("community_reward_rate")
-	KeyValidatorCommissionRate      = []byte("validator_commission_rate")
 	KeyDelegatorsIncomePeriodHeight = []byte("delegator_income_period_height")
 	KeyGasPerUnitCost               = []byte("gas_per_unit_cost")
 )
@@ -22,18 +21,16 @@ var (
 type Params struct {
 	ProposerRewardRate           qtypes.Fraction `json:"proposer_reward_rate"`
 	CommunityRewardRate          qtypes.Fraction `json:"community_reward_rate"`
-	ValidatorCommissionRate      qtypes.Fraction `json:"validator_commission_rate"`
 	DelegatorsIncomePeriodHeight uint64          `json:"delegator_income_period_height"`
 	GasPerUnitCost               uint64          `json:"gas_per_unit_cost"` // how much gas = 1 QOS
 }
 
 func DefaultParams() Params {
 	return Params{
-		ProposerRewardRate:           qtypes.NewFraction(int64(4), int64(100)), // 4%
-		CommunityRewardRate:          qtypes.NewFraction(int64(1), int64(100)), // 1%
-		ValidatorCommissionRate:      qtypes.NewFraction(int64(1), int64(100)), // 1%
-		DelegatorsIncomePeriodHeight: uint64(10),
-		GasPerUnitCost:               uint64(10),
+		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)),      // 1%
+		CommunityRewardRate:          qtypes.NewFraction(int64(2), int64(100)),      // 2%
+		DelegatorsIncomePeriodHeight: uint64(60 * 60 / qtypes.DefaultBlockInterval), // 1 hour
+		GasPerUnitCost:               qtypes.GasPerUnitCost,
 	}
 }
 
@@ -41,7 +38,6 @@ func (p *Params) KeyValuePairs() params.KeyValuePairs {
 	return params.KeyValuePairs{
 		{KeyProposerRewardRate, &p.ProposerRewardRate},
 		{KeyCommunityRewardRate, &p.CommunityRewardRate},
-		{KeyValidatorCommissionRate, &p.ValidatorCommissionRate},
 		{KeyDelegatorsIncomePeriodHeight, &p.DelegatorsIncomePeriodHeight},
 		{KeyGasPerUnitCost, &p.GasPerUnitCost},
 	}
@@ -49,7 +45,7 @@ func (p *Params) KeyValuePairs() params.KeyValuePairs {
 
 func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
 	switch key {
-	case string(KeyProposerRewardRate), string(KeyCommunityRewardRate), string(KeyValidatorCommissionRate):
+	case string(KeyProposerRewardRate), string(KeyCommunityRewardRate):
 		rate, err := qtypes.NewDecFromStr(value)
 		if err != nil || rate.GTE(qtypes.OneDec()) || rate.LTE(qtypes.ZeroDec()) {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))

@@ -12,7 +12,7 @@ import (
 
 var (
 	_ types.AppModuleBasic   = AppModuleBasic{}
-	_ types.AppModuleGenesis = AppModule{}
+	_ types.AppModule = AppModule{}
 )
 
 // app module basics object
@@ -56,8 +56,18 @@ type AppModule struct {
 	AppModuleBasic
 }
 
+func (am AppModule) RegisterInvariants(types.InvariantRegistry) {}
+
+func (am AppModule) BeginBlock(ctx context.Context, req abci.RequestBeginBlock) {
+	BeginBlocker(ctx, req)
+}
+
+func (am AppModule) EndBlock(context.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
+}
+
 func NewAppModule() types.AppModule {
-	return types.NewGenesisOnlyAppModule(AppModule{})
+	return AppModule{}
 }
 
 func (am AppModule) InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data json.RawMessage) []abci.ValidatorUpdate {

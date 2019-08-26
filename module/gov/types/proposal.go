@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/types"
 	"strings"
 	"time"
@@ -173,6 +174,8 @@ const (
 	ProposalTypeText            ProposalType = 0x01
 	ProposalTypeParameterChange ProposalType = 0x02
 	ProposalTypeTaxUsage        ProposalType = 0x03
+	ProposalTypeModifyInflation ProposalType = 0x04
+	ProposalTypeSoftwareUpgrade ProposalType = 0x05
 )
 
 // String to proposalType byte. Returns 0xff if invalid.
@@ -184,6 +187,10 @@ func ProposalTypeFromString(str string) (ProposalType, error) {
 		return ProposalTypeParameterChange, nil
 	case "taxusage":
 		return ProposalTypeTaxUsage, nil
+	case "modifyinflation":
+		return ProposalTypeModifyInflation, nil
+	case "softwareupgrade":
+		return ProposalTypeSoftwareUpgrade, nil
 	default:
 		return ProposalType(0xff), fmt.Errorf("'%s' is not a valid proposal type", str)
 	}
@@ -198,6 +205,10 @@ func (pt ProposalType) String() string {
 		return "Parameter"
 	case ProposalTypeTaxUsage:
 		return "TaxUsage"
+	case ProposalTypeModifyInflation:
+		return "ModifyInflation"
+	case ProposalTypeSoftwareUpgrade:
+		return "SoftwareUpgrade"
 	default:
 		return ""
 	}
@@ -207,13 +218,15 @@ func (pt ProposalType) String() string {
 func ValidProposalType(pt ProposalType) bool {
 	if pt == ProposalTypeText ||
 		pt == ProposalTypeParameterChange ||
-		pt == ProposalTypeTaxUsage {
+		pt == ProposalTypeTaxUsage ||
+		pt == ProposalTypeModifyInflation ||
+		pt == ProposalTypeSoftwareUpgrade {
 		return true
 	}
 	return false
 }
 
-// Text Proposals
+// Text Proposal
 type TextProposal struct {
 	Title       string `json:"title"`       //  Title of the proposal
 	Description string `json:"description"` //  Description of the proposal
@@ -237,7 +250,7 @@ func (tp TextProposal) GetDescription() string        { return tp.Description }
 func (tp TextProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText }
 
-// TaxUsage Proposals
+// TaxUsage Proposal
 type TaxUsageProposal struct {
 	TextProposal
 	DestAddress btypes.Address `json:"dest_address"`
@@ -265,7 +278,7 @@ func (tp TaxUsageProposal) GetDescription() string        { return tp.Descriptio
 func (tp TaxUsageProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeTaxUsage }
 
-// Parameters change Proposals
+// Parameters change Proposal
 type ParameterProposal struct {
 	TextProposal
 	Params []Param `json:"params"`
@@ -291,6 +304,36 @@ func (tp ParameterProposal) GetDescription() string        { return tp.Descripti
 func (tp ParameterProposal) GetDeposit() uint64            { return tp.Deposit }
 func (tp ParameterProposal) GetProposalType() ProposalType { return ProposalTypeParameterChange }
 
+// Add Inflation Phrase Proposal
+type ModifyInflationProposal struct {
+	TextProposal
+	TotalAmount      uint64                `json:"total_amount"`
+	InflationPhrases mint.InflationPhrases `json:"inflation_phrases"`
+}
+
+func NewAddInflationPhrase(title, description string, deposit uint64, totalAmount uint64, phrases mint.InflationPhrases) ModifyInflationProposal {
+	return ModifyInflationProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		TotalAmount:      totalAmount,
+		InflationPhrases: phrases,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = ModifyInflationProposal{}
+
+// nolint
+func (tp ModifyInflationProposal) GetTitle() string       { return tp.Title }
+func (tp ModifyInflationProposal) GetDescription() string { return tp.Description }
+func (tp ModifyInflationProposal) GetDeposit() uint64     { return tp.Deposit }
+func (tp ModifyInflationProposal) GetProposalType() ProposalType {
+	return ProposalTypeModifyInflation
+}
+
 type Param struct {
 	Module string `json:"module"`
 	Key    string `json:"key"`
@@ -311,3 +354,37 @@ func (param Param) String() string {
   Key:    	  %s
   Value:      %s`, param.Module, param.Key, param.Value)
 }
+
+type SoftwareUpgradeProposal struct {
+	TextProposal
+	Version       string `json:"version"`
+	DataHeight    uint64 `json:"data_height"`
+	GenesisFile   string `json:"genesis_file"`
+	GenesisMD5    string `json:"genesis_md5"`
+	ForZeroHeight bool   `json:"for_zero_height"`
+}
+
+func NewSoftwareUpgradeProposal(title, description string, deposit uint64,
+	version string, dataHeight uint64, genesisFile string, genesisMd5 string, forZeroHeight bool) SoftwareUpgradeProposal {
+	return SoftwareUpgradeProposal{
+		TextProposal: TextProposal{
+			Title:       title,
+			Description: description,
+			Deposit:     deposit,
+		},
+		Version:     version,
+		DataHeight:  dataHeight,
+		GenesisFile: genesisFile,
+		GenesisMD5:  genesisMd5,
+		ForZeroHeight:  forZeroHeight,
+	}
+}
+
+// Implements Proposal Interface
+var _ ProposalContent = SoftwareUpgradeProposal{}
+
+// nolint
+func (tp SoftwareUpgradeProposal) GetTitle() string              { return tp.Title }
+func (tp SoftwareUpgradeProposal) GetDescription() string        { return tp.Description }
+func (tp SoftwareUpgradeProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp SoftwareUpgradeProposal) GetProposalType() ProposalType { return ProposalTypeSoftwareUpgrade }

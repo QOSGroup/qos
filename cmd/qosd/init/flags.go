@@ -21,4 +21,8 @@ const (
 	flagLogo    = "logo"
 	flagWebsite = "website"
 	flagDetails = "details"
+
+	flagCommissionRate          = "commission-rate"
+	flagCommissionMaxRate       = "commission-max-rate"
+	flagCommissionMaxChangeRate = "commission-max-change-rate"
 )

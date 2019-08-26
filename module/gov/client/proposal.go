@@ -9,11 +9,16 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 	gtxs "github.com/QOSGroup/qos/module/gov/txs"
 	gtypes "github.com/QOSGroup/qos/module/gov/types"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"strings"
+)
+
+const (
+	layoutISO = "2006-01-02"
 )
 
 func ProposalCmd(cdc *amino.Codec) *cobra.Command {
@@ -60,6 +65,44 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 						return nil, err
 					}
 					return gtxs.NewTxParameterChange(title, description, proposer, uint64(deposit), params), nil
+				case gtypes.ProposalTypeModifyInflation:
+					inflationPhrasesStr := viper.GetString(flagInflationPhrases)
+					if len(inflationPhrasesStr) == 0 {
+						return nil, errors.New("inflation-phrases incorrect")
+					}
+
+					var inflationPhrases mint.InflationPhrases
+					err := cdc.UnmarshalJSON([]byte(inflationPhrasesStr), &inflationPhrases)
+					if err != nil {
+						return nil, err
+					}
+					totalAmount := uint64(viper.GetFloat64(flagTotalAmount))
+					if totalAmount <= 0 {
+						return nil, errors.New("total-amount must be positive")
+					}
+					return gtxs.NewTxModifyInflation(title, description, proposer, uint64(deposit), totalAmount, inflationPhrases), nil
+				case gtypes.ProposalTypeSoftwareUpgrade:
+					version := viper.GetString(flagVersion)
+					if len(version) == 0 {
+						return nil, errors.New("version is empty")
+					}
+					forZeroHeight := viper.GetBool(flagForZeroHeight)
+					dataHeight := viper.GetInt64(flagDataHeight)
+					genesisFile := viper.GetString(flagGenesisFile)
+					genesisMD5 := viper.GetString(flagGenesisMD5)
+					if forZeroHeight {
+						if dataHeight <= 0 {
+							return nil, errors.New("data-height must be positive")
+						}
+						if len(genesisFile) == 0 {
+							return nil, errors.New("genesis-file is empty")
+						}
+						if len(genesisMD5) == 0 {
+							return nil, errors.New("genesis-md5 is empty")
+						}
+					}
+					return gtxs.NewTxSoftwareUpgrade(title, description, proposer, uint64(deposit),
+						version, uint64(dataHeight), genesisFile, genesisMD5, forZeroHeight), nil
 				}
 
 				return nil, errors.New("unknown proposal-type")
@@ -72,9 +115,17 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagProposalType, gtypes.ProposalTypeText.String(), "")
 	cmd.Flags().String(flagProposer, "", "Proposer who submit the proposal")
 	cmd.Flags().Uint64(flagDeposit, 0, "Initial deposit paid by proposer. Must be strictly positive")
-	cmd.Flags().String(flagDestAddress, "", "Address to receive QOS")
-	cmd.Flags().Float64(flagPercent, 0, "Percent of QOS in fee pool send to dest-address")
-	cmd.Flags().String(flagParams, "", "params, format:<module>/<key>:<value>,<module>/<key>:<value>")
+	cmd.Flags().String(flagDestAddress, "", "Address to receive QOS, for TaxUsage proposal")
+	cmd.Flags().Float64(flagPercent, 0, "Percent of QOS in fee pool send to dest-address, for TaxUsage proposal")
+	cmd.Flags().String(flagParams, "", "params, format:<module>/<key>:<value>,<module>/<key>:<value>, for ParameterChange proposal")
+	cmd.Flags().String(flagInflationPhrases, "", "Inflation phrases, json marshaled")
+	cmd.Flags().Float64(flagTotalAmount, 0, "Total QOS amount")
+	cmd.Flags().String(flagVersion, "", "qosd version, for software upgrade")
+	cmd.Flags().Uint64(flagDataHeight, 0, "data version, for software upgrade")
+	cmd.Flags().String(flagGenesisFile, "", "url of genesis file, for software upgrade")
+	cmd.Flags().String(flagGenesisMD5, "", "signature of genesis.json, for software upgrade")
+	cmd.Flags().Bool(flagForZeroHeight, false, "restart from zero height")
+
 	cmd.MarkFlagRequired(flagTitle)
 	cmd.MarkFlagRequired(flagDescription)
 	cmd.MarkFlagRequired(flagProposalType)

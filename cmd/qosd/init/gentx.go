@@ -118,6 +118,9 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
+	cmd.Flags().String(flagCommissionRate, stake.DefaultCommissionRate, "The initial commission rate percentage")
+	cmd.Flags().String(flagCommissionMaxRate, stake.DefaultCommissionMaxRate, "The maximum commission rate percentage")
+	cmd.Flags().String(flagCommissionMaxChangeRate, stake.DefaultCommissionMaxChangeRate, "The maximum commission change rate percentage (per day)")
 
 	cmd.MarkFlagRequired(flagMoniker)
 	cmd.MarkFlagRequired(flagOwner)

@@ -17,25 +17,31 @@ const (
 	MaxNameLen        = 300
 	MaxLinkLen        = 255
 	MaxDescriptionLen = 1000
+
+	GasForCreateValidator = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
+	GasForModifyValidator = uint64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+	GasForRevokeValidator = uint64(18*qtypes.QOSUnit) * qtypes.GasPerUnitCost   // 18 QOS
 )
 
 type TxCreateValidator struct {
-	Owner       btypes.Address    //操作者, self delegator
-	PubKey      crypto.PubKey     //validator公钥
-	BondTokens  uint64            //绑定Token数量
-	IsCompound  bool              //周期收益是否复投
-	Description types.Description //描述信息
+	Owner       btypes.Address        //操作者, self delegator
+	PubKey      crypto.PubKey         //validator公钥
+	BondTokens  uint64                //绑定Token数量
+	IsCompound  bool                  //周期收益是否复投
+	Description types.Description     //描述信息
+	Commission  types.CommissionRates //佣金比例
 }
 
 var _ txs.ITx = (*TxCreateValidator)(nil)
 
-func NewCreateValidatorTx(owner btypes.Address, pubKey crypto.PubKey, bondTokens uint64, isCompound bool, description types.Description) *TxCreateValidator {
+func NewCreateValidatorTx(owner btypes.Address, pubKey crypto.PubKey, bondTokens uint64, isCompound bool, description types.Description, commission types.CommissionRates) *TxCreateValidator {
 	return &TxCreateValidator{
 		Owner:       owner,
 		PubKey:      pubKey,
 		BondTokens:  bondTokens,
 		IsCompound:  isCompound,
 		Description: description,
+		Commission:  commission,
 	}
 }
 
@@ -49,6 +55,11 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 		len(tx.Owner) == 0 ||
 		tx.BondTokens == 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+	}
+
+	err = tx.Commission.Validate()
+	if err != nil {
+		return
 	}
 
 	err = validateQOSAccount(ctx, tx.Owner, tx.BondTokens)
@@ -79,6 +90,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		Status:          types.Active,
 		MinPeriod:       uint64(0),
 		BondHeight:      uint64(ctx.BlockHeight()),
+		Commission:      types.NewCommissionWithTime(tx.Commission.Rate, tx.Commission.MaxRate, tx.Commission.MaxChangeRate, ctx.BlockHeader().Time.UTC()),
 	}
 
 	valAddr := validator.GetValidatorAddress()
@@ -115,7 +127,7 @@ func (tx *TxCreateValidator) GetSigner() []btypes.Address {
 }
 
 func (tx *TxCreateValidator) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForCreateValidator))
 }
 
 func (tx *TxCreateValidator) GetGasPayer() btypes.Address {
@@ -127,16 +139,18 @@ func (tx *TxCreateValidator) GetSignData() (ret []byte) {
 }
 
 type TxModifyValidator struct {
-	Owner       btypes.Address    //节点所有账户
-	Description types.Description //描述信息
+	Owner          btypes.Address    //节点所有账户
+	Description    types.Description //描述信息
+	CommissionRate *qtypes.Dec       //佣金比例
 }
 
 var _ txs.ITx = (*TxModifyValidator)(nil)
 
-func NewModifyValidatorTx(owner btypes.Address, description types.Description) *TxModifyValidator {
+func NewModifyValidatorTx(owner btypes.Address, description types.Description, commissionRate *qtypes.Dec) *TxModifyValidator {
 	return &TxModifyValidator{
-		Owner:       owner,
-		Description: description,
+		Owner:          owner,
+		Description:    description,
+		CommissionRate: commissionRate,
 	}
 }
 
@@ -150,11 +164,17 @@ func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
 	}
 
 	mapper := mapper.GetMapper(ctx)
-	if !mapper.ExistsWithOwner(tx.Owner) {
+	validator, exists := mapper.GetValidatorByOwner(tx.Owner)
+	if !exists {
 		return types.ErrOwnerHasValidator(types.DefaultCodeSpace, fmt.Sprintf("%s has no validator", tx.Owner.String()))
 	}
 
-	return nil
+	// valid commission rate
+	if tx.CommissionRate != nil {
+		err = validator.Commission.ValidateNewRate(*tx.CommissionRate, ctx.BlockHeader().Time.UTC())
+	}
+
+	return
 }
 
 func (tx *TxModifyValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
@@ -180,8 +200,12 @@ func (tx *TxModifyValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	if len(tx.Description.Details) != 0 {
 		description.Details = tx.Description.Details
 	}
-
 	validator.Description = description
+
+	if tx.CommissionRate != nil {
+		validator.Commission = types.NewCommissionWithTime(*tx.CommissionRate, validator.Commission.MaxRate, validator.Commission.MaxChangeRate, ctx.BlockHeader().Time.UTC())
+	}
+
 	validatorMapper.Set(types.BuildValidatorKey(validator.GetValidatorAddress()), validator)
 
 	result.Events = btypes.Events{
@@ -205,7 +229,7 @@ func (tx *TxModifyValidator) GetSigner() []btypes.Address {
 }
 
 func (tx *TxModifyValidator) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForModifyValidator))
 }
 
 func (tx *TxModifyValidator) GetGasPayer() btypes.Address {
@@ -274,7 +298,7 @@ func (tx *TxRevokeValidator) GetSigner() []btypes.Address {
 }
 
 func (tx *TxRevokeValidator) CalcGas() btypes.BigInt {
-	return btypes.ZeroInt()
+	return btypes.NewInt(int64(GasForRevokeValidator))
 }
 
 func (tx *TxRevokeValidator) GetGasPayer() btypes.Address {

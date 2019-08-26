@@ -5,15 +5,42 @@ import (
 	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/QOSGroup/qos/module/gov/types"
+	"github.com/QOSGroup/qos/module/mint"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
+	"github.com/QOSGroup/qos/version"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	qtypes "github.com/QOSGroup/qos/types"
+	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/log"
 )
+
+func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
+	logger := ctx.Logger().With("module", "module/gov")
+	if ctx.BlockHeight() > 1 {
+		// software upgrade
+		proposal := types.Proposal{}
+		exists := GetMapper(ctx).Get(types.KeySoftUpgradeProposal, &proposal)
+		if exists {
+			proposalContent := proposal.ProposalContent.(*types.SoftwareUpgradeProposal)
+
+			if proposalContent.ForZeroHeight {
+				panic(fmt.Sprintf("PLEASE INSTALL VERSION: %s, THEN SET THE CORRECT `genesis.json`(DataHeight:%d, MD5:%s) FOR UPGRADING TO %s, YOU CAN DOWNLOAD THE `genesis.json` FROM %s",
+					proposalContent.Version, proposalContent.DataHeight, proposalContent.GenesisMD5, proposalContent.Version, proposalContent.GenesisFile))
+			}
+
+			if version.Version != proposalContent.Version {
+				panic(fmt.Sprintf("PLEASE INSTALL VERSION: %s , THEN RESTART YOUR NODE FOR THE SOFTWARE UPGRADING", proposalContent.Version))
+			}
+
+			GetMapper(ctx).Del(types.KeySoftUpgradeProposal)
+			logger.Info("software upgrade completed", "proposal", proposal.ProposalID)
+		}
+	}
+}
 
 // Called every block, process inflation, update validator set
 func EndBlocker(ctx context.Context) {
@@ -64,22 +91,32 @@ func EndBlocker(ctx context.Context) {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
 
-		proposalResult, tallyResults, votingValidators := mapper.Tally(ctx, gm, activeProposal)
+		proposalResult, tallyResults, votingValidators, deductOprion := mapper.Tally(ctx, gm, activeProposal)
+
+		switch deductOprion {
+		case types.DepositDeductNone:
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, false)
+			break
+		case types.DepositDeductPart:
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
+			break
+		case types.DepositDeductAll:
+			gm.DeleteDeposits(ctx, activeProposal.ProposalID)
+			break
+		}
+
 		var tagValue string
 		switch proposalResult {
 		case types.PASS:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = types.StatusPassed
 			tagValue = types.AttributeKeyResultPassed
 			Execute(ctx, activeProposal, logger)
 			break
 		case types.REJECT:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
 			activeProposal.Status = types.StatusRejected
 			tagValue = types.AttributeKeyResultRejected
 			break
 		case types.REJECTVETO:
-			gm.DeleteDeposits(ctx, activeProposal.ProposalID)
 			activeProposal.Status = types.StatusRejected
 			tagValue = types.AttributeKeyResultVetoRejected
 			break
@@ -107,10 +144,11 @@ func EndBlocker(ctx context.Context) {
 		penalty := gm.GetParams(ctx).Penalty
 		if penalty.GT(qtypes.ZeroDec()) {
 			sm := stake.GetMapper(ctx)
-			validators := sm.GetActiveValidatorSet(false)
+			var validators []stake.Validator
+			sm.Get(stake.BuildCurrentValidatorsAddressKey(), &validators)
 			for _, val := range validators {
-				if _, ok := votingValidators[val.String()]; !ok {
-					if validator, exists := sm.GetValidator(val); exists && validator.BondHeight < activeProposal.VotingStartHeight {
+				if _, ok := votingValidators[val.GetValidatorAddress().String()]; !ok {
+					if validator, exists := sm.GetValidator(val.GetValidatorAddress()); exists && validator.BondHeight < activeProposal.VotingStartHeight {
 						e := slash(ctx, validator, penalty, activeProposal.ProposalID)
 						if e != nil {
 							logger.Error("slash validator error", "e", e, "validator", validator.GetValidatorAddress().String())
@@ -183,6 +221,11 @@ func Execute(ctx context.Context, proposal types.Proposal, logger log.Logger) er
 		return executeParameterChange(ctx, proposal, logger)
 	case types.ProposalTypeTaxUsage:
 		return executeTaxUsage(ctx, proposal, logger)
+	case types.ProposalTypeModifyInflation:
+		return executeModifyInflation(ctx, proposal, logger)
+	case types.ProposalTypeSoftwareUpgrade:
+		GetMapper(ctx).Set(types.KeySoftUpgradeProposal, proposal)
+		return nil
 	}
 
 	return nil
@@ -224,6 +267,18 @@ func executeTaxUsage(ctx context.Context, proposal types.Proposal, logger log.Lo
 	dm.SetCommunityFeePool(feePool.Sub(qos))
 
 	logger.Info("execute taxUsage", "proposal", proposal.ProposalID)
+
+	return nil
+}
+
+func executeModifyInflation(ctx context.Context, proposal types.Proposal, logger log.Logger) error {
+	proposalContent := proposal.ProposalContent.(*types.ModifyInflationProposal)
+	mintMapper := mint.GetMapper(ctx)
+	oldPhrases := mintMapper.MustGetInflationPhrases()
+	phrases := proposalContent.InflationPhrases.Adapt(oldPhrases)
+	mintMapper.SetInflationPhrases(phrases)
+	mintMapper.SetTotalQOSAmount(proposalContent.TotalAmount)
+	logger.Info("execute modifyInflation, proposal: %d", proposal.ProposalID)
 
 	return nil
 }

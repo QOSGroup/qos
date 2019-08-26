@@ -8,7 +8,7 @@ import (
 	"github.com/QOSGroup/qos/types"
 )
 
-func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passes gtypes.ProposalResult, tallyResults gtypes.TallyResult, validators map[string]bool) {
+func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passes gtypes.ProposalResult, tallyResults gtypes.TallyResult, validators map[string]bool, deductOption gtypes.DeductOption) {
 	results := make(map[gtypes.VoteOption]int64)
 	results[gtypes.OptionYes] = 0
 	results[gtypes.OptionAbstain] = 0
@@ -60,25 +60,25 @@ func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passe
 
 	// If no one votes, proposal fails
 	if totalVotingPower.Int64() == results[gtypes.OptionAbstain] {
-		return gtypes.REJECT, tallyResults, validators
+		return gtypes.REJECT, tallyResults, validators, gtypes.DepositDeductNone
 	}
 
 	//if more than 1/3 of voters abstain, proposal fails
-	if totalVotingPower.MulRaw(3).LT(totalSystemPower) {
-		return gtypes.REJECT, tallyResults, validators
+	if types.NewDecFromInt(totalVotingPower.Div(totalSystemPower)).LT(params.Quorum) {
+		return gtypes.REJECT, tallyResults, validators, gtypes.DepositDeductPart
 	}
 
 	// If more than 1/3 of voters veto, proposal fails
-	if types.NewDec(int64(results[gtypes.OptionNoWithVeto])).Quo(types.NewDecFromInt(totalVotingPower)).GT(params.Veto) {
-		return gtypes.REJECTVETO, tallyResults, validators
+	if types.NewDec(results[gtypes.OptionNoWithVeto]).Quo(types.NewDecFromInt(totalVotingPower)).GT(params.Veto) {
+		return gtypes.REJECTVETO, tallyResults, validators, gtypes.DepositDeductAll
 	}
 
 	// If more than 1/2 of non-abstaining voters vote Yes, proposal passes
-	if types.NewDec(int64(results[gtypes.OptionYes])).Quo(types.NewDecFromInt(totalVotingPower.Sub(btypes.NewInt(results[gtypes.OptionAbstain])))).GT(params.Threshold) {
-		return gtypes.PASS, tallyResults, validators
+	if types.NewDec(results[gtypes.OptionYes]).Quo(types.NewDecFromInt(totalVotingPower.Sub(btypes.NewInt(results[gtypes.OptionAbstain])))).GT(params.Threshold) {
+		return gtypes.PASS, tallyResults, validators, gtypes.DepositDeductNone
 	}
 
 	// If more than 1/2 of non-abstaining voters vote No, proposal fails
 
-	return gtypes.REJECT, tallyResults, validators
+	return gtypes.REJECT, tallyResults, validators, gtypes.DepositDeductNone
 }

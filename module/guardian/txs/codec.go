@@ -18,4 +18,5 @@ func init() {
 func RegisterCodec(cdc *amino.Codec) {
 	cdc.RegisterConcrete(&TxAddGuardian{}, "guardian/txs/TxAddGuardian", nil)
 	cdc.RegisterConcrete(&TxDeleteGuardian{}, "guardian/txs/TxDeleteGuardian", nil)
+	cdc.RegisterConcrete(&TxHaltNetwork{}, "guardian/txs/TxHaltNetwork", nil)
 }

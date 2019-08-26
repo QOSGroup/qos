@@ -39,6 +39,7 @@ type Validator struct {
 	ValidatorPubKey crypto.PubKey  `json:"pub_key"`
 	BondTokens      uint64         `json:"bond_tokens"` //不能超过int64最大值
 	Description     Description    `json:"description"`
+	Commission      Commission     `json:"commission"`
 
 	Status         int8         `json:"status"`
 	InactiveCode   InactiveCode `json:"inactive_code"`
