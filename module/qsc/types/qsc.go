@@ -6,11 +6,12 @@ import (
 )
 
 type Info struct {
-	Name        string         `json:"name"`        //币名
-	ChainId     string         `json:"chain_id"`    //证书可用链
-	Extrate     string         `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
-	Description string         `json:"description"` //描述信息
-	Banker      btypes.Address `json:"banker"`      //Banker PubKey
+	Name        string         `json:"name"`         //币名
+	ChainId     string         `json:"chain_id"`     //证书可用链
+	Extrate     string         `json:"extrate"`      //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
+	Description string         `json:"description"`  //描述信息
+	Banker      btypes.Address `json:"banker"`       //Banker PubKey
+	TotalAmount btypes.BigInt  `json:"total_amount"` //发行总量
 }
 
 func NewInfoWithQSCCA(cer *cert.Certificate) Info {
@@ -20,8 +21,9 @@ func NewInfoWithQSCCA(cer *cert.Certificate) Info {
 		banker = btypes.Address(subj.Banker.Address())
 	}
 	return Info{
-		Name:    subj.Name,
-		ChainId: subj.ChainId,
-		Banker:  banker,
+		Name:        subj.Name,
+		ChainId:     subj.ChainId,
+		Banker:      banker,
+		TotalAmount: btypes.ZeroInt(),
 	}
 }

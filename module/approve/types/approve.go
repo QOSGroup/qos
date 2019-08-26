@@ -35,9 +35,9 @@ func (approve Approve) IsValid() (bool, error) {
 
 	m := make(map[string]bool)
 	for _, val := range approve.QSCs {
-		val.Name = strings.ToLower(strings.TrimSpace(val.Name))
+		val.Name = strings.ToUpper(strings.TrimSpace(val.Name))
 		// 不能包含QOS
-		if strings.ToLower(val.Name) == "qos" {
+		if strings.ToUpper(val.Name) == types.QOSCoinName {
 			return false, errors.New("QSCs can not contain qos, not case sensitive")
 		}
 
