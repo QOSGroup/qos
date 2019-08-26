@@ -57,8 +57,8 @@ func DefaultParams() Params {
 	}
 }
 
-func (p *Params) KeyValuePairs() params.KeyValuePairs {
-	return params.KeyValuePairs{
+func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
+	return qtypes.KeyValuePairs{
 		{KeyMinDeposit, &p.MinDeposit},
 		{keyMinProposerDepositRate, &p.MinProposerDepositRate},
 		{KeyMaxDepositPeriod, &p.MaxDepositPeriod},

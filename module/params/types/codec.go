@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/QOSGroup/qbase/baseabci"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/tendermint/go-amino"
 )
 
@@ -12,5 +13,5 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	cdc.RegisterInterface((*ParamSet)(nil), nil)
+	cdc.RegisterInterface((*qtypes.ParamSet)(nil), nil)
 }

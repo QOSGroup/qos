@@ -3,16 +3,16 @@ package client
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
 
 	"github.com/QOSGroup/qos/module/gov/mapper"
-	"github.com/QOSGroup/qos/module/params"
+	"strconv"
+	"strings"
 
 	"github.com/spf13/viper"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	btypes "github.com/QOSGroup/qbase/types"
+	qtypes "github.com/QOSGroup/qos/types"
 
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qos/module/gov/types"
@@ -352,13 +352,13 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 			}
 
 			if mod == 0 {
-				var result []params.ParamSet
+				var result []qtypes.ParamSet
 				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
 					return err
 				}
 				return cliCtx.PrintResult(result)
 			} else if mod == 1 {
-				var result params.ParamSet
+				var result qtypes.ParamSet
 				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
 					return err
 				}

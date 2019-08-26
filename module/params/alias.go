@@ -19,6 +19,5 @@ var (
 )
 
 type (
-	KeyValuePairs = types.KeyValuePairs
-	ParamSet      = types.ParamSet
+	Mapper = mapper.Mapper
 )
