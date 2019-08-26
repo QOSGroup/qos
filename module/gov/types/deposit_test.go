@@ -8,8 +8,8 @@ import (
 )
 
 func TestDeposit_Equals(t *testing.T) {
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	addr2 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	addr2 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	cases := []struct {
 		input1   Deposit

@@ -23,11 +23,11 @@ type TxProposal struct {
 	Title          string             `json:"title"`           //  Title of the proposal
 	Description    string             `json:"description"`     //  Description of the proposal
 	ProposalType   types.ProposalType `json:"proposal_type"`   //  Type of proposal. Initial set {PlainTextProposal, SoftwareUpgradeProposal}
-	Proposer       btypes.Address     `json:"proposer"`        //  Address of the proposer
+	Proposer       btypes.AccAddress     `json:"proposer"`        //  Address of the proposer
 	InitialDeposit uint64             `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
-func NewTxProposal(title, description string, proposer btypes.Address, deposit uint64) *TxProposal {
+func NewTxProposal(title, description string, proposer btypes.AccAddress, deposit uint64) *TxProposal {
 	return &TxProposal{
 		Title:          title,
 		Description:    description,
@@ -103,15 +103,15 @@ func (tx TxProposal) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	return
 }
 
-func (tx TxProposal) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Proposer}
+func (tx TxProposal) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Proposer}
 }
 
 func (tx TxProposal) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxProposal) GetGasPayer() btypes.Address {
+func (tx TxProposal) GetGasPayer() btypes.AccAddress {
 	return tx.Proposer
 }
 
@@ -127,11 +127,11 @@ func (tx TxProposal) GetSignData() (ret []byte) {
 
 type TxTaxUsage struct {
 	TxProposal
-	DestAddress btypes.Address `json:"dest_address"`
+	DestAddress btypes.AccAddress `json:"dest_address"`
 	Percent     qtypes.Dec     `json:"percent"`
 }
 
-func NewTxTaxUsage(title, description string, proposer btypes.Address, deposit uint64, destAddress btypes.Address, percent qtypes.Dec) *TxTaxUsage {
+func NewTxTaxUsage(title, description string, proposer btypes.AccAddress, deposit uint64, destAddress btypes.AccAddress, percent qtypes.Dec) *TxTaxUsage {
 	return &TxTaxUsage{
 		TxProposal: TxProposal{
 			Title:          title,
@@ -203,15 +203,15 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	return
 }
 
-func (tx TxTaxUsage) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Proposer}
+func (tx TxTaxUsage) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Proposer}
 }
 
 func (tx TxTaxUsage) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxTaxUsage) GetGasPayer() btypes.Address {
+func (tx TxTaxUsage) GetGasPayer() btypes.AccAddress {
 	return tx.Proposer
 }
 
@@ -228,7 +228,7 @@ type TxParameterChange struct {
 	Params []types.Param `json:"params"`
 }
 
-func NewTxParameterChange(title, description string, proposer btypes.Address, deposit uint64, params []types.Param) *TxParameterChange {
+func NewTxParameterChange(title, description string, proposer btypes.AccAddress, deposit uint64, params []types.Param) *TxParameterChange {
 	return &TxParameterChange{
 		TxProposal: TxProposal{
 			Title:          title,
@@ -297,15 +297,15 @@ func (tx TxParameterChange) Exec(ctx context.Context) (result btypes.Result, cro
 	return
 }
 
-func (tx TxParameterChange) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Proposer}
+func (tx TxParameterChange) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Proposer}
 }
 
 func (tx TxParameterChange) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxParameterChange) GetGasPayer() btypes.Address {
+func (tx TxParameterChange) GetGasPayer() btypes.AccAddress {
 	return tx.Proposer
 }
 
@@ -323,7 +323,7 @@ type TxModifyInflation struct {
 	InflationPhrases mint.InflationPhrases `json:"inflation_phrases"` // 通胀阶段
 }
 
-func NewTxModifyInflation(title, description string, proposer btypes.Address, deposit uint64, totalAmount uint64, phrases []mint.InflationPhrase) *TxModifyInflation {
+func NewTxModifyInflation(title, description string, proposer btypes.AccAddress, deposit uint64, totalAmount uint64, phrases []mint.InflationPhrase) *TxModifyInflation {
 	return &TxModifyInflation{
 		TxProposal: TxProposal{
 			Title:          title,
@@ -403,15 +403,15 @@ func (tx TxModifyInflation) Exec(ctx context.Context) (result btypes.Result, cro
 	return
 }
 
-func (tx TxModifyInflation) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Proposer}
+func (tx TxModifyInflation) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Proposer}
 }
 
 func (tx TxModifyInflation) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxModifyInflation) GetGasPayer() btypes.Address {
+func (tx TxModifyInflation) GetGasPayer() btypes.AccAddress {
 	return tx.Proposer
 }
 
@@ -429,7 +429,7 @@ type TxSoftwareUpgrade struct {
 	ForZeroHeight bool   `json:"for_zero_height"` // restart from zero height
 }
 
-func NewTxSoftwareUpgrade(title, description string, proposer btypes.Address, deposit uint64,
+func NewTxSoftwareUpgrade(title, description string, proposer btypes.AccAddress, deposit uint64,
 	version string, dataHeight uint64, genesisFile string, genesisMd5 string, forZeroHeight bool) *TxSoftwareUpgrade {
 	return &TxSoftwareUpgrade{
 		TxProposal: TxProposal{
@@ -511,15 +511,15 @@ func (tx TxSoftwareUpgrade) Exec(ctx context.Context) (result btypes.Result, cro
 	return
 }
 
-func (tx TxSoftwareUpgrade) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Proposer}
+func (tx TxSoftwareUpgrade) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Proposer}
 }
 
 func (tx TxSoftwareUpgrade) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxSoftwareUpgrade) GetGasPayer() btypes.Address {
+func (tx TxSoftwareUpgrade) GetGasPayer() btypes.AccAddress {
 	return tx.Proposer
 }
 

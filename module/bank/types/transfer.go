@@ -2,15 +2,16 @@ package types
 
 import (
 	"fmt"
+
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 )
 
 type TransItem struct {
-	Address btypes.Address `json:"addr"` // 账户地址
-	QOS     btypes.BigInt  `json:"qos"`  // QOS
-	QSCs    types.QSCs     `json:"qscs"` // QSCs
+	Address btypes.AccAddress `json:"addr"` // 账户地址
+	QOS     btypes.BigInt     `json:"qos"`  // QOS
+	QSCs    types.QSCs        `json:"qscs"` // QSCs
 }
 
 // valid QSC、QSCs

@@ -46,7 +46,7 @@ func TestGuardianMapper_GetGuardian(t *testing.T) {
 	ctx := defaultContext()
 	mapper := GetMapper(ctx)
 
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	g2, exists := mapper.GetGuardian(addr1)
 
 	require.False(t, exists)
@@ -63,7 +63,7 @@ func TestGuardianMapper_DeleteGuardian(t *testing.T) {
 	ctx := defaultContext()
 	mapper := GetMapper(ctx)
 
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	g1 := types.NewGuardian("g1", types.Genesis, addr1, nil)
 	mapper.AddGuardian(*g1)
 
@@ -80,7 +80,7 @@ func TestGuardianMapper_GuardiansIterator(t *testing.T) {
 	ctx := defaultContext()
 	mapper := GetMapper(ctx)
 
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	g1 := types.NewGuardian("g1", types.Genesis, addr1, nil)
 	mapper.AddGuardian(*g1)
 

@@ -57,8 +57,8 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 			if err != nil {
 				return err
 			}
-			if strings.HasPrefix(owner, btypes.PREF_ADD) {
-				addr, err := btypes.GetAddrFromBech32(owner)
+			if strings.HasPrefix(owner, btypes.QOSAccountPrefix) {
+				addr, err := btypes.AccAddressFromBech32(owner)
 				if err != nil {
 					return err
 				}
@@ -135,7 +135,7 @@ func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, addr
 	var bankState bank.GenesisState
 	cdc.MustUnmarshalJSON(genesisState[bank.ModuleName], &bankState)
 	for _, acc := range bankState.Accounts {
-		if acc.AccountAddress.EqualsTo(address) {
+		if acc.AccountAddress.Equals(address) {
 
 			if !acc.EnoughOfQOS(amount) {
 				return fmt.Errorf(

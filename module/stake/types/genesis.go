@@ -5,7 +5,6 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/tendermint/tendermint/crypto"
 )
 
 type GenesisState struct {
@@ -60,36 +59,36 @@ func validateValidators(validators []Validator) (err error) {
 	ownerMap := make(map[string]bool, len(validators))
 	for i := 0; i < len(validators); i++ {
 		val := validators[i]
-		strKey := string(val.ValidatorPubKey.Bytes())
+		strKey := string(val.GetConsensusPubKey().Bytes())
 		if _, ok := addrMap[strKey]; ok {
-			return fmt.Errorf("duplicate validator in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
+			return fmt.Errorf("duplicate validator in genesis state: Name %v, operator %v", val.Description.Moniker, val.OperatorAddress.String())
 		}
-		if _, ok := ownerMap[val.Owner.String()]; ok {
-			return fmt.Errorf("duplicate owner in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
+		if _, ok := ownerMap[val.OperatorAddress.String()]; ok {
+			return fmt.Errorf("duplicate operator in genesis state: Name %v, operator %v", val.Description.Moniker, val.OperatorAddress.String())
 		}
 		if val.Status != Active {
-			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
+			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, operator %v", val.Description.Moniker, val.OperatorAddress.String())
 		}
 		addrMap[strKey] = true
-		ownerMap[val.Owner.String()] = true
+		ownerMap[val.OperatorAddress.String()] = true
 	}
 	return nil
 }
 
 type ValidatorVoteInfoState struct {
-	ValidatorPubKey crypto.PubKey     `json:"validator_pub_key"`
+	ValidatorAddr  btypes.ValAddress     `json:"validator_addr"`
 	VoteInfo        ValidatorVoteInfo `json:"vote_info"`
 }
 
 type ValidatorVoteInWindowInfoState struct {
-	ValidatorPubKey crypto.PubKey `json:"validator_pub_key"`
+	ValidatorAddr  btypes.ValAddress     `json:"validator_addr"`
 	Index           uint64        `json:"index"`
 	Vote            bool          `json:"vote"`
 }
 
 type DelegationInfoState struct {
-	DelegatorAddr   btypes.Address `json:"delegator_addr"`
-	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
+	DelegatorAddr   btypes.AccAddress `json:"delegator_addr"`
+	ValidatorAddr btypes.ValAddress  `json:"validator_addr"`
 	Amount          uint64         `json:"delegate_amount"`
 	IsCompound      bool           `json:"is_compound"`
 }

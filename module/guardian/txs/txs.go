@@ -14,11 +14,11 @@ const (
 
 type TxAddGuardian struct {
 	Description string         `json:"description"`
-	Address     btypes.Address `json:"address"`
-	Creator     btypes.Address `json:"creator"`
+	Address     btypes.AccAddress `json:"address"`
+	Creator     btypes.AccAddress `json:"creator"`
 }
 
-func NewTxAddGuardian(description string, address, creator btypes.Address) *TxAddGuardian {
+func NewTxAddGuardian(description string, address, creator btypes.AccAddress) *TxAddGuardian {
 	return &TxAddGuardian{
 		Description: description,
 		Address:     address,
@@ -77,15 +77,15 @@ func (tx TxAddGuardian) Exec(ctx context.Context) (result btypes.Result, crossTx
 	return
 }
 
-func (tx TxAddGuardian) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Creator}
+func (tx TxAddGuardian) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Creator}
 }
 
 func (tx TxAddGuardian) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxAddGuardian) GetGasPayer() btypes.Address {
+func (tx TxAddGuardian) GetGasPayer() btypes.AccAddress {
 	return tx.Creator
 }
 
@@ -98,11 +98,11 @@ func (tx TxAddGuardian) GetSignData() (ret []byte) {
 }
 
 type TxDeleteGuardian struct {
-	Address   btypes.Address `json:"address"`    // this guardian's address
-	DeletedBy btypes.Address `json:"deleted_by"` // address that initiated the AddGuardian tx
+	Address   btypes.AccAddress `json:"address"`    // this guardian's address
+	DeletedBy btypes.AccAddress `json:"deleted_by"` // address that initiated the AddGuardian tx
 }
 
-func NewTxDeleteGuardian(address, deletedBy btypes.Address) *TxDeleteGuardian {
+func NewTxDeleteGuardian(address, deletedBy btypes.AccAddress) *TxDeleteGuardian {
 	return &TxDeleteGuardian{
 		Address:   address,
 		DeletedBy: deletedBy,
@@ -161,15 +161,15 @@ func (tx TxDeleteGuardian) Exec(ctx context.Context) (result btypes.Result, cros
 	return
 }
 
-func (tx TxDeleteGuardian) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.DeletedBy}
+func (tx TxDeleteGuardian) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.DeletedBy}
 }
 
 func (tx TxDeleteGuardian) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxDeleteGuardian) GetGasPayer() btypes.Address {
+func (tx TxDeleteGuardian) GetGasPayer() btypes.AccAddress {
 	return tx.DeletedBy
 }
 
@@ -181,11 +181,11 @@ func (tx TxDeleteGuardian) GetSignData() (ret []byte) {
 }
 
 type TxHaltNetwork struct {
-	Guardian btypes.Address `json:"guardian"` // guardian's address
+	Guardian btypes.AccAddress `json:"guardian"` // guardian's address
 	Reason   string         `json:"reason"`   // reason for halting the network
 }
 
-func NewTxHaltNetwork(address btypes.Address, reason string) *TxHaltNetwork {
+func NewTxHaltNetwork(address btypes.AccAddress, reason string) *TxHaltNetwork {
 	return &TxHaltNetwork{
 		Guardian: address,
 		Reason:   reason,
@@ -237,15 +237,15 @@ func (tx TxHaltNetwork) Exec(ctx context.Context) (result btypes.Result, crossTx
 	return
 }
 
-func (tx TxHaltNetwork) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Guardian}
+func (tx TxHaltNetwork) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Guardian}
 }
 
 func (tx TxHaltNetwork) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxHaltNetwork) GetGasPayer() btypes.Address {
+func (tx TxHaltNetwork) GetGasPayer() btypes.AccAddress {
 	return tx.Guardian
 }
 

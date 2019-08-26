@@ -7,7 +7,7 @@ import (
 
 // Deposit
 type Deposit struct {
-	Depositor  types.Address `json:"depositor"`   //  Address of the depositor
+	Depositor  types.AccAddress `json:"depositor"`   //  Address of the depositor
 	ProposalID uint64        `json:"proposal_id"` //  proposalID of the proposal
 	Amount     uint64        `json:"amount"`      //  Deposit amount
 }
@@ -31,5 +31,5 @@ func (d Deposits) String() string {
 }
 
 func (d Deposit) Equals(comp Deposit) bool {
-	return d.Depositor.EqualsTo(comp.Depositor) && d.ProposalID == comp.ProposalID && d.Amount == comp.Amount
+	return d.Depositor.Equals(comp.Depositor) && d.ProposalID == comp.ProposalID && d.Amount == comp.Amount
 }

@@ -11,10 +11,10 @@ import (
 func TestKey(t *testing.T) {
 
 	key := ed25519.GenPrivKey()
-	valAddr := btypes.Address(key.PubKey().Address())
+	valAddr := btypes.ValAddress(key.PubKey().Address())
 
 	key = ed25519.GenPrivKey()
-	deleAddr := btypes.Address(key.PubKey().Address())
+	deleAddr := btypes.AccAddress(key.PubKey().Address())
 
 	infoKey := BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 	vAddr, dAddr := GetDelegatorEarningStartInfoAddr(infoKey)

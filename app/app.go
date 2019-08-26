@@ -201,7 +201,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
-		valAddr := btypes.Address(key[9:])
+		valAddr := btypes.ValAddress(key[9:])
 		if validator, exists := sm.GetValidator(valAddr); exists {
 			validators[valAddr.String()] = validator
 			delegations = append(delegations, sm.GetDelegationsByValidator(valAddr)...)
@@ -213,7 +213,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	stake.CloseInactiveValidator(ctx, -1)
 
 	// return unbond tokens
-	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + ctx.BlockHeight()); h++ {
+	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondFrozenHeight) + ctx.BlockHeight()); h++ {
 		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(uint64(h))
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
@@ -231,7 +231,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	}
 
 	// return redelegation tokens
-	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationHeight) + ctx.BlockHeight()); h++ {
+	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationActiveHeight) + ctx.BlockHeight()); h++ {
 		prePrefix := stake.BuildRedelegationByHeightPrefix(uint64(h))
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
@@ -287,7 +287,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 }
 
 // gas
-func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
+func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.AccAddress) (gasUsed uint64, err btypes.Error) {
 	gasUsed = ctx.GasMeter().GasConsumed()
 	// gas free for txs in the first block
 	if ctx.BlockHeight() == 0 {

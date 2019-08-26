@@ -41,7 +41,7 @@ func BuildDistributionStoreQueryPath() []byte {
 }
 
 //初始化validator历史计费点汇总收益,当前计费点收益信息.
-func (mapper *Mapper) InitValidatorPeriodSummaryInfo(valAddr btypes.Address) types.ValidatorCurrentPeriodSummary {
+func (mapper *Mapper) InitValidatorPeriodSummaryInfo(valAddr btypes.ValAddress) types.ValidatorCurrentPeriodSummary {
 	mapper.Set(types.BuildValidatorHistoryPeriodSummaryKey(valAddr, uint64(0)), qtypes.ZeroFraction())
 	current := types.ValidatorCurrentPeriodSummary{
 		Period: 1,
@@ -52,7 +52,7 @@ func (mapper *Mapper) InitValidatorPeriodSummaryInfo(valAddr btypes.Address) typ
 }
 
 //清空validator收益分配相关信息
-func (mapper *Mapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.Address) {
+func (mapper *Mapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.ValAddress) {
 	periodPrifixKey := append(types.GetValidatorHistoryPeriodSummaryPrefixKey(), valAddr...)
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), periodPrifixKey)
 	defer iter.Close()
@@ -68,7 +68,7 @@ func (mapper *Mapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.Address) {
 //首次Delegate:
 //1. first delegate
 //2. unbond all , then delegate
-func (mapper *Mapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr, deleAddr btypes.Address, bondTokens, currHeight uint64) {
+func (mapper *Mapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr btypes.ValAddress, deleAddr btypes.AccAddress, bondTokens, currHeight uint64) {
 	//初始化delegaotr 收益计算信息
 	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
 	params := mapper.GetParams(ctx)
@@ -103,7 +103,7 @@ func (mapper *Mapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr, dele
 
 //删除delegator收益计算信息
 //todo: 某高度下发放收益信息没有删除
-func (mapper *Mapper) DeleteDelegatorIncomeInfo(valAddr, deleAddr btypes.Address) {
+func (mapper *Mapper) DeleteDelegatorIncomeInfo(valAddr btypes.ValAddress, deleAddr btypes.AccAddress) {
 	k := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 	mapper.Del(k)
 }
@@ -147,7 +147,7 @@ func (mapper *Mapper) IncrementValidatorPeriod(validator stake.Validator) uint64
 //1. 增加validator的计费点
 //2. 计算delegator在两次计费点间的收益
 //3. 追加该收益到delegator 收益计算信息中
-func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr btypes.Address, updatedToken, blockHeight uint64) error {
+func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr btypes.AccAddress, updatedToken, blockHeight uint64) error {
 	valAddr := validator.GetValidatorAddress()
 	info, exists := mapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
 	if !exists {
@@ -168,7 +168,7 @@ func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr 
 	return nil
 }
 
-func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.Address) uint64 {
+func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.ValAddress) uint64 {
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
 
 	minPeriod := uint64(0)
@@ -195,7 +195,7 @@ func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.Address
 }
 
 //删除validator历史计费点信息,额外保留2个历史数据
-func (mapper *Mapper) ClearValidatorHistoryPeroid(valAddr btypes.Address, minPeroid uint64) {
+func (mapper *Mapper) ClearValidatorHistoryPeroid(valAddr btypes.ValAddress, minPeroid uint64) {
 	if minPeroid <= uint64(2) {
 		return
 	}
@@ -213,7 +213,7 @@ func (mapper *Mapper) ClearValidatorHistoryPeroid(valAddr btypes.Address, minPer
 }
 
 //计算delegator在计费点区间的收益
-func (mapper *Mapper) CalculateDelegatorPeriodRewards(valAddr, deleAddr btypes.Address, endPeriod, blockHeight uint64) (btypes.BigInt, error) {
+func (mapper *Mapper) CalculateDelegatorPeriodRewards(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, endPeriod, blockHeight uint64) (btypes.BigInt, error) {
 	info, exists := mapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
 	if !exists {
 		return btypes.BigInt{}, fmt.Errorf("DelegatorEarningStartInfo not exsist. deleAddr: %s, valAddr: %s ", deleAddr, valAddr)
@@ -236,7 +236,7 @@ func (mapper *Mapper) CalculateDelegatorPeriodRewards(valAddr, deleAddr btypes.A
 }
 
 //计算bondTokens在validator的两个计费点区间的收益
-func (mapper *Mapper) CalculateRewardsBetweenPeriod(valAddr btypes.Address, startPeriod, endPeriod, bondTokens uint64) btypes.BigInt {
+func (mapper *Mapper) CalculateRewardsBetweenPeriod(valAddr btypes.ValAddress, startPeriod, endPeriod, bondTokens uint64) btypes.BigInt {
 
 	if startPeriod > endPeriod {
 		return btypes.ZeroInt()
@@ -273,19 +273,19 @@ func (mapper *Mapper) SetParams(ctx context.Context, p types.Params) {
 	params.GetMapper(ctx).SetParamSet(&p)
 }
 
-func (mapper *Mapper) GetValidatorCurrentPeriodSummary(valAddr btypes.Address) (vcps types.ValidatorCurrentPeriodSummary, exists bool) {
+func (mapper *Mapper) GetValidatorCurrentPeriodSummary(valAddr btypes.ValAddress) (vcps types.ValidatorCurrentPeriodSummary, exists bool) {
 	key := types.BuildValidatorCurrentPeriodSummaryKey(valAddr)
 	exists = mapper.Get(key, &vcps)
 	return
 }
 
-func (mapper *Mapper) GetLastBlockProposer() btypes.Address {
-	var previousProposer btypes.Address
+func (mapper *Mapper) GetLastBlockProposer() btypes.ConsAddress {
+	var previousProposer btypes.ConsAddress
 	mapper.Get(types.BuildLastProposerKey(), &previousProposer)
 	return previousProposer
 }
 
-func (mapper *Mapper) SetLastBlockProposer(proposer btypes.Address) {
+func (mapper *Mapper) SetLastBlockProposer(proposer btypes.ConsAddress) {
 	mapper.Set(types.BuildLastProposerKey(), proposer)
 }
 
@@ -307,7 +307,7 @@ func (mapper *Mapper) AddToCommunityFeePool(fee btypes.BigInt) {
 	mapper.SetCommunityFeePool(communityFee.Add(fee))
 }
 
-func (mapper *Mapper) GetValidatorHistoryPeriodSummary(valAddr btypes.Address, period uint64) (frac qtypes.Fraction) {
+func (mapper *Mapper) GetValidatorHistoryPeriodSummary(valAddr btypes.ValAddress, period uint64) (frac qtypes.Fraction) {
 	key := types.BuildValidatorHistoryPeriodSummaryKey(valAddr, period)
 	exists := mapper.Get(key, &frac)
 	if !exists {
@@ -316,13 +316,13 @@ func (mapper *Mapper) GetValidatorHistoryPeriodSummary(valAddr btypes.Address, p
 	return
 }
 
-func (mapper *Mapper) GetDelegatorEarningStartInfo(valAddr, deleAddr btypes.Address) (info types.DelegatorEarningsStartInfo, exists bool) {
+func (mapper *Mapper) GetDelegatorEarningStartInfo(valAddr btypes.ValAddress, deleAddr btypes.AccAddress) (info types.DelegatorEarningsStartInfo, exists bool) {
 	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 	exists = mapper.Get(key, &info)
 	return
 }
 
-func (mapper *Mapper) DelDelegatorEarningStartInfo(valAddr, deleAddr btypes.Address) {
+func (mapper *Mapper) DelDelegatorEarningStartInfo(valAddr btypes.ValAddress, deleAddr btypes.AccAddress) {
 	key := types.BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 	mapper.Del(key)
 }
@@ -351,7 +351,7 @@ func (mapper *Mapper) ClearPreDistributionQOS() {
 
 //------------------------ genesis export
 
-func (mapper *Mapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.Address, period uint64, frac qtypes.Fraction)) {
+func (mapper *Mapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.ValAddress, period uint64, frac qtypes.Fraction)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorHistoryPeriodSummaryPrefixKey())
 	defer iter.Close()
 
@@ -366,7 +366,7 @@ func (mapper *Mapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.Add
 	}
 }
 
-func (mapper *Mapper) IteratorValidatorsCurrentPeriod(fn func(btypes.Address, types.ValidatorCurrentPeriodSummary)) {
+func (mapper *Mapper) IteratorValidatorsCurrentPeriod(fn func(btypes.ValAddress, types.ValidatorCurrentPeriodSummary)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorCurrentPeriodSummaryPrefixKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -382,7 +382,7 @@ func (mapper *Mapper) IteratorValidatorsCurrentPeriod(fn func(btypes.Address, ty
 	}
 }
 
-func (mapper *Mapper) IteratorDelegatorEarningStartInfo(fn func(btypes.Address, btypes.Address, types.DelegatorEarningsStartInfo)) {
+func (mapper *Mapper) IteratorDelegatorEarningStartInfo(fn func(btypes.ValAddress, btypes.AccAddress, types.DelegatorEarningsStartInfo)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorEarningsStartInfoPrefixKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -407,7 +407,7 @@ func (mapper *Mapper) DeleteDelegatorsEarningStartInfo() {
 	}
 }
 
-func (mapper *Mapper) IteratorDelegatorsIncomeHeight(fn func(btypes.Address, btypes.Address, uint64)) {
+func (mapper *Mapper) IteratorDelegatorsIncomeHeight(fn func(btypes.ValAddress, btypes.AccAddress, uint64)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
 	defer iter.Close()
 
@@ -428,7 +428,7 @@ func (mapper *Mapper) DeleteDelegatorsIncomeHeight() {
 	}
 }
 
-func (mapper *Mapper) IteratorValidatorEcoFeePools(fn func(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool)) {
+func (mapper *Mapper) IteratorValidatorEcoFeePools(fn func(validatorAddr btypes.ValAddress, pool types.ValidatorEcoFeePool)) {
 	mapper.IteratorWithType(types.GetValidatorEcoFeePoolPrefixKey(), reflect.TypeOf(types.ValidatorEcoFeePool{}), func(key []byte, dataPtr interface{}) bool {
 		sPtr := dataPtr.(*types.ValidatorEcoFeePool)
 		ecoPool := *sPtr
@@ -437,7 +437,7 @@ func (mapper *Mapper) IteratorValidatorEcoFeePools(fn func(validatorAddr btypes.
 	})
 }
 
-func (mapper *Mapper) AddValidatorEcoFeePool(validatorAddr btypes.Address, proposerReward, commissionReward, preDistributionReward btypes.BigInt) {
+func (mapper *Mapper) AddValidatorEcoFeePool(validatorAddr btypes.ValAddress, proposerReward, commissionReward, preDistributionReward btypes.BigInt) {
 	pool := mapper.GetValidatorEcoFeePool(validatorAddr)
 
 	pool.ProposerTotalRewardFee = pool.ProposerTotalRewardFee.Add(proposerReward)
@@ -450,21 +450,21 @@ func (mapper *Mapper) AddValidatorEcoFeePool(validatorAddr btypes.Address, propo
 	mapper.SaveValidatorEcoFeePool(validatorAddr, pool)
 }
 
-func (mapper *Mapper) MinusValidatorEcoFeePool(validatorAddr btypes.Address, bonusReward btypes.BigInt) {
+func (mapper *Mapper) MinusValidatorEcoFeePool(validatorAddr btypes.ValAddress, bonusReward btypes.BigInt) {
 	pool := mapper.GetValidatorEcoFeePool(validatorAddr)
 	pool.PreDistributeRemainTotalFee = pool.PreDistributeRemainTotalFee.Sub(bonusReward)
 	mapper.SaveValidatorEcoFeePool(validatorAddr, pool)
 }
 
-func (mapper *Mapper) SaveValidatorEcoFeePool(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool) {
+func (mapper *Mapper) SaveValidatorEcoFeePool(validatorAddr btypes.ValAddress, pool types.ValidatorEcoFeePool) {
 	mapper.Set(types.BuildValidatorEcoFeePoolKey(validatorAddr), pool)
 }
 
-func (mapper *Mapper) DeleteValidatorEcoFeePool(validatorAddr btypes.Address) {
+func (mapper *Mapper) DeleteValidatorEcoFeePool(validatorAddr btypes.ValAddress) {
 	mapper.Del(types.BuildValidatorEcoFeePoolKey(validatorAddr))
 }
 
-func (mapper *Mapper) GetValidatorEcoFeePool(validatorAddr btypes.Address) (pool types.ValidatorEcoFeePool) {
+func (mapper *Mapper) GetValidatorEcoFeePool(validatorAddr btypes.ValAddress) (pool types.ValidatorEcoFeePool) {
 	key := types.BuildValidatorEcoFeePoolKey(validatorAddr)
 	if exists := mapper.Get(key, &pool); !exists {
 		pool = types.NewValidatorEcoFeePool()

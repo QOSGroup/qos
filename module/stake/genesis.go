@@ -59,7 +59,7 @@ func initGentxs(ctx context.Context, bapp *baseabci.BaseApp, gentxs []btxs.TxStd
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
-		valAddr := btypes.Address(key[9:])
+		valAddr := btypes.ValAddress(key[9:])
 		validator, _ := sm.GetValidator(valAddr)
 		validatorSet = append(validatorSet, validator.ToABCIValidatorUpdate(false))
 	}
@@ -71,11 +71,11 @@ func initValidators(ctx context.Context, validators []types.Validator) {
 	validatorMapper := mapper.GetMapper(ctx)
 	for _, v := range validators {
 
-		if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
-			panic(fmt.Errorf("validator %s already exists", v.ValidatorPubKey.Address()))
+		if validatorMapper.Exists(v.GetValidatorAddress()) {
+			panic(fmt.Errorf("validator %s already exists", v.GetValidatorAddress()))
 		}
-		if validatorMapper.ExistsWithOwner(v.Owner) {
-			panic(fmt.Errorf("owner %s already bind a validator", v.Owner))
+		if validatorMapper.ExistsWithConsensusAddr(v.ConsAddress()) {
+			panic(fmt.Errorf("owner %s already bind a validator", v.ConsAddress()))
 		}
 
 		validatorMapper.CreateValidator(v)
@@ -89,11 +89,11 @@ func initValidators(ctx context.Context, validators []types.Validator) {
 func initValidatorsVotesInfo(ctx context.Context, voteInfos []types.ValidatorVoteInfoState, voteWindowInfos []types.ValidatorVoteInWindowInfoState) {
 	sm := mapper.GetMapper(ctx)
 	for _, voteInfo := range voteInfos {
-		sm.SetValidatorVoteInfo(btypes.Address(voteInfo.ValidatorPubKey.Address()), voteInfo.VoteInfo)
+		sm.SetValidatorVoteInfo(voteInfo.ValidatorAddr, voteInfo.VoteInfo)
 	}
 
 	for _, voteWindowInfo := range voteWindowInfos {
-		sm.SetVoteInfoInWindow(btypes.Address(voteWindowInfo.ValidatorPubKey.Address()), voteWindowInfo.Index, voteWindowInfo.Vote)
+		sm.SetVoteInfoInWindow(voteWindowInfo.ValidatorAddr, voteWindowInfo.Index, voteWindowInfo.Vote)
 	}
 }
 
@@ -103,7 +103,7 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 	for _, info := range delegatorsInfo {
 		sm.SetDelegationInfo(types.DelegationInfo{
 			DelegatorAddr: info.DelegatorAddr,
-			ValidatorAddr: btypes.Address(info.ValidatorPubKey.Address()),
+			ValidatorAddr: info.ValidatorAddr,
 			Amount:        info.Amount,
 			IsCompound:    info.IsCompound,
 		})
@@ -135,12 +135,12 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var validatorsVoteInfo []types.ValidatorVoteInfoState
-	sm.IterateVoteInfos(func(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+	sm.IterateVoteInfos(func(valAddr btypes.ValAddress, info types.ValidatorVoteInfo) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			vvis := ValidatorVoteInfoState{
-				ValidatorPubKey: validator.GetValidatorPubKey(),
+				ValidatorAddr: validator.GetValidatorAddress(),
 				VoteInfo:        info,
 			}
 			validatorsVoteInfo = append(validatorsVoteInfo, vvis)
@@ -148,12 +148,12 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var validatorsVoteInWindow []types.ValidatorVoteInWindowInfoState
-	sm.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.Address, vote bool) {
+	sm.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.ValAddress, vote bool) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			validatorsVoteInWindow = append(validatorsVoteInWindow, ValidatorVoteInWindowInfoState{
-				ValidatorPubKey: validator.GetValidatorPubKey(),
+				ValidatorAddr: validator.GetValidatorAddress(),
 				Index:           index,
 				Vote:            vote,
 			})
@@ -161,7 +161,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var delegatorsInfo []types.DelegationInfoState
-	sm.IterateDelegationsInfo(btypes.Address{}, func(info types.DelegationInfo) {
+	sm.IterateDelegationsInfo(btypes.AccAddress{}, func(info types.DelegationInfo) {
 
 		validator, exists := validatorMapper.GetValidator(info.ValidatorAddr)
 		if !exists {
@@ -170,7 +170,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 
 		delegatorsInfo = append(delegatorsInfo, DelegationInfoState{
 			DelegatorAddr:   info.DelegatorAddr,
-			ValidatorPubKey: validator.GetValidatorPubKey(),
+			ValidatorAddr: validator.GetValidatorAddress(),
 			Amount:          info.Amount,
 			IsCompound:      info.IsCompound,
 		})
@@ -268,7 +268,7 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 
 		txCreateValidator := itxs[0].(*txs.TxCreateValidator)
 		// validate delegator and validator addresses and funds against the accounts in the state
-		ownerAddr := txCreateValidator.Owner
+		ownerAddr := txCreateValidator.Operator
 
 		if txCreateValidator.BondTokens >= math.MaxInt64 {
 			continue

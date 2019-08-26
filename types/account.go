@@ -27,7 +27,7 @@ func NewQOSAccountZero() *QOSAccount {
 	return &QOSAccount{QOS: btypes.ZeroInt()}
 }
 
-func NewQOSAccountWithAddress(addr btypes.Address) *QOSAccount {
+func NewQOSAccountWithAddress(addr btypes.AccAddress) *QOSAccount {
 	return &QOSAccount{
 		BaseAccount: account.BaseAccount{
 			AccountAddress: addr,
@@ -36,7 +36,7 @@ func NewQOSAccountWithAddress(addr btypes.Address) *QOSAccount {
 	}
 }
 
-func NewQOSAccount(addr btypes.Address, qos btypes.BigInt, qscs QSCs) *QOSAccount {
+func NewQOSAccount(addr btypes.AccAddress, qos btypes.BigInt, qscs QSCs) *QOSAccount {
 	return &QOSAccount{
 		BaseAccount: account.BaseAccount{
 			AccountAddress: addr,
@@ -375,8 +375,8 @@ func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
 			return nil, fmt.Errorf("`%s` not match rules", ti)
 		}
 
-		var addr btypes.Address
-		if !strings.HasPrefix(addrAndCoins[0], btypes.PREF_ADD) {
+		var addr btypes.AccAddress
+		if !strings.HasPrefix(addrAndCoins[0], btypes.QOSAccountPrefix) {
 			if keybaseAvailable {
 				info, err := keybase.Get(addrAndCoins[0])
 				if err != nil {
@@ -387,7 +387,7 @@ func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
 				return nil, fmt.Errorf("no %s found in keybase", addrAndCoins[0])
 			}
 		} else {
-			addr, err = btypes.GetAddrFromBech32(addrAndCoins[0])
+			addr, err = btypes.AccAddressFromBech32(addrAndCoins[0])
 		}
 		if err != nil {
 			return nil, err

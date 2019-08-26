@@ -6,12 +6,12 @@ import (
 )
 
 type Hooks interface {
-	AfterValidatorCreated(ctx context.Context, val btypes.Address)
+	AfterValidatorCreated(ctx context.Context, val btypes.ValAddress)
 
-	BeforeValidatorRemoved(ctx context.Context, val btypes.Address)
+	BeforeValidatorRemoved(ctx context.Context, val btypes.ValAddress)
 
-	AfterDelegationCreated(ctx context.Context, val btypes.Address, del btypes.Address)
-	BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateTokes uint64)
+	AfterDelegationCreated(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress)
+	BeforeDelegationModified(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress, updateTokes uint64)
 
 	AfterValidatorSlashed(ctx context.Context, slashedTokes uint64)
 }

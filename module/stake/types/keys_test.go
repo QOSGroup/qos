@@ -11,7 +11,7 @@ import (
 func TestStakeKey(t *testing.T) {
 
 	key := ed25519.GenPrivKey()
-	valAddr := btypes.Address(key.PubKey().Address())
+	valAddr := btypes.ValAddress(key.PubKey().Address())
 
 	k := BuildValidatorVoteInfoKey(valAddr)
 	addr := GetValidatorVoteInfoAddr(k)

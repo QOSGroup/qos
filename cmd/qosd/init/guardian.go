@@ -24,7 +24,7 @@ func AddGuardian(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			config.SetRoot(viper.GetString(cli.HomeFlag))
 
 			address := viper.GetString(flagAddress)
-			addr, err := btypes.GetAddrFromBech32(address)
+			addr, err := btypes.AccAddressFromBech32(address)
 			if err != nil {
 				return err
 			}
@@ -45,7 +45,7 @@ func AddGuardian(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 			cdc.MustUnmarshalJSON(appState[guardian.ModuleName], &guardianState)
 
 			for _, v := range guardianState.Guardians {
-				if v.Address.EqualsTo(addr) {
+				if v.Address.Equals(addr) {
 					return fmt.Errorf("guardian: %s has already exists", v.Address.String())
 				}
 			}

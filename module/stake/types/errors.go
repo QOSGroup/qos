@@ -12,7 +12,7 @@ const (
 	CodeOwnerNotExists                   btypes.CodeType = 502 // Owner账户不存在
 	CodeOwnerNoEnoughToken               btypes.CodeType = 503 // Owner账户Tokens不足
 	CodeValidatorExists                  btypes.CodeType = 504 // Validator已存在
-	CodeOwnerHasValidator                btypes.CodeType = 505 // Owner已绑定有Validator
+	CodeConsensusHasValidator            btypes.CodeType = 505 // Owner已绑定有Validator
 	CodeValidatorNotExists               btypes.CodeType = 506 // Validator不存在
 	CodeValidatorIsActive                btypes.CodeType = 507 // Validator处于激活状态
 	CodeValidatorIsInactive              btypes.CodeType = 508 // Validator处于非激活状态
@@ -49,8 +49,8 @@ func codeToDefaultMsg(code btypes.CodeType) string {
 		return "owner has no enough token"
 	case CodeValidatorExists:
 		return "validator exists"
-	case CodeOwnerHasValidator:
-		return "owner already bind a validator"
+	case CodeConsensusHasValidator:
+		return "consensus pubkey already bind a validator"
 	case CodeValidatorNotExists:
 		return "validator not exists"
 	case CodeValidatorIsActive:
@@ -94,8 +94,8 @@ func ErrValidatorExists(codeSpace btypes.CodespaceType, msg string) btypes.Error
 	return newError(codeSpace, CodeValidatorExists, msg)
 }
 
-func ErrOwnerHasValidator(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeOwnerHasValidator, msg)
+func ErrConsensusHasValidator(codeSpace btypes.CodespaceType, msg string) btypes.Error {
+	return newError(codeSpace, CodeConsensusHasValidator, msg)
 }
 
 func ErrValidatorNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {

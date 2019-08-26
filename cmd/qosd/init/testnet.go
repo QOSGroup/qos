@@ -144,7 +144,7 @@ Example:
 				if err != nil {
 					return err
 				}
-				txCreateValidator := stake.NewCreateValidatorTx(btypes.Address(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission)
+				txCreateValidator := stake.NewCreateValidatorTx(btypes.AccAddress(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
 				if err != nil {
@@ -174,7 +174,7 @@ Example:
 			if len(guardianAddresses) != 0 {
 				addressArr := strings.Split(guardianAddresses, ",")
 				for _, address := range addressArr {
-					addr, err := btypes.GetAddrFromBech32(address)
+					addr, err := btypes.AccAddressFromBech32(address)
 					if err != nil {
 						return err
 					}

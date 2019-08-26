@@ -15,3 +15,5 @@ require (
 	github.com/tendermint/tendermint v0.32.0
 
 )
+
+replace github.com/QOSGroup/qbase v0.2.2 => ../qbase

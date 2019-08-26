@@ -81,7 +81,7 @@ func TestTransferTx_GetSigner(t *testing.T) {
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(20), nil},
 		},
 	}
-	require.Equal(t, tx.GetSigner(), []btypes.Address{tx.Senders[0].Address, tx.Senders[1].Address})
+	require.Equal(t, tx.GetSigner(), []btypes.AccAddress{tx.Senders[0].Address, tx.Senders[1].Address})
 }
 
 func TestTransferTx_CalcGas(t *testing.T) {
@@ -93,7 +93,7 @@ func TestTransferTx_CalcGas(t *testing.T) {
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
 	}
-	require.Equal(t, tx.CalcGas(), btypes.NewInt(0))
+	require.Equal(t, tx.CalcGas(), btypes.NewInt(int64(GasForTransfer)))
 }
 
 func TestTransferTx_GetGasPayer(t *testing.T) {

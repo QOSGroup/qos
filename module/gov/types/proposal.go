@@ -253,11 +253,11 @@ func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText 
 // TaxUsage Proposal
 type TaxUsageProposal struct {
 	TextProposal
-	DestAddress btypes.Address `json:"dest_address"`
+	DestAddress btypes.AccAddress `json:"dest_address"`
 	Percent     types.Dec      `json:"percent"`
 }
 
-func NewTaxUsageProposal(title, description string, deposit uint64, destAddress btypes.Address, percent types.Dec) TaxUsageProposal {
+func NewTaxUsageProposal(title, description string, deposit uint64, destAddress btypes.AccAddress, percent types.Dec) TaxUsageProposal {
 	return TaxUsageProposal{
 		TextProposal: TextProposal{
 			Title:       title,

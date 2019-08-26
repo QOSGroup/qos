@@ -13,7 +13,7 @@ const GasForInvariantCheck = uint64(200000*qtypes.QOSUnit) * qtypes.GasPerUnitCo
 
 // 全网账户数据检查
 type TxInvariantCheck struct {
-	Sender btypes.Address
+	Sender btypes.AccAddress
 }
 
 func (tx TxInvariantCheck) ValidateData(ctx context.Context) error {
@@ -36,15 +36,15 @@ func (tx TxInvariantCheck) Exec(ctx context.Context) (result btypes.Result, cros
 	return btypes.Result{Code: btypes.CodeOK, Events: result.Events}, nil
 }
 
-func (tx TxInvariantCheck) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Sender}
+func (tx TxInvariantCheck) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Sender}
 }
 
 func (tx TxInvariantCheck) CalcGas() btypes.BigInt {
 	return btypes.NewInt(int64(GasForInvariantCheck))
 }
 
-func (tx TxInvariantCheck) GetGasPayer() btypes.Address {
+func (tx TxInvariantCheck) GetGasPayer() btypes.AccAddress {
 	return tx.Sender
 }
 

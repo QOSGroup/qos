@@ -3,12 +3,11 @@ package types
 import (
 	btypes "github.com/QOSGroup/qbase/types"
 	qtypes "github.com/QOSGroup/qos/types"
-	"github.com/tendermint/tendermint/crypto"
 )
 
 type GenesisState struct {
 	CommunityFeePool         btypes.BigInt                 `json:"community_fee_pool"`
-	LastBlockProposer        btypes.Address                `json:"last_block_proposer"`
+	LastBlockProposer        btypes.ConsAddress                `json:"last_block_proposer"`
 	PreDistributionQOSAmount btypes.BigInt                 `json:"pre_distribute_amount"`
 	ValidatorHistoryPeriods  []ValidatorHistoryPeriodState `json:"validators_history_period"`
 	ValidatorCurrentPeriods  []ValidatorCurrentPeriodState `json:"validators_current_period"`
@@ -19,7 +18,7 @@ type GenesisState struct {
 }
 
 func NewGenesisState(communityFeePool btypes.BigInt,
-	lastBlockProposer btypes.Address,
+	lastBlockProposer btypes.ConsAddress,
 	preDistributionQOSAmount btypes.BigInt,
 	validatorHistoryPeriods []ValidatorHistoryPeriodState,
 	validatorCurrentPeriods []ValidatorCurrentPeriodState,
@@ -49,30 +48,34 @@ func DefaultGenesisState() GenesisState {
 }
 
 type ValidatorHistoryPeriodState struct {
-	ValidatorPubKey crypto.PubKey   `json:"validator_pubkey"`
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	ConsPubKey      string     `json:"consensus_pubkey"`
 	Period          uint64          `json:"period"`
 	Summary         qtypes.Fraction `json:"summary"`
 }
 
 type ValidatorCurrentPeriodState struct {
-	ValidatorPubKey      crypto.PubKey                 `json:"validator_pub_key"`
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	ConsPubKey      string     `json:"consensus_pubkey"`
 	CurrentPeriodSummary ValidatorCurrentPeriodSummary `json:"current_period_summary"`
 }
 
 type DelegatorEarningStartState struct {
-	ValidatorPubKey            crypto.PubKey              `json:"validator_pub_key"`
-	DeleAddress                btypes.Address             `json:"delegator_address"`
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	ConsPubKey      string     `json:"consensus_pubkey"`
+	DeleAddress                btypes.AccAddress             `json:"delegator_address"`
 	DelegatorEarningsStartInfo DelegatorEarningsStartInfo `json:"earning_start_info"`
 }
 
 type DelegatorIncomeHeightState struct {
-	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
-	DeleAddress     btypes.Address `json:"delegator_address"`
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	ConsPubKey      string     `json:"consensus_pubkey"`
+	DeleAddress     btypes.AccAddress `json:"delegator_address"`
 	Height          uint64         `json:"height"`
 }
 
 type ValidatorEcoFeePoolState struct {
-	ValidatorAddress btypes.Address      `json:"validator_address"`
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
 	EcoFeePool       ValidatorEcoFeePool `json:"eco_fee_pool"`
 }
 
