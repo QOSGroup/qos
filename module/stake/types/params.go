@@ -49,8 +49,8 @@ type Params struct {
 	SlashFractionDowntime       types.Dec     `json:"slash_fraction_downtime"`
 }
 
-func (p *Params) KeyValuePairs() params.KeyValuePairs {
-	return params.KeyValuePairs{
+func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
+	return qtypes.KeyValuePairs{
 		{KeyMaxValidatorCnt, &p.MaxValidatorCnt},
 		{KeyValidatorVotingStatusLen, &p.ValidatorVotingStatusLen},
 		{KeyValidatorVotingStatusLeast, &p.ValidatorVotingStatusLeast},

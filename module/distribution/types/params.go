@@ -34,8 +34,8 @@ func DefaultParams() Params {
 	}
 }
 
-func (p *Params) KeyValuePairs() params.KeyValuePairs {
-	return params.KeyValuePairs{
+func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
+	return qtypes.KeyValuePairs{
 		{KeyProposerRewardRate, &p.ProposerRewardRate},
 		{KeyCommunityRewardRate, &p.CommunityRewardRate},
 		{KeyDelegatorsIncomePeriodHeight, &p.DelegatorsIncomePeriodHeight},

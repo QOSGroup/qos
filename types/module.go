@@ -196,11 +196,14 @@ func (m *Manager) RegisterQueriers(qr QueryRegistry) {
 }
 
 // register all module mapper and hooks routes
-func (m *Manager) RegisterMapperAndHooks(hmr HooksMapperRegistry) {
+func (m *Manager) RegisterMapperAndHooks(hmr HooksMapperRegistry, paramsInitializerModule string, ps ...ParamSet) {
 	mhs := make(map[string]MapperWithHooks)
 	for _, module := range m.Modules {
 		mh := module.GetMapperAndHooks()
 		if !mh.IsNil() {
+			if module.Name() == paramsInitializerModule {
+				mh.Mapper.(ParamsInitializer).RegisterParamSet(ps...)
+			}
 			mhs[module.Name()] = mh
 		}
 	}
