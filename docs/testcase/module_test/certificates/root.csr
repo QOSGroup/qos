@@ -1,0 +1,1 @@
+{"subj":{"type":"certificate/CommonSubject","value":{"cn":"CA"}},"is_ca":true,"not_before":"0001-01-01T00:00:00Z","not_after":"0001-01-01T00:00:00Z","public_key":{"type":"tendermint/PubKeyEd25519","value":"YqnR96cSkDR4Hxb/Dk4KpJVA5fQRprzFNRd+EEsajPg="}}
