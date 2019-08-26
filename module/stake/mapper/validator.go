@@ -127,6 +127,7 @@ func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address, addTokens u
 
 	bondTokens := validator.BondTokens + addTokens
 	qtypes.AssertUint64NotOverflow(bondTokens)
+
 	validator.Status = types.Active
 	validator.BondTokens = bondTokens
 
