@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"path/filepath"
+
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
@@ -15,7 +17,6 @@ import (
 	"github.com/tendermint/go-amino"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/privval"
-	"path/filepath"
 )
 
 const (
@@ -158,12 +159,12 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				tokens := uint64(viper.GetInt64(flagBondTokens))
-				if tokens <= 0 {
-					return nil, errors.New("tokens lte zero")
+				tokens := viper.GetInt64(flagBondTokens)
+				if tokens < 0 {
+					return nil, errors.New("tokens lt zero")
 				}
 
-				return txs.NewActiveValidatorTx(owner, tokens), nil
+				return txs.NewActiveValidatorTx(owner, uint64(tokens)), nil
 			})
 
 		},
@@ -182,7 +183,8 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	if len(name) == 0 {
 		return nil, errors.New("moniker is empty")
 	}
-	tokens := uint64(viper.GetInt64(flagBondTokens))
+
+	tokens := viper.GetInt64(flagBondTokens)
 	if tokens <= 0 {
 		return nil, errors.New("tokens lte zero")
 	}
@@ -207,7 +209,7 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission), nil
+	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission), nil
 }
 
 func BuildCommissionRates() (*types.CommissionRates, error) {

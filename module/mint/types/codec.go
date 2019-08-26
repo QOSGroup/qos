@@ -12,5 +12,5 @@ func init() {
 }
 
 func RegisterCodec(cdc *amino.Codec) {
-	
+
 }

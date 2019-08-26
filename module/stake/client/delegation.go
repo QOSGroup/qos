@@ -108,8 +108,13 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 
 				tokens := viper.GetInt64(flagBondTokens)
 				isUnbondAll := viper.GetBool(flagAll)
+
+				if isUnbondAll {
+					tokens = 0
+				}
+
 				if !isUnbondAll && tokens <= 0 {
-					return nil, errors.New("unbond QOS amount must gte 0")
+					return nil, errors.New("unbond QOS amount must gt 0")
 				}
 
 				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
@@ -152,8 +157,13 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 
 				tokens := viper.GetInt64(flagBondTokens)
 				all := viper.GetBool(flagAll)
-				if tokens <= 0 && !all {
-					return nil, errors.New("unbond QOS amount must gt 0")
+
+				if all {
+					tokens = 0
+				}
+
+				if !all && tokens <= 0 {
+					return nil, errors.New("redelegate QOS amount must gt 0")
 				}
 
 				delegator, err := qcliacc.GetAddrFromFlag(ctx, flagDelegator)

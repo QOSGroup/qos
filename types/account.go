@@ -2,12 +2,13 @@ package types
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/client/context"
 	clikeys "github.com/QOSGroup/qbase/client/keys"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/pkg/errors"
-	"strings"
 )
 
 type QOSAccount struct {

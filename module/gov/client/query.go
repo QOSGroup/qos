@@ -3,10 +3,11 @@ package client
 import (
 	"errors"
 	"fmt"
-	"github.com/QOSGroup/qos/module/gov/mapper"
-	"github.com/QOSGroup/qos/module/params"
 	"strconv"
 	"strings"
+
+	"github.com/QOSGroup/qos/module/gov/mapper"
+	"github.com/QOSGroup/qos/module/params"
 
 	"github.com/spf13/viper"
 
@@ -63,6 +64,11 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
+			limit := viper.GetInt64(flagNumLimit)
+			if limit <= 0 {
+				limit = int64(10)
+			}
+
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			var depositorAddr btypes.Address
@@ -83,7 +89,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 				Depositor: depositorAddr,
 				Voter:     voterAddr,
 				Status:    status,
-				Limit:     uint64(viper.GetInt64(flagNumLimit)),
+				Limit:     uint64(limit),
 			}
 
 			data, err := cliCtx.Codec.MarshalJSON(queryParam)
