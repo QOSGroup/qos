@@ -2,10 +2,16 @@ package mapper
 
 import (
 	"encoding/binary"
+<<<<<<< HEAD
 	"time"
 
 	qtypes "github.com/QOSGroup/qos/types"
 
+=======
+	qtypes "github.com/QOSGroup/qos/types"
+	"time"
+
+>>>>>>> fix #295
 	"github.com/QOSGroup/qos/module/params"
 
 	"github.com/QOSGroup/qbase/context"
@@ -125,7 +131,6 @@ func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address, addTokens u
 	}
 
 	mapper.Del(types.BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()))
-
 	bondTokens := validator.BondTokens + addTokens
 	qtypes.AssertUint64NotOverflow(bondTokens)
 
