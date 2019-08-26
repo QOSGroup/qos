@@ -51,9 +51,8 @@ $ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tok
 | -        | `--compound`        | ✖        | -          | -                         | -           | (主要参数)作为一个自委托者，收入是否计算为复利                                     |
 | -        | `--delegator`       | ✖        | string     | -                         | -           | (主要参数)委托人账户本地密钥库名字或账户地址                                      |
 | -        | `--from-owner`      | ✖        | string     | -                         | -           | (主要参数)源验证人账户本地密钥库名字或账户地址                                     |
-| -        | `--owner`           | ✖        | string     | -                         | -           | (主要参数)验证人`Owner`账户本地密钥库名字或账户地址                               |
 | -        | `--to-owner`        | ✖        | string     | -                         | -           | (主要参数)目标验证人账户本地密钥库名字或账户地址                                    |
-| -        | `--tokens`          | ✖        | int        | -                         | -           | (主要参数)要增加的绑定token数量，不能大于操作者持有QOS数量                           |
+| -        | `--tokens`          | ✖        | int        | -                         | -           | (主要参数)要重新委托的绑定token数量，不能大于操作者持有QOS数量                           |
 
 
 # Global Flags
