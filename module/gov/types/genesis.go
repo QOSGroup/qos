@@ -9,7 +9,7 @@ import (
 
 const (
 	// Default period for deposits & voting
-	DefaultPeriod = /*86400*/60 * 2 * time.Second // 2 days
+	DefaultPeriod = /*86400*/ 60 * 2 * time.Second // 2 days
 )
 
 type GenesisProposal struct {

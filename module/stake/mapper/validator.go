@@ -2,8 +2,10 @@ package mapper
 
 import (
 	"encoding/binary"
-	"github.com/QOSGroup/qos/module/params"
+	qtypes "github.com/QOSGroup/qos/types"
 	"time"
+
+	"github.com/QOSGroup/qos/module/params"
 
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/store"
@@ -12,13 +14,20 @@ import (
 )
 
 func (mapper *Mapper) CreateValidator(validator types.Validator) {
+
+	qtypes.AssertUint64NotOverflow(validator.GetBondTokens())
+
 	valAddr := validator.GetValidatorAddress()
 	mapper.Set(types.BuildValidatorKey(valAddr), validator)
 	mapper.Set(types.BuildOwnerWithValidatorKey(validator.Owner), valAddr)
 	mapper.Set(types.BuildValidatorByVotePower(validator.BondTokens, valAddr), true)
+
 }
 
 func (mapper *Mapper) ChangeValidatorBondTokens(validator types.Validator, updatedTokens uint64) {
+
+	qtypes.AssertUint64NotOverflow(updatedTokens)
+
 	valAddr := validator.GetValidatorAddress()
 	mapper.Del(types.BuildValidatorByVotePower(validator.BondTokens, valAddr))
 	validator.BondTokens = updatedTokens
@@ -113,8 +122,12 @@ func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address, addTokens u
 	if !exists {
 		return
 	}
+
+	bondTokens := validator.BondTokens + addTokens
+	qtypes.AssertUint64NotOverflow(bondTokens)
+
 	validator.Status = types.Active
-	validator.BondTokens += addTokens
+	validator.BondTokens = bondTokens
 
 	mapper.Set(types.BuildValidatorKey(validator.ValidatorPubKey.Address().Bytes()), validator)
 	mapper.Del(types.BuildInactiveValidatorKey(uint64(validator.InactiveTime.UTC().Unix()), valAddress))

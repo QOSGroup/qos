@@ -372,11 +372,11 @@ func NewSoftwareUpgradeProposal(title, description string, deposit uint64,
 			Description: description,
 			Deposit:     deposit,
 		},
-		Version:     version,
-		DataHeight:  dataHeight,
-		GenesisFile: genesisFile,
-		GenesisMD5:  genesisMd5,
-		ForZeroHeight:  forZeroHeight,
+		Version:       version,
+		DataHeight:    dataHeight,
+		GenesisFile:   genesisFile,
+		GenesisMD5:    genesisMd5,
+		ForZeroHeight: forZeroHeight,
 	}
 }
 

@@ -7,10 +7,10 @@ import (
 )
 
 var (
-	ModuleName     = types.Distribution
-	Cdc            = types.Cdc
-	RegisterCodec  = types.RegisterCodec
-	DefaultGenesis = types.DefaultGenesisState
+	ModuleName      = types.Distribution
+	Cdc             = types.Cdc
+	RegisterCodec   = types.RegisterCodec
+	DefaultGenesis  = types.DefaultGenesisState
 	ValidateGenesis = types.ValidateGenesis
 
 	MapperName = types.MapperName

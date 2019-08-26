@@ -9,6 +9,7 @@ import (
 )
 
 func (mapper *Mapper) SetDelegationInfo(info types.DelegationInfo) {
+	qtypes.AssertUint64NotOverflow(info.Amount)
 	mapper.Set(types.BuildDelegationByDelValKey(info.DelegatorAddr, info.ValidatorAddr), info)
 	mapper.Set(types.BuildDelegationByValDelKey(info.ValidatorAddr, info.DelegatorAddr), true)
 }
@@ -76,6 +77,9 @@ func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.Address, fn func(ty
 }
 
 func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, reDelegate bool) {
+
+	qtypes.AssertUint64NotOverflow(info.Amount)
+
 	if !reDelegate {
 		am := baseabci.GetAccountMapper(ctx)
 		delegator := am.GetAccount(info.DelegatorAddr).(*qtypes.QOSAccount)
@@ -90,6 +94,9 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, r
 	} else {
 		delegation.Amount += info.Amount
 		delegation.IsCompound = info.IsCompound
+
+		qtypes.AssertUint64NotOverflow(delegation.Amount)
+
 		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount)
 		mapper.SetDelegationInfo(delegation)
 	}
@@ -98,6 +105,8 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, r
 
 func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens uint64) {
 	info.Amount = info.Amount - tokens
+	qtypes.AssertUint64NotOverflow(info.Amount)
+
 	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount)
 	unbondHeight := uint64(mapper.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
 	mapper.AddUnbondingDelegation(types.NewUnbondingDelegationInfo(info.DelegatorAddr, info.ValidatorAddr, uint64(ctx.BlockHeight()), unbondHeight, tokens))
@@ -107,6 +116,8 @@ func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInf
 func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.RedelegationInfo) {
 	// update origin delegation
 	delegation.Amount -= info.Amount
+	qtypes.AssertUint64NotOverflow(delegation.Amount)
+
 	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
 	mapper.SetDelegationInfo(delegation)
 
@@ -159,6 +170,8 @@ func (mapper *Mapper) GetUnbondingDelegationsByValidator(validator btypes.Addres
 }
 
 func (mapper *Mapper) SetUnbondingDelegation(unbonding types.UnbondingDelegationInfo) {
+	qtypes.AssertUint64NotOverflow(unbonding.Amount)
+
 	mapper.Set(types.BuildUnbondingHeightDelegatorValidatorKey(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr), unbonding)
 	mapper.Set(types.BuildUnbondingDelegatorHeightValidatorKey(unbonding.DelegatorAddr, unbonding.CompleteHeight, unbonding.ValidatorAddr), true)
 	mapper.Set(types.BuildUnbondingValidatorHeightDelegatorKey(unbonding.ValidatorAddr, unbonding.CompleteHeight, unbonding.DelegatorAddr), true)
@@ -170,6 +183,9 @@ func (mapper *Mapper) GetUnbondingDelegation(height uint64, delAddr btypes.Addre
 }
 
 func (mapper *Mapper) AddUnbondingDelegation(unbonding types.UnbondingDelegationInfo) {
+
+	qtypes.AssertUint64NotOverflow(unbonding.Amount)
+
 	origin, exist := mapper.GetUnbondingDelegation(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr)
 	if exist {
 		origin.Amount += unbonding.Amount

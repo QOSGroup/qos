@@ -2,6 +2,7 @@ package txs
 
 import (
 	"errors"
+
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -27,11 +28,11 @@ func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "Validator and Delegator must be specified.")
 	}
 
-	if tx.Amount == 0 {
+	if tx.Amount <= 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "Delegation amount must be a positive integer.")
 	}
 
-	if _, err := validateValidator(ctx, tx.ValidatorOwner, true, types.Active, true); err != nil {
+	if _, err := validateValidator(ctx, tx.ValidatorOwner, false, types.Active, true); err != nil {
 		return err
 	}
 
@@ -221,6 +222,10 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 		tx.UnbondAmount = delegation.Amount
 	}
 
+	if delegation.Amount < tx.UnbondAmount || validator.GetBondTokens() < tx.UnbondAmount {
+		return btypes.Result{Code: btypes.CodeInternal}, nil
+	}
+
 	// unBond delegation tokens
 	sm.UnbondTokens(ctx, delegation, tx.UnbondAmount)
 
@@ -286,8 +291,8 @@ func (tx *TxCreateReDelegation) ValidateData(ctx context.Context) error {
 		return err
 	}
 
-	//2. 校验toValidator是否存在 且 状态为active
-	_, err = validateValidator(ctx, tx.ToValidatorOwner, true, types.Active, true)
+	//2. 校验toValidator是否存在 <del>且 状态为active</del>
+	_, err = validateValidator(ctx, tx.ToValidatorOwner, false, types.Active, true)
 	if err != nil {
 		return err
 	}
@@ -313,6 +318,13 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 
 	if tx.IsRedelegateAll {
 		tx.Amount = delegation.Amount
+	}
+
+	qtypes.AssertUint64NotOverflow(tx.Amount)
+	qtypes.AssertUint64NotOverflow(toValidator.GetBondTokens() + tx.Amount)
+
+	if fromValidator.GetBondTokens() < tx.Amount {
+		return btypes.Result{Code: btypes.CodeInternal}, nil
 	}
 
 	// redelegate

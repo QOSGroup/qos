@@ -53,7 +53,7 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 		len(tx.Description.Website) > MaxLinkLen ||
 		len(tx.Description.Details) > MaxDescriptionLen ||
 		len(tx.Owner) == 0 ||
-		tx.BondTokens == 0 {
+		tx.BondTokens <= 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
@@ -99,6 +99,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	// 创建validator
 	sm := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	sm.CreateValidator(validator)
+
 	sm.AfterValidatorCreated(ctx, valAddr)
 
 	// 初始化self-delegation
@@ -425,10 +426,19 @@ func validateQOSAccount(ctx context.Context, addr btypes.Address, toPay uint64) 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	acc := accountMapper.GetAccount(addr)
 
+	qtypes.AssertUint64NotOverflow(toPay)
+
 	if toPay > 0 {
 		if acc != nil {
 			qosAccount := acc.(*qtypes.QOSAccount)
-			if !qosAccount.EnoughOfQOS(btypes.NewInt(int64(toPay))) {
+			toPay := btypes.NewInt(int64(toPay))
+
+			//溢出校验
+			if toPay.LT(btypes.ZeroInt()) {
+				return types.ErrInvalidInput(types.DefaultCodeSpace, "Bind tokens is lt zero: "+addr.String())
+			}
+
+			if !qosAccount.EnoughOfQOS(toPay) {
 				return types.ErrOwnerNoEnoughToken(types.DefaultCodeSpace, "No enough QOS in account: "+addr.String())
 			}
 		} else {

@@ -3,6 +3,13 @@ package stake
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"math"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btxs "github.com/QOSGroup/qbase/txs"
@@ -15,11 +22,6 @@ import (
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 )
 
 func InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data types.GenesisState) []abci.ValidatorUpdate {
@@ -75,7 +77,9 @@ func initValidators(ctx context.Context, validators []types.Validator) {
 		if validatorMapper.ExistsWithOwner(v.Owner) {
 			panic(fmt.Errorf("owner %s already bind a validator", v.Owner))
 		}
+
 		validatorMapper.CreateValidator(v)
+
 		if !v.IsActive() {
 			validatorMapper.MakeValidatorInactive(v.GetValidatorAddress(), v.InactiveHeight, v.InactiveTime, v.InactiveCode)
 		}
@@ -265,6 +269,10 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 		txCreateValidator := itxs[0].(*txs.TxCreateValidator)
 		// validate delegator and validator addresses and funds against the accounts in the state
 		ownerAddr := txCreateValidator.Owner
+
+		if txCreateValidator.BondTokens >= math.MaxInt64 {
+			continue
+		}
 
 		delAcc, delOk := addrMap[ownerAddr.String()]
 

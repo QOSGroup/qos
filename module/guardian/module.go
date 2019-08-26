@@ -11,8 +11,8 @@ import (
 )
 
 var (
-	_ types.AppModuleBasic   = AppModuleBasic{}
-	_ types.AppModule = AppModule{}
+	_ types.AppModuleBasic = AppModuleBasic{}
+	_ types.AppModule      = AppModule{}
 )
 
 // app module basics object

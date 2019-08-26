@@ -20,5 +20,5 @@ var (
 
 type (
 	KeyValuePairs = types.KeyValuePairs
-	ParamSet = types.ParamSet
+	ParamSet      = types.ParamSet
 )

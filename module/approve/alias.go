@@ -8,9 +8,9 @@ import (
 )
 
 var (
-	ModuleName    = "approve"
-	Cdc           = txs.Cdc
-	RegisterCodec = txs.RegisterCodec
+	ModuleName      = "approve"
+	Cdc             = txs.Cdc
+	RegisterCodec   = txs.RegisterCodec
 	DefaultGenesis  = types.DefaultGenesisState
 	ValidateGenesis = types.ValidateGenesis
 
