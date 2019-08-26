@@ -57,7 +57,7 @@ func ParseCoins(str string) (btypes.BigInt, QSCs, error) {
 		if err != nil {
 			return btypes.ZeroInt(), nil, err
 		}
-		if strings.ToLower(coin[2]) == "qos" {
+		if strings.ToUpper(coin[2]) == QOSCoinName {
 			qos = btypes.NewInt(amount)
 		} else {
 			qscs = append(qscs, &QSC{
