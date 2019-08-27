@@ -288,7 +288,7 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 func rewardToValidator(ctx context.Context, validator stake.Validator, rewards btypes.BigInt) {
 	dm := mapper.GetMapper(ctx)
 
-	commissionReward := btypes.NewInt(validator.Commission.Rate.MulInt(rewards).Int64())
+	commissionReward := validator.Commission.Rate.MulInt(rewards).TruncateInt()
 	sharedReward := rewards.Sub(commissionReward)
 
 	valAddr := validator.GetValidatorAddress()
