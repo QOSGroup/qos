@@ -2,8 +2,9 @@ package mapper
 
 import (
 	"encoding/binary"
-	qtypes "github.com/QOSGroup/qos/types"
 	"time"
+
+	qtypes "github.com/QOSGroup/qos/types"
 
 	"github.com/QOSGroup/qos/module/params"
 
