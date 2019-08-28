@@ -29,7 +29,7 @@ func genTestApprove() types.Approve {
 		QOS:  btypes.NewInt(100),
 		QSCs: qtypes.QSCs{
 			{
-				Name:   "qstar",
+				Name:   "QSTAR",
 				Amount: btypes.NewInt(100),
 			},
 		},
@@ -41,18 +41,18 @@ func TestValidateData(t *testing.T) {
 	approve := genTestApprove()
 	require.NotNil(t, ValidateData(ctx, approve))
 
-	saveQSCInfo(ctx, "qstar")
+	saveQSCInfo(ctx, "QSTAR")
 	require.Nil(t, ValidateData(ctx, approve))
 
 	approve.QSCs = append(approve.QSCs, &qtypes.QSC{
-		Name:   "qstar",
+		Name:   "QSTAR",
 		Amount: btypes.NewInt(100),
 	})
 	require.NotNil(t, ValidateData(ctx, approve))
 
 	approve.QSCs = qtypes.QSCs{
 		{
-			Name:   "qos",
+			Name:   "QOS",
 			Amount: btypes.NewInt(100),
 		},
 	}
@@ -69,7 +69,7 @@ func genTestAccount(addr btypes.AccAddress) *qtypes.QOSAccount {
 		QOS: btypes.NewInt(100),
 		QSCs: qtypes.QSCs{
 			{
-				Name:   "qstar",
+				Name:   "QSTAR",
 				Amount: btypes.NewInt(100),
 			},
 		},
@@ -120,7 +120,7 @@ func saveQSCInfo(ctx context.Context, qscName string) {
 
 func defaultContextWithQSC() context.Context {
 	ctx := defaultContext()
-	saveQSCInfo(ctx, "qstar")
+	saveQSCInfo(ctx, "QSTAR")
 	return ctx
 }
 
