@@ -37,7 +37,7 @@ type Description struct {
 
 type Validator struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	Creator         btypes.AccAddress `json:"creator"`
+	Owner           btypes.AccAddress `json:"owner"`
 	ConsPubKey      crypto.PubKey     `json:"consensus_pubkey"`
 	BondTokens      uint64            `json:"bond_tokens"` //不能超过int64最大值
 	Description     Description       `json:"description"`
@@ -54,7 +54,7 @@ type Validator struct {
 
 type jsonifyValidator struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	Creator         btypes.AccAddress `json:"creator"`
+	Owner           btypes.AccAddress `json:"owner"`
 	ConsPubKey      string            `json:"consensus_pubkey"`
 	BondTokens      uint64            `json:"bond_tokens"`
 	Description     Description       `json:"description"`
@@ -104,8 +104,8 @@ func (val Validator) GetConsensusPubKey() crypto.PubKey {
 	return val.ConsPubKey
 }
 
-func (val Validator) GetCreator() btypes.AccAddress {
-	return val.Creator
+func (val Validator) GetOwner() btypes.AccAddress {
+	return val.Owner
 }
 
 func (val Validator) MarshalJSON() ([]byte, error) {
@@ -116,7 +116,7 @@ func (val Validator) MarshalJSON() ([]byte, error) {
 
 	return codec.Cdc.MarshalJSON(jsonifyValidator{
 		OperatorAddress: val.OperatorAddress,
-		Creator:         val.Creator,
+		Owner:           val.Owner,
 		ConsPubKey:      bechPubKey,
 		BondTokens:      val.BondTokens,
 		Description:     val.Description,
@@ -145,7 +145,7 @@ func (val *Validator) UnmarshalJSON(data []byte) error {
 
 	*val = Validator{
 		OperatorAddress: jv.OperatorAddress,
-		Creator:         jv.Creator,
+		Owner:           jv.Owner,
 		ConsPubKey:      consPubKey,
 		BondTokens:      jv.BondTokens,
 		Description:     jv.Description,

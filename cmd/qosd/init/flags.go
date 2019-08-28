@@ -12,7 +12,7 @@ const (
 
 	flagAddress = "address"
 
-	flagCreator     = "creator"
+	flagOwner       = "owner"
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"

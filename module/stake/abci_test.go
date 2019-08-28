@@ -33,7 +33,7 @@ func TestValidatorMapper(t *testing.T) {
 	validator := types.Validator{
 		Description:     types.Description{Moniker: "test"},
 		OperatorAddress: btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address()),
-		Creator:         btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address()),
+		Owner:           btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address()),
 		ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
 		Status:          types.Active,

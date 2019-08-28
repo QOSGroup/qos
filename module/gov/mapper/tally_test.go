@@ -34,7 +34,7 @@ func TestTally(t *testing.T) {
 
 		validator := stake.Validator{
 			Description:     stake.Description{Moniker: string(i)},
-			Creator:         addr,
+			Owner:           addr,
 			OperatorAddress: btypes.ValAddress(addr),
 			ConsPubKey:      pub,
 			BondTokens:      1000,
@@ -43,7 +43,7 @@ func TestTally(t *testing.T) {
 			BondHeight:      uint64(ctx.BlockHeight()),
 		}
 
-		delegationInfo := stake.NewDelegationInfo(validator.Creator, validator.GetValidatorAddress(), validator.BondTokens, false)
+		delegationInfo := stake.NewDelegationInfo(validator.Owner, validator.GetValidatorAddress(), validator.BondTokens, false)
 		sm.SetDelegationInfo(delegationInfo)
 		sm.CreateValidator(validator)
 	}

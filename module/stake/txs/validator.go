@@ -88,7 +88,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	validator := types.Validator{
 		OperatorAddress: valAddr,
-		Creator:         tx.Operator,
+		Owner:           tx.Operator,
 		ConsPubKey:      tx.ConsPubKey,
 		BondTokens:      tx.BondTokens,
 		Description:     tx.Description,
@@ -98,7 +98,7 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		Commission:      types.NewCommissionWithTime(tx.Commission.Rate, tx.Commission.MaxRate, tx.Commission.MaxChangeRate, ctx.BlockHeader().Time.UTC()),
 	}
 
-	delegatorAddr := validator.Creator
+	delegatorAddr := validator.Owner
 
 	// 创建validator
 	sm := ctx.Mapper(types.MapperName).(*mapper.Mapper)
@@ -286,7 +286,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		btypes.NewEvent(
 			types.EventTypeRevokeValidator,
 			btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
-			btypes.NewAttribute(types.AttributeKeyOwner, validator.Creator.String()),
+			btypes.NewAttribute(types.AttributeKeyOwner, validator.Owner.String()),
 		),
 		btypes.NewEvent(
 			btypes.EventTypeMessage,
@@ -371,7 +371,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	stakeMapper.ResetValidatorVoteInfo(validator.GetValidatorAddress(), voteInfo)
 
 	// 获取 Owner 对应的 Delegator 账户
-	delegatorAddr := validator.Creator
+	delegatorAddr := validator.Owner
 	delegator := accountMapper.GetAccount(delegatorAddr).(*qtypes.QOSAccount)
 
 	// 当增加委托的tokens大于0时
@@ -398,7 +398,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		btypes.NewEvent(
 			types.EventTypeActiveValidator,
 			btypes.NewAttribute(types.AttributeKeyValidator, validatorAddr.String()),
-			btypes.NewAttribute(types.AttributeKeyOwner, validator.Creator.String()),
+			btypes.NewAttribute(types.AttributeKeyOwner, validator.Owner.String()),
 		),
 		btypes.NewEvent(
 			btypes.EventTypeMessage,

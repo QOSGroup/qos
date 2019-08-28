@@ -32,7 +32,7 @@ const (
 
 type validatorDisplayInfo struct {
 	OperatorAddress btypes.ValAddress `json:"validatorAddr"`
-	Creator         btypes.AccAddress `json:"creatorAddr"`
+	Owner           btypes.AccAddress `json:"owner"`
 	ConsPubKey      string            `json:"consensusPubKey"`
 	BondTokens      uint64            `json:"bondTokens"` //不能超过int64最大值
 	Description     types.Description `json:"description"`
@@ -53,7 +53,7 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 
 	info := validatorDisplayInfo{
 		OperatorAddress: validator.OperatorAddress,
-		Creator:         validator.Creator,
+		Owner:           validator.Owner,
 		ConsPubKey:      consPubKey,
 		BondTokens:      validator.BondTokens,
 		Description:     validator.Description,

@@ -21,7 +21,7 @@ import (
 )
 
 const (
-	flagCreator    = "creator"
+	flagOwner      = "owner"
 	flagValidator  = "validator"
 	flagBondTokens = "tokens"
 
@@ -60,7 +60,7 @@ example:
 		},
 	}
 
-	cmd.Flags().String(flagCreator, "", "keystore name or account creator address")
+	cmd.Flags().String(flagOwner, "", "keystore name or account creator address")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagNodeHome, qtypes.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
@@ -73,7 +73,7 @@ example:
 	cmd.Flags().String(flagCommissionMaxChangeRate, DefaultCommissionMaxChangeRate, "The maximum commission change rate percentage (per day)")
 
 	cmd.MarkFlagRequired(flagMoniker)
-	cmd.MarkFlagRequired(flagCreator)
+	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd
@@ -205,13 +205,13 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()),
 		filepath.Join(viper.GetString(flagNodeHome), cfg.DefaultConfig().PrivValidatorKeyFile()))
 
-	operator, err := qcliacc.GetAddrFromFlag(ctx, flagCreator)
+	owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 	if err != nil {
 		return nil, err
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(operator, privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission), nil
+	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission), nil
 }
 
 func BuildCommissionRates() (*types.CommissionRates, error) {

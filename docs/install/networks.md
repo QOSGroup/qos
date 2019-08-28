@@ -90,7 +90,7 @@ $ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 
 使用上面的初始化账户地址作为owner
 ```bash
-$ qosd gentx --moniker validatorName --creator qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq --tokens 10
+$ qosd gentx --moniker validatorName --owner qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq --tokens 10
 ```
 
 主要参数说明:

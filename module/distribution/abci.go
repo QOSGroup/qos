@@ -248,12 +248,12 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.ConsAddress, denomTota
 	//proposer奖励,直接归属proposer
 	proposerRewards := params.ProposerRewardRate.MultiBigInt(totalAmount)
 	proposerValidater, validatorExsits := sm.GetValidatorByConsensusAddr(proposerAddr)
-	proposerInfo, proposerInfoExsits := dm.GetDelegatorEarningStartInfo(proposerValidater.OperatorAddress, proposerValidater.Creator)
+	proposerInfo, proposerInfoExsits := dm.GetDelegatorEarningStartInfo(proposerValidater.OperatorAddress, proposerValidater.Owner)
 
 	if validatorExsits && proposerInfoExsits {
 		proposerInfo.HistoricalRewardFees = proposerInfo.HistoricalRewardFees.Add(proposerRewards)
 		remainQOS = remainQOS.Sub(proposerRewards)
-		dm.Set(types.BuildDelegatorEarningStartInfoKey(proposerValidater.OperatorAddress, proposerValidater.Creator), proposerInfo)
+		dm.Set(types.BuildDelegatorEarningStartInfoKey(proposerValidater.OperatorAddress, proposerValidater.Owner), proposerInfo)
 		dm.AddValidatorEcoFeePool(proposerValidater.OperatorAddress, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
@@ -295,9 +295,9 @@ func rewardToValidator(ctx context.Context, validator stake.Validator, rewards b
 	dm.AddValidatorEcoFeePool(valAddr, btypes.ZeroInt(), commissionReward, sharedReward)
 
 	//validator 佣金收益
-	if info, exists := dm.GetDelegatorEarningStartInfo(valAddr, validator.Creator); exists {
+	if info, exists := dm.GetDelegatorEarningStartInfo(valAddr, validator.Owner); exists {
 		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(commissionReward)
-		dm.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Creator), info)
+		dm.Set(types.BuildDelegatorEarningStartInfoKey(valAddr, validator.Owner), info)
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
 				types.EventTypeCommission,

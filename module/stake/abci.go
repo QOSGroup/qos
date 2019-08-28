@@ -327,7 +327,7 @@ func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHei
 		btypes.NewEvent(
 			types.EventTypeSlash,
 			btypes.NewAttribute(types.AttributeKeyValidator, validator.GetValidatorAddress().String()),
-			btypes.NewAttribute(types.AttributeKeyOwner, validator.Creator.String()),
+			btypes.NewAttribute(types.AttributeKeyOwner, validator.Owner.String()),
 			btypes.NewAttribute(types.AttributeKeyReason, types.AttributeValueDoubleSign),
 		),
 	)
