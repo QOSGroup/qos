@@ -11,9 +11,9 @@ import (
 )
 
 type TxVote struct {
-	ProposalID uint64           `json:"proposal_id"` // ID of the proposal
-	Voter      btypes.AccAddress   `json:"voter"`       //  address of the voter
-	Option     types.VoteOption `json:"option"`      //  option from OptionSet chosen by the voter
+	ProposalID uint64            `json:"proposal_id"` // ID of the proposal
+	Voter      btypes.AccAddress `json:"voter"`       //  address of the voter
+	Option     types.VoteOption  `json:"option"`      //  option from OptionSet chosen by the voter
 }
 
 func NewTxVote(proposalID uint64, voter btypes.AccAddress, option types.VoteOption) *TxVote {

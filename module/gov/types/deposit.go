@@ -8,8 +8,8 @@ import (
 // Deposit
 type Deposit struct {
 	Depositor  types.AccAddress `json:"depositor"`   //  Address of the depositor
-	ProposalID uint64        `json:"proposal_id"` //  proposalID of the proposal
-	Amount     uint64        `json:"amount"`      //  Deposit amount
+	ProposalID uint64           `json:"proposal_id"` //  proposalID of the proposal
+	Amount     uint64           `json:"amount"`      //  Deposit amount
 }
 
 func (d Deposit) String() string {

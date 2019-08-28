@@ -23,7 +23,7 @@ type TxProposal struct {
 	Title          string             `json:"title"`           //  Title of the proposal
 	Description    string             `json:"description"`     //  Description of the proposal
 	ProposalType   types.ProposalType `json:"proposal_type"`   //  Type of proposal. Initial set {PlainTextProposal, SoftwareUpgradeProposal}
-	Proposer       btypes.AccAddress     `json:"proposer"`        //  Address of the proposer
+	Proposer       btypes.AccAddress  `json:"proposer"`        //  Address of the proposer
 	InitialDeposit uint64             `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
@@ -128,7 +128,7 @@ func (tx TxProposal) GetSignData() (ret []byte) {
 type TxTaxUsage struct {
 	TxProposal
 	DestAddress btypes.AccAddress `json:"dest_address"`
-	Percent     qtypes.Dec     `json:"percent"`
+	Percent     qtypes.Dec        `json:"percent"`
 }
 
 func NewTxTaxUsage(title, description string, proposer btypes.AccAddress, deposit uint64, destAddress btypes.AccAddress, percent qtypes.Dec) *TxTaxUsage {

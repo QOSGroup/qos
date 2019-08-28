@@ -262,8 +262,8 @@ func queryParam(ctx context.Context, module string, key string) ([]byte, error) 
 
 //nolint
 type QueryProposalsParam struct {
-	Depositor btypes.AccAddress       `json:"depositor"`
-	Voter     btypes.AccAddress       `json:"voter"`
+	Depositor btypes.AccAddress    `json:"depositor"`
+	Voter     btypes.AccAddress    `json:"voter"`
 	Status    types.ProposalStatus `json:"status"`
 	Limit     uint64               `json:"limit"`
 }

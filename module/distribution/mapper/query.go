@@ -78,8 +78,8 @@ func queryValidatorPeriodInfo(ctx context.Context, operatorAddr btypes.ValAddres
 	}
 
 	result := ValidatorPeriodInfoQueryResult{
-		OperatorAddress:       validator.OperatorAddress,
-		ConsPubKey: btypes.MustConsensusPubKeyString(validator.ConsPubKey),
+		OperatorAddress: validator.OperatorAddress,
+		ConsPubKey:      btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 		Fees:            vcps.Fees,
 		CurrentTokens:   validator.GetBondTokens(),
 		CurrentPeriod:   vcps.Period,
@@ -109,8 +109,8 @@ func queryDelegatorIncomeInfo(ctx context.Context, delegator btypes.AccAddress, 
 	}
 
 	result := DelegatorIncomeInfoQueryResult{
-		OperatorAddress:             validator.OperatorAddress,
-		ConsPubKey:       btypes.MustConsensusPubKeyString(validator.ConsPubKey),
+		OperatorAddress:       validator.OperatorAddress,
+		ConsPubKey:            btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 		PreviousPeriod:        info.PreviousPeriod,
 		BondToken:             info.BondToken,
 		CurrentStartingHeight: info.CurrentStartingHeight,
@@ -123,23 +123,23 @@ func queryDelegatorIncomeInfo(ctx context.Context, delegator btypes.AccAddress, 
 }
 
 type ValidatorPeriodInfoQueryResult struct {
-	OperatorAddress          btypes.ValAddress  `json:"validator_address"`
-	ConsPubKey    string   `json:"consensus_pubkey"`
-	Fees               btypes.BigInt   `json:"fees"`
-	CurrentTokens      uint64          `json:"current_tokens"`
-	CurrentPeriod      uint64          `json:"current_period"`
-	LastPeriod         uint64          `json:"last_period"`
-	LastPeriodFraction qtypes.Fraction `json:"last_period_fraction"`
+	OperatorAddress    btypes.ValAddress `json:"validator_address"`
+	ConsPubKey         string            `json:"consensus_pubkey"`
+	Fees               btypes.BigInt     `json:"fees"`
+	CurrentTokens      uint64            `json:"current_tokens"`
+	CurrentPeriod      uint64            `json:"current_period"`
+	LastPeriod         uint64            `json:"last_period"`
+	LastPeriodFraction qtypes.Fraction   `json:"last_period_fraction"`
 }
 
 type DelegatorIncomeInfoQueryResult struct {
-	OperatorAddress             btypes.ValAddress `json:"validator_address"`
-	ConsPubKey       string  `json:"consensus_pubkey"`
-	PreviousPeriod        uint64         `json:"previous_validator_period"`
-	BondToken             uint64         `json:"bond_token"`
-	CurrentStartingHeight uint64         `json:"earns_starting_height"`
-	FirstDelegateHeight   uint64         `json:"first_delegate_height"`
-	HistoricalRewardFees  btypes.BigInt  `json:"historical_rewards"`
-	LastIncomeCalHeight   uint64         `json:"last_income_calHeight"`
-	LastIncomeCalFees     btypes.BigInt  `json:"last_income_calFees"`
+	OperatorAddress       btypes.ValAddress `json:"validator_address"`
+	ConsPubKey            string            `json:"consensus_pubkey"`
+	PreviousPeriod        uint64            `json:"previous_validator_period"`
+	BondToken             uint64            `json:"bond_token"`
+	CurrentStartingHeight uint64            `json:"earns_starting_height"`
+	FirstDelegateHeight   uint64            `json:"first_delegate_height"`
+	HistoricalRewardFees  btypes.BigInt     `json:"historical_rewards"`
+	LastIncomeCalHeight   uint64            `json:"last_income_calHeight"`
+	LastIncomeCalFees     btypes.BigInt     `json:"last_income_calFees"`
 }

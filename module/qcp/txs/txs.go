@@ -17,7 +17,7 @@ const GasForCreateQCP = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.
 
 // init QCP
 type TxInitQCP struct {
-	Creator btypes.AccAddress    `json:"creator"` //创建账户
+	Creator btypes.AccAddress `json:"creator"` //创建账户
 	QCPCA   *cert.Certificate `json:"ca_qcp"`  //CA信息
 }
 

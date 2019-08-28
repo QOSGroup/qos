@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -351,6 +352,58 @@ func (account *QOSAccount) RemoveQSC(qscName string) {
 			account.QSCs = append(account.QSCs[:i], account.QSCs[i+1:]...)
 		}
 	}
+}
+
+type jsonifyQOSAccount struct {
+	AccountAddress string        `json:"account_address"`
+	Publickey      string        `json:"public_key"`
+	Nonce          int64         `json:"nonce"`
+	QOS            btypes.BigInt `json:"qos"`
+	QSCs           QSCs          `json:"qscs"`
+}
+
+func (account *QOSAccount) MarshalJSON() ([]byte, error) {
+
+	pkStr := ""
+	if account.Publickey != nil && len(account.Publickey.Bytes()) != 0 {
+		pkStr = btypes.MustAccPubKeyString(account.Publickey)
+	}
+
+	ja := jsonifyQOSAccount{
+		AccountAddress: account.AccountAddress.String(),
+		Publickey:      pkStr,
+		Nonce:          account.Nonce,
+		QOS:            account.QOS,
+		QSCs:           account.QSCs,
+	}
+
+	return json.Marshal(ja)
+}
+
+func (account *QOSAccount) UnmarshalJSON(bz []byte) error {
+	var ja jsonifyQOSAccount
+	err := json.Unmarshal(bz, &ja)
+	if err != nil {
+		return err
+	}
+
+	account.AccountAddress, err = btypes.AccAddressFromBech32(ja.AccountAddress)
+	if err != nil {
+		return err
+	}
+
+	if len(ja.Publickey) != 0 {
+		account.Publickey, err = btypes.GetAccPubKeyBech32(ja.Publickey)
+		if err != nil {
+			return err
+		}
+	}
+
+	account.Nonce = ja.Nonce
+	account.QOS = ja.QOS
+	account.QSCs = ja.QSCs
+
+	return nil
 }
 
 // Parse accounts from string

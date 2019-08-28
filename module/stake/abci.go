@@ -33,7 +33,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	// 统计validator投票信息, 将不活跃的validator转成Inactive状态
 	params := sm.GetParams(ctx)
 	for _, signingValidator := range req.LastCommitInfo.Votes {
-		v , _ := sm.GetValidatorByConsensusAddr(btypes.ConsAddress(signingValidator.Validator.Address))
+		v, _ := sm.GetValidatorByConsensusAddr(btypes.ConsAddress(signingValidator.Validator.Address))
 		handleValidatorValidatorVoteInfo(ctx, v.GetValidatorAddress(), signingValidator.SignedLastBlock, params)
 	}
 }

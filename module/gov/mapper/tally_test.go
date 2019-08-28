@@ -34,9 +34,9 @@ func TestTally(t *testing.T) {
 
 		validator := stake.Validator{
 			Description:     stake.Description{Moniker: string(i)},
-			Creator:addr,
-			OperatorAddress:           btypes.ValAddress(addr),
-			ConsPubKey: pub,
+			Creator:         addr,
+			OperatorAddress: btypes.ValAddress(addr),
+			ConsPubKey:      pub,
 			BondTokens:      1000,
 			Status:          stake.Active,
 			MinPeriod:       uint64(0),

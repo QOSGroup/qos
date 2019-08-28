@@ -48,17 +48,17 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 				return err
 			}
 
-			owner := viper.GetString(flagOwner)
+			creator := viper.GetString(flagCreator)
 			var info keys.Info
-			if len(owner) == 0 {
-				return errors.New("owner is empty")
+			if len(creator) == 0 {
+				return errors.New("creator is empty")
 			}
 			keybase, err := clikeys.GetKeyBaseFromDir(cliCtx, viper.GetString(flagClientHome))
 			if err != nil {
 				return err
 			}
-			if strings.HasPrefix(owner, btypes.QOSAccountPrefix) {
-				addr, err := btypes.AccAddressFromBech32(owner)
+			if strings.HasPrefix(creator, btypes.QOSAccountPrefix) {
+				addr, err := btypes.AccAddressFromBech32(creator)
 				if err != nil {
 					return err
 				}
@@ -67,7 +67,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 					return err
 				}
 			} else {
-				info, err = keybase.Get(owner)
+				info, err = keybase.Get(creator)
 				if err != nil {
 					return err
 				}
@@ -109,7 +109,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	}
 
 	cmd.Flags().String(flagMoniker, "", "name for validator")
-	cmd.Flags().String(flagOwner, "", "keystore name or account address")
+	cmd.Flags().String(flagCreator, "", "keystore name or account address for validator's creator")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
@@ -123,7 +123,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	cmd.Flags().String(flagCommissionMaxChangeRate, stake.DefaultCommissionMaxChangeRate, "The maximum commission change rate percentage (per day)")
 
 	cmd.MarkFlagRequired(flagMoniker)
-	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagCreator)
 	cmd.MarkFlagRequired(flagBondTokens)
 
 	return cmd

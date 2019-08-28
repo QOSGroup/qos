@@ -43,10 +43,10 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 				}
 
 				return &txs.TxCreateDelegation{
-					Delegator:      delegator,
-					ValidatorAddr:  types.ValAddress(validatorAddr),
-					Amount:         uint64(tokens),
-					IsCompound:     viper.GetBool(flagCompound),
+					Delegator:     delegator,
+					ValidatorAddr: types.ValAddress(validatorAddr),
+					Amount:        uint64(tokens),
+					IsCompound:    viper.GetBool(flagCompound),
 				}, nil
 			})
 		},
@@ -82,9 +82,9 @@ func CreateModifyCompoundCommand(cdc *amino.Codec) *cobra.Command {
 				}
 
 				return &txs.TxModifyCompound{
-					Delegator:      delegator,
+					Delegator:     delegator,
 					ValidatorAddr: types.ValAddress(validatorAddr),
-					IsCompound:     viper.GetBool(flagCompound),
+					IsCompound:    viper.GetBool(flagCompound),
 				}, nil
 			})
 		},
@@ -129,10 +129,10 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 				}
 
 				return &txs.TxUnbondDelegation{
-					Delegator:      delegator,
+					Delegator:     delegator,
 					ValidatorAddr: types.ValAddress(validatorAddr),
-					UnbondAmount:   uint64(tokens),
-					IsUnbondAll:    isUnbondAll,
+					UnbondAmount:  uint64(tokens),
+					IsUnbondAll:   isUnbondAll,
 				}, nil
 			})
 		},
@@ -183,12 +183,12 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 				}
 
 				return &txs.TxCreateReDelegation{
-					Delegator:          delegator,
+					Delegator:         delegator,
 					FromValidatorAddr: types.ValAddress(fromValidatorAddr),
 					ToValidatorAddr:   types.ValAddress(toValidatorAddr),
-					Amount:             uint64(tokens),
-					IsCompound:         viper.GetBool(flagCompound),
-					IsRedelegateAll:    all,
+					Amount:            uint64(tokens),
+					IsCompound:        viper.GetBool(flagCompound),
+					IsRedelegateAll:   all,
 				}, nil
 			})
 		},

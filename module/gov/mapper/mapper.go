@@ -94,7 +94,7 @@ func (mapper Mapper) DeleteProposal(proposalID uint64) {
 // depositorAddr will filter proposals by whether or not that address has deposited to them
 // status will filter proposals by status
 // numLatest will fetch a specified number of the most recent proposals, or 0 for all proposals
-func (mapper Mapper) GetProposalsFiltered(ctx context.Context, voterAddr , depositorAddr btypes.AccAddress, status types.ProposalStatus, numLatest uint64) []types.Proposal {
+func (mapper Mapper) GetProposalsFiltered(ctx context.Context, voterAddr, depositorAddr btypes.AccAddress, status types.ProposalStatus, numLatest uint64) []types.Proposal {
 
 	maxProposalID, err := mapper.PeekCurrentProposalID()
 	if err != nil {

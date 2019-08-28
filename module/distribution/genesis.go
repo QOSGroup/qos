@@ -67,7 +67,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		if exists {
 			vhps := types.ValidatorHistoryPeriodState{
 				OperatorAddress: validator.OperatorAddress,
-				ConsPubKey:  btypes.MustConsensusPubKeyString(validator.ConsPubKey),
+				ConsPubKey:      btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				Period:          period,
 				Summary:         frac,
 			}
@@ -81,8 +81,8 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			vcpsState := types.ValidatorCurrentPeriodState{
-				OperatorAddress: validator.OperatorAddress,
-				ConsPubKey:  btypes.MustConsensusPubKeyString(validator.ConsPubKey),
+				OperatorAddress:      validator.OperatorAddress,
+				ConsPubKey:           btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				CurrentPeriodSummary: vcps,
 			}
 			validatorCurrentPeriods = append(validatorCurrentPeriods, vcpsState)
@@ -95,8 +95,8 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			dess := types.DelegatorEarningStartState{
-				OperatorAddress: validator.OperatorAddress,
-				ConsPubKey:  btypes.MustConsensusPubKeyString(validator.ConsPubKey),
+				OperatorAddress:            validator.OperatorAddress,
+				ConsPubKey:                 btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				DeleAddress:                deleAddr,
 				DelegatorEarningsStartInfo: desi,
 			}
@@ -111,7 +111,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		if exists {
 			dihs := types.DelegatorIncomeHeightState{
 				OperatorAddress: validator.OperatorAddress,
-				ConsPubKey:  btypes.MustConsensusPubKeyString(validator.ConsPubKey),
+				ConsPubKey:      btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				DeleAddress:     deleAddr,
 				Height:          height,
 			}
@@ -123,7 +123,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	distributionMapper.IteratorValidatorEcoFeePools(func(validatorAddr btypes.ValAddress, pool types.ValidatorEcoFeePool) {
 		validatorEcoFeePools = append(validatorEcoFeePools, types.ValidatorEcoFeePoolState{
 			OperatorAddress: validatorAddr,
-			EcoFeePool:       pool,
+			EcoFeePool:      pool,
 		})
 	})
 

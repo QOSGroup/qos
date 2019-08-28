@@ -121,26 +121,26 @@ func getDelegationsByDelegator(ctx context.Context, delegator btypes.AccAddress)
 }
 
 func infoToDelegationQueryResult(validator types.Validator, info types.DelegationInfo) DelegationQueryResult {
-	consPubKey, _  := btypes.ConsensusPubKeyString(validator.GetConsensusPubKey())
+	consPubKey, _ := btypes.ConsensusPubKeyString(validator.GetConsensusPubKey())
 	return NewDelegationQueryResult(info.DelegatorAddr,
 		validator.GetValidatorAddress(), consPubKey, info.Amount, info.IsCompound)
 }
 
 type DelegationQueryResult struct {
-	DelegatorAddr   btypes.AccAddress `json:"delegator_address"`
-	ValidatorAddr       btypes.ValAddress `json:"owner_address"`
-	ValidatorConsensusPubKey string  `json:"validator_cons_pub_key"`
-	Amount          uint64         `json:"delegate_amount"`
-	IsCompound      bool           `json:"is_compound"`
+	DelegatorAddr            btypes.AccAddress `json:"delegator_address"`
+	ValidatorAddr            btypes.ValAddress `json:"owner_address"`
+	ValidatorConsensusPubKey string            `json:"validator_cons_pub_key"`
+	Amount                   uint64            `json:"delegate_amount"`
+	IsCompound               bool              `json:"is_compound"`
 }
 
 func NewDelegationQueryResult(deleAddr btypes.AccAddress, ownerAddr btypes.ValAddress, bench32ConPubKey string, amount uint64, compound bool) DelegationQueryResult {
 	return DelegationQueryResult{
-		DelegatorAddr:   deleAddr,
-		ValidatorAddr:       ownerAddr,
+		DelegatorAddr:            deleAddr,
+		ValidatorAddr:            ownerAddr,
 		ValidatorConsensusPubKey: bench32ConPubKey,
-		Amount:          amount,
-		IsCompound:      compound,
+		Amount:                   amount,
+		IsCompound:               compound,
 	}
 }
 

@@ -56,16 +56,16 @@ Repeat the passphrase:
 $ qoscli keys list
 
 NAME:   TYPE:   ADDRESS:                                                PUBKEY:
-qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtUl1+Ak3WBtyKxGKvpcu4e5ky5TfAC26cN+mQ=
+qosInitAcc      local   qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq  qosaccpub1zcjduepqfzd5r2hzdnz58pjc9xuw5r2ez8f4khhwtekfxdjyvkvhrly6rxzqll3fgz
 
 ```
 更多本地秘钥库相关指令参照[qoscli keys](../command/qoscli.md#密钥（keys）)
 
 参照[设置账户](../command/qosd.md#设置账户) 初始化账户信息：
 ```bash
-$ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,49000000000000qos
+$ qosd add-genesis-accounts qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq,49000000000000qos
 ```
-::: warning Note 
+::: warning Note
 QOS默认总发行100亿，通胀待发行总量51亿，`add-genesis-accounts`添加的所有账户QOS总量需要是49亿，而源码中QOS以万分之一为单位，
 所以通过`add-genesis-accounts`添加的账户QOS总量数值应为`49000000000000`，否则无法网络启动。
 :::
@@ -80,7 +80,7 @@ root CA用于校验[QSC](../spec/qsc.md)和[QCP](../spec/qcp.md)，不存在相�
 $ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 ```
 
-更多操作说明查看[设置CA](../command/qosd.md#设置ca) 
+更多操作说明查看[设置CA](../command/qosd.md#设置ca)
 
 查看genesis.json内容，确认配置成功。
 
@@ -90,7 +90,7 @@ $ qosd config-root-ca --qcp <qcp-root.pub> --qsc <qsc-root.pub>
 
 使用上面的初始化账户地址作为owner
 ```bash
-$ qosd gentx --moniker validatorName --owner address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --tokens 10
+$ qosd gentx --moniker validatorName --creator qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq --tokens 10
 ```
 
 主要参数说明:

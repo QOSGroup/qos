@@ -13,7 +13,7 @@ const (
 )
 
 type TxAddGuardian struct {
-	Description string         `json:"description"`
+	Description string            `json:"description"`
 	Address     btypes.AccAddress `json:"address"`
 	Creator     btypes.AccAddress `json:"creator"`
 }
@@ -182,7 +182,7 @@ func (tx TxDeleteGuardian) GetSignData() (ret []byte) {
 
 type TxHaltNetwork struct {
 	Guardian btypes.AccAddress `json:"guardian"` // guardian's address
-	Reason   string         `json:"reason"`   // reason for halting the network
+	Reason   string            `json:"reason"`   // reason for halting the network
 }
 
 func NewTxHaltNetwork(address btypes.AccAddress, reason string) *TxHaltNetwork {

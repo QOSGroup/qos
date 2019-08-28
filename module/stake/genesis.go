@@ -141,7 +141,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		if exists {
 			vvis := ValidatorVoteInfoState{
 				ValidatorAddr: validator.GetValidatorAddress(),
-				VoteInfo:        info,
+				VoteInfo:      info,
 			}
 			validatorsVoteInfo = append(validatorsVoteInfo, vvis)
 		}
@@ -154,8 +154,8 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		if exists {
 			validatorsVoteInWindow = append(validatorsVoteInWindow, ValidatorVoteInWindowInfoState{
 				ValidatorAddr: validator.GetValidatorAddress(),
-				Index:           index,
-				Vote:            vote,
+				Index:         index,
+				Vote:          vote,
 			})
 		}
 	})
@@ -169,10 +169,10 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		}
 
 		delegatorsInfo = append(delegatorsInfo, DelegationInfoState{
-			DelegatorAddr:   info.DelegatorAddr,
+			DelegatorAddr: info.DelegatorAddr,
 			ValidatorAddr: validator.GetValidatorAddress(),
-			Amount:          info.Amount,
-			IsCompound:      info.IsCompound,
+			Amount:        info.Amount,
+			IsCompound:    info.IsCompound,
 		})
 	})
 

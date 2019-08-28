@@ -5,8 +5,8 @@ import (
 )
 
 type Guardian struct {
-	Description  string         `json:"description"`
-	GuardianType GuardianType   `json:"guardian_type"`
+	Description  string            `json:"description"`
+	GuardianType GuardianType      `json:"guardian_type"`
 	Address      btypes.AccAddress `json:"address"`
 	Creator      btypes.AccAddress `json:"creator"`
 }

@@ -24,8 +24,8 @@ const (
 )
 
 type TxCreateValidator struct {
-	Operator       btypes.AccAddress       //操作者, self delegator
-	ConsPubKey      crypto.PubKey         //validator公钥
+	Operator    btypes.AccAddress     //操作者, self delegator
+	ConsPubKey  crypto.PubKey         //validator公钥
 	BondTokens  uint64                //绑定Token数量
 	IsCompound  bool                  //周期收益是否复投
 	Description types.Description     //描述信息
@@ -88,8 +88,8 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	validator := types.Validator{
 		OperatorAddress: valAddr,
-		Creator: tx.Operator,
-		ConsPubKey: tx.ConsPubKey,
+		Creator:         tx.Operator,
+		ConsPubKey:      tx.ConsPubKey,
 		BondTokens:      tx.BondTokens,
 		Description:     tx.Description,
 		Status:          types.Active,
@@ -144,7 +144,7 @@ func (tx *TxCreateValidator) GetSignData() (ret []byte) {
 }
 
 type TxModifyValidator struct {
-	ValidatorAddr          btypes.ValAddress    //节点所有账户
+	ValidatorAddr  btypes.ValAddress //节点所有账户
 	Description    types.Description //描述信息
 	CommissionRate *qtypes.Dec       //佣金比例
 }
@@ -153,7 +153,7 @@ var _ txs.ITx = (*TxModifyValidator)(nil)
 
 func NewModifyValidatorTx(validatorAddr btypes.ValAddress, description types.Description, commissionRate *qtypes.Dec) *TxModifyValidator {
 	return &TxModifyValidator{
-		ValidatorAddr:          validatorAddr,
+		ValidatorAddr:  validatorAddr,
 		Description:    description,
 		CommissionRate: commissionRate,
 	}
@@ -317,16 +317,16 @@ func (tx *TxRevokeValidator) GetSignData() (ret []byte) {
 }
 
 type TxActiveValidator struct {
-	ValidatorAddr      btypes.ValAddress //操作者
-	BondTokens uint64         //绑定Token数量
+	ValidatorAddr btypes.ValAddress //操作者
+	BondTokens    uint64            //绑定Token数量
 }
 
 var _ txs.ITx = (*TxActiveValidator)(nil)
 
 func NewActiveValidatorTx(validatorAddr btypes.ValAddress, bondTokens uint64) *TxActiveValidator {
 	return &TxActiveValidator{
-		ValidatorAddr:      validatorAddr,
-		BondTokens: bondTokens,
+		ValidatorAddr: validatorAddr,
+		BondTokens:    bondTokens,
 	}
 }
 

@@ -76,19 +76,19 @@ func validateValidators(validators []Validator) (err error) {
 }
 
 type ValidatorVoteInfoState struct {
-	ValidatorAddr  btypes.ValAddress     `json:"validator_addr"`
-	VoteInfo        ValidatorVoteInfo `json:"vote_info"`
+	ValidatorAddr btypes.ValAddress `json:"validator_addr"`
+	VoteInfo      ValidatorVoteInfo `json:"vote_info"`
 }
 
 type ValidatorVoteInWindowInfoState struct {
-	ValidatorAddr  btypes.ValAddress     `json:"validator_addr"`
-	Index           uint64        `json:"index"`
-	Vote            bool          `json:"vote"`
+	ValidatorAddr btypes.ValAddress `json:"validator_addr"`
+	Index         uint64            `json:"index"`
+	Vote          bool              `json:"vote"`
 }
 
 type DelegationInfoState struct {
-	DelegatorAddr   btypes.AccAddress `json:"delegator_addr"`
-	ValidatorAddr btypes.ValAddress  `json:"validator_addr"`
-	Amount          uint64         `json:"delegate_amount"`
-	IsCompound      bool           `json:"is_compound"`
+	DelegatorAddr btypes.AccAddress `json:"delegator_addr"`
+	ValidatorAddr btypes.ValAddress `json:"validator_addr"`
+	Amount        uint64            `json:"delegate_amount"`
+	IsCompound    bool              `json:"is_compound"`
 }

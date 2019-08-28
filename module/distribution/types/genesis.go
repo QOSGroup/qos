@@ -7,7 +7,7 @@ import (
 
 type GenesisState struct {
 	CommunityFeePool         btypes.BigInt                 `json:"community_fee_pool"`
-	LastBlockProposer        btypes.ConsAddress                `json:"last_block_proposer"`
+	LastBlockProposer        btypes.ConsAddress            `json:"last_block_proposer"`
 	PreDistributionQOSAmount btypes.BigInt                 `json:"pre_distribute_amount"`
 	ValidatorHistoryPeriods  []ValidatorHistoryPeriodState `json:"validators_history_period"`
 	ValidatorCurrentPeriods  []ValidatorCurrentPeriodState `json:"validators_current_period"`
@@ -49,34 +49,34 @@ func DefaultGenesisState() GenesisState {
 
 type ValidatorHistoryPeriodState struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	ConsPubKey      string     `json:"consensus_pubkey"`
-	Period          uint64          `json:"period"`
-	Summary         qtypes.Fraction `json:"summary"`
+	ConsPubKey      string            `json:"consensus_pubkey"`
+	Period          uint64            `json:"period"`
+	Summary         qtypes.Fraction   `json:"summary"`
 }
 
 type ValidatorCurrentPeriodState struct {
-	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	ConsPubKey      string     `json:"consensus_pubkey"`
+	OperatorAddress      btypes.ValAddress             `json:"validator_address"`
+	ConsPubKey           string                        `json:"consensus_pubkey"`
 	CurrentPeriodSummary ValidatorCurrentPeriodSummary `json:"current_period_summary"`
 }
 
 type DelegatorEarningStartState struct {
-	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	ConsPubKey      string     `json:"consensus_pubkey"`
-	DeleAddress                btypes.AccAddress             `json:"delegator_address"`
+	OperatorAddress            btypes.ValAddress          `json:"validator_address"`
+	ConsPubKey                 string                     `json:"consensus_pubkey"`
+	DeleAddress                btypes.AccAddress          `json:"delegator_address"`
 	DelegatorEarningsStartInfo DelegatorEarningsStartInfo `json:"earning_start_info"`
 }
 
 type DelegatorIncomeHeightState struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	ConsPubKey      string     `json:"consensus_pubkey"`
+	ConsPubKey      string            `json:"consensus_pubkey"`
 	DeleAddress     btypes.AccAddress `json:"delegator_address"`
-	Height          uint64         `json:"height"`
+	Height          uint64            `json:"height"`
 }
 
 type ValidatorEcoFeePoolState struct {
-	OperatorAddress btypes.ValAddress `json:"validator_address"`
-	EcoFeePool       ValidatorEcoFeePool `json:"eco_fee_pool"`
+	OperatorAddress btypes.ValAddress   `json:"validator_address"`
+	EcoFeePool      ValidatorEcoFeePool `json:"eco_fee_pool"`
 }
 
 func ValidateGenesis(_ GenesisState) error { return nil }
