@@ -113,6 +113,7 @@ func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address, addTokens u
 	if !exists {
 		return
 	}
+	mapper.Del(types.BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()))
 	validator.Status = types.Active
 	validator.BondTokens += addTokens
 

@@ -41,6 +41,21 @@ func ValidatorFeePoolInvariant(module string) qtypes.Invariant {
 		var count int
 
 		GetMapper(ctx).IteratorValidatorEcoFeePools(func(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool) {
+			if pool.ProposerTotalRewardFee.LT(btypes.ZeroInt()) {
+				count++
+				msg += fmt.Sprintf("validator %s has a negative fee pool proposerTotalRewardFee value %s\n",
+					validatorAddr.String(), pool.ProposerTotalRewardFee.String())
+			}
+			if pool.CommissionTotalRewardFee.LT(btypes.ZeroInt()) {
+				count++
+				msg += fmt.Sprintf("validator %s has a negative fee pool commissionTotalRewardFee value %s\n",
+					validatorAddr.String(), pool.CommissionTotalRewardFee.String())
+			}
+			if pool.PreDistributeTotalRewardFee.LT(btypes.ZeroInt()) {
+				count++
+				msg += fmt.Sprintf("validator %s has a negative fee pool preDistributeTotalRewardFee value %s\n",
+					validatorAddr.String(), pool.PreDistributeTotalRewardFee.String())
+			}
 			tokens := btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, pool.PreDistributeRemainTotalFee)}
 			coins = coins.Plus(tokens)
 			if !tokens.IsNotNegative() {
