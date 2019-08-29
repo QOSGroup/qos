@@ -63,8 +63,12 @@ qosInitAcc      local   address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8  4MFA7MtU
 
 参照[设置账户](../command/qosd.md#设置账户) 初始化账户信息：
 ```bash
-$ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos
+$ qosd add-genesis-accounts address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,49000000000000qos
 ```
+::: warning Note 
+QOS默认总发行100亿，通胀待发行总量51亿，`add-genesis-accounts`添加的所有账户QOS总量需要是49亿，而源码中QOS以万分之一为单位，
+所以通过`add-genesis-accounts`添加的账户QOS总量数值应为`49000000000000`，否则无法网络启动。
+:::
 
 * config-root-ca
 
