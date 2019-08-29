@@ -28,7 +28,11 @@ func DefaultGenesisState() GenesisState {
 
 func ValidateGenesis(gs GenesisState) error {
 	if gs.TotalQOSAmount == 0 {
-		return errors.New("total amount must positive")
+		return errors.New("total_qos_amount must be positive")
+	}
+
+	if gs.AppliedQOSAmount + gs.InflationPhrases.TotalAmount() != gs.TotalQOSAmount {
+		return errors.New("total_qos_amount must equals applied_qos_amount + sum(total_amount in inflation_phrases)")
 	}
 
 	return gs.InflationPhrases.Valid()

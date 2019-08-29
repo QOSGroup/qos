@@ -78,6 +78,15 @@ func (phrases InflationPhrases) Equals(ips InflationPhrases) bool {
 	return true
 }
 
+// 获取通胀总量
+func (phrases InflationPhrases) TotalAmount() (total uint64) {
+	for _, p := range phrases {
+		total += p.TotalAmount
+	}
+
+	return
+}
+
 // 获取时间点对应通胀阶段
 func (phrases InflationPhrases) GetPhrase(time time.Time) (phrase *InflationPhrase, exists bool) {
 	for _, p := range phrases {
