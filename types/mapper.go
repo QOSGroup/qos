@@ -25,3 +25,7 @@ type HooksMapperRegistry interface {
 type HooksMapper interface {
 	SetHooks(hooks Hooks)
 }
+
+type ParamsInitializer interface {
+	RegisterParamSet(ps ...ParamSet)
+}

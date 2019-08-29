@@ -123,6 +123,8 @@ func (mapper *Mapper) MakeValidatorActive(valAddress btypes.Address, addTokens u
 		return
 	}
 
+	mapper.Del(types.BuildValidatorByVotePower(validator.BondTokens, validator.ValidatorPubKey.Address().Bytes()))
+
 	bondTokens := validator.BondTokens + addTokens
 	qtypes.AssertUint64NotOverflow(bondTokens)
 

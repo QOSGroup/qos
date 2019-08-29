@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/qsc/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
@@ -11,8 +12,8 @@ import (
 )
 
 var (
-	_ types.AppModuleBasic   = AppModuleBasic{}
-	_ types.AppModuleGenesis = AppModule{}
+	_ types.AppModuleBasic = AppModuleBasic{}
+	_ types.AppModule      = AppModule{}
 )
 
 // app module basics object
@@ -56,8 +57,22 @@ type AppModule struct {
 	AppModuleBasic
 }
 
+func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
+	ir.RegisterInvarRoute(ModuleName, "amount", mapper.QSCsInvariant(ModuleName))
+}
+
+func (am AppModule) RegisterQuerier(types.QueryRegistry) {}
+
+func (am AppModule) BeginBlock(context.Context, abci.RequestBeginBlock) {}
+
+func (am AppModule) EndBlock(context.Context, abci.RequestEndBlock) []abci.ValidatorUpdate {
+	return []abci.ValidatorUpdate{}
+}
+
 func NewAppModule() types.AppModule {
-	return types.NewGenesisOnlyAppModule(AppModule{})
+	return AppModule{
+		AppModuleBasic{},
+	}
 }
 
 func (am AppModule) InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data json.RawMessage) []abci.ValidatorUpdate {

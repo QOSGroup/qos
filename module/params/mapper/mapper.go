@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/params/types"
+	qtypes "github.com/QOSGroup/qos/types"
 	"reflect"
 )
 
@@ -14,7 +15,7 @@ const MapperName = "params"
 type Mapper struct {
 	*mapper.BaseMapper
 
-	paramSets map[string]types.ParamSet
+	paramSets map[string]qtypes.ParamSet
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {
@@ -37,7 +38,7 @@ func GetMapper(ctx context.Context) *Mapper {
 func NewMapper() *Mapper {
 	var paramsMapper = Mapper{}
 	paramsMapper.BaseMapper = mapper.NewBaseMapper(nil, MapperName)
-	paramsMapper.paramSets = make(map[string]types.ParamSet)
+	paramsMapper.paramSets = make(map[string]qtypes.ParamSet)
 	return &paramsMapper
 }
 
@@ -50,7 +51,7 @@ func (mapper Mapper) Validate(paramSpace string, key string, value string) btype
 	return err
 }
 
-func (mapper Mapper) RegisterParamSet(ps ...types.ParamSet) {
+func (mapper Mapper) RegisterParamSet(ps ...qtypes.ParamSet) {
 	for _, ps := range ps {
 		if ps != nil {
 			if _, ok := mapper.paramSets[ps.GetParamSpace()]; ok {
@@ -61,14 +62,14 @@ func (mapper Mapper) RegisterParamSet(ps ...types.ParamSet) {
 	}
 }
 
-func (mapper Mapper) SetParamSet(params types.ParamSet) {
+func (mapper Mapper) SetParamSet(params qtypes.ParamSet) {
 	for _, pair := range params.KeyValuePairs() {
 		v := reflect.Indirect(reflect.ValueOf(pair.Value)).Interface()
 		mapper.Set(BuildParamKey(params.GetParamSpace(), []byte(pair.Key)), v)
 	}
 }
 
-func (mapper Mapper) GetParamSet(params types.ParamSet) {
+func (mapper Mapper) GetParamSet(params qtypes.ParamSet) {
 	for _, pair := range params.KeyValuePairs() {
 		mapper.Get(BuildParamKey(params.GetParamSpace(), pair.Key), pair.Value)
 	}
@@ -89,7 +90,7 @@ func (mapper Mapper) GetParam(paramSpace string, key string) (value interface{},
 	return
 }
 
-func (mapper Mapper) GetModuleParams(module string) (set types.ParamSet, exists bool) {
+func (mapper Mapper) GetModuleParams(module string) (set qtypes.ParamSet, exists bool) {
 	set, ok := mapper.paramSets[module]
 	if !ok {
 		return nil, false
@@ -98,7 +99,7 @@ func (mapper Mapper) GetModuleParams(module string) (set types.ParamSet, exists 
 	return set, true
 }
 
-func (mapper Mapper) GetModuleParamSet(module string) (set types.ParamSet, exists bool) {
+func (mapper Mapper) GetModuleParamSet(module string) (set qtypes.ParamSet, exists bool) {
 	set, ok := mapper.paramSets[module]
 	if !ok {
 		return nil, false
@@ -106,7 +107,7 @@ func (mapper Mapper) GetModuleParamSet(module string) (set types.ParamSet, exist
 	return set, true
 }
 
-func (mapper Mapper) GetParams() (params []types.ParamSet) {
+func (mapper Mapper) GetParams() (params []qtypes.ParamSet) {
 	for _, set := range mapper.paramSets {
 		mapper.GetParamSet(set)
 		params = append(params, set)
