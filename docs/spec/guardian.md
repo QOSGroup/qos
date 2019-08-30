@@ -17,8 +17,8 @@ const (
 type Guardian struct {
 	Description  string         `json:"description"`
 	GuardianType GuardianType   `json:"guardian_type"`  
-	Address      btypes.Address `json:"address"`
-	Creator      btypes.Address `json:"creator"` 
+	Address      btypes.AccAddress `json:"address"`
+	Creator      btypes.AccAddress `json:"creator"` 
 }
 ```
 
@@ -36,8 +36,8 @@ type Guardian struct {
 ```go
 type TxAddGuardian struct {
 	Description string         `json:"description"`
-	Address     btypes.Address `json:"address"`
-	Creator     btypes.Address `json:"creator"`
+	Address     btypes.AccAddress `json:"address"`
+	Creator     btypes.AccAddress `json:"creator"`
 }
 ```
 
@@ -53,8 +53,8 @@ type TxAddGuardian struct {
 删除特权账户
 ```go
 type TxDeleteGuardian struct {
-	Address   btypes.Address `json:"address"`   
-	DeletedBy btypes.Address `json:"deleted_by"`
+	Address   btypes.AccAddress `json:"address"`   
+	DeletedBy btypes.AccAddress `json:"deleted_by"`
 }
 ```
 
