@@ -87,7 +87,7 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 
 func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator [validator]",
+		Use:   "validator [validator-address]",
 		Short: "Query validator's info",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -184,7 +184,7 @@ func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 func queryDelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "delegations [delegator]",
+		Use:   "delegations [delegator-account-address]",
 		Short: "Query all delegations made by one delegator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -260,7 +260,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator-miss-vote",
+		Use:   "validator-miss-vote [validator-address]",
 		Short: "Query validator miss vote info in the nearest voting window",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -457,7 +457,7 @@ func getValidator(ctx context.CLIContext, validatorAddr btypes.ValAddress) (type
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.Validator{}, errors.New("owner does't have validator")
+		return types.Validator{}, errors.New("Validator not exists")
 	}
 
 	var validator types.Validator
@@ -482,7 +482,7 @@ func buildQueryOptions() client.ABCIQueryOptions {
 func queryUnbondingsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "unbondings [delegator]",
+		Use:   "unbondings [delegator-account-address]",
 		Short: "Query all unbonding delegations by delegator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -514,7 +514,7 @@ func queryUnbondingsCommand(cdc *go_amino.Codec) *cobra.Command {
 func queryRedelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "redelegations [delegator]",
+		Use:   "redelegations [delegator-account-address]",
 		Short: "Query all redelegations by delegator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {

@@ -79,12 +79,12 @@ func getDelegationByOwnerAndDelegator(ctx context.Context, validatorAddr btypes.
 
 	validator, exists := sm.GetValidator(validatorAddr)
 	if !exists {
-		return nil, fmt.Errorf("validator not exists. owner: %s", validatorAddr.String())
+		return nil, fmt.Errorf("Validator not exists. validator-address: %s", validatorAddr.String())
 	}
 
 	info, exists := sm.GetDelegationInfo(delegator, validator.GetValidatorAddress())
 	if !exists {
-		return nil, fmt.Errorf("delegationInfo not exists. owner: %s , deleAddr: %s", validatorAddr.String(), delegator.String())
+		return nil, fmt.Errorf("DelegationInfo not exists. validator-address: %s , deleAddr: %s", validatorAddr.String(), delegator.String())
 	}
 
 	result := infoToDelegationQueryResult(validator, info)
@@ -96,7 +96,7 @@ func getDelegationsByValidator(ctx context.Context, validatorAddr btypes.ValAddr
 
 	validator, exists := sm.GetValidator(validatorAddr)
 	if !exists {
-		return nil, fmt.Errorf("validator not exists. owner: %s", validatorAddr.String())
+		return nil, fmt.Errorf("Validator not exists. validator-address: %s", validatorAddr.String())
 	}
 
 	var result []DelegationQueryResult

@@ -460,16 +460,16 @@ func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, che
 	valMapper := mapper.GetMapper(ctx)
 	validator, exists := valMapper.GetValidator(validatorAddr)
 	if !exists {
-		return validator, types.ErrValidatorNotExists(types.DefaultCodeSpace, validatorAddr.String()+" is not a validator.")
+		return validator, types.ErrValidatorNotExists(types.DefaultCodeSpace, "Validator not exists.")
 	}
 
 	if checkOwner && !validator.Owner.Equals(owner) {
-		return validator, types.ErrOwnerNotMatch(types.DefaultCodeSpace, fmt.Sprintf("owner:%s does not have right operate validator:%s", owner, validatorAddr))
+		return validator, types.ErrOwnerNotMatch(types.DefaultCodeSpace, fmt.Sprintf("Owner:%s does not have right operate validator:%s", owner, validatorAddr))
 	}
 
 	if checkStatus {
 		if validator.Status != expectedStatus {
-			return validator, fmt.Errorf("validator status not match. except: %d, actual:%d", expectedStatus, validator.Status)
+			return validator, fmt.Errorf("Validator status not match. except: %d, actual:%d.", expectedStatus, validator.Status)
 		}
 	}
 	if checkJail {
