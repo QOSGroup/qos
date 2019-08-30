@@ -25,4 +25,11 @@ const (
 	flagCommissionRate          = "commission-rate"
 	flagCommissionMaxRate       = "commission-max-rate"
 	flagCommissionMaxChangeRate = "commission-max-change-rate"
+
+	flagReceiver        = "receiver"
+	flagTotalAmount     = "total-amount"
+	flagReleasedAmount  = "released-amount"
+	flagReleaseTime     = "release-time"
+	flagReleaseInterval = "release-interval"
+	flagReleaseTimes    = "release-times"
 )

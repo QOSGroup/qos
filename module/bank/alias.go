@@ -16,11 +16,15 @@ var (
 	DefaultGenesis  = types.DefaultGenesisState
 	ValidateGenesis = types.ValidateGenesis
 
-	TxCommands = client.TxCommands
+	TxCommands    = client.TxCommands
+	QueryCommands = client.QueryCommands
 
 	NeedInvariantCheck = mapper.NeedInvariantCheck
+
+	NewLockInfo = types.NewLockInfo
 )
 
 type (
 	GenesisState = types.GenesisState
+	LockInfo     = types.LockInfo
 )

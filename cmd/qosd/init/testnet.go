@@ -193,7 +193,7 @@ Example:
 			}
 
 			appState := app.ModuleBasics.DefaultGenesis()
-			appState[bank.ModuleName] = cdc.MustMarshalJSON(bank.NewGenesisState(genesisAccounts))
+			appState[bank.ModuleName] = cdc.MustMarshalJSON(bank.NewGenesisState(genesisAccounts, nil))
 			appState[guardian.ModuleName] = cdc.MustMarshalJSON(guardianState)
 			mintState := mint.DefaultGenesis()
 			mintState.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())

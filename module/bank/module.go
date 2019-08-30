@@ -46,7 +46,7 @@ func (amb AppModuleBasic) GetTxCmds(cdc *amino.Codec) []*cobra.Command {
 }
 
 func (amb AppModuleBasic) GetQueryCmds(cdc *amino.Codec) []*cobra.Command {
-	return []*cobra.Command{}
+	return QueryCommands(cdc)
 }
 
 func (amb AppModuleBasic) GetMapperAndHooks() types.MapperWithHooks {
