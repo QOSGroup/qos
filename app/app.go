@@ -274,13 +274,13 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	proposals := mapper.GetProposalsFiltered(ctx, nil, nil, gov.StatusDepositPeriod, 0)
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
-		mapper.RefundDeposits(ctx, proposalID, false)
+		mapper.RefundDeposits(ctx, proposalID, proposal.GetProposalLevel(), false)
 		mapper.DeleteProposal(proposalID)
 	}
 	proposals = mapper.GetProposalsFiltered(ctx, nil, nil, gov.StatusVotingPeriod, 0)
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
-		mapper.RefundDeposits(ctx, proposalID, false)
+		mapper.RefundDeposits(ctx, proposalID, proposal.GetProposalLevel(), false)
 		mapper.DeleteVotes(proposalID)
 		mapper.DeleteProposal(proposalID)
 	}

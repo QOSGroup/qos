@@ -73,7 +73,7 @@ func EndBlocker(ctx context.Context) {
 			fmt.Sprintf("proposal %d (%s) didn't meet minimum deposit of %d (had only %d); deleted",
 				inactiveProposal.ProposalID,
 				inactiveProposal.GetTitle(),
-				gm.GetParams(ctx).MinDeposit,
+				gm.GetLevelParams(ctx, inactiveProposal.GetProposalLevel()).MinDeposit,
 				inactiveProposal.TotalDeposit,
 			),
 		)
@@ -95,10 +95,10 @@ func EndBlocker(ctx context.Context) {
 
 		switch deductOprion {
 		case types.DepositDeductNone:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, false)
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, activeProposal.GetProposalLevel(), false)
 			break
 		case types.DepositDeductPart:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, activeProposal.GetProposalLevel(), true)
 			break
 		case types.DepositDeductAll:
 			gm.DeleteDeposits(ctx, activeProposal.ProposalID)
@@ -141,7 +141,7 @@ func EndBlocker(ctx context.Context) {
 			),
 		)
 
-		penalty := gm.GetParams(ctx).Penalty
+		penalty := gm.GetLevelParams(ctx, activeProposal.GetProposalLevel()).Penalty
 		if penalty.GT(qtypes.ZeroDec()) {
 			sm := stake.GetMapper(ctx)
 			var validators []stake.Validator

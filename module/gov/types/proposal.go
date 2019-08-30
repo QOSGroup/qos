@@ -32,6 +32,7 @@ type ProposalContent interface {
 	GetDescription() string
 	GetDeposit() uint64
 	GetProposalType() ProposalType
+	GetProposalLevel() ProposalLevel
 }
 
 type ProposalResult string
@@ -214,6 +215,24 @@ func (pt ProposalType) String() string {
 	}
 }
 
+// Turns VoteOption byte to String
+func (pt ProposalType) Level() ProposalLevel {
+	switch pt {
+	case ProposalTypeText:
+		return LevelNormal
+	case ProposalTypeParameterChange:
+		return LevelImportant
+	case ProposalTypeTaxUsage:
+		return LevelNormal
+	case ProposalTypeModifyInflation:
+		return LevelImportant
+	case ProposalTypeSoftwareUpgrade:
+		return LevelCritical
+	default:
+		return ""
+	}
+}
+
 // is defined GetProposalType?
 func ValidProposalType(pt ProposalType) bool {
 	if pt == ProposalTypeText ||
@@ -225,6 +244,17 @@ func ValidProposalType(pt ProposalType) bool {
 	}
 	return false
 }
+
+// proposal level
+type ProposalLevel string
+
+const (
+	LevelNormal    ProposalLevel = "normal"
+	LevelImportant ProposalLevel = "important"
+	LevelCritical  ProposalLevel = "critical"
+)
+
+var ProposalLevels = []ProposalLevel{LevelNormal, LevelImportant, LevelCritical}
 
 // Text Proposal
 type TextProposal struct {
@@ -245,10 +275,11 @@ func NewTextProposal(title, description string, deposit uint64) TextProposal {
 var _ ProposalContent = TextProposal{}
 
 // nolint
-func (tp TextProposal) GetTitle() string              { return tp.Title }
-func (tp TextProposal) GetDescription() string        { return tp.Description }
-func (tp TextProposal) GetDeposit() uint64            { return tp.Deposit }
-func (tp TextProposal) GetProposalType() ProposalType { return ProposalTypeText }
+func (tp TextProposal) GetTitle() string                { return tp.Title }
+func (tp TextProposal) GetDescription() string          { return tp.Description }
+func (tp TextProposal) GetDeposit() uint64              { return tp.Deposit }
+func (tp TextProposal) GetProposalType() ProposalType   { return ProposalTypeText }
+func (tp TextProposal) GetProposalLevel() ProposalLevel { return tp.GetProposalType().Level() }
 
 // TaxUsage Proposal
 type TaxUsageProposal struct {
@@ -327,12 +358,10 @@ func NewAddInflationPhrase(title, description string, deposit uint64, totalAmoun
 var _ ProposalContent = ModifyInflationProposal{}
 
 // nolint
-func (tp ModifyInflationProposal) GetTitle() string       { return tp.Title }
-func (tp ModifyInflationProposal) GetDescription() string { return tp.Description }
-func (tp ModifyInflationProposal) GetDeposit() uint64     { return tp.Deposit }
-func (tp ModifyInflationProposal) GetProposalType() ProposalType {
-	return ProposalTypeModifyInflation
-}
+func (tp ModifyInflationProposal) GetTitle() string              { return tp.Title }
+func (tp ModifyInflationProposal) GetDescription() string        { return tp.Description }
+func (tp ModifyInflationProposal) GetDeposit() uint64            { return tp.Deposit }
+func (tp ModifyInflationProposal) GetProposalType() ProposalType { return ProposalTypeModifyInflation }
 
 type Param struct {
 	Module string `json:"module"`
