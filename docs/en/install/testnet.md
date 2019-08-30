@@ -162,7 +162,7 @@ $ qoscli query account Peter --indent
   "type": "qbase/account/QOSAccount",
   "value": {
     "base_account": {
-      "account_address": "address1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s",
+      "account_address": "qosacc1epvxmtxx99gy5xv7k7sl55994pehxgqt03va2s",
       "public_key": {
         "type": "tendermint/PubKeyEd25519",
         "value": "D+pHqEJVjQMiRzl5PbL8FraVZqWqxrxcTF7akcCIDfo="

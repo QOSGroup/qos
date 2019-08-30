@@ -71,7 +71,7 @@ Note, strict routability for addresses is turned off in the config file.
 
 Example:
 
-	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos
+	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=qosacc16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos
 	`,
 		RunE: func(cmd *cobra.Command, args []string) error {
 			config := ctx.Config
