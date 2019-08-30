@@ -30,11 +30,12 @@ type TxCreateValidator struct {
 	IsCompound  bool                  //周期收益是否复投
 	Description types.Description     //描述信息
 	Commission  types.CommissionRates //佣金比例
+	Delegations []types.DelegationInfo //初始委托，仅在iniChainer中执行有效
 }
 
 var _ txs.ITx = (*TxCreateValidator)(nil)
 
-func NewCreateValidatorTx(operator btypes.AccAddress, bech32ConPubKey crypto.PubKey, bondTokens uint64, isCompound bool, description types.Description, commission types.CommissionRates) *TxCreateValidator {
+func NewCreateValidatorTx(operator btypes.AccAddress, bech32ConPubKey crypto.PubKey, bondTokens uint64, isCompound bool, description types.Description, commission types.CommissionRates, delegations []types.DelegationInfo) *TxCreateValidator {
 	return &TxCreateValidator{
 		Operator:    operator,
 		ConsPubKey:  bech32ConPubKey,
@@ -42,6 +43,7 @@ func NewCreateValidatorTx(operator btypes.AccAddress, bech32ConPubKey crypto.Pub
 		IsCompound:  isCompound,
 		Description: description,
 		Commission:  commission,
+		Delegations: delegations,
 	}
 }
 
@@ -55,6 +57,16 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 		len(tx.Operator) == 0 ||
 		tx.BondTokens <= 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+	}
+
+	if ctx.BlockHeader().Height == 0 && len(tx.Delegations) != 0 {
+		totalDelegation := uint64(0)
+		for _, delegation := range tx.Delegations {
+			totalDelegation += delegation.Amount
+		}
+		if totalDelegation != tx.BondTokens {
+			return types.ErrInvalidInput(types.DefaultCodeSpace, "validator bondTokens must equal sum(amount) of delegations")
+		}
 	}
 
 	err = tx.Commission.Validate()
@@ -106,9 +118,16 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 
 	sm.AfterValidatorCreated(ctx, valAddr)
 
-	// 初始化self-delegation
-	delegationInfo := types.NewDelegationInfo(delegatorAddr, valAddr, tx.BondTokens, tx.IsCompound)
-	sm.Delegate(ctx, delegationInfo, false)
+	// 初始化delegations
+	if ctx.BlockHeader().Height == 0 && len(tx.Delegations) != 0 {
+		for _, delegation := range tx.Delegations {
+			sm.Delegate(ctx, delegation, false)
+		}
+	} else {
+		delegationInfo := types.NewDelegationInfo(delegatorAddr, valAddr, tx.BondTokens, tx.IsCompound)
+		sm.Delegate(ctx, delegationInfo, false)
+
+	}
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(

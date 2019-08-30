@@ -227,6 +227,7 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 	var invalidTxFiles []string
 	var accsNotInGenesis []string
 	var accsNoEnoughQOS []string
+	var delegatonsNotEqual []string
 
 	for _, fo := range fos {
 		filename := filepath.Join(genTxsDir, fo.Name())
@@ -274,14 +275,29 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 			continue
 		}
 
-		delAcc, delOk := addrMap[ownerAddr.String()]
+		delegations := txCreateValidator.Delegations
+		if len(delegations) == 0 {
+			delegations = append(delegations, NewDelegationInfo(ownerAddr, btypes.ValAddress(ownerAddr), txCreateValidator.BondTokens, txCreateValidator.IsCompound))
+		}
+		totalDelegationAmount := uint64(0)
+		for _, delegation := range delegations {
+			totalDelegationAmount += delegation.Amount
+			delAcc, delOk := addrMap[delegation.DelegatorAddr.String()]
+			if !delOk {
+				accsNotInGenesis = append(accsNotInGenesis, simpleName+"-"+delegation.DelegatorAddr.String())
+				continue
+			} else if !delAcc.EnoughOfQOS(btypes.NewInt(int64(delegation.Amount))) {
+				accsNoEnoughQOS = append(accsNoEnoughQOS, simpleName+"-"+delegation.DelegatorAddr.String())
+				continue
+			} else {
+				delAcc.MustMinusQOS(btypes.NewInt(int64(delegation.Amount)))
+				addrMap[delAcc.AccountAddress.String()] = delAcc
+			}
+		}
 
-		if !delOk {
-			accsNotInGenesis = append(accsNotInGenesis, simpleName+"-"+ownerAddr.String())
-			continue
-		} else if !delAcc.EnoughOfQOS(btypes.NewInt(int64(txCreateValidator.BondTokens))) {
-			accsNoEnoughQOS = append(accsNoEnoughQOS, simpleName+"-"+ownerAddr.String())
-			continue
+		// bondTokens != sum(amount) of delegations
+		if totalDelegationAmount != txCreateValidator.BondTokens {
+			delegatonsNotEqual = append(delegatonsNotEqual, simpleName)
 		}
 
 		// exclude itself from persistent peers
@@ -302,6 +318,9 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 	}
 	if len(accsNoEnoughQOS) != 0 {
 		errorInfo += fmt.Sprintf("account(s) %v no enough QOS in genesis.json \n", strings.Join(accsNoEnoughQOS, " "))
+	}
+	if len(delegatonsNotEqual) != 0 {
+		errorInfo += fmt.Sprintf("validator's BondTokens not equals sum(Amount) of delegations in file(s) %v \n", strings.Join(delegatonsNotEqual, " "))
 	}
 
 	if len(errorInfo) != 0 {

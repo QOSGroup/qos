@@ -230,7 +230,7 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission), nil
+	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission, nil), nil
 }
 
 func BuildCommissionRates() (*types.CommissionRates, error) {

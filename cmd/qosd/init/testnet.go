@@ -144,7 +144,7 @@ Example:
 				if err != nil {
 					return err
 				}
-				txCreateValidator := stake.NewCreateValidatorTx(btypes.AccAddress(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission)
+				txCreateValidator := stake.NewCreateValidatorTx(btypes.AccAddress(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission, nil)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
 				if err != nil {
