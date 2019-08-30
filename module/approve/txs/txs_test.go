@@ -19,8 +19,8 @@ import (
 	"github.com/tendermint/tendermint/libs/log"
 )
 
-var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-var testToAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+var testFromAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+var testToAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 func genTestApprove() types.Approve {
 	return types.Approve{
@@ -29,7 +29,7 @@ func genTestApprove() types.Approve {
 		QOS:  btypes.NewInt(100),
 		QSCs: qtypes.QSCs{
 			{
-				Name:   "qstar",
+				Name:   "QSTAR",
 				Amount: btypes.NewInt(100),
 			},
 		},
@@ -41,25 +41,25 @@ func TestValidateData(t *testing.T) {
 	approve := genTestApprove()
 	require.NotNil(t, ValidateData(ctx, approve))
 
-	saveQSCInfo(ctx, "qstar")
+	saveQSCInfo(ctx, "QSTAR")
 	require.Nil(t, ValidateData(ctx, approve))
 
 	approve.QSCs = append(approve.QSCs, &qtypes.QSC{
-		Name:   "qstar",
+		Name:   "QSTAR",
 		Amount: btypes.NewInt(100),
 	})
 	require.NotNil(t, ValidateData(ctx, approve))
 
 	approve.QSCs = qtypes.QSCs{
 		{
-			Name:   "qos",
+			Name:   "QOS",
 			Amount: btypes.NewInt(100),
 		},
 	}
 	require.NotNil(t, ValidateData(ctx, approve))
 }
 
-func genTestAccount(addr btypes.Address) *qtypes.QOSAccount {
+func genTestAccount(addr btypes.AccAddress) *qtypes.QOSAccount {
 	return &qtypes.QOSAccount{
 		BaseAccount: bacc.BaseAccount{
 			AccountAddress: addr,
@@ -69,7 +69,7 @@ func genTestAccount(addr btypes.Address) *qtypes.QOSAccount {
 		QOS: btypes.NewInt(100),
 		QSCs: qtypes.QSCs{
 			{
-				Name:   "qstar",
+				Name:   "QSTAR",
 				Amount: btypes.NewInt(100),
 			},
 		},
@@ -78,8 +78,8 @@ func genTestAccount(addr btypes.Address) *qtypes.QOSAccount {
 
 func genApproveCancelTx() TxCancelApprove {
 	return TxCancelApprove{
-		From: btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
-		To:   btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
+		From: btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address()),
+		To:   btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address()),
 	}
 }
 
@@ -120,7 +120,7 @@ func saveQSCInfo(ctx context.Context, qscName string) {
 
 func defaultContextWithQSC() context.Context {
 	ctx := defaultContext()
-	saveQSCInfo(ctx, "qstar")
+	saveQSCInfo(ctx, "QSTAR")
 	return ctx
 }
 
@@ -253,8 +253,8 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 	require.NotNil(t, useTx.ValidateData(ctx))
 
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.From)))
-	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.To)))
+	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.From)))
+	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.To)))
 
 	require.Nil(t, useTx.ValidateData(ctx))
 
@@ -267,7 +267,7 @@ func TestTxApproveUse_GetSigner(t *testing.T) {
 	useTx := TxUseApprove{
 		genTestApprove(),
 	}
-	require.Equal(t, useTx.GetSigner(), []btypes.Address{useTx.To})
+	require.Equal(t, useTx.GetSigner(), []btypes.AccAddress{useTx.To})
 }
 
 func TestTxApproveUse_GetGasPayer(t *testing.T) {
@@ -287,8 +287,8 @@ func TestTxApproveUse_Exec(t *testing.T) {
 		genTestApprove(),
 	}
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.From)))
-	accountMapper.SetAccount(genTestAccount(btypes.Address(useTx.To)))
+	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.From)))
+	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.To)))
 
 	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	approveMapper.SaveApprove(createTx.Approve)
@@ -340,7 +340,7 @@ func TestTxApproveCancel_Exec(t *testing.T) {
 
 func TestTxApproveCancel_GetSigner(t *testing.T) {
 	cancelTx := genApproveCancelTx()
-	require.Equal(t, cancelTx.GetSigner(), []btypes.Address{cancelTx.From})
+	require.Equal(t, cancelTx.GetSigner(), []btypes.AccAddress{cancelTx.From})
 }
 
 func TestTxApproveCancel_GetGasPayer(t *testing.T) {

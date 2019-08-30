@@ -26,27 +26,27 @@ var (
 	ParamSpace = "stake"
 
 	// keys for stake p
-	KeyMaxValidatorCnt             = []byte("max_validator_cnt")
-	KeyValidatorVotingStatusLen    = []byte("voting_status_len")
-	KeyValidatorVotingStatusLeast  = []byte("voting_status_least")
-	KeyValidatorSurvivalSecs       = []byte("survival_secs")
-	KeyDelegatorUnbondReturnHeight = []byte("unbond_return_height")
-	KeyDelegatorRedelegationHeight = []byte("redelegation_height")
-	KeyMaxEvidenceAge              = []byte("max_evidence_age")
-	KeySlashFractionDoubleSign     = []byte("slash_fraction_double_sign")
-	KeySlashFractionDowntime       = []byte("slash_fraction_downtime")
+	KeyMaxValidatorCnt                   = []byte("max_validator_cnt")
+	KeyValidatorVotingStatusLen          = []byte("voting_status_len")
+	KeyValidatorVotingStatusLeast        = []byte("voting_status_least")
+	KeyValidatorSurvivalSecs             = []byte("survival_secs")
+	KeyDelegatorUnbondFrozenHeight       = []byte("unbond_frozen_height")
+	KeyDelegatorRedelegationActiveHeight = []byte("redelegation_active_height")
+	KeyMaxEvidenceAge                    = []byte("max_evidence_age")
+	KeySlashFractionDoubleSign           = []byte("slash_fraction_double_sign")
+	KeySlashFractionDowntime             = []byte("slash_fraction_downtime")
 )
 
 type Params struct {
-	MaxValidatorCnt             uint32        `json:"max_validator_cnt"`
-	ValidatorVotingStatusLen    uint32        `json:"voting_status_len"`
-	ValidatorVotingStatusLeast  uint32        `json:"voting_status_least"`
-	ValidatorSurvivalSecs       uint32        `json:"survival_secs"`
-	DelegatorUnbondReturnHeight uint32        `json:"unbond_return_height"`
-	DelegatorRedelegationHeight uint32        `json:"redelegation_height"`
-	MaxEvidenceAge              time.Duration `json:"max_evidence_age"`
-	SlashFractionDoubleSign     types.Dec     `json:"slash_fraction_double_sign"`
-	SlashFractionDowntime       types.Dec     `json:"slash_fraction_downtime"`
+	MaxValidatorCnt                   uint32        `json:"max_validator_cnt"`
+	ValidatorVotingStatusLen          uint32        `json:"voting_status_len"`
+	ValidatorVotingStatusLeast        uint32        `json:"voting_status_least"`
+	ValidatorSurvivalSecs             uint32        `json:"survival_secs"`
+	DelegatorUnbondFrozenHeight       uint32        `json:"unbond_frozen_height"`
+	DelegatorRedelegationActiveHeight uint32        `json:"redelegation_active_height"`
+	MaxEvidenceAge                    time.Duration `json:"max_evidence_age"`
+	SlashFractionDoubleSign           types.Dec     `json:"slash_fraction_double_sign"`
+	SlashFractionDowntime             types.Dec     `json:"slash_fraction_downtime"`
 }
 
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
@@ -55,8 +55,8 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 		{KeyValidatorVotingStatusLen, &p.ValidatorVotingStatusLen},
 		{KeyValidatorVotingStatusLeast, &p.ValidatorVotingStatusLeast},
 		{KeyValidatorSurvivalSecs, &p.ValidatorSurvivalSecs},
-		{KeyDelegatorUnbondReturnHeight, &p.DelegatorUnbondReturnHeight},
-		{KeyDelegatorRedelegationHeight, &p.DelegatorRedelegationHeight},
+		{KeyDelegatorUnbondFrozenHeight, &p.DelegatorUnbondFrozenHeight},
+		{KeyDelegatorRedelegationActiveHeight, &p.DelegatorRedelegationActiveHeight},
 		{KeyMaxEvidenceAge, &p.MaxEvidenceAge},
 		{KeySlashFractionDoubleSign, &p.SlashFractionDoubleSign},
 		{KeySlashFractionDowntime, &p.SlashFractionDowntime},
@@ -69,8 +69,8 @@ func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) 
 		string(KeyValidatorVotingStatusLen),
 		string(KeyValidatorVotingStatusLeast),
 		string(KeyValidatorSurvivalSecs),
-		string(KeyDelegatorUnbondReturnHeight),
-		string(KeyDelegatorRedelegationHeight),
+		string(KeyDelegatorUnbondFrozenHeight),
+		string(KeyDelegatorRedelegationActiveHeight),
 		string(KeyMaxEvidenceAge):
 		v, err := strconv.ParseUint(value, 10, 64)
 		if err != nil || v <= 0 {
@@ -87,19 +87,19 @@ func (p *Params) GetParamSpace() string {
 }
 
 func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs,
-	delegatorUnbondReturnHeight uint32, delegatorRedelegationHeight uint32, maxEvidenceAge time.Duration,
+	delegatorUnbondFrozenHeight uint32, delegatorRedelegationActiveHeight uint32, maxEvidenceAge time.Duration,
 	slashFractionDoubleSign types.Dec, slashFractionDowntime types.Dec) Params {
 
 	return Params{
-		MaxValidatorCnt:             maxValidatorCnt,
-		ValidatorVotingStatusLen:    validatorVotingStatusLen,
-		ValidatorVotingStatusLeast:  validatorVotingStatusLeast,
-		ValidatorSurvivalSecs:       validatorSurvivalSecs,
-		DelegatorUnbondReturnHeight: delegatorUnbondReturnHeight,
-		DelegatorRedelegationHeight: delegatorRedelegationHeight,
-		MaxEvidenceAge:              maxEvidenceAge,
-		SlashFractionDoubleSign:     slashFractionDoubleSign,
-		SlashFractionDowntime:       slashFractionDowntime,
+		MaxValidatorCnt:                   maxValidatorCnt,
+		ValidatorVotingStatusLen:          validatorVotingStatusLen,
+		ValidatorVotingStatusLeast:        validatorVotingStatusLeast,
+		ValidatorSurvivalSecs:             validatorSurvivalSecs,
+		DelegatorUnbondFrozenHeight:       delegatorUnbondFrozenHeight,
+		DelegatorRedelegationActiveHeight: delegatorRedelegationActiveHeight,
+		MaxEvidenceAge:                    maxEvidenceAge,
+		SlashFractionDoubleSign:           slashFractionDoubleSign,
+		SlashFractionDowntime:             slashFractionDowntime,
 	}
 }
 

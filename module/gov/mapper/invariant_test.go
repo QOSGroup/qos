@@ -13,7 +13,7 @@ import (
 
 func TestDepositInvariant(t *testing.T) {
 	ctx := defaultContext()
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	am := baseabci.GetAccountMapper(ctx)
 	am.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(1000), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})

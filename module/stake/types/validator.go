@@ -3,6 +3,7 @@ package types
 import (
 	"time"
 
+	"github.com/QOSGroup/qos/codec"
 	"github.com/tendermint/tendermint/crypto"
 
 	btypes "github.com/QOSGroup/qbase/types"
@@ -35,11 +36,12 @@ type Description struct {
 }
 
 type Validator struct {
-	Owner           btypes.Address `json:"owner"`
-	ValidatorPubKey crypto.PubKey  `json:"pub_key"`
-	BondTokens      uint64         `json:"bond_tokens"` //不能超过int64最大值
-	Description     Description    `json:"description"`
-	Commission      Commission     `json:"commission"`
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	Owner           btypes.AccAddress `json:"owner"`
+	ConsPubKey      crypto.PubKey     `json:"consensus_pubkey"`
+	BondTokens      uint64            `json:"bond_tokens"` //不能超过int64最大值
+	Description     Description       `json:"description"`
+	Commission      Commission        `json:"commission"`
 
 	Status         int8         `json:"status"`
 	InactiveCode   InactiveCode `json:"inactive_code"`
@@ -50,23 +52,42 @@ type Validator struct {
 	BondHeight uint64 `json:"bond_height"`
 }
 
-func (val Validator) GetValidatorAddress() btypes.Address {
-	return btypes.Address(val.ValidatorPubKey.Address())
+type jsonifyValidator struct {
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	Owner           btypes.AccAddress `json:"owner"`
+	ConsPubKey      string            `json:"consensus_pubkey"`
+	BondTokens      uint64            `json:"bond_tokens"`
+	Description     Description       `json:"description"`
+
+	Status         int8         `json:"status"`
+	InactiveCode   InactiveCode `json:"inactive_code"`
+	InactiveTime   time.Time    `json:"inactive_time"`
+	InactiveHeight uint64       `json:"inactive_height"`
+
+	MinPeriod  uint64 `json:"min_period"`
+	BondHeight uint64 `json:"bond_height"`
+}
+
+func (val Validator) ConsAddress() btypes.ConsAddress {
+	return btypes.ConsAddress(val.ConsPubKey.Address())
+}
+
+func (val Validator) ConsensusPower() int64 {
+	return int64(val.BondTokens)
 }
 
 func (val Validator) ToABCIValidator() (abciVal abci.Validator) {
-	// abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ValidatorPubKey)
-	abciVal.Power = int64(val.BondTokens)
-	abciVal.Address = val.ValidatorPubKey.Address()
+	abciVal.Power = val.ConsensusPower()
+	abciVal.Address = val.ConsAddress()
 	return
 }
 
 func (val Validator) ToABCIValidatorUpdate(isRemoved bool) (abciVal abci.ValidatorUpdate) {
-	abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ValidatorPubKey)
+	abciVal.PubKey = tmtypes.TM2PB.PubKey(val.ConsPubKey)
 	if isRemoved {
 		abciVal.Power = int64(0)
 	} else {
-		abciVal.Power = int64(val.BondTokens)
+		abciVal.Power = val.ConsensusPower()
 	}
 	return
 }
@@ -79,10 +100,68 @@ func (val Validator) GetBondTokens() uint64 {
 	return val.BondTokens
 }
 
-func (val Validator) GetValidatorPubKey() crypto.PubKey {
-	return val.ValidatorPubKey
+func (val Validator) GetConsensusPubKey() crypto.PubKey {
+	return val.ConsPubKey
 }
 
-func (val Validator) GetOwner() btypes.Address {
+func (val Validator) GetOwner() btypes.AccAddress {
 	return val.Owner
+}
+
+func (val Validator) MarshalJSON() ([]byte, error) {
+	bechPubKey, err := btypes.ConsensusPubKeyString(val.ConsPubKey)
+	if err != nil {
+		return nil, err
+	}
+
+	return codec.Cdc.MarshalJSON(jsonifyValidator{
+		OperatorAddress: val.OperatorAddress,
+		Owner:           val.Owner,
+		ConsPubKey:      bechPubKey,
+		BondTokens:      val.BondTokens,
+		Description:     val.Description,
+
+		Status:         val.Status,
+		InactiveCode:   val.InactiveCode,
+		InactiveTime:   val.InactiveTime,
+		InactiveHeight: val.InactiveHeight,
+
+		MinPeriod:  val.MinPeriod,
+		BondHeight: val.BondHeight,
+	})
+}
+
+func (val *Validator) UnmarshalJSON(data []byte) error {
+
+	jv := &jsonifyValidator{}
+	if err := codec.Cdc.UnmarshalJSON(data, jv); err != nil {
+		return err
+	}
+
+	consPubKey, err := btypes.GetConsensusPubKeyBech32(jv.ConsPubKey)
+	if err != nil {
+		return err
+	}
+
+	*val = Validator{
+		OperatorAddress: jv.OperatorAddress,
+		Owner:           jv.Owner,
+		ConsPubKey:      consPubKey,
+		BondTokens:      jv.BondTokens,
+		Description:     jv.Description,
+
+		Status:         jv.Status,
+		InactiveCode:   jv.InactiveCode,
+		InactiveTime:   jv.InactiveTime,
+		InactiveHeight: jv.InactiveHeight,
+
+		MinPeriod:  jv.MinPeriod,
+		BondHeight: jv.BondHeight,
+	}
+
+	return nil
+}
+
+func (val Validator) GetValidatorAddress() btypes.ValAddress {
+	return val.OperatorAddress
 }

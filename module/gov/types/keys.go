@@ -28,12 +28,12 @@ func KeyProposal(proposalID uint64) []byte {
 }
 
 // Key for getting a specific deposit from the store
-func KeyDeposit(proposalID uint64, depositorAddr btypes.Address) []byte {
+func KeyDeposit(proposalID uint64, depositorAddr btypes.AccAddress) []byte {
 	return []byte(fmt.Sprintf("deposits:%d:%s", proposalID, depositorAddr.String()))
 }
 
 // Key for getting a specific vote from the store
-func KeyVote(proposalID uint64, voterAddr btypes.Address) []byte {
+func KeyVote(proposalID uint64, voterAddr btypes.AccAddress) []byte {
 	return []byte(fmt.Sprintf("votes:%d:%s", proposalID, voterAddr.String()))
 }
 

@@ -19,7 +19,7 @@ func GetMapper(ctx context.Context) *account.AccountMapper {
 	return baseabci.GetAccountMapper(ctx)
 }
 
-func GetAccount(ctx context.Context, addr btypes.Address) *qtypes.QOSAccount {
+func GetAccount(ctx context.Context, addr btypes.AccAddress) *qtypes.QOSAccount {
 	account := baseabci.GetAccountMapper(ctx).GetAccount(addr)
 	if account != nil {
 		return account.(*qtypes.QOSAccount)

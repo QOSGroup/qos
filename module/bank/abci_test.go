@@ -41,8 +41,8 @@ func TestReleaseLockedAccount(t *testing.T) {
 	require.False(t, exists)
 
 	// init lock info
-	lockAddress := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	receiverAddress := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	lockAddress := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	receiverAddress := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	totalAmount := uint64(10000000000000)
 	releasedAmountInit := uint64(8333332)
 	releaseTime := ctx.BlockHeader().Time.Add(-time.Hour)

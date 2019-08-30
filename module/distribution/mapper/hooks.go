@@ -21,12 +21,12 @@ func (hooks *StakingHooks) HookMapper() string {
 }
 
 // 创建validator时初始化分配信息
-func (hooks *StakingHooks) AfterValidatorCreated(ctx context.Context, val btypes.Address) {
+func (hooks *StakingHooks) AfterValidatorCreated(ctx context.Context, val btypes.ValAddress) {
 	GetMapper(ctx).InitValidatorPeriodSummaryInfo(val)
 }
 
 // 删除validator时分配处理逻辑
-func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btypes.Address) {
+func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btypes.ValAddress) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 
@@ -62,7 +62,7 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 		sm.DelDelegationInfo(delAddr, val)
 
 		//unbond height
-		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
+		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondFrozenHeight) + uint64(ctx.BlockHeight())
 		sm.AddUnbondingDelegation(stake.NewUnbondingInfo(delAddr, val, uint64(ctx.BlockHeight()), unbondHeight, unbondToken))
 	}
 
@@ -71,7 +71,7 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 }
 
 // 创建delegation时初始化分配信息
-func (hooks *StakingHooks) AfterDelegationCreated(ctx context.Context, val btypes.Address, del btypes.Address) {
+func (hooks *StakingHooks) AfterDelegationCreated(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress) {
 	delegation, exists := stake.GetMapper(ctx).GetDelegationInfo(del, val)
 	if !exists {
 		panic(fmt.Sprintf("delegation from %s to %s not exists", del, val))
@@ -80,7 +80,7 @@ func (hooks *StakingHooks) AfterDelegationCreated(ctx context.Context, val btype
 }
 
 // 更新绑定tokens时分配处理逻辑
-func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateAmount uint64) {
+func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress, updateAmount uint64) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 	validator, exists := sm.GetValidator(val)

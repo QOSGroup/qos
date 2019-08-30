@@ -25,7 +25,7 @@ const (
 
 // create QSC
 type TxCreateQSC struct {
-	Creator     btypes.Address       `json:"creator"`     //QSC创建账户
+	Creator     btypes.AccAddress    `json:"creator"`     //QSC创建账户
 	Extrate     string               `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
 	QSCCA       *cert.Certificate    `json:"qsc_crt"`     //CA信息
 	Description string               `json:"description"` //描述信息
@@ -130,15 +130,15 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 	return
 }
 
-func (tx TxCreateQSC) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Creator}
+func (tx TxCreateQSC) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Creator}
 }
 
 func (tx TxCreateQSC) CalcGas() btypes.BigInt {
 	return btypes.NewInt(int64(GasForCreateQSC))
 }
 
-func (tx TxCreateQSC) GetGasPayer() btypes.Address {
+func (tx TxCreateQSC) GetGasPayer() btypes.AccAddress {
 	return tx.Creator
 }
 
@@ -157,9 +157,9 @@ func (tx TxCreateQSC) GetSignData() (ret []byte) {
 
 // issue QSC
 type TxIssueQSC struct {
-	QSCName string         `json:"qsc_name"` //币名
-	Amount  btypes.BigInt  `json:"amount"`   //金额
-	Banker  btypes.Address `json:"banker"`   //banker地址
+	QSCName string            `json:"qsc_name"` //币名
+	Amount  btypes.BigInt     `json:"amount"`   //金额
+	Banker  btypes.AccAddress `json:"banker"`   //banker地址
 }
 
 func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
@@ -229,15 +229,15 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	return
 }
 
-func (tx TxIssueQSC) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Banker}
+func (tx TxIssueQSC) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Banker}
 }
 
 func (tx TxIssueQSC) CalcGas() btypes.BigInt {
 	return btypes.NewInt(int64(GasForIssueQSC))
 }
 
-func (tx TxIssueQSC) GetGasPayer() btypes.Address {
+func (tx TxIssueQSC) GetGasPayer() btypes.AccAddress {
 	return tx.Banker
 }
 

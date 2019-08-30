@@ -32,15 +32,16 @@ func TestValidatorMapper(t *testing.T) {
 
 	validator := types.Validator{
 		Description:     types.Description{Moniker: "test"},
-		Owner:           btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
-		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
+		OperatorAddress: btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address()),
+		Owner:           btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address()),
+		ConsPubKey:      ed25519.GenPrivKey().PubKey(),
 		BondTokens:      500,
 		Status:          types.Active,
 		MinPeriod:       0,
 		BondHeight:      1,
 	}
 
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
+	valAddr := validator.GetValidatorAddress()
 	key := types.BuildValidatorKey(valAddr)
 	validatorMapper.Set(key, validator)
 
@@ -51,7 +52,7 @@ func TestValidatorMapper(t *testing.T) {
 
 	now := uint64(time.Now().UTC().Unix())
 	for i := uint64(0); i <= uint64(100); i++ {
-		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+		addr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 		validatorMapper.Set(types.BuildInactiveValidatorKey(now+i, addr), i)
 	}
 
@@ -69,7 +70,7 @@ func TestValidatorMapper(t *testing.T) {
 	require.Equal(t, 20, i)
 
 	for i := uint64(100); i <= uint64(200); i++ {
-		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+		addr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 		validatorMapper.Set(types.BuildValidatorByVotePower(i, addr), 1)
 	}
 
@@ -105,7 +106,7 @@ func TestVoteInfoMapper(t *testing.T) {
 
 	sm := mapper.GetMapper(ctx)
 
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 	voteInfo := types.NewValidatorVoteInfo(1, 1, 1)
 
 	sm.SetValidatorVoteInfo(addr, voteInfo)

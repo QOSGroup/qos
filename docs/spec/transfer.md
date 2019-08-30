@@ -5,12 +5,12 @@
 * Struct
 ```go
 type TransItem struct {
-	Address btypes.Address `json:"addr"` // 账户地址
+	Address btypes.AccAddress `json:"addr"` // 账户地址
 	QOS     btypes.BigInt  `json:"qos"`  // QOS
 	QSCs    types.QSCs     `json:"qscs"` // QSCs
 }
 
-type TransItems []TransItem 
+type TransItems []TransItem
 
 type TxTransfer struct {
 	Senders   TransItems `json:"senders"`   // 发送集合

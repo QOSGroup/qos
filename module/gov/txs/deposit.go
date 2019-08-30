@@ -12,12 +12,12 @@ import (
 )
 
 type TxDeposit struct {
-	ProposalID uint64         `json:"proposal_id"` // ID of the proposal
-	Depositor  btypes.Address `json:"depositor"`   // Address of the depositor
-	Amount     uint64         `json:"amount"`      // Percent of QOS to add to the proposal's deposit
+	ProposalID uint64            `json:"proposal_id"` // ID of the proposal
+	Depositor  btypes.AccAddress `json:"depositor"`   // Address of the depositor
+	Amount     uint64            `json:"amount"`      // Percent of QOS to add to the proposal's deposit
 }
 
-func NewTxDeposit(proposalID uint64, depositor btypes.Address, amount uint64) *TxDeposit {
+func NewTxDeposit(proposalID uint64, depositor btypes.AccAddress, amount uint64) *TxDeposit {
 	return &TxDeposit{
 		ProposalID: proposalID,
 		Depositor:  depositor,
@@ -80,15 +80,15 @@ func (tx TxDeposit) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 	return
 }
 
-func (tx TxDeposit) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Depositor}
+func (tx TxDeposit) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Depositor}
 }
 
 func (tx TxDeposit) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxDeposit) GetGasPayer() btypes.Address {
+func (tx TxDeposit) GetGasPayer() btypes.AccAddress {
 	return tx.Depositor
 }
 

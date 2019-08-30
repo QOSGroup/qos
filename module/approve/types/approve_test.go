@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-var testToAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+var testFromAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+var testToAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 func genTestApprove() Approve {
 	return Approve{

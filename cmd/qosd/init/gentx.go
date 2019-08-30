@@ -3,6 +3,10 @@ package init
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/QOSGroup/qbase/client/context"
 	clikeys "github.com/QOSGroup/qbase/client/keys"
 	"github.com/QOSGroup/qbase/keys"
@@ -18,9 +22,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func GenTxCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
@@ -51,14 +52,14 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 			owner := viper.GetString(flagOwner)
 			var info keys.Info
 			if len(owner) == 0 {
-				return errors.New("owner is empty")
+				return errors.New("creator is empty")
 			}
 			keybase, err := clikeys.GetKeyBaseFromDir(cliCtx, viper.GetString(flagClientHome))
 			if err != nil {
 				return err
 			}
-			if strings.HasPrefix(owner, btypes.PREF_ADD) {
-				addr, err := btypes.GetAddrFromBech32(owner)
+			if strings.HasPrefix(owner, btypes.GetAddressConfig().GetBech32AccountAddrPrefix()) {
+				addr, err := btypes.AccAddressFromBech32(owner)
 				if err != nil {
 					return err
 				}
@@ -109,7 +110,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	}
 
 	cmd.Flags().String(flagMoniker, "", "name for validator")
-	cmd.Flags().String(flagOwner, "", "keystore name or account address")
+	cmd.Flags().String(flagOwner, "", "keystore name or account address for validator's owner")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
@@ -129,13 +130,13 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	return cmd
 }
 
-func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, address btypes.Address, amount btypes.BigInt) error {
+func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, address btypes.AccAddress, amount btypes.BigInt) error {
 	accountIsInGenesis := false
 
 	var bankState bank.GenesisState
 	cdc.MustUnmarshalJSON(genesisState[bank.ModuleName], &bankState)
 	for _, acc := range bankState.Accounts {
-		if acc.AccountAddress.EqualsTo(address) {
+		if acc.AccountAddress.Equals(address) {
 
 			if !acc.EnoughOfQOS(amount) {
 				return fmt.Errorf(

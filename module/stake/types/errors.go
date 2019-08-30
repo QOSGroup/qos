@@ -12,7 +12,7 @@ const (
 	CodeOwnerNotExists                   btypes.CodeType = 502 // Owner账户不存在
 	CodeOwnerNoEnoughToken               btypes.CodeType = 503 // Owner账户Tokens不足
 	CodeValidatorExists                  btypes.CodeType = 504 // Validator已存在
-	CodeOwnerHasValidator                btypes.CodeType = 505 // Owner已绑定有Validator
+	CodeConsensusHasValidator            btypes.CodeType = 505 // Owner已绑定有Validator
 	CodeValidatorNotExists               btypes.CodeType = 506 // Validator不存在
 	CodeValidatorIsActive                btypes.CodeType = 507 // Validator处于激活状态
 	CodeValidatorIsInactive              btypes.CodeType = 508 // Validator处于非激活状态
@@ -24,6 +24,7 @@ const (
 	CodeErrCommissionChangeRateGTMaxRate btypes.CodeType = 514 // Validator处于非激活状态时收益非法
 	CodeErrCommissionUpdateTime          btypes.CodeType = 515 // Validator处于非激活状态时收益非法
 	CodeErrCommissionGTMaxChangeRate     btypes.CodeType = 516 // Validator处于非激活状态时收益非法
+	CoderErrOwnerNotMatch                btypes.CodeType = 517 // validator owner不匹配
 )
 
 func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
@@ -49,8 +50,8 @@ func codeToDefaultMsg(code btypes.CodeType) string {
 		return "owner has no enough token"
 	case CodeValidatorExists:
 		return "validator exists"
-	case CodeOwnerHasValidator:
-		return "owner already bind a validator"
+	case CodeConsensusHasValidator:
+		return "consensus pubkey already bind a validator"
 	case CodeValidatorNotExists:
 		return "validator not exists"
 	case CodeValidatorIsActive:
@@ -73,6 +74,8 @@ func codeToDefaultMsg(code btypes.CodeType) string {
 		return "commission cannot be changed more than once in 24h"
 	case CodeErrCommissionGTMaxChangeRate:
 		return "commission cannot be changed more than max change rate"
+	case CoderErrOwnerNotMatch:
+		return "validator owner not match"
 	default:
 		return btypes.CodeToDefaultMsg(code)
 	}
@@ -94,8 +97,8 @@ func ErrValidatorExists(codeSpace btypes.CodespaceType, msg string) btypes.Error
 	return newError(codeSpace, CodeValidatorExists, msg)
 }
 
-func ErrOwnerHasValidator(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeOwnerHasValidator, msg)
+func ErrConsensusHasValidator(codeSpace btypes.CodespaceType, msg string) btypes.Error {
+	return newError(codeSpace, CodeConsensusHasValidator, msg)
 }
 
 func ErrValidatorNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
@@ -140,4 +143,8 @@ func ErrCommissionUpdateTime(codeSpace btypes.CodespaceType) btypes.Error {
 
 func ErrCommissionGTMaxChangeRate(codeSpace btypes.CodespaceType) btypes.Error {
 	return newError(codeSpace, CodeErrCommissionGTMaxChangeRate, "")
+}
+
+func ErrOwnerNotMatch(codeSpace btypes.CodespaceType, msg string) btypes.Error {
+	return newError(codeSpace, CoderErrOwnerNotMatch, msg)
 }

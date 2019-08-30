@@ -28,7 +28,7 @@ func (mapper *Mapper) Copy() mapper.IMapper {
 }
 
 // 获取授权
-func (mapper *Mapper) GetApprove(from btypes.Address, to btypes.Address) (types.Approve, bool) {
+func (mapper *Mapper) GetApprove(from btypes.AccAddress, to btypes.AccAddress) (types.Approve, bool) {
 	approve := types.Approve{}
 	key := types.BuildApproveKey(from, to)
 	exists := mapper.BaseMapper.Get(key, &approve)
@@ -42,7 +42,7 @@ func (mapper *Mapper) SaveApprove(approve types.Approve) {
 }
 
 // 删除授权
-func (mapper *Mapper) DeleteApprove(from btypes.Address, to btypes.Address) {
+func (mapper *Mapper) DeleteApprove(from btypes.AccAddress, to btypes.AccAddress) {
 	key := types.BuildApproveKey(from, to)
 	mapper.BaseMapper.Del(key)
 }

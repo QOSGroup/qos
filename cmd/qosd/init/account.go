@@ -3,6 +3,7 @@ package init
 import (
 	"errors"
 	"fmt"
+
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/mint"
@@ -27,7 +28,7 @@ Multiple accounts separated by ';'.
 
 Example:
 
-	qosd add-genesis-accounts "address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos;address1auhqphrnk74jx2c5n80m9pdgl0ln79tyz32xlc,100000qos"
+	qosd add-genesis-accounts "qosacc128xejc2f9lp7pjm56j8sahcvkxan9lqfqp6azy,1000000qos;qosacc12kjmpgyg23l7axhzzne33jmd0r9y083w6mpa33,100000qos"
 	`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {
@@ -54,7 +55,7 @@ Example:
 
 			for _, v := range bankState.Accounts {
 				for _, acc := range accounts {
-					if acc.AccountAddress.EqualsTo(v.GetAddress()) {
+					if acc.AccountAddress.Equals(v.GetAddress()) {
 						return fmt.Errorf("addr: %s has already exists", v.AccountAddress.String())
 					}
 				}
@@ -98,7 +99,7 @@ func AddLockAccount(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 
 Example:
 
-	qosd add-lock-account --receiver address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --total-amount 10000000000000 --released-amount 1000000000000 --release-time '2023-10-20T00:00:00Z' --release-interval 30 --release-times 10"
+	qosd add-lock-account --receiver qosacc1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --total-amount 10000000000000 --released-amount 1000000000000 --release-time '2023-10-20T00:00:00Z' --release-interval 30 --release-times 10"
 	`,
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
@@ -108,7 +109,7 @@ Example:
 			if len(receiverStr) == 0 {
 				return errors.New("empty receiver")
 			}
-			receiver, err := btypes.GetAddrFromBech32(receiverStr)
+			receiver, err := btypes.AccAddressFromBech32(receiverStr)
 			if err != nil {
 				return errors.New("invalid receiver address")
 			}
@@ -156,7 +157,7 @@ Example:
 			var mintState mint.GenesisState
 			cdc.MustUnmarshalJSON(appState[mint.ModuleName], &mintState)
 
-			lockedAddress := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+			lockedAddress := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 			lockAccount := types.NewQOSAccount(lockedAddress, btypes.NewInt(totalAmount-releasedAmount), nil)
 			lockInfo := bank.NewLockInfo(lockedAddress, receiver, uint64(totalAmount), uint64(releasedAmount), releaseTime, uint(releaseInterval), uint(releaseTimes))
 			bankState.Accounts = append(bankState.Accounts, lockAccount)

@@ -1,11 +1,12 @@
 package mapper
 
 import (
+	"time"
+
 	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
-	"time"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
@@ -94,7 +95,7 @@ func (mapper Mapper) DeleteProposal(proposalID uint64) {
 // depositorAddr will filter proposals by whether or not that address has deposited to them
 // status will filter proposals by status
 // numLatest will fetch a specified number of the most recent proposals, or 0 for all proposals
-func (mapper Mapper) GetProposalsFiltered(ctx context.Context, voterAddr btypes.Address, depositorAddr btypes.Address, status types.ProposalStatus, numLatest uint64) []types.Proposal {
+func (mapper Mapper) GetProposalsFiltered(ctx context.Context, voterAddr, depositorAddr btypes.AccAddress, status types.ProposalStatus, numLatest uint64) []types.Proposal {
 
 	maxProposalID, err := mapper.PeekCurrentProposalID()
 	if err != nil {
@@ -212,7 +213,7 @@ func (mapper Mapper) saveValidatorSet(ctx context.Context, proposalID uint64) {
 	}
 }
 
-func (mapper Mapper) GetValidatorSet(proposalID uint64) (validators []btypes.Address, exists bool) {
+func (mapper Mapper) GetValidatorSet(proposalID uint64) (validators []btypes.ValAddress, exists bool) {
 	exists = mapper.Get(types.KeyVotingPeriodValidators(proposalID), &validators)
 	return
 }
@@ -236,7 +237,7 @@ func (mapper Mapper) SetParams(ctx context.Context, p types.Params) {
 // Votes
 
 // Adds a vote on a specific proposal
-func (mapper Mapper) AddVote(proposalID uint64, voterAddr btypes.Address, option types.VoteOption) btypes.Error {
+func (mapper Mapper) AddVote(proposalID uint64, voterAddr btypes.AccAddress, option types.VoteOption) btypes.Error {
 	vote := types.Vote{
 		ProposalID: proposalID,
 		Voter:      voterAddr,
@@ -248,7 +249,7 @@ func (mapper Mapper) AddVote(proposalID uint64, voterAddr btypes.Address, option
 }
 
 // Gets the vote of a specific voter on a specific proposal
-func (mapper Mapper) GetVote(proposalID uint64, voterAddr btypes.Address) (vote types.Vote, exists bool) {
+func (mapper Mapper) GetVote(proposalID uint64, voterAddr btypes.AccAddress) (vote types.Vote, exists bool) {
 	exists = mapper.Get(types.KeyVote(proposalID, voterAddr), &vote)
 	if !exists {
 		return types.Vote{}, false
@@ -256,7 +257,7 @@ func (mapper Mapper) GetVote(proposalID uint64, voterAddr btypes.Address) (vote 
 	return
 }
 
-func (mapper Mapper) SetVote(proposalID uint64, voterAddr btypes.Address, vote types.Vote) {
+func (mapper Mapper) SetVote(proposalID uint64, voterAddr btypes.AccAddress, vote types.Vote) {
 	mapper.Set(types.KeyVote(proposalID, voterAddr), vote)
 }
 
@@ -265,7 +266,7 @@ func (mapper Mapper) GetVotes(proposalID uint64) store.Iterator {
 	return btypes.KVStorePrefixIterator(mapper.GetStore(), types.KeyVotesSubspace(proposalID))
 }
 
-func (mapper Mapper) deleteVote(proposalID uint64, voterAddr btypes.Address) {
+func (mapper Mapper) deleteVote(proposalID uint64, voterAddr btypes.AccAddress) {
 	mapper.Del(types.KeyVote(proposalID, voterAddr))
 }
 
@@ -281,7 +282,7 @@ func (mapper Mapper) DeleteVotes(proposalID uint64) {
 // Deposits
 
 // Gets the deposit of a specific depositor on a specific proposal
-func (mapper Mapper) GetDeposit(proposalID uint64, depositorAddr btypes.Address) (deposit types.Deposit, exists bool) {
+func (mapper Mapper) GetDeposit(proposalID uint64, depositorAddr btypes.AccAddress) (deposit types.Deposit, exists bool) {
 	exists = mapper.Get(types.KeyDeposit(proposalID, depositorAddr), &deposit)
 	if !exists {
 		return types.Deposit{}, false
@@ -290,13 +291,13 @@ func (mapper Mapper) GetDeposit(proposalID uint64, depositorAddr btypes.Address)
 	return deposit, true
 }
 
-func (mapper Mapper) SetDeposit(proposalID uint64, depositorAddr btypes.Address, deposit types.Deposit) {
+func (mapper Mapper) SetDeposit(proposalID uint64, depositorAddr btypes.AccAddress, deposit types.Deposit) {
 	mapper.Set(types.KeyDeposit(proposalID, depositorAddr), deposit)
 }
 
 // Adds or updates a deposit of a specific depositor on a specific proposal
 // Activates voting period when appropriate
-func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, depositorAddr btypes.Address, depositAmount uint64) (btypes.Error, bool) {
+func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, depositorAddr btypes.AccAddress, depositAmount uint64) (btypes.Error, bool) {
 	proposal, ok := mapper.GetProposal(proposalID)
 	if !ok {
 		return types.ErrUnknownProposal(proposalID), false

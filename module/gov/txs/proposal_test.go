@@ -100,7 +100,7 @@ func TestTxProposal_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 	initGenesis(ctx, types.DefaultGenesisState())
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	cases := []struct {
 		input *TxProposal
@@ -126,7 +126,7 @@ func TestTxProposal_ValidateData(t *testing.T) {
 func TestTxProposal_Exec(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
@@ -144,7 +144,7 @@ func TestTxProposal_Exec(t *testing.T) {
 func TestTxParameterChange_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
@@ -171,7 +171,7 @@ func TestTxParameterChange_ValidateData(t *testing.T) {
 func TestTxParameterChange_Exec(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
@@ -190,8 +190,8 @@ func TestTxParameterChange_Exec(t *testing.T) {
 func TestTxTaxUsage_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	dest := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	dest := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
@@ -215,8 +215,8 @@ func TestTxTaxUsage_ValidateData(t *testing.T) {
 func TestTxTaxUsage_Exec(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	dest := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	dest := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())

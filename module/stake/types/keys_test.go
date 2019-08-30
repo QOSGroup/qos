@@ -11,7 +11,7 @@ import (
 func TestStakeKey(t *testing.T) {
 
 	key := ed25519.GenPrivKey()
-	valAddr := btypes.Address(key.PubKey().Address())
+	valAddr := btypes.ValAddress(key.PubKey().Address())
 
 	k := BuildValidatorVoteInfoKey(valAddr)
 	addr := GetValidatorVoteInfoAddr(k)
@@ -24,4 +24,12 @@ func TestStakeKey(t *testing.T) {
 	require.Equal(t, index, i)
 	require.Equal(t, valAddr, addr)
 
+	power := uint64(1228)
+	bz := BuildValidatorByVotePower(power, valAddr)
+
+	vp, va, e := ParseValidatorVotePowerKey(bz)
+
+	require.Nil(t, e)
+	require.Equal(t, uint64(1228), vp)
+	require.Equal(t, valAddr, va)
 }

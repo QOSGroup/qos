@@ -3,22 +3,23 @@ package types
 import (
 	"bytes"
 	"fmt"
+	"sort"
+	"strings"
+
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
-	"sort"
-	"strings"
 )
 
 // 授权 Common 结构
 type Approve struct {
-	From btypes.Address `json:"from"` // 授权账号
-	To   btypes.Address `json:"to"`   // 被授权账号
-	QOS  btypes.BigInt  `json:"qos"`  // QOS
-	QSCs types.QSCs     `json:"qscs"` // QSCs
+	From btypes.AccAddress `json:"from"` // 授权账号
+	To   btypes.AccAddress `json:"to"`   // 被授权账号
+	QOS  btypes.BigInt     `json:"qos"`  // QOS
+	QSCs types.QSCs        `json:"qscs"` // QSCs
 }
 
-func NewApprove(from btypes.Address, to btypes.Address, qos btypes.BigInt, qscs types.QSCs) Approve {
+func NewApprove(from btypes.AccAddress, to btypes.AccAddress, qos btypes.BigInt, qscs types.QSCs) Approve {
 	return Approve{
 		From: from,
 		To:   to,

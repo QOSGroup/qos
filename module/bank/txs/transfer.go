@@ -89,8 +89,8 @@ func (tx TxTransfer) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 }
 
 // 所有Senders
-func (tx TxTransfer) GetSigner() []btypes.Address {
-	addrs := make([]btypes.Address, 0)
+func (tx TxTransfer) GetSigner() []btypes.AccAddress {
+	addrs := make([]btypes.AccAddress, 0)
 	for _, sender := range tx.Senders {
 		addrs = append(addrs, sender.Address)
 	}
@@ -104,7 +104,7 @@ func (tx TxTransfer) CalcGas() btypes.BigInt {
 }
 
 // Senders[0]
-func (tx TxTransfer) GetGasPayer() btypes.Address {
+func (tx TxTransfer) GetGasPayer() btypes.AccAddress {
 	return tx.Senders[0].Address
 }
 

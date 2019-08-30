@@ -70,8 +70,8 @@ func (tx TxCreateApprove) Exec(ctx context.Context) (result btypes.Result, cross
 }
 
 // 签名账号：授权账号
-func (tx TxCreateApprove) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.From}
+func (tx TxCreateApprove) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.From}
 }
 
 // Gas TODO
@@ -80,7 +80,7 @@ func (tx TxCreateApprove) CalcGas() btypes.BigInt {
 }
 
 // Gas Payer：授权账号
-func (tx TxCreateApprove) GetGasPayer() btypes.Address {
+func (tx TxCreateApprove) GetGasPayer() btypes.AccAddress {
 	return tx.From
 }
 
@@ -134,8 +134,8 @@ func (tx TxIncreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 }
 
 // 签名账号：授权账号
-func (tx TxIncreaseApprove) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.From}
+func (tx TxIncreaseApprove) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.From}
 }
 
 // Gas TODO
@@ -144,7 +144,7 @@ func (tx TxIncreaseApprove) CalcGas() btypes.BigInt {
 }
 
 // Gas Payer：授权账号
-func (tx TxIncreaseApprove) GetGasPayer() btypes.Address {
+func (tx TxIncreaseApprove) GetGasPayer() btypes.AccAddress {
 	return tx.From
 }
 
@@ -202,8 +202,8 @@ func (tx TxDecreaseApprove) Exec(ctx context.Context) (result btypes.Result, cro
 }
 
 // 签名账号：授权账号
-func (tx TxDecreaseApprove) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.From}
+func (tx TxDecreaseApprove) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.From}
 }
 
 // Gas TODO
@@ -212,7 +212,7 @@ func (tx TxDecreaseApprove) CalcGas() btypes.BigInt {
 }
 
 // Gas Payer：授权账号
-func (tx TxDecreaseApprove) GetGasPayer() btypes.Address {
+func (tx TxDecreaseApprove) GetGasPayer() btypes.AccAddress {
 	return tx.From
 }
 
@@ -291,8 +291,8 @@ func (tx TxUseApprove) Exec(ctx context.Context) (result btypes.Result, crossTxQ
 }
 
 // 签名账号：被授权账户
-func (tx TxUseApprove) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.To}
+func (tx TxUseApprove) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.To}
 }
 
 // Gas TODO
@@ -301,14 +301,14 @@ func (tx TxUseApprove) CalcGas() btypes.BigInt {
 }
 
 // Gas Payer：被授权账户
-func (tx TxUseApprove) GetGasPayer() btypes.Address {
+func (tx TxUseApprove) GetGasPayer() btypes.AccAddress {
 	return tx.To
 }
 
 // 取消授权 Tx
 type TxCancelApprove struct {
-	From btypes.Address `json:"from"` // 授权账号
-	To   btypes.Address `json:"to"`   // 被授权账号
+	From btypes.AccAddress `json:"from"` // 授权账号
+	To   btypes.AccAddress `json:"to"`   // 被授权账号
 }
 
 func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
@@ -351,8 +351,8 @@ func (tx TxCancelApprove) Exec(ctx context.Context) (result btypes.Result, cross
 }
 
 // 签名账号：被授权账号
-func (tx TxCancelApprove) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.From}
+func (tx TxCancelApprove) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.From}
 }
 
 // Gas TODO
@@ -361,7 +361,7 @@ func (tx TxCancelApprove) CalcGas() btypes.BigInt {
 }
 
 // Gas Payer：被授权账号
-func (tx TxCancelApprove) GetGasPayer() btypes.Address {
+func (tx TxCancelApprove) GetGasPayer() btypes.AccAddress {
 	return tx.From
 }
 

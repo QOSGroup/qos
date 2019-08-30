@@ -17,7 +17,7 @@ const GasForCreateQCP = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.
 
 // init QCP
 type TxInitQCP struct {
-	Creator btypes.Address    `json:"creator"` //创建账户
+	Creator btypes.AccAddress `json:"creator"` //创建账户
 	QCPCA   *cert.Certificate `json:"ca_qcp"`  //CA信息
 }
 
@@ -90,15 +90,15 @@ func (tx TxInitQCP) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 	return
 }
 
-func (tx TxInitQCP) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Creator}
+func (tx TxInitQCP) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Creator}
 }
 
 func (tx TxInitQCP) CalcGas() btypes.BigInt {
 	return btypes.NewInt(int64(GasForCreateQCP))
 }
 
-func (tx TxInitQCP) GetGasPayer() btypes.Address {
+func (tx TxInitQCP) GetGasPayer() btypes.AccAddress {
 	return tx.Creator
 }
 

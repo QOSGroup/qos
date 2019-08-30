@@ -43,7 +43,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		allocateQOS(ctx, previousProposer, denomTotalPower, validators)
 	}
 
-	consAddr := btypes.Address(req.Header.ProposerAddress)
+	consAddr := btypes.ConsAddress(req.Header.ProposerAddress)
 	distributionMapper.SetLastBlockProposer(consAddr)
 }
 
@@ -54,7 +54,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 	prefixKey := types.BuildDelegatorPeriodIncomePrefixKey(height)
 	iter := btypes.KVStorePrefixIterator(dm.GetStore(), prefixKey)
-	validatorMap := make(map[string][]btypes.Address)
+	validatorMap := make(map[string][]btypes.AccAddress)
 	for ; iter.Valid(); iter.Next() {
 		key := iter.Key()
 		valAddr, delAddr, _ := types.GetDelegatorPeriodIncomeHeightAddr(key)
@@ -66,7 +66,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 	params := dm.GetParams(ctx)
 	for k, delegators := range validatorMap {
-		valAddr, _ := btypes.GetAddrFromBech32(k)
+		valAddr, _ := btypes.ValAddressFromBech32(k)
 		distributeEarningByValidator(ctx, valAddr, delegators, height, params.DelegatorsIncomePeriodHeight)
 
 		//获取validator委托人的最小计费点周期, 删除validator历史计费点周期
@@ -83,7 +83,7 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 //      1. 若不复投,则收益直接返还至delegator账户,生成下一周期收益发放信息
 //      2. 若复投, 则更新委托信息
 //5.  更新validator totalpower信息
-func distributeEarningByValidator(ctx context.Context, valAddr btypes.Address, delegators []btypes.Address, blockHeight, periodHeightParam uint64) {
+func distributeEarningByValidator(ctx context.Context, valAddr btypes.ValAddress, delegators []btypes.AccAddress, blockHeight, periodHeightParam uint64) {
 
 	dm := mapper.GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
@@ -138,7 +138,7 @@ func distributeEarningByValidator(ctx context.Context, valAddr btypes.Address, d
 	}
 }
 
-func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, endPeriod uint64, delAddr btypes.Address, blockHeight, periodHeightParam uint64) uint64 {
+func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, endPeriod uint64, delAddr btypes.AccAddress, blockHeight, periodHeightParam uint64) uint64 {
 	sm := stake.GetMapper(ctx)
 	dm := mapper.GetMapper(ctx)
 	am := baseabci.GetAccountMapper(ctx)
@@ -234,7 +234,7 @@ func distributeDelegatorEarning(ctx context.Context, validator stake.Validator, 
 //        * 平分金额Fee由validator,delegator根据各自绑定的stake平均分配
 // 4.  validator的proposer奖励,佣金奖励 均按周期发放
 //
-func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPower int64, validators []stake.Validator) {
+func allocateQOS(ctx context.Context, proposerAddr btypes.ConsAddress, denomTotalPower int64, validators []stake.Validator) {
 	dm := mapper.GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 
@@ -247,14 +247,14 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.Address, denomTotalPow
 
 	//proposer奖励,直接归属proposer
 	proposerRewards := params.ProposerRewardRate.MultiBigInt(totalAmount)
-	proposerValidater, validatorExsits := sm.GetValidator(proposerAddr)
-	proposerInfo, proposerInfoExsits := dm.GetDelegatorEarningStartInfo(proposerAddr, proposerValidater.Owner)
+	proposerValidater, validatorExsits := sm.GetValidatorByConsensusAddr(proposerAddr)
+	proposerInfo, proposerInfoExsits := dm.GetDelegatorEarningStartInfo(proposerValidater.OperatorAddress, proposerValidater.Owner)
 
 	if validatorExsits && proposerInfoExsits {
 		proposerInfo.HistoricalRewardFees = proposerInfo.HistoricalRewardFees.Add(proposerRewards)
 		remainQOS = remainQOS.Sub(proposerRewards)
-		dm.Set(types.BuildDelegatorEarningStartInfoKey(proposerAddr, proposerValidater.Owner), proposerInfo)
-		dm.AddValidatorEcoFeePool(proposerAddr, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
+		dm.Set(types.BuildDelegatorEarningStartInfoKey(proposerValidater.OperatorAddress, proposerValidater.Owner), proposerInfo)
+		dm.AddValidatorEcoFeePool(proposerValidater.OperatorAddress, proposerRewards, btypes.ZeroInt(), btypes.ZeroInt())
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
 				types.EventTypeProposerReward,

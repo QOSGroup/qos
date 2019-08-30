@@ -171,7 +171,7 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 
 	sm := stake.GetMapper(ctx)
 	var delegations []stake.Delegation
-	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.Address, delAddr btypes.Address) {
+	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.ValAddress, delAddr btypes.AccAddress) {
 		if delegation, exists := sm.GetDelegationInfo(delAddr, valAddr); exists {
 			delegations = append(delegations, delegation)
 		}

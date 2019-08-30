@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
@@ -171,8 +172,8 @@ func applyApprove(cdc *amino.Codec, operType operateType) error {
 			return nil, err
 		}
 
-		fromAddr := viper.Get(flagFrom).(btypes.Address)
-		toAddr := viper.Get(flagTo).(btypes.Address)
+		fromAddr := viper.Get(flagFrom).(btypes.AccAddress)
+		toAddr := viper.Get(flagTo).(btypes.AccAddress)
 
 		if operType == cancleType {
 			return atxs.TxCancelApprove{

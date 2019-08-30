@@ -26,16 +26,17 @@ func TestTally(t *testing.T) {
 		ed25519.GenPrivKey().PubKey(),
 		ed25519.GenPrivKey().PubKey(),
 	}
-	var addrs []btypes.Address
+	var addrs []btypes.AccAddress
 	for i, pub := range pubKeys {
-		addr := btypes.Address(pub.Address())
+		addr := btypes.AccAddress(pub.Address())
 		addrs = append(addrs, addr)
 		am.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(1000), nil))
 
 		validator := stake.Validator{
 			Description:     stake.Description{Moniker: string(i)},
 			Owner:           addr,
-			ValidatorPubKey: pub,
+			OperatorAddress: btypes.ValAddress(addr),
+			ConsPubKey:      pub,
 			BondTokens:      1000,
 			Status:          stake.Active,
 			MinPeriod:       uint64(0),

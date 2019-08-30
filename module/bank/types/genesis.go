@@ -45,16 +45,16 @@ func ValidateGenesis(gs GenesisState) error {
 }
 
 type LockInfo struct {
-	LockedAccount   types.Address `json:"locked_account"`   // 锁定账户地址
-	Receiver        types.Address `json:"receiver"`         // 接收账户地址
-	TotalAmount     uint64        `json:"total_amount"`     // 总锁定QOS
-	ReleasedAmount  uint64        `json:"released_amount"`  // 已释放QOS
-	ReleaseTime     time.Time     `json:"release_time"'`    // 下一次释放时间
-	ReleaseInterval uint          `json:"release_interval"` // 释放间隔，以天为单位
-	ReleaseTimes    uint          `json:"release_times"`    // 释放次数
+	LockedAccount   types.AccAddress `json:"locked_account"`   // 锁定账户地址
+	Receiver        types.AccAddress `json:"receiver"`         // 接收账户地址
+	TotalAmount     uint64           `json:"total_amount"`     // 总锁定QOS
+	ReleasedAmount  uint64           `json:"released_amount"`  // 已释放QOS
+	ReleaseTime     time.Time        `json:"release_time"'`    // 下一次释放时间
+	ReleaseInterval uint             `json:"release_interval"` // 释放间隔，以天为单位
+	ReleaseTimes    uint             `json:"release_times"`    // 释放次数
 }
 
-func NewLockInfo(lockedAccount, receiver types.Address, totalAmount, releasedAmount uint64, releaseTime time.Time, releaseInterval, releaseTimes uint) LockInfo {
+func NewLockInfo(lockedAccount, receiver types.AccAddress, totalAmount, releasedAmount uint64, releaseTime time.Time, releaseInterval, releaseTimes uint) LockInfo {
 	return LockInfo{
 		LockedAccount:   lockedAccount,
 		Receiver:        receiver,

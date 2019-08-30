@@ -40,10 +40,10 @@ func defaultContext() context.Context {
 	return ctx
 }
 
-var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-var testToAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+var testFromAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+var testToAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
-func genTestApprove(from, to btypes.Address, qos, qsc int64) types.Approve {
+func genTestApprove(from, to btypes.AccAddress, qos, qsc int64) types.Approve {
 	return types.Approve{
 		From: from,
 		To:   to,

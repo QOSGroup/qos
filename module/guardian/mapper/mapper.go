@@ -17,7 +17,7 @@ var (
 	haltKey     = []byte{0x01}
 )
 
-func KeyGuardian(address btypes.Address) []byte {
+func KeyGuardian(address btypes.AccAddress) []byte {
 	return append(guardianKey, address...)
 }
 
@@ -51,11 +51,11 @@ func (mapper Mapper) AddGuardian(guardian types.Guardian) {
 	mapper.Set(KeyGuardian(guardian.Address), guardian)
 }
 
-func (mapper Mapper) DeleteGuardian(address btypes.Address) {
+func (mapper Mapper) DeleteGuardian(address btypes.AccAddress) {
 	mapper.Del(KeyGuardian(address))
 }
 
-func (mapper Mapper) GetGuardian(address btypes.Address) (guardian types.Guardian, exists bool) {
+func (mapper Mapper) GetGuardian(address btypes.AccAddress) (guardian types.Guardian, exists bool) {
 	exists = mapper.Get(KeyGuardian(address), &guardian)
 	return guardian, exists
 }

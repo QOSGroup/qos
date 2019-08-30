@@ -2,24 +2,24 @@
 
 `qosd`创建、初始化、启动QOS网络命令：
 
-* `init`                  [初始化](#初始化) 
-* `add-genesis-accounts`  [设置创世账户](#设置账户) 
-* `add-guardian`          [添加特权账户](#添加特权账户) 
-* `gentx`                 [生成创世交易](#生成创世交易) 
-* `collect-gentxs`        [收集创世交易](#收集创世交易) 
-* `config-root-ca`        [设置CA](#设置ca) 
-* `start`                 [启动](#启动) 
-* `export        `        [状态导出](#状态导出) 
-* `testnet`               [初始化测试网络](#初始化测试网络) 
-* `unsafe-reset-all`      [重置](#重置) 
-* `tendermint`            [Tendermint](#tendermint) 
+* `init`                  [初始化](#初始化)
+* `add-genesis-accounts`  [设置创世账户](#设置账户)
+* `add-guardian`          [添加特权账户](#添加特权账户)
+* `gentx`                 [生成创世交易](#生成创世交易)
+* `collect-gentxs`        [收集创世交易](#收集创世交易)
+* `config-root-ca`        [设置CA](#设置ca)
+* `start`                 [启动](#启动)
+* `export        `        [状态导出](#状态导出)
+* `testnet`               [初始化测试网络](#初始化测试网络)
+* `unsafe-reset-all`      [重置](#重置)
+* `tendermint`            [Tendermint](#tendermint)
 * `version`               [版本信息](#版本)
 
 全局参数：
 
 | 参数 | 默认值 | 说明 |
 | :--- | :---: | :--- |
-|--home string        | "$HOME/.qosd" |directory for config and data (default "$HOMW/.qosd")|
+|--home string        | "$HOME/.qosd" |directory for config and data (default "$HOME/.qosd")|
 |--log_level string   | "main:info,state:info,*:error" |Log level (default "main:info,state:info,*:error")|
 |--trace              |  |print out full stack trace on errors|
 
@@ -61,10 +61,10 @@ $ qosd init --moniker capricorn-1000
 
 添加创世账户至`genesis.json`文件：
 ```bash
-$ qosd add-genesis-accounts address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy,10000QOS
+$ qosd add-genesis-accounts qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk,10000QOS
 ```
 
-会在`genesis.json`文件`app-state`中`accounts`部分添加地址为`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`，持有10000QOS的账户信息。
+会在`genesis.json`文件`app-state`中`accounts`部分添加地址为`qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk`，持有10000QOS的账户信息。
 
 ## 添加特权账户
 
@@ -77,10 +77,10 @@ $ qosd add-genesis-accounts address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy,10000
 
 添加特权账户至`genesis.json`文件：
 ```bash
-$ qosd add-guardian --address address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --description "this is the description"
+$ qosd add-guardian --address qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk --description "this is the description"
 ```
 
-会在`genesis.json`文件`app-state`中`guardian`部分添加地址为`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`的特权账户。
+会在`genesis.json`文件`app-state`中`guardian`部分添加地址为`qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk`的特权账户。
 
 ## 生成创世交易
 
@@ -92,7 +92,7 @@ $ qosd add-guardian --address address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --d
 
 生成验证节点交易：
 ```bash
-$ qosd gentx --moniker "Arya's node" --owner address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --tokens 1000
+$ qosd gentx --moniker "Arya's node" --owner qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk --tokens 1000
 ```
 
 默认会在`$HOME/.qosd/config/gentx`目录下生成以`nodeID@IP`为文件名的已签名的交易数据文件。
@@ -172,7 +172,7 @@ Note, strict routability for addresses is turned off in the config file.
 
 Example:
 
-	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos
+	qosd testnet --chain-id=qostest --v=4 --o=./output --starting-ip-address=192.168.1.2 --genesis-accounts=qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk,1000000qos
 
 Usage:
   qosd testnet [flags]
@@ -180,7 +180,7 @@ Usage:
 Flags:
       --chain-id string              Chain ID
       --compound                     whether the validator's income is calculated as compound interest, default: true (default true)
-      --genesis-accounts string      Add genesis accounts to genesis.json, eg: address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
+      --genesis-accounts string      Add genesis accounts to genesis.json, eg: qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk,1000000qos,1000000qstars. Multiple accounts separated by ';'
       --guardians string             addresses for guardian. Multiple addresses separated by ','
   -h, --help                         help for testnet
       --home-client string           directory for keybase (default "$HOME/.qoscli")

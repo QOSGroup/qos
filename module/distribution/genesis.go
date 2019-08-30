@@ -25,27 +25,27 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	distributionMapper.SetParams(ctx, data.Params)
 
 	for _, validatorHistoryPeriodState := range data.ValidatorHistoryPeriods {
-		key := types.BuildValidatorHistoryPeriodSummaryKey(btypes.Address(validatorHistoryPeriodState.ValidatorPubKey.Address()), validatorHistoryPeriodState.Period)
+		key := types.BuildValidatorHistoryPeriodSummaryKey(validatorHistoryPeriodState.OperatorAddress, validatorHistoryPeriodState.Period)
 		distributionMapper.Set(key, validatorHistoryPeriodState.Summary)
 	}
 
 	for _, validatorCurrentPeriodState := range data.ValidatorCurrentPeriods {
-		key := types.BuildValidatorCurrentPeriodSummaryKey(btypes.Address(validatorCurrentPeriodState.ValidatorPubKey.Address()))
+		key := types.BuildValidatorCurrentPeriodSummaryKey(validatorCurrentPeriodState.OperatorAddress)
 		distributionMapper.Set(key, validatorCurrentPeriodState.CurrentPeriodSummary)
 	}
 
 	for _, delegatorEarningInfoState := range data.DelegatorEarningInfos {
-		key := types.BuildDelegatorEarningStartInfoKey(btypes.Address(delegatorEarningInfoState.ValidatorPubKey.Address()), delegatorEarningInfoState.DeleAddress)
+		key := types.BuildDelegatorEarningStartInfoKey(delegatorEarningInfoState.OperatorAddress, delegatorEarningInfoState.DeleAddress)
 		distributionMapper.Set(key, delegatorEarningInfoState.DelegatorEarningsStartInfo)
 	}
 
 	for _, delegatorIncomeHeightState := range data.DelegatorIncomeHeights {
-		key := types.BuildDelegatorPeriodIncomeKey(btypes.Address(delegatorIncomeHeightState.ValidatorPubKey.Address()), delegatorIncomeHeightState.DeleAddress, delegatorIncomeHeightState.Height)
+		key := types.BuildDelegatorPeriodIncomeKey(delegatorIncomeHeightState.OperatorAddress, delegatorIncomeHeightState.DeleAddress, delegatorIncomeHeightState.Height)
 		distributionMapper.Set(key, true)
 	}
 
 	for _, validatorFeePoolState := range data.ValidatorEcoFeePools {
-		key := types.BuildValidatorEcoFeePoolKey(validatorFeePoolState.ValidatorAddress)
+		key := types.BuildValidatorEcoFeePoolKey(validatorFeePoolState.OperatorAddress)
 		distributionMapper.Set(key, validatorFeePoolState.EcoFeePool)
 	}
 }
@@ -61,12 +61,13 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	params := distributionMapper.GetParams(ctx)
 
 	var validatorHistoryPeriods []types.ValidatorHistoryPeriodState
-	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.Address, period uint64, frac qtypes.Fraction) {
+	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.ValAddress, period uint64, frac qtypes.Fraction) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			vhps := types.ValidatorHistoryPeriodState{
-				ValidatorPubKey: validator.ValidatorPubKey,
+				OperatorAddress: validator.OperatorAddress,
+				ConsPubKey:      btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				Period:          period,
 				Summary:         frac,
 			}
@@ -75,12 +76,13 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var validatorCurrentPeriods []types.ValidatorCurrentPeriodState
-	distributionMapper.IteratorValidatorsCurrentPeriod(func(valAddr btypes.Address, vcps types.ValidatorCurrentPeriodSummary) {
+	distributionMapper.IteratorValidatorsCurrentPeriod(func(valAddr btypes.ValAddress, vcps types.ValidatorCurrentPeriodSummary) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			vcpsState := types.ValidatorCurrentPeriodState{
-				ValidatorPubKey:      validator.ValidatorPubKey,
+				OperatorAddress:      validator.OperatorAddress,
+				ConsPubKey:           btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				CurrentPeriodSummary: vcps,
 			}
 			validatorCurrentPeriods = append(validatorCurrentPeriods, vcpsState)
@@ -88,12 +90,13 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var delegatorEarningInfos []types.DelegatorEarningStartState
-	distributionMapper.IteratorDelegatorEarningStartInfo(func(valAddr btypes.Address, deleAddr btypes.Address, desi types.DelegatorEarningsStartInfo) {
+	distributionMapper.IteratorDelegatorEarningStartInfo(func(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, desi types.DelegatorEarningsStartInfo) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			dess := types.DelegatorEarningStartState{
-				ValidatorPubKey:            validator.ValidatorPubKey,
+				OperatorAddress:            validator.OperatorAddress,
+				ConsPubKey:                 btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				DeleAddress:                deleAddr,
 				DelegatorEarningsStartInfo: desi,
 			}
@@ -102,12 +105,13 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var delegatorIncomeHeights []types.DelegatorIncomeHeightState
-	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.Address, deleAddr btypes.Address, height uint64) {
+	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height uint64) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			dihs := types.DelegatorIncomeHeightState{
-				ValidatorPubKey: validator.ValidatorPubKey,
+				OperatorAddress: validator.OperatorAddress,
+				ConsPubKey:      btypes.MustConsensusPubKeyString(validator.ConsPubKey),
 				DeleAddress:     deleAddr,
 				Height:          height,
 			}
@@ -116,10 +120,10 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var validatorEcoFeePools []types.ValidatorEcoFeePoolState
-	distributionMapper.IteratorValidatorEcoFeePools(func(validatorAddr btypes.Address, pool types.ValidatorEcoFeePool) {
+	distributionMapper.IteratorValidatorEcoFeePools(func(validatorAddr btypes.ValAddress, pool types.ValidatorEcoFeePool) {
 		validatorEcoFeePools = append(validatorEcoFeePools, types.ValidatorEcoFeePoolState{
-			ValidatorAddress: validatorAddr,
-			EcoFeePool:       pool,
+			OperatorAddress: validatorAddr,
+			EcoFeePool:      pool,
 		})
 	})
 

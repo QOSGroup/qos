@@ -6,16 +6,16 @@
 ```go
 // 授权、增加授权、减少授权、使用授权
 type Approve struct {
-    From    btypes.Address `json:"from"` // 授权账号，不能为空
-    To      btypes.Address `json:"to"`   // 被授权账号，不能为空
+    From    btypes.AccAddress `json:"from"` // 授权账号，不能为空
+    To      btypes.AccAddress `json:"to"`   // 被授权账号，不能为空
     Qos     btypes.BigInt  `json:"qos"`  // qos
     QscList []*QSC         `json:"qsc"`  // qscs，币种不能重复，不能为"qos"（大小写敏感）
 }
 
 // 取消授权 Tx
 type TxCancelApprove struct {
-	From btypes.Address `json:"from"` // 授权账号
-	To   btypes.Address `json:"to"`   // 被授权账号
+	From btypes.AccAddress `json:"from"` // 授权账号
+	To   btypes.AccAddress `json:"to"`   // 被授权账号
 }
 ```
 ## Store
@@ -27,7 +27,7 @@ approveKey      = "from:[%s]/to:[%s]"   // key
 读写使用ApproveMapper
 ```go
 type ApproveMapper struct {
-	*mapper.BaseMapper      // qbase BaseMapper封装 
+	*mapper.BaseMapper      // qbase BaseMapper封装
 }
 ```
 提供获取授权（GetApprove）、保存授权（SaveApprove）、删除授权（DeleteApprove）方法
@@ -41,7 +41,7 @@ From账户向To账户预授权一定量的QOS和QSCs，预授权创建成功并�
 2. 创建前链上不存在From对To的预授权，若存在请执行approve的其他操作。
 
 * signer
-  
+
 From账户
 
 ## Increase
@@ -81,7 +81,7 @@ To账户使用From账户预授权的QOS和QSCs。假设From已授权To 2QOS，�
 3. QOS、QSCs总量不能大于From账户币值总量
 
 * signer
-  
+
 To账户
 
 ## Cancel
@@ -92,5 +92,5 @@ From账户取消对To账户的预授权信息。假设From已授权To 2QOS，执
 1. 链上不存在From对To的预授权。
 
 * signer
-  
+
 From账户

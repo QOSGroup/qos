@@ -11,12 +11,12 @@ import (
 )
 
 type TxVote struct {
-	ProposalID uint64           `json:"proposal_id"` // ID of the proposal
-	Voter      btypes.Address   `json:"voter"`       //  address of the voter
-	Option     types.VoteOption `json:"option"`      //  option from OptionSet chosen by the voter
+	ProposalID uint64            `json:"proposal_id"` // ID of the proposal
+	Voter      btypes.AccAddress `json:"voter"`       //  address of the voter
+	Option     types.VoteOption  `json:"option"`      //  option from OptionSet chosen by the voter
 }
 
-func NewTxVote(proposalID uint64, voter btypes.Address, option types.VoteOption) *TxVote {
+func NewTxVote(proposalID uint64, voter btypes.AccAddress, option types.VoteOption) *TxVote {
 	return &TxVote{
 		ProposalID: proposalID,
 		Voter:      voter,
@@ -74,15 +74,15 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 	return
 }
 
-func (tx TxVote) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Voter}
+func (tx TxVote) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Voter}
 }
 
 func (tx TxVote) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxVote) GetGasPayer() btypes.Address {
+func (tx TxVote) GetGasPayer() btypes.AccAddress {
 	return tx.Voter
 }
 

@@ -155,7 +155,7 @@ func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string
 		return nil, fmt.Errorf("proposal id %d not exists", proposalID)
 	}
 
-	voterAddress, err := btypes.GetAddrFromBech32(voter)
+	voterAddress, err := btypes.AccAddressFromBech32(voter)
 	if err != nil {
 		return nil, fmt.Errorf("voter %s is not valid address", voter)
 	}
@@ -181,7 +181,7 @@ func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depo
 		return nil, fmt.Errorf("proposal id %d not exists", proposalID)
 	}
 
-	depositerAddress, err := btypes.GetAddrFromBech32(depositer)
+	depositerAddress, err := btypes.AccAddressFromBech32(depositer)
 	if err != nil {
 		return nil, fmt.Errorf("depositer %s is not valid address", depositer)
 	}
@@ -262,8 +262,8 @@ func queryParam(ctx context.Context, module string, key string) ([]byte, error) 
 
 //nolint
 type QueryProposalsParam struct {
-	Depositor btypes.Address       `json:"depositor"`
-	Voter     btypes.Address       `json:"voter"`
+	Depositor btypes.AccAddress    `json:"depositor"`
+	Voter     btypes.AccAddress    `json:"voter"`
 	Status    types.ProposalStatus `json:"status"`
 	Limit     uint64               `json:"limit"`
 }

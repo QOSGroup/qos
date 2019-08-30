@@ -1,6 +1,7 @@
 package types
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -27,7 +28,7 @@ func NewQOSAccountZero() *QOSAccount {
 	return &QOSAccount{QOS: btypes.ZeroInt()}
 }
 
-func NewQOSAccountWithAddress(addr btypes.Address) *QOSAccount {
+func NewQOSAccountWithAddress(addr btypes.AccAddress) *QOSAccount {
 	return &QOSAccount{
 		BaseAccount: account.BaseAccount{
 			AccountAddress: addr,
@@ -36,7 +37,7 @@ func NewQOSAccountWithAddress(addr btypes.Address) *QOSAccount {
 	}
 }
 
-func NewQOSAccount(addr btypes.Address, qos btypes.BigInt, qscs QSCs) *QOSAccount {
+func NewQOSAccount(addr btypes.AccAddress, qos btypes.BigInt, qscs QSCs) *QOSAccount {
 	return &QOSAccount{
 		BaseAccount: account.BaseAccount{
 			AccountAddress: addr,
@@ -353,6 +354,58 @@ func (account *QOSAccount) RemoveQSC(qscName string) {
 	}
 }
 
+type jsonifyQOSAccount struct {
+	AccountAddress string        `json:"account_address"`
+	Publickey      string        `json:"public_key"`
+	Nonce          int64         `json:"nonce"`
+	QOS            btypes.BigInt `json:"qos"`
+	QSCs           QSCs          `json:"qscs"`
+}
+
+func (account *QOSAccount) MarshalJSON() ([]byte, error) {
+
+	pkStr := ""
+	if account.Publickey != nil && len(account.Publickey.Bytes()) != 0 {
+		pkStr = btypes.MustAccPubKeyString(account.Publickey)
+	}
+
+	ja := jsonifyQOSAccount{
+		AccountAddress: account.AccountAddress.String(),
+		Publickey:      pkStr,
+		Nonce:          account.Nonce,
+		QOS:            account.QOS,
+		QSCs:           account.QSCs,
+	}
+
+	return json.Marshal(ja)
+}
+
+func (account *QOSAccount) UnmarshalJSON(bz []byte) error {
+	var ja jsonifyQOSAccount
+	err := json.Unmarshal(bz, &ja)
+	if err != nil {
+		return err
+	}
+
+	account.AccountAddress, err = btypes.AccAddressFromBech32(ja.AccountAddress)
+	if err != nil {
+		return err
+	}
+
+	if len(ja.Publickey) != 0 {
+		account.Publickey, err = btypes.GetAccPubKeyBech32(ja.Publickey)
+		if err != nil {
+			return err
+		}
+	}
+
+	account.Nonce = ja.Nonce
+	account.QOS = ja.QOS
+	account.QSCs = ja.QSCs
+
+	return nil
+}
+
 // Parse accounts from string
 // address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd,1000000qos,1000000qstars. Multiple accounts separated by ';'
 func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
@@ -375,8 +428,8 @@ func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
 			return nil, fmt.Errorf("`%s` not match rules", ti)
 		}
 
-		var addr btypes.Address
-		if !strings.HasPrefix(addrAndCoins[0], btypes.PREF_ADD) {
+		var addr btypes.AccAddress
+		if !strings.HasPrefix(addrAndCoins[0], btypes.GetAddressConfig().GetBech32AccountAddrPrefix()) {
 			if keybaseAvailable {
 				info, err := keybase.Get(addrAndCoins[0])
 				if err != nil {
@@ -387,7 +440,7 @@ func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
 				return nil, fmt.Errorf("no %s found in keybase", addrAndCoins[0])
 			}
 		} else {
-			addr, err = btypes.GetAddrFromBech32(addrAndCoins[0])
+			addr, err = btypes.AccAddressFromBech32(addrAndCoins[0])
 		}
 		if err != nil {
 			return nil, err

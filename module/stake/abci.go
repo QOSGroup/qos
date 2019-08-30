@@ -23,7 +23,8 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	for _, evidence := range req.ByzantineValidators {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
-			handleDoubleSign(ctx, evidence.Validator.Address, evidence.Height-1, evidence.Time, evidence.Validator.Power)
+			v, _ := sm.GetValidatorByConsensusAddr(btypes.ConsAddress(evidence.Validator.Address))
+			handleDoubleSign(ctx, v.GetValidatorAddress(), evidence.Height-1, evidence.Time, evidence.Validator.Power)
 		default:
 			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
@@ -32,7 +33,8 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	// 统计validator投票信息, 将不活跃的validator转成Inactive状态
 	params := sm.GetParams(ctx)
 	for _, signingValidator := range req.LastCommitInfo.Votes {
-		handleValidatorValidatorVoteInfo(ctx, btypes.Address(signingValidator.Validator.Address), signingValidator.SignedLastBlock, params)
+		v, _ := sm.GetValidatorByConsensusAddr(btypes.ConsAddress(signingValidator.Validator.Address))
+		handleValidatorValidatorVoteInfo(ctx, v.GetValidatorAddress(), signingValidator.SignedLastBlock, params)
 	}
 }
 
@@ -114,7 +116,7 @@ func CloseInactiveValidator(ctx context.Context, survivalSecs int32) {
 	iterator := sm.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
-		valAddress := btypes.Address(key[9:])
+		valAddress := btypes.ValAddress(key[9:])
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
 				types.EventTypeCloseValidator,
@@ -132,7 +134,7 @@ func CloseInactiveValidator(ctx context.Context, survivalSecs int32) {
 //delegator当前收益和收益发放信息数据不删除, 只是将bondTokens重置为0
 //发放收益时,若delegator非validator的委托人, 或validator 不存在 则可以将delegator的收益相关数据删除
 //发放收益时,validator的汇总数据可能会不存在
-func removeValidator(ctx context.Context, valAddr btypes.Address) error {
+func removeValidator(ctx context.Context, valAddr btypes.ValAddress) error {
 
 	sm := mapper.GetMapper(ctx)
 
@@ -173,7 +175,12 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
-		valAddr := btypes.Address(key[9:])
+
+		tokens, valAddr, err := types.ParseValidatorVotePowerKey(key)
+		if err != nil {
+			ctx.Logger().Error("parse validatorVotePowerKey error", "key", key)
+			panic(err)
+		}
 
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
@@ -185,6 +192,15 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 				if !validator.IsActive() {
 					continue
 				}
+
+				if validator.BondTokens != tokens {
+					ctx.Logger().Error("validator votePower list may have dup record. if you forgot delete?",
+						"validator", validator.OperatorAddress.String(),
+						"tokens", validator.BondTokens,
+						"recordTokens", tokens)
+					continue
+				}
+
 				i++
 				//保存数据
 				newValidatorAddressString := validator.GetValidatorAddress().String()
@@ -218,7 +234,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	return updateValidators
 }
 
-func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Address, isVote bool, params types.Params) {
+func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAddress, isVote bool, params types.Params) {
 
 	log := ctx.Logger()
 	height := uint64(ctx.BlockHeight())
@@ -289,7 +305,7 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.Addres
 	sm.SetValidatorVoteInfo(valAddr, voteInfo)
 }
 
-func handleDoubleSign(ctx context.Context, addr btypes.Address, infractionHeight int64, timestamp time.Time, power int64) {
+func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHeight int64, timestamp time.Time, power int64) {
 	logger := ctx.Logger()
 	sm := GetMapper(ctx)
 
@@ -401,7 +417,7 @@ func slashDelegations(ctx context.Context, validator types.Validator, fraction q
 
 	// get delegations
 	var delegations []types.DelegationInfo
-	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.Address, delAddr btypes.Address) {
+	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.ValAddress, delAddr btypes.AccAddress) {
 		if delegation, exists := sm.GetDelegationInfo(delAddr, valAddr); exists {
 			delegations = append(delegations, delegation)
 		}

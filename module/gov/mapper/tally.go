@@ -27,7 +27,7 @@ func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passe
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
-		valAddr := btypes.Address(key[9:])
+		valAddr := btypes.ValAddress(key[9:])
 		if validator, exists := sm.GetValidator(valAddr); exists {
 			currValidators[validator.GetValidatorAddress().String()] = validator
 			totalSystemPower = totalSystemPower.Add(btypes.NewInt(int64(validator.BondTokens)))

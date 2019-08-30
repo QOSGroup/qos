@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/QOSGroup/qos/module/gov/mapper"
 	"strconv"
 	"strings"
 
+	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/spf13/viper"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
@@ -71,8 +71,8 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var depositorAddr btypes.Address
-			var voterAddr btypes.Address
+			var depositorAddr btypes.AccAddress
+			var voterAddr btypes.AccAddress
 			var status types.ProposalStatus
 
 			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDepositor); err == nil {

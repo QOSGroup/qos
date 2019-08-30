@@ -5,20 +5,20 @@ import (
 )
 
 type Guardian struct {
-	Description  string         `json:"description"`
-	GuardianType GuardianType   `json:"guardian_type"`
-	Address      btypes.Address `json:"address"`
-	Creator      btypes.Address `json:"creator"`
+	Description  string            `json:"description"`
+	GuardianType GuardianType      `json:"guardian_type"`
+	Address      btypes.AccAddress `json:"address"`
+	Creator      btypes.AccAddress `json:"creator"`
 }
 
 func (g Guardian) Equals(g1 Guardian) bool {
 	return g.Description == g1.Description &&
 		g.GuardianType == g1.GuardianType &&
-		g.Address.EqualsTo(g1.Address) &&
-		g.Creator.EqualsTo(g1.Creator)
+		g.Address.Equals(g1.Address) &&
+		g.Creator.Equals(g1.Creator)
 }
 
-func NewGuardian(description string, guardianType GuardianType, address, creator btypes.Address) *Guardian {
+func NewGuardian(description string, guardianType GuardianType, address, creator btypes.AccAddress) *Guardian {
 	return &Guardian{
 		Description:  description,
 		GuardianType: guardianType,
