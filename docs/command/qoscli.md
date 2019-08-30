@@ -1084,13 +1084,13 @@ $ qoscli query validator-miss-vote qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
 ```
 
 #### 验证节点窗口信息
-`qoscli query validator-period --validator  <validator-address>`
+`qoscli query validator-period  <validator-address>`
 
 `validator-address`为验证人地址
 
 查询`Arya`的节点漏块信息：
 ```bash
-$ qoscli query validator-period --validator qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
+$ qoscli query validator-period qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
 ```
 
 执行结果：

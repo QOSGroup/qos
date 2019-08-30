@@ -69,12 +69,12 @@ func queryValidatorPeriodInfo(ctx context.Context, operatorAddr btypes.ValAddres
 
 	validator, exists := sm.GetValidator(operatorAddr)
 	if !exists {
-		return nil, fmt.Errorf("validator not exists. operator: %s", operatorAddr.String())
+		return nil, fmt.Errorf("Validator not exists. validator-address: %s", operatorAddr.String())
 	}
 
 	vcps, exists := dm.GetValidatorCurrentPeriodSummary(validator.GetValidatorAddress())
 	if !exists {
-		return nil, fmt.Errorf("validator current period not exists. operator: %s", operatorAddr.String())
+		return nil, fmt.Errorf("Validator current period not exists. validator-address: %s", operatorAddr.String())
 	}
 
 	result := ValidatorPeriodInfoQueryResult{
@@ -100,12 +100,12 @@ func queryDelegatorIncomeInfo(ctx context.Context, delegator btypes.AccAddress, 
 
 	validator, exists := sm.GetValidator(operatorAddr)
 	if !exists {
-		return nil, fmt.Errorf("validator not exists. operatorAddr: %s", operatorAddr.String())
+		return nil, fmt.Errorf("Validator not exists. validator-address: %s", operatorAddr.String())
 	}
 
 	info, exists := dm.GetDelegatorEarningStartInfo(validator.GetValidatorAddress(), delegator)
 	if !exists {
-		return nil, fmt.Errorf("delegator income info not exists. delegator: %s , operatorAddr: %s", delegator.String(), operatorAddr.String())
+		return nil, fmt.Errorf("Delegator income info not exists. delegator: %s , validator-address: %s", delegator.String(), operatorAddr.String())
 	}
 
 	result := DelegatorIncomeInfoQueryResult{

@@ -18,14 +18,15 @@ const (
 
 func queryValidatorPeriodCommand(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator-period",
+		Use:   "validator-period [validator-address]",
+		Args:  cobra.ExactArgs(1),
 		Short: "Query distribution validator period info",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
 			var validator btypes.ValAddress
-			if o, err := qcliacc.GetValidatorAddrFromFlag(cliCtx, flagValidator); err == nil {
+			if o, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0]); err == nil {
 				validator = o
 			}
 
@@ -41,8 +42,6 @@ func queryValidatorPeriodCommand(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagValidator, "", "validator's address")
-	cmd.MarkFlagRequired(flagValidator)
 	return cmd
 }
 
