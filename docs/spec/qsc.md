@@ -8,7 +8,7 @@
 ```go
 // create QSC
 type TxCreateQSC struct {
-	Creator     btypes.Address        `json:"creator"`     //QSC创建账户
+	Creator     btypes.AccAddress        `json:"creator"`     //QSC创建账户
 	Extrate     string                `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
 	QSCCA       *cert.Certificate     `json:"qsc_crt"`       //CA信息
 	Description string                `json:"description"` //描述信息
@@ -32,7 +32,7 @@ type TxCreateQSC struct {
 type TxIssueQSC struct {
 	QSCName string         `json:"qsc_name"` //币名
 	Amount  btypes.BigInt  `json:"amount"`   //金额
-	Banker  btypes.Address `json:"banker"`   //banker地址
+	Banker  btypes.AccAddress `json:"banker"`   //banker地址
 }
 ```
 

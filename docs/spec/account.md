@@ -11,15 +11,27 @@ type QOSAccount struct {
 
 // BaseAccount in qbase.
 type BaseAccount struct {
-	AccountAddress types.Address `json:"account_address"` // account address
+	AccountAddress types.AccAddress `json:"account_address"` // account address
 	Publickey      crypto.PubKey `json:"public_key"`      // public key
 	Nonce          int64         `json:"nonce"`           // identifies tx_status of an account
 }
 ```
 
-* Address 
+* AccAddress
 
-采用ed25519加密，Bech32编码，"address"前缀
+采用ed25519加密，Bech32编码，"qosacc"前缀
+
+* QOS地址区分如下
+
+| HRP               | Definition                            |
+|-------------------|---------------------------------------|
+| qosacc            | QOS账户地址                            |
+| qosaccpub         | QOS账户公钥                            |
+| qoscons           | QOS验证人共识地址                       |
+| qosconspub        | QOS验证人共识公钥                       |
+| qosval            | QOS验证人地址                          |
+| qosvalpub         | QOS验证人公钥                          |
+
 
 * QOS
 

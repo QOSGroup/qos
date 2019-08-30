@@ -32,7 +32,7 @@ func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "Delegation amount must be a positive integer.")
 	}
 
-	if _, err := validateValidator(ctx, tx.ValidatorAddr, false, types.Active, true); err != nil {
+	if _, err := validateValidator(ctx, tx.ValidatorAddr, false, types.Active, true, btypes.AccAddress{}, false); err != nil {
 		return err
 	}
 
@@ -108,7 +108,7 @@ func (tx *TxModifyCompound) ValidateData(ctx context.Context) (err error) {
 	}
 
 	// TODO:是否允许validator为inactive/jailed时修改
-	validator, err := validateValidator(ctx, tx.ValidatorAddr, true, types.Active, true)
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, true, btypes.AccAddress{}, false)
 	if nil != err {
 		return err
 	}
@@ -187,7 +187,7 @@ func (tx *TxUnbondDelegation) ValidateData(ctx context.Context) error {
 		return errors.New("unbond QOS amount is zero")
 	}
 
-	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, types.Active, true)
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, types.Active, true, btypes.AccAddress{}, false)
 	if nil != err {
 		return err
 	}
@@ -286,13 +286,13 @@ func (tx *TxCreateReDelegation) ValidateData(ctx context.Context) error {
 	}
 
 	//1. 校验fromValidator是否存在
-	validator, err := validateValidator(ctx, tx.FromValidatorAddr, false, 0, true)
+	validator, err := validateValidator(ctx, tx.FromValidatorAddr, false, 0, true, btypes.AccAddress{}, false)
 	if err != nil {
 		return err
 	}
 
 	//2. 校验toValidator是否存在 <del>且 状态为active</del>
-	_, err = validateValidator(ctx, tx.ToValidatorAddr, false, types.Active, true)
+	_, err = validateValidator(ctx, tx.ToValidatorAddr, false, 0, true, btypes.AccAddress{}, false)
 	if err != nil {
 		return err
 	}

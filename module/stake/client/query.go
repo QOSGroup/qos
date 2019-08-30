@@ -31,12 +31,13 @@ const (
 )
 
 type validatorDisplayInfo struct {
-	OperatorAddress btypes.ValAddress `json:"validatorAddr"`
-	Owner           btypes.AccAddress `json:"owner"`
-	ConsPubKey      string            `json:"consensusPubKey"`
-	BondTokens      uint64            `json:"bondTokens"` //不能超过int64最大值
-	Description     types.Description `json:"description"`
-	Commission      types.Commission  `json:"commission"`
+	OperatorAddress btypes.ValAddress  `json:"validator"`
+	Owner           btypes.AccAddress  `json:"owner"`
+	ConsAddress     btypes.ConsAddress `json:"consensusAddress"`
+	ConsPubKey      string             `json:"consensusPubKey"`
+	BondTokens      uint64             `json:"bondTokens"` //不能超过int64最大值
+	Description     types.Description  `json:"description"`
+	Commission      types.Commission   `json:"commission"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
@@ -54,6 +55,7 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 	info := validatorDisplayInfo{
 		OperatorAddress: validator.OperatorAddress,
 		Owner:           validator.Owner,
+		ConsAddress:     validator.ConsAddress(),
 		ConsPubKey:      consPubKey,
 		BondTokens:      validator.BondTokens,
 		Description:     validator.Description,
@@ -90,12 +92,12 @@ func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			validatorAddr, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
+			validatorAddr, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
 
-			validator, err := getValidator(cliCtx, btypes.ValAddress(validatorAddr))
+			validator, err := getValidator(cliCtx, validatorAddr)
 			if err != nil {
 				return err
 			}
@@ -118,8 +120,8 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 			var validator btypes.ValAddress
 			var delegator btypes.AccAddress
 
-			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagValidator); err == nil {
-				validator = btypes.ValAddress(o)
+			if o, err := qcliacc.GetValidatorAddrFromFlag(cliCtx, flagValidator); err == nil {
+				validator = o
 			}
 
 			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDelegator); err == nil {
@@ -139,8 +141,8 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
-	cmd.Flags().String(flagDelegator, "", "delegator address")
+	cmd.Flags().String(flagValidator, "", "account of validator address")
+	cmd.Flags().String(flagDelegator, "", "keystore name or delegator account address")
 	cmd.MarkFlagRequired(flagValidator)
 	cmd.MarkFlagRequired(flagDelegator)
 
@@ -150,7 +152,7 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "delegations-to [validator-owner]",
+		Use:   "delegations-to [validator-address]",
 		Short: "Query all delegations made to one validator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -159,8 +161,8 @@ func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 
 			var validator btypes.ValAddress
 
-			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
-				validator = btypes.ValAddress(o)
+			if o, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0]); err == nil {
+				validator = o
 			}
 
 			var path = types.BuildQueryDelegationsByOwnerCustomQueryPath(validator)
@@ -264,12 +266,12 @@ func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			validatorAddr, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
+			validatorAddr, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
 
-			voteSummaryDisplay, err := queryVotesInfoByOwner(cliCtx, btypes.ValAddress(validatorAddr))
+			voteSummaryDisplay, err := queryVotesInfoByOwner(cliCtx, validatorAddr)
 			if err != nil {
 				return err
 			}

@@ -6,7 +6,7 @@ QOS跨链协议（QCP），初始化新的联盟链
 ```go
 // init QCP
 type TxInitQCP struct {
-	Creator btypes.Address       `json:"creator"` //创建账户
+	Creator btypes.AccAddress       `json:"creator"` //创建账户
 	QCPCA   *cert.Certificate    `json:"ca_qcp"`  //CA信息
 }
 ```
@@ -15,7 +15,7 @@ type TxInitQCP struct {
 
 * Store
 ```go
-QcpMapperName = "qcp"               
+QcpMapperName = "qcp"
 outSequenceKey = "sequence/out/%s"  //需要输出到"chainId"的qcp tx最大序号
 outSequenceTxKey = "tx/out/%s/%d"   //需要输出到"chainId"的每个qcp tx
 inSequenceKey = "sequence/in/%s"    //已经接受到来自"chainId"的qcp 的合法公钥tx最大序号

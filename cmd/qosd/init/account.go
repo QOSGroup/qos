@@ -3,6 +3,7 @@ package init
 import (
 	"errors"
 	"fmt"
+
 	"github.com/QOSGroup/qbase/server"
 	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/mint"
@@ -27,7 +28,7 @@ Multiple accounts separated by ';'.
 
 Example:
 
-	qosd add-genesis-accounts "address1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8,1000000qos;address1auhqphrnk74jx2c5n80m9pdgl0ln79tyz32xlc,100000qos"
+	qosd add-genesis-accounts "qosacc128xejc2f9lp7pjm56j8sahcvkxan9lqfqp6azy,1000000qos;qosacc12kjmpgyg23l7axhzzne33jmd0r9y083w6mpa33,100000qos"
 	`,
 		Args: cobra.ExactArgs(1),
 		RunE: func(_ *cobra.Command, args []string) error {

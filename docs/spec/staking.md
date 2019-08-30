@@ -15,25 +15,30 @@ none---------------------->Active <------------------->Inactive------------->non
 
 ```go
 type TxCreateValidator struct {
-  Owner Address //操作者
-  ValidatorPubkey crypto.Pubkey //validator公钥
-  BondTokens  uint64 //绑定Token数量
-  Description Description
+	Operator    btypes.AccAddress     //操作者, self delegator
+	ConsPubKey  crypto.PubKey         //validator公钥
+	BondTokens  uint64                //绑定Token数量
+	IsCompound  bool                  //周期收益是否复投
+	Description types.Description     //描述信息
+	Commission  types.CommissionRates //佣金比例
 }
 
 
 type Validator struct {
-  Owner Address
-  ValidatorPubkey crypto.Pubkey
-  BondTokens uint64
-  Description Description
+	OperatorAddress btypes.ValAddress `json:"validator_address"`
+	Owner           btypes.AccAddress `json:"owner"`
+	ConsPubKey      crypto.PubKey     `json:"consensus_pubkey"`
+	BondTokens      uint64            `json:"bond_tokens"` //不能超过int64最大值
+	Description     Description       `json:"description"`
+	Commission      Commission        `json:"commission"`
 
-  Status  enum// ACTIVE/INACTIVE
-  IsRevoke bool
-  InactiveTime time.Time
-  InactiveHeight uint64
+	Status         int8         `json:"status"`
+	InactiveCode   InactiveCode `json:"inactive_code"`
+	InactiveTime   time.Time    `json:"inactive_time"`
+	InactiveHeight uint64       `json:"inactive_height"`
 
-  BondHeight uint64
+	MinPeriod  uint64 `json:"min_period"`
+	BondHeight uint64 `json:"bond_height"`
 }
 ```
 创建validator,validator的`VotingPower`由`BondTokens`决定. `BondTokens`与`QOS`等价.
@@ -45,9 +50,11 @@ validator总数量不应超过`maxValidatorCnt`配置
 
 ```go
 type TxModifyValidator struct {
-  Owner Address //操作者
-  Description Description //validator描述信息
+	ValidatorAddr  btypes.ValAddress //验证人地址
+	Description    types.Description //描述信息
+	CommissionRate *qtypes.Dec       //佣金比例
 }
+
 ```
 
 修改validator信息
@@ -56,8 +63,7 @@ type TxModifyValidator struct {
 
 ```go
 type TxRevokeValidator struct {
-  Owner Address //操作者
-  ValidatorPubkey crypto.Pubkey //validator地址
+	ValidatorAddr btypes.ValAddress //验证人地址
 }
 ```
 
@@ -67,8 +73,8 @@ type TxRevokeValidator struct {
 
 ```go
 type TxActiveValidator struct {
-  Owner Address //操作者
-  ValidatorPubkey crypto.Pubkey //validator地址
+	ValidatorAddr btypes.ValAddress //验证人地址
+	BondTokens    uint64            //绑定Token数量
 }
 
 ```

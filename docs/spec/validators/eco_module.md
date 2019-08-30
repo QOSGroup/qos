@@ -54,26 +54,41 @@ QOS公链验证人节点通过绑定一定的QOS，同时承担了DPOS算法的�
 
 ```
         "inflation_phrases": [
-          {
-            "endtime": "2023-01-01T00:00:00Z",
-            "total_amount": "2500000000000",
-            "applied_amount": "0"
-          },
-          {
-            "endtime": "2027-01-01T00:00:00Z",
-            "total_amount": "12750000000000",
-            "applied_amount": "0"
-          },
-          {
-            "endtime": "2031-01-01T00:00:00Z",
-            "total_amount": "6375000000000",
-            "applied_amount": "0"
-          },
-          {
-            "endtime": "2035-01-01T00:00:00Z",
-            "total_amount": "3185000000000",
-            "applied_amount": "0"
-          }
+                {
+                  "end_time": "2023-10-20T00:00:00Z",
+                  "total_amount": "25500000000000",
+                  "applied_amount": "0"
+                },
+                {
+                  "end_time": "2027-10-20T00:00:00Z",
+                  "total_amount": "12750000000000",
+                  "applied_amount": "0"
+                },
+                {
+                  "end_time": "2031-10-20T00:00:00Z",
+                  "total_amount": "6375000000000",
+                  "applied_amount": "0"
+                },
+                {
+                  "end_time": "2035-10-20T00:00:00Z",
+                  "total_amount": "3187500000000",
+                  "applied_amount": "0"
+                },
+                {
+                  "end_time": "2039-10-20T00:00:00Z",
+                  "total_amount": "1593750000000",
+                  "applied_amount": "0"
+                },
+                {
+                  "end_time": "2043-10-20T00:00:00Z",
+                  "total_amount": "796875000000",
+                  "applied_amount": "0"
+                },
+                {
+                  "end_time": "2047-10-20T00:00:00Z",
+                  "total_amount": "796875000000",
+                  "applied_amount": "0"
+                }
         ]
 ```
 

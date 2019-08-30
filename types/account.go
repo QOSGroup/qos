@@ -429,7 +429,7 @@ func ParseAccounts(str, clientHome string) ([]*QOSAccount, error) {
 		}
 
 		var addr btypes.AccAddress
-		if !strings.HasPrefix(addrAndCoins[0], btypes.QOSAccountPrefix) {
+		if !strings.HasPrefix(addrAndCoins[0], btypes.GetAddressConfig().GetBech32AccountAddrPrefix()) {
 			if keybaseAvailable {
 				info, err := keybase.Get(addrAndCoins[0])
 				if err != nil {

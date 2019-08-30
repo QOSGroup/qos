@@ -24,6 +24,7 @@ const (
 	CodeErrCommissionChangeRateGTMaxRate btypes.CodeType = 514 // Validator处于非激活状态时收益非法
 	CodeErrCommissionUpdateTime          btypes.CodeType = 515 // Validator处于非激活状态时收益非法
 	CodeErrCommissionGTMaxChangeRate     btypes.CodeType = 516 // Validator处于非激活状态时收益非法
+	CoderErrOwnerNotMatch                btypes.CodeType = 517 // validator owner不匹配
 )
 
 func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
@@ -73,6 +74,8 @@ func codeToDefaultMsg(code btypes.CodeType) string {
 		return "commission cannot be changed more than once in 24h"
 	case CodeErrCommissionGTMaxChangeRate:
 		return "commission cannot be changed more than max change rate"
+	case CoderErrOwnerNotMatch:
+		return "validator owner not match"
 	default:
 		return btypes.CodeToDefaultMsg(code)
 	}
@@ -140,4 +143,8 @@ func ErrCommissionUpdateTime(codeSpace btypes.CodespaceType) btypes.Error {
 
 func ErrCommissionGTMaxChangeRate(codeSpace btypes.CodespaceType) btypes.Error {
 	return newError(codeSpace, CodeErrCommissionGTMaxChangeRate, "")
+}
+
+func ErrOwnerNotMatch(codeSpace btypes.CodespaceType, msg string) btypes.Error {
+	return newError(codeSpace, CoderErrOwnerNotMatch, msg)
 }

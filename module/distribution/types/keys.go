@@ -151,10 +151,10 @@ func GetDelegatorPeriodIncomeHeightAddr(key []byte) (valAddr btypes.ValAddress, 
 	return btypes.ValAddress(key[9 : 9+AddrLen]), btypes.AccAddress(key[9+AddrLen:]), binary.LittleEndian.Uint64(b)
 }
 
-func BuildQueryValidatorPeriodInfoCustomQueryPath(owner btypes.Address) string {
-	return fmt.Sprintf("custom/%s/%s/%s", Distribution, ValidatorPeriodInfo, owner.String())
+func BuildQueryValidatorPeriodInfoCustomQueryPath(valAddr btypes.ValAddress) string {
+	return fmt.Sprintf("custom/%s/%s/%s", Distribution, ValidatorPeriodInfo, valAddr.String())
 }
 
-func BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, owner btypes.Address) string {
-	return fmt.Sprintf("custom/%s/%s/%s/%s", Distribution, DelegatorIncomeInfo, delegator.String(), owner.String())
+func BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator btypes.AccAddress, valAddr btypes.ValAddress) string {
+	return fmt.Sprintf("custom/%s/%s/%s/%s", Distribution, DelegatorIncomeInfo, delegator.String(), valAddr.String())
 }

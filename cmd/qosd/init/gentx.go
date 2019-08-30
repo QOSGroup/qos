@@ -3,6 +3,10 @@ package init
 import (
 	"errors"
 	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/QOSGroup/qbase/client/context"
 	clikeys "github.com/QOSGroup/qbase/client/keys"
 	"github.com/QOSGroup/qbase/keys"
@@ -18,9 +22,6 @@ import (
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"os"
-	"path/filepath"
-	"strings"
 )
 
 func GenTxCmd(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
@@ -57,7 +58,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 			if err != nil {
 				return err
 			}
-			if strings.HasPrefix(owner, btypes.QOSAccountPrefix) {
+			if strings.HasPrefix(owner, btypes.GetAddressConfig().GetBech32AccountAddrPrefix()) {
 				addr, err := btypes.AccAddressFromBech32(owner)
 				if err != nil {
 					return err
@@ -129,7 +130,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	return cmd
 }
 
-func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, address btypes.Address, amount btypes.BigInt) error {
+func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, address btypes.AccAddress, amount btypes.BigInt) error {
 	accountIsInGenesis := false
 
 	var bankState bank.GenesisState

@@ -1,6 +1,8 @@
 package types
 
 import (
+	"fmt"
+	"github.com/QOSGroup/qbase/account"
 	"testing"
 
 	btypes "github.com/QOSGroup/qbase/types"
@@ -513,4 +515,14 @@ func TestParseAccounts(t *testing.T) {
 		require.Equal(t, tc.correct, err == nil, "tc #%d", tcIndex)
 		require.Equal(t, tc.expected, res, "tc #%d", tcIndex)
 	}
+
+	v := "o02QgAo/ChTlRGtPqdlmCvuf5wHpqTUBCxZL7xIlFiTeZCAkyVH28bOOMahIjzKOnUPLgv7A5fX3wQjV6qPdGOWeVBgFEgk4OTc5OTk0NDM="
+	bz := []byte(v)
+
+	var acc2 account.Account
+	err := cdc.UnmarshalBinaryBare(bz, &acc2)
+
+	fmt.Println(err)
+	fmt.Println(acc2)
+
 }

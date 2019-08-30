@@ -24,4 +24,12 @@ func TestStakeKey(t *testing.T) {
 	require.Equal(t, index, i)
 	require.Equal(t, valAddr, addr)
 
+	power := uint64(1228)
+	bz := BuildValidatorByVotePower(power, valAddr)
+
+	vp, va, e := ParseValidatorVotePowerKey(bz)
+
+	require.Nil(t, e)
+	require.Equal(t, uint64(1228), vp)
+	require.Equal(t, valAddr, va)
 }

@@ -175,7 +175,12 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
-		valAddr := btypes.ValAddress(key[9:])
+
+		tokens, valAddr, err := types.ParseValidatorVotePowerKey(key)
+		if err != nil {
+			ctx.Logger().Error("parse validatorVotePowerKey error", "key", key)
+			panic(err)
+		}
 
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
@@ -187,6 +192,15 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 				if !validator.IsActive() {
 					continue
 				}
+
+				if validator.BondTokens != tokens {
+					ctx.Logger().Error("validator votePower list may have dup record. if you forgot delete?",
+						"validator", validator.OperatorAddress.String(),
+						"tokens", validator.BondTokens,
+						"recordTokens", tokens)
+					continue
+				}
+
 				i++
 				//保存数据
 				newValidatorAddressString := validator.GetValidatorAddress().String()

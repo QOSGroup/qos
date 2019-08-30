@@ -128,7 +128,7 @@ func infoToDelegationQueryResult(validator types.Validator, info types.Delegatio
 
 type DelegationQueryResult struct {
 	DelegatorAddr            btypes.AccAddress `json:"delegator_address"`
-	ValidatorAddr            btypes.ValAddress `json:"owner_address"`
+	ValidatorAddr            btypes.ValAddress `json:"validator_address"`
 	ValidatorConsensusPubKey string            `json:"validator_cons_pub_key"`
 	Amount                   uint64            `json:"delegate_amount"`
 	IsCompound               bool              `json:"is_compound"`

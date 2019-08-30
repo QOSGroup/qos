@@ -144,15 +144,17 @@ func (tx *TxCreateValidator) GetSignData() (ret []byte) {
 }
 
 type TxModifyValidator struct {
-	ValidatorAddr  btypes.ValAddress //节点所有账户
+	Owner          btypes.AccAddress //验证人Owner地址
+	ValidatorAddr  btypes.ValAddress //验证人地址
 	Description    types.Description //描述信息
 	CommissionRate *qtypes.Dec       //佣金比例
 }
 
 var _ txs.ITx = (*TxModifyValidator)(nil)
 
-func NewModifyValidatorTx(validatorAddr btypes.ValAddress, description types.Description, commissionRate *qtypes.Dec) *TxModifyValidator {
+func NewModifyValidatorTx(owner btypes.AccAddress, validatorAddr btypes.ValAddress, description types.Description, commissionRate *qtypes.Dec) *TxModifyValidator {
 	return &TxModifyValidator{
+		Owner:          owner,
 		ValidatorAddr:  validatorAddr,
 		Description:    description,
 		CommissionRate: commissionRate,
@@ -168,11 +170,9 @@ func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	mapper := mapper.GetMapper(ctx)
-
-	validator, exists := mapper.GetValidator(tx.ValidatorAddr)
-	if !exists {
-		return types.ErrOwnerNotExists(types.DefaultCodeSpace, fmt.Sprintf("%s has no validator", tx.ValidatorAddr.String()))
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, false, tx.Owner, true)
+	if err != nil {
+		return err
 	}
 
 	// valid commission rate
@@ -230,7 +230,7 @@ func (tx *TxModifyValidator) Exec(ctx context.Context) (result btypes.Result, cr
 }
 
 func (tx *TxModifyValidator) GetSigner() []btypes.AccAddress {
-	return []btypes.AccAddress{btypes.AccAddress(tx.ValidatorAddr)}
+	return []btypes.AccAddress{tx.Owner}
 }
 
 func (tx *TxModifyValidator) CalcGas() btypes.BigInt {
@@ -238,7 +238,7 @@ func (tx *TxModifyValidator) CalcGas() btypes.BigInt {
 }
 
 func (tx *TxModifyValidator) GetGasPayer() btypes.AccAddress {
-	return btypes.AccAddress(tx.ValidatorAddr)
+	return tx.Owner
 }
 
 func (tx *TxModifyValidator) GetSignData() (ret []byte) {
@@ -246,13 +246,15 @@ func (tx *TxModifyValidator) GetSignData() (ret []byte) {
 }
 
 type TxRevokeValidator struct {
-	ValidatorAddr btypes.ValAddress //操作者
+	Owner         btypes.AccAddress //验证人Owner地址
+	ValidatorAddr btypes.ValAddress //验证人地址
 }
 
 var _ txs.ITx = (*TxRevokeValidator)(nil)
 
-func NewRevokeValidatorTx(validatorAddr btypes.ValAddress) *TxRevokeValidator {
+func NewRevokeValidatorTx(owner btypes.AccAddress, validatorAddr btypes.ValAddress) *TxRevokeValidator {
 	return &TxRevokeValidator{
+		Owner:         owner,
 		ValidatorAddr: validatorAddr,
 	}
 }
@@ -262,7 +264,7 @@ func (tx *TxRevokeValidator) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Active, true)
+	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Active, true, tx.Owner, true)
 	if nil != err {
 		return err
 	}
@@ -299,7 +301,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 }
 
 func (tx *TxRevokeValidator) GetSigner() []btypes.AccAddress {
-	return []btypes.AccAddress{btypes.AccAddress(tx.ValidatorAddr)}
+	return []btypes.AccAddress{tx.Owner}
 }
 
 func (tx *TxRevokeValidator) CalcGas() btypes.BigInt {
@@ -307,24 +309,26 @@ func (tx *TxRevokeValidator) CalcGas() btypes.BigInt {
 }
 
 func (tx *TxRevokeValidator) GetGasPayer() btypes.AccAddress {
-	return btypes.AccAddress(tx.ValidatorAddr)
+	return tx.Owner
 }
 
 func (tx *TxRevokeValidator) GetSignData() (ret []byte) {
 	ret = append(ret, tx.ValidatorAddr...)
-
+	ret = append(ret, tx.Owner...)
 	return
 }
 
 type TxActiveValidator struct {
-	ValidatorAddr btypes.ValAddress //操作者
+	Owner         btypes.AccAddress //验证人Owner地址
+	ValidatorAddr btypes.ValAddress //验证人地址
 	BondTokens    uint64            //绑定Token数量
 }
 
 var _ txs.ITx = (*TxActiveValidator)(nil)
 
-func NewActiveValidatorTx(validatorAddr btypes.ValAddress, bondTokens uint64) *TxActiveValidator {
+func NewActiveValidatorTx(owner btypes.AccAddress, validatorAddr btypes.ValAddress, bondTokens uint64) *TxActiveValidator {
 	return &TxActiveValidator{
+		Owner:         owner,
 		ValidatorAddr: validatorAddr,
 		BondTokens:    bondTokens,
 	}
@@ -341,7 +345,7 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 		return err
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Inactive, true)
+	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Inactive, true, tx.Owner, true)
 	if nil != err {
 		return err
 	}
@@ -411,7 +415,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 }
 
 func (tx *TxActiveValidator) GetSigner() []btypes.AccAddress {
-	return []btypes.AccAddress{btypes.AccAddress(tx.ValidatorAddr)}
+	return []btypes.AccAddress{tx.Owner}
 }
 
 func (tx *TxActiveValidator) CalcGas() btypes.BigInt {
@@ -419,7 +423,7 @@ func (tx *TxActiveValidator) CalcGas() btypes.BigInt {
 }
 
 func (tx *TxActiveValidator) GetGasPayer() btypes.AccAddress {
-	return btypes.AccAddress(tx.ValidatorAddr)
+	return tx.Owner
 }
 
 func (tx *TxActiveValidator) GetSignData() (ret []byte) {
@@ -452,12 +456,17 @@ func validateQOSAccount(ctx context.Context, addr btypes.AccAddress, toPay uint6
 	return nil
 }
 
-func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, checkStatus bool, expectedStatus int8, checkJail bool) (validator types.Validator, err error) {
+func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, checkStatus bool, expectedStatus int8, checkJail bool, owner btypes.AccAddress, checkOwner bool) (validator types.Validator, err error) {
 	valMapper := mapper.GetMapper(ctx)
 	validator, exists := valMapper.GetValidator(validatorAddr)
 	if !exists {
-		return validator, types.ErrValidatorNotExists(types.DefaultCodeSpace, validatorAddr.String()+" does't have validator.")
+		return validator, types.ErrValidatorNotExists(types.DefaultCodeSpace, validatorAddr.String()+" is not a validator.")
 	}
+
+	if checkOwner && !validator.Owner.Equals(owner) {
+		return validator, types.ErrOwnerNotMatch(types.DefaultCodeSpace, fmt.Sprintf("owner:%s does not have right operate validator:%s", owner, validatorAddr))
+	}
+
 	if checkStatus {
 		if validator.Status != expectedStatus {
 			return validator, fmt.Errorf("validator status not match. except: %d, actual:%d", expectedStatus, validator.Status)

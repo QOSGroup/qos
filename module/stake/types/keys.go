@@ -2,6 +2,7 @@ package types
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"time"
 
@@ -122,6 +123,21 @@ func BuildValidatorByVotePower(votePower uint64, valAddress btypes.ValAddress) [
 	copy(bz[9:len(valAddress)+9], valAddress)
 
 	return bz
+}
+
+func ParseValidatorVotePowerKey(key []byte) (votePower uint64, valAddress btypes.ValAddress, err error) {
+	if len(key) < 10 {
+		return 0, btypes.ValAddress{}, errors.New("incorrect key length")
+	}
+
+	if key[0] != validatorByVotePowerKey[0] {
+		return 0, btypes.ValAddress{}, errors.New("incorrect key type, not validatorByVotePowerKey key")
+	}
+
+	votePower = binary.BigEndian.Uint64(key[1:9])
+	valAddress = btypes.ValAddress(key[9:])
+	err = nil
+	return
 }
 
 func BuildDelegationByDelValKey(delAdd btypes.AccAddress, valAdd btypes.ValAddress) []byte {

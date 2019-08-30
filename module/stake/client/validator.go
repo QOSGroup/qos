@@ -8,7 +8,6 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
-	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/stake/txs"
 	"github.com/QOSGroup/qos/module/stake/types"
 	qtypes "github.com/QOSGroup/qos/types"
@@ -22,7 +21,6 @@ import (
 
 const (
 	flagOwner      = "owner"
-	flagValidator  = "validator"
 	flagBondTokens = "tokens"
 
 	flagCompound = "compound"
@@ -93,7 +91,12 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					name, logo, website, details,
 				}
 
-				owner, err := qcliacc.GetAddrFromFlag(ctx, flagValidator)
+				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
+				if err != nil {
+					return nil, err
+				}
+
+				validator, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
 				if err != nil {
 					return nil, err
 				}
@@ -109,18 +112,20 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					newRate = &rate
 				}
 
-				return txs.NewModifyValidatorTx(btypes.ValAddress(owner), desc, newRate), nil
+				return txs.NewModifyValidatorTx(owner, validator, desc, newRate), nil
 			})
 		},
 	}
 
+	cmd.Flags().String(flagOwner, "", "keystore name or account of validator's owner address")
+	cmd.Flags().String(flagValidator, "", "validator address")
 	cmd.Flags().String(flagMoniker, "", "The validator's name")
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
 	cmd.Flags().String(flagCommissionRate, "", "The initial commission rate percentage")
 
+	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagValidator)
 
 	return cmd
@@ -132,19 +137,26 @@ func RevokeValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Short: "Revoke validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
-				owner, err := qcliacc.GetAddrFromFlag(ctx, flagValidator)
+				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
 				if err != nil {
 					return nil, err
 				}
 
-				return txs.NewRevokeValidatorTx(btypes.ValAddress(owner)), nil
+				validator, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
+				if err != nil {
+					return nil, err
+				}
+
+				return txs.NewRevokeValidatorTx(owner, validator), nil
 			})
 
 		},
 	}
 
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagOwner, "", "keystore name or account of validator's owner address")
+	cmd.Flags().String(flagValidator, "", "validator address")
 
+	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagValidator)
 
 	return cmd
@@ -156,7 +168,12 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Short: "Active validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
-				owner, err := qcliacc.GetAddrFromFlag(ctx, flagValidator)
+				owner, err := qcliacc.GetAddrFromFlag(ctx, flagOwner)
+				if err != nil {
+					return nil, err
+				}
+
+				validator, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
 				if err != nil {
 					return nil, err
 				}
@@ -166,15 +183,17 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("tokens lt zero")
 				}
 
-				return txs.NewActiveValidatorTx(btypes.ValAddress(owner), uint64(tokens)), nil
+				return txs.NewActiveValidatorTx(owner, validator, uint64(tokens)), nil
 			})
 
 		},
 	}
 
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagOwner, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagValidator, "", "validator address")
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount to increase")
 
+	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagValidator)
 
 	return cmd

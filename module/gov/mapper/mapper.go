@@ -1,11 +1,12 @@
 package mapper
 
 import (
+	"time"
+
 	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
-	"time"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
@@ -212,7 +213,7 @@ func (mapper Mapper) saveValidatorSet(ctx context.Context, proposalID uint64) {
 	}
 }
 
-func (mapper Mapper) GetValidatorSet(proposalID uint64) (validators []btypes.Address, exists bool) {
+func (mapper Mapper) GetValidatorSet(proposalID uint64) (validators []btypes.ValAddress, exists bool) {
 	exists = mapper.Get(types.KeyVotingPeriodValidators(proposalID), &validators)
 	return
 }
