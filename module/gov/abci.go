@@ -239,7 +239,7 @@ func executeParameterChange(ctx context.Context, proposal types.Proposal, logger
 		if !exists {
 			panic(fmt.Sprintf("%s should exists", param.Module))
 		}
-		v, _ := paramSet.Validate(param.Key, param.Value)
+		v, _ := paramSet.ValidateKeyValue(param.Key, param.Value)
 		paramMapper.SetParam(param.Module, param.Key, v)
 	}
 

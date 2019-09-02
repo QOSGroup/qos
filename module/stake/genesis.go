@@ -114,6 +114,9 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 }
 
 func initParams(ctx context.Context, params types.Params) {
+	if err := params.Validate(); err != nil {
+		panic(err)
+	}
 	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SetParams(ctx, params)
 }

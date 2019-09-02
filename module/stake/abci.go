@@ -5,6 +5,7 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/module/stake/types"
 	qtypes "github.com/QOSGroup/qos/types"
@@ -94,10 +95,16 @@ func handlerReDelegations(ctx context.Context) {
 		sm.BaseMapper.DecodeObject(iter.Value(), &reDelegation)
 
 		height, delAddr, valAddr := types.GetRedelegationHeightDelegatorFromValidator(k)
-		validator, _ := sm.GetValidator(reDelegation.ToValidator)
-		sm.Delegate(ctx, NewDelegationInfo(reDelegation.DelegatorAddr, reDelegation.ToValidator, reDelegation.Amount, reDelegation.IsCompound), true)
-		sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens().Add(reDelegation.Amount))
-
+		validator, exists := sm.GetValidator(reDelegation.ToValidator)
+		if exists {
+			sm.Delegate(ctx, NewDelegationInfo(reDelegation.DelegatorAddr, reDelegation.ToValidator, reDelegation.Amount, reDelegation.IsCompound), true)
+			sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens().Add(reDelegation.Amount))
+		} else {
+			// to validator 不存在时，返还待质押 tokens
+			delegator := bank.GetAccount(ctx, reDelegation.DelegatorAddr)
+			delegator.MustPlusQOS(reDelegation.Amount)
+			bank.GetMapper(ctx).SetAccount(delegator)
+		}
 		sm.RemoveRedelegation(height, delAddr, valAddr)
 	}
 }

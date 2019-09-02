@@ -22,7 +22,12 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	}
 
 	distributionMapper.SetPreDistributionQOS(data.PreDistributionQOSAmount.NilToZero())
-	distributionMapper.SetParams(ctx, data.Params)
+
+	if err := data.Params.Validate(); err == nil {
+		distributionMapper.SetParams(ctx, data.Params)
+	} else {
+		panic(err)
+	}
 
 	for _, validatorHistoryPeriodState := range data.ValidatorHistoryPeriods {
 		key := types.BuildValidatorHistoryPeriodSummaryKey(validatorHistoryPeriodState.OperatorAddress, validatorHistoryPeriodState.Period)

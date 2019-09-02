@@ -32,7 +32,7 @@ func TestParams_Validate(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		v, _ := p.Validate(tc.key, tc.value)
+		v, _ := p.ValidateKeyValue(tc.key, tc.value)
 		require.Equal(t, tc.expected, v, "tc #%d", tcIndex)
 	}
 }

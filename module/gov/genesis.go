@@ -17,7 +17,10 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	if err != nil {
 		panic(err)
 	}
-	mapper.SetParams(ctx, data.Params)
+	err = data.Params.Validate()
+	if err != nil {
+		mapper.SetParams(ctx, data.Params)
+	}
 	for _, proposal := range data.Proposals {
 		switch proposal.Proposal.Status {
 		case types.StatusDepositPeriod:

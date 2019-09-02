@@ -79,4 +79,13 @@ type ValidatorEcoFeePoolState struct {
 	EcoFeePool      ValidatorEcoFeePool `json:"eco_fee_pool"`
 }
 
-func ValidateGenesis(_ GenesisState) error { return nil }
+func ValidateGenesis(data GenesisState) error {
+
+	// validate params
+	err := data.Params.Validate()
+	if err != nil {
+		return err
+	}
+
+	return nil
+}

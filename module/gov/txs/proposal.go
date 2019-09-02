@@ -255,6 +255,13 @@ func (tx TxParameterChange) ValidateData(ctx context.Context) error {
 
 	paramMapper := params.GetMapper(ctx)
 	for _, param := range tx.Params {
+		ps, exists := paramMapper.GetModuleParamSet(param.Module);
+		if !exists {
+			return types.ErrInvalidInput(fmt.Sprintf("No params in module:%s", param.Module))
+		}
+		if err = ps.Validate(); err != nil {
+			return err
+		}
 		if err = paramMapper.Validate(param.Module, param.Key, param.Value); err != nil {
 			return err
 		}

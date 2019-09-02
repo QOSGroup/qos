@@ -193,7 +193,7 @@ func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, false, tx.Owner, true)
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, tx.Owner, true)
 	if err != nil {
 		return err
 	}
@@ -287,7 +287,7 @@ func (tx *TxRevokeValidator) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Active, true, tx.Owner, true)
+	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Active, tx.Owner, true)
 	if nil != err {
 		return err
 	}
@@ -368,7 +368,7 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 		return err
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Inactive, true, tx.Owner, true)
+	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Inactive, tx.Owner, true)
 	if nil != err {
 		return err
 	}
@@ -469,7 +469,7 @@ func validateQOSAccount(ctx context.Context, addr btypes.AccAddress, toPay btype
 	return nil
 }
 
-func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, checkStatus bool, expectedStatus int8, checkJail bool, owner btypes.AccAddress, checkOwner bool) (validator types.Validator, err error) {
+func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, checkStatus bool, expectedStatus int8, owner btypes.AccAddress, checkOwner bool) (validator types.Validator, err error) {
 	valMapper := mapper.GetMapper(ctx)
 	validator, exists := valMapper.GetValidator(validatorAddr)
 	if !exists {
@@ -484,9 +484,6 @@ func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, che
 		if validator.Status != expectedStatus {
 			return validator, fmt.Errorf("Validator status not match. except: %d, actual:%d.", expectedStatus, validator.Status)
 		}
-	}
-	if checkJail {
-		// TODO: block jailed validator
 	}
 	return validator, nil
 }

@@ -92,6 +92,8 @@ type Params struct {
 	CriticalBurnRate qtypes.Dec `json:"critical_burn_rate"` // Deposit burning rate when proposals pass or reject.
 }
 
+var _ qtypes.ParamSet = (*Params)(nil)
+
 func DefaultParams() Params {
 	return Params{
 		// normal level
@@ -161,7 +163,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
-func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
+func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyNormalMinDeposit), string(KeyImportantMinDeposit), string(KeyCriticalMinDeposit):
 		v, err := strconv.ParseInt(value, 10, 64)
@@ -246,4 +248,33 @@ func (p *Params) GetLevelParams(level ProposalLevel) LevelParams {
 	}
 
 	return LevelParams{}
+}
+
+func (p *Params) Validate() btypes.Error {
+	for _, level := range ProposalLevels {
+		levelParams := p.GetLevelParams(level)
+		threshold := levelParams.Threshold
+		if threshold.IsNegative() || threshold.GT(qtypes.OneDec()) {
+			return params.ErrInvalidParam(fmt.Sprintf("governance vote threshold should be positive and less or equal to one, is %s",
+				threshold.String()))
+		}
+
+		veto := levelParams.Veto
+		if veto.IsNegative() || veto.GT(qtypes.OneDec()) {
+			return params.ErrInvalidParam(fmt.Sprintf("governance vote veto threshold should be positive and less or equal to one, is %s",
+				veto.String()))
+		}
+
+		if levelParams.MaxDepositPeriod > levelParams.VotingPeriod {
+			return params.ErrInvalidParam(fmt.Sprintf("governance deposit period should be less than or equal to the voting period (%ds), is %ds",
+				levelParams.VotingPeriod, levelParams.MaxDepositPeriod))
+		}
+
+		if levelParams.MinDeposit <= 0 {
+			return params.ErrInvalidParam(fmt.Sprintf("governance deposit amount must be a valid sdk.Coins amount, is %v",
+				levelParams.MinDeposit))
+		}
+	}
+
+	return nil
 }

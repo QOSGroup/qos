@@ -49,6 +49,8 @@ type Params struct {
 	SlashFractionDowntime             types.Dec     `json:"slash_fraction_downtime"`
 }
 
+var _ qtypes.ParamSet = (*Params)(nil)
+
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	return qtypes.KeyValuePairs{
 		{KeyMaxValidatorCnt, &p.MaxValidatorCnt},
@@ -63,7 +65,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
-func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
+func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyMaxValidatorCnt),
 		string(KeyValidatorVotingStatusLen),
@@ -105,4 +107,12 @@ func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusL
 
 func DefaultParams() Params {
 	return NewParams(defaultMaxValidatorCnt, defaultValidatorVotingStatusLen, defaultValidatorVotingStatusLeast, defaultValidatorSurvivalSecs, defaultDelegatorUnbondReturnHeight, defaultDelegatorRedelegationHeight, defaultMaxEvidenceAge, defaultSlashFractionDoubleSign, defaultSlashFractionDowntime)
+}
+
+func (p *Params) Validate() btypes.Error {
+	if p.DelegatorRedelegationActiveHeight >= p.ValidatorSurvivalSecs/qtypes.DefaultBlockInterval {
+		return params.ErrInvalidParam("redelegation_active_height must lt survival_secs/block_interval")
+	}
+
+	return nil
 }

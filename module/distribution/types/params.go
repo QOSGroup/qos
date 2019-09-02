@@ -25,6 +25,8 @@ type Params struct {
 	GasPerUnitCost               int64           `json:"gas_per_unit_cost"` // how much gas = 1 QOS
 }
 
+var _ qtypes.ParamSet = (*Params)(nil)
+
 func DefaultParams() Params {
 	return Params{
 		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)), // 1%
@@ -43,7 +45,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
-func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
+func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyProposerRewardRate), string(KeyCommunityRewardRate):
 		rate, err := qtypes.NewDecFromStr(value)
@@ -64,4 +66,8 @@ func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) 
 
 func (p *Params) GetParamSpace() string {
 	return ParamSpace
+}
+
+func (p *Params) Validate() btypes.Error {
+	return nil
 }
