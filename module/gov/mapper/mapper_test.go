@@ -222,14 +222,14 @@ func TestGovMapper_GetSetParams(t *testing.T) {
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 
 	params := govMapper.GetParams(ctx)
-	require.Zero(t, params.MinDeposit)
+	require.Zero(t, params.NormalMinDeposit)
 
 	params = types.DefaultParams()
 	govMapper.SetParams(ctx, params)
 
 	params = govMapper.GetParams(ctx)
 	require.NotNil(t, params)
-	require.NotZero(t, params.MinDeposit)
+	require.NotZero(t, params.NormalMinDeposit)
 }
 
 func TestGovMapper_GetSetVote(t *testing.T) {
@@ -265,8 +265,8 @@ func TestGovMapper_RefundDeposits(t *testing.T) {
 	account := accountMapper.GetAccount(addr).(*qtypes.QOSAccount)
 	require.Equal(t, btypes.NewInt(10), account.QOS)
 
-	govMapper.RefundDeposits(ctx, 1, true)
-	govParams := govMapper.GetParams(ctx)
+	govMapper.RefundDeposits(ctx, 1, textContent.GetProposalLevel(), true)
+	govParams := govMapper.GetLevelParams(ctx, textContent.GetProposalLevel())
 	account = accountMapper.GetAccount(addr).(*qtypes.QOSAccount)
 	burn := govParams.BurnRate.Mul(qtypes.MustNewDecFromStr("10")).TruncateInt()
 	require.Equal(t, btypes.NewInt(10).Add(btypes.NewInt(10).Sub(burn)), account.QOS)

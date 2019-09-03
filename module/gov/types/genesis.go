@@ -2,9 +2,8 @@ package types
 
 import (
 	"fmt"
-	"time"
-
 	"github.com/QOSGroup/qos/types"
+	"time"
 )
 
 const (
@@ -41,26 +40,29 @@ func DefaultGenesisState() GenesisState {
 
 // ValidateGenesis
 func ValidateGenesis(data GenesisState) error {
-	threshold := data.Params.Threshold
-	if threshold.IsNegative() || threshold.GT(types.OneDec()) {
-		return fmt.Errorf("governance vote threshold should be positive and less or equal to one, is %s",
-			threshold.String())
-	}
+	for _, level := range ProposalLevels {
+		levelParams := data.Params.GetLevelParams(level)
+		threshold := levelParams.Threshold
+		if threshold.IsNegative() || threshold.GT(types.OneDec()) {
+			return fmt.Errorf("governance vote threshold should be positive and less or equal to one, is %s",
+				threshold.String())
+		}
 
-	veto := data.Params.Veto
-	if veto.IsNegative() || veto.GT(types.OneDec()) {
-		return fmt.Errorf("governance vote veto threshold should be positive and less or equal to one, is %s",
-			veto.String())
-	}
+		veto := levelParams.Veto
+		if veto.IsNegative() || veto.GT(types.OneDec()) {
+			return fmt.Errorf("governance vote veto threshold should be positive and less or equal to one, is %s",
+				veto.String())
+		}
 
-	if data.Params.MaxDepositPeriod > data.Params.VotingPeriod {
-		return fmt.Errorf("governance deposit period should be less than or equal to the voting period (%ds), is %ds",
-			data.Params.VotingPeriod, data.Params.MaxDepositPeriod)
-	}
+		if levelParams.MaxDepositPeriod > levelParams.VotingPeriod {
+			return fmt.Errorf("governance deposit period should be less than or equal to the voting period (%ds), is %ds",
+				levelParams.VotingPeriod, levelParams.MaxDepositPeriod)
+		}
 
-	if data.Params.MinDeposit <= 0 {
-		return fmt.Errorf("governance deposit amount must be a valid sdk.Coins amount, is %v",
-			data.Params.MinDeposit)
+		if levelParams.MinDeposit <= 0 {
+			return fmt.Errorf("governance deposit amount must be a valid sdk.Coins amount, is %v",
+				levelParams.MinDeposit)
+		}
 	}
 
 	return nil

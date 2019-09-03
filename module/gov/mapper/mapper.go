@@ -50,7 +50,7 @@ func (mapper Mapper) SubmitProposal(ctx context.Context, content types.ProposalC
 	}
 
 	submitTime := ctx.BlockHeader().Time
-	depositPeriod := mapper.GetParams(ctx).MaxDepositPeriod
+	depositPeriod := mapper.GetLevelParams(ctx, content.GetProposalLevel()).MaxDepositPeriod
 
 	proposal = types.Proposal{
 		ProposalContent: content,
@@ -194,7 +194,7 @@ func (mapper Mapper) PeekCurrentProposalID() (proposalID uint64, err btypes.Erro
 func (mapper Mapper) activateVotingPeriod(ctx context.Context, proposal types.Proposal) {
 	proposal.VotingStartTime = ctx.BlockHeader().Time
 	proposal.VotingStartHeight = uint64(ctx.BlockHeight())
-	votingPeriod := mapper.GetParams(ctx).VotingPeriod
+	votingPeriod := mapper.GetLevelParams(ctx, proposal.GetProposalLevel()).VotingPeriod
 	proposal.VotingEndTime = proposal.VotingStartTime.Add(votingPeriod)
 	proposal.Status = types.StatusVotingPeriod
 	mapper.SetProposal(proposal)
@@ -228,6 +228,12 @@ func (mapper Mapper) GetParams(ctx context.Context) types.Params {
 	var p types.Params
 	params.GetMapper(ctx).GetParamSet(&p)
 	return p
+}
+
+func (mapper Mapper) GetLevelParams(ctx context.Context, level types.ProposalLevel) types.LevelParams {
+	var p types.Params
+	params.GetMapper(ctx).GetParamSet(&p)
+	return p.GetLevelParams(level)
 }
 
 func (mapper Mapper) SetParams(ctx context.Context, p types.Params) {
@@ -314,7 +320,7 @@ func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, deposito
 
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
-	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetParams(ctx).MinDeposit {
+	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetLevelParams(ctx, proposal.GetProposalLevel()).MinDeposit {
 		mapper.activateVotingPeriod(ctx, proposal)
 		activatedVotingPeriod = true
 	}
@@ -338,10 +344,10 @@ func (mapper Mapper) GetDeposits(proposalID uint64) store.Iterator {
 }
 
 // Refunds and deletes all the deposits on a specific proposal
-func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, deductDeposit bool) {
+func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, level types.ProposalLevel, deductDeposit bool) {
 
 	log := ctx.Logger()
-	params := mapper.GetParams(ctx)
+	params := mapper.GetLevelParams(ctx, level)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	depositsIterator := mapper.GetDeposits(proposalID)
 	defer depositsIterator.Close()

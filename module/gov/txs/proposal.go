@@ -51,7 +51,7 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	}
 
 	govMapper := mapper.GetMapper(ctx)
-	params := govMapper.GetParams(ctx)
+	params := govMapper.GetLevelParams(ctx, tx.ProposalType.Level())
 	if qtypes.NewDec(int64(tx.InitialDeposit)).LT(qtypes.NewDec(int64(params.MinDeposit)).Mul(params.MinProposerDepositRate)) {
 		return types.ErrInvalidInput("initial deposit is too small")
 	}
@@ -357,7 +357,7 @@ func (tx TxModifyInflation) ValidateData(ctx context.Context) error {
 	phrases := mint.GetMapper(ctx).MustGetInflationPhrases()
 	// 校验当前通胀时间， 当前通胀结束时间 > 当前时间+质押期+投票期 或 当前无通胀
 	currentPhrase, exists := phrases.GetPhrase(ctx.BlockHeader().Time.UTC())
-	params := mapper.GetMapper(ctx).GetParams(ctx)
+	params := mapper.GetMapper(ctx).GetLevelParams(ctx, tx.ProposalType.Level())
 	if exists && currentPhrase.EndTime.UTC().Before(ctx.BlockHeader().Time.UTC().Add(params.MaxDepositPeriod).Add(params.VotingPeriod)) {
 		return types.ErrInvalidInput("cannot submit proposal at current time")
 	}
