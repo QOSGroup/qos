@@ -13,6 +13,9 @@ import (
 
 type InactiveCode int8
 
+// 验证节点绑定QOS与共识权重换算， 1 voting power = 1 bond tokens
+var PowerReduction = btypes.OneInt()
+
 const (
 	//Active 可获得挖矿奖励状态
 	Active int8 = iota
@@ -39,33 +42,33 @@ type Validator struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
 	Owner           btypes.AccAddress `json:"owner"`
 	ConsPubKey      crypto.PubKey     `json:"consensus_pubkey"`
-	BondTokens      uint64            `json:"bond_tokens"` //不能超过int64最大值
+	BondTokens      btypes.BigInt     `json:"bond_tokens"` //不能超过int64最大值
 	Description     Description       `json:"description"`
 	Commission      Commission        `json:"commission"`
 
 	Status         int8         `json:"status"`
 	InactiveCode   InactiveCode `json:"inactive_code"`
 	InactiveTime   time.Time    `json:"inactive_time"`
-	InactiveHeight uint64       `json:"inactive_height"`
+	InactiveHeight int64        `json:"inactive_height"`
 
-	MinPeriod  uint64 `json:"min_period"`
-	BondHeight uint64 `json:"bond_height"`
+	MinPeriod  int64 `json:"min_period"`
+	BondHeight int64 `json:"bond_height"`
 }
 
 type jsonifyValidator struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
 	Owner           btypes.AccAddress `json:"owner"`
 	ConsPubKey      string            `json:"consensus_pubkey"`
-	BondTokens      uint64            `json:"bond_tokens"`
+	BondTokens      btypes.BigInt     `json:"bond_tokens"`
 	Description     Description       `json:"description"`
 
 	Status         int8         `json:"status"`
 	InactiveCode   InactiveCode `json:"inactive_code"`
 	InactiveTime   time.Time    `json:"inactive_time"`
-	InactiveHeight uint64       `json:"inactive_height"`
+	InactiveHeight int64        `json:"inactive_height"`
 
-	MinPeriod  uint64 `json:"min_period"`
-	BondHeight uint64 `json:"bond_height"`
+	MinPeriod  int64 `json:"min_period"`
+	BondHeight int64 `json:"bond_height"`
 }
 
 func (val Validator) ConsAddress() btypes.ConsAddress {
@@ -73,7 +76,7 @@ func (val Validator) ConsAddress() btypes.ConsAddress {
 }
 
 func (val Validator) ConsensusPower() int64 {
-	return int64(val.BondTokens)
+	return val.BondTokens.Div(PowerReduction).Int64()
 }
 
 func (val Validator) ToABCIValidator() (abciVal abci.Validator) {
@@ -96,7 +99,7 @@ func (val Validator) IsActive() bool {
 	return val.Status == Active
 }
 
-func (val Validator) GetBondTokens() uint64 {
+func (val Validator) GetBondTokens() btypes.BigInt {
 	return val.BondTokens
 }
 

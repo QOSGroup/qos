@@ -2,6 +2,7 @@ package types
 
 import (
 	"fmt"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"time"
 )
@@ -18,12 +19,12 @@ type GenesisProposal struct {
 }
 
 type GenesisState struct {
-	StartingProposalID uint64            `json:"starting_proposal_id"`
+	StartingProposalID int64             `json:"starting_proposal_id"`
 	Params             Params            `json:"params"`
 	Proposals          []GenesisProposal `json:"proposals"`
 }
 
-func NewGenesisState(startingProposalID uint64, params Params) GenesisState {
+func NewGenesisState(startingProposalID int64, params Params) GenesisState {
 	return GenesisState{
 		StartingProposalID: startingProposalID,
 		Params:             params,
@@ -59,7 +60,7 @@ func ValidateGenesis(data GenesisState) error {
 				levelParams.VotingPeriod, levelParams.MaxDepositPeriod)
 		}
 
-		if levelParams.MinDeposit <= 0 {
+		if !levelParams.MinDeposit.GT(btypes.ZeroInt()) {
 			return fmt.Errorf("governance deposit amount must be a valid sdk.Coins amount, is %v",
 				levelParams.MinDeposit)
 		}

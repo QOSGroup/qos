@@ -20,14 +20,14 @@ func TestDepositInvariant(t *testing.T) {
 	initGenesis(ctx, types.DefaultGenesisState())
 	govMapper := GetMapper(ctx)
 
-	textContent := types.NewTextProposal("p1", "p1", 10)
+	textContent := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	proposal, _ := govMapper.SubmitProposal(ctx, textContent)
 	govMapper.AddDeposit(ctx, proposal.ProposalID, addr, textContent.Deposit)
 	_, coins, broken := DepositInvariant("gov")(ctx)
 	assert.False(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(10))
 
-	textContent = types.NewTextProposal("p2", "p2", 10)
+	textContent = types.NewTextProposal("p2", "p2", btypes.NewInt(10))
 	proposal, _ = govMapper.SubmitProposal(ctx, textContent)
 	govMapper.AddDeposit(ctx, proposal.ProposalID, addr, textContent.Deposit)
 	_, coins, broken = DepositInvariant("gov")(ctx)

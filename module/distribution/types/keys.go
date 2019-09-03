@@ -94,20 +94,20 @@ func BuildValidatorHistoryPeriodSummaryPrefixKey(validatorAddr btypes.ValAddress
 	return append(validatorHistoryPeriodSummaryPrefixKey, validatorAddr...)
 }
 
-func BuildValidatorHistoryPeriodSummaryKey(validatorAddr btypes.ValAddress, period uint64) []byte {
+func BuildValidatorHistoryPeriodSummaryKey(validatorAddr btypes.ValAddress, period int64) []byte {
 	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, period)
+	binary.LittleEndian.PutUint64(b, uint64(period))
 	return append(append(validatorHistoryPeriodSummaryPrefixKey, validatorAddr...), b...)
 }
 
-func GetValidatorHistoryPeriodSummaryAddrPeriod(key []byte) (valAddr btypes.ValAddress, period uint64) {
+func GetValidatorHistoryPeriodSummaryAddrPeriod(key []byte) (valAddr btypes.ValAddress, period int64) {
 	if len(key) != (1 + 8 + AddrLen) {
 		panic("invalid ValidatorHistoryPeriodSummaryKey length")
 	}
 
 	valAddr = btypes.ValAddress(key[1 : 1+AddrLen])
 	b := key[1+AddrLen:]
-	period = binary.LittleEndian.Uint64(b)
+	period = int64(binary.LittleEndian.Uint64(b))
 	return
 }
 
@@ -122,15 +122,15 @@ func GetValidatorCurrentPeriodSummaryAddr(key []byte) btypes.ValAddress {
 	return btypes.ValAddress(key[1:])
 }
 
-func BuildDelegatorPeriodIncomeKey(validatorAddr btypes.ValAddress, delegatorAddress btypes.AccAddress, height uint64) []byte {
+func BuildDelegatorPeriodIncomeKey(validatorAddr btypes.ValAddress, delegatorAddress btypes.AccAddress, height int64) []byte {
 	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, height)
+	binary.LittleEndian.PutUint64(b, uint64(height))
 	return append(append(append(delegatorPeriodIncomePrefixKey, b...), validatorAddr...), delegatorAddress...)
 }
 
-func BuildDelegatorPeriodIncomePrefixKey(height uint64) []byte {
+func BuildDelegatorPeriodIncomePrefixKey(height int64) []byte {
 	b := make([]byte, 8)
-	binary.LittleEndian.PutUint64(b, height)
+	binary.LittleEndian.PutUint64(b, uint64(height))
 	return append(delegatorPeriodIncomePrefixKey, b...)
 }
 
@@ -142,13 +142,13 @@ func GetValidatorEcoPoolAddress(key []byte) btypes.ValAddress {
 	return btypes.ValAddress(key[1 : 1+AddrLen])
 }
 
-func GetDelegatorPeriodIncomeHeightAddr(key []byte) (valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height uint64) {
+func GetDelegatorPeriodIncomeHeightAddr(key []byte) (valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height int64) {
 	if len(key) != (1 + 8 + 2*AddrLen) {
 		panic("invalid DelegatorsPeriodIncomeKey length")
 	}
 
 	b := key[1:9]
-	return btypes.ValAddress(key[9 : 9+AddrLen]), btypes.AccAddress(key[9+AddrLen:]), binary.LittleEndian.Uint64(b)
+	return btypes.ValAddress(key[9 : 9+AddrLen]), btypes.AccAddress(key[9+AddrLen:]), int64(binary.LittleEndian.Uint64(b))
 }
 
 func BuildQueryValidatorPeriodInfoCustomQueryPath(valAddr btypes.ValAddress) string {

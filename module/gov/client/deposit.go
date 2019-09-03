@@ -7,6 +7,7 @@ import (
 	qcltx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/txs"
 	gtxs "github.com/QOSGroup/qos/module/gov/txs"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
@@ -28,19 +29,19 @@ func DepositCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				deposit := viper.GetInt64(flagAmount)
-				if deposit <= 0 {
-					return nil, errors.New("deposit must be positive")
+				amount, err := qtypes.GetIntFromFlag(flagAmount, false)
+				if err != nil {
+					return nil, err
 				}
 
-				return gtxs.NewTxDeposit(uint64(proposalID), proposer, uint64(deposit)), nil
+				return gtxs.NewTxDeposit(proposalID, proposer, amount), nil
 			})
 		},
 	}
 
 	cmd.Flags().Uint64(flagProposalID, 0, "Proposal ID")
 	cmd.Flags().String(flagDepositor, "", "Depositor")
-	cmd.Flags().Uint64(flagAmount, 0, "Percent of QOS for deposit")
+	cmd.Flags().String(flagAmount, "0", "Amount of QOS for deposit")
 	cmd.MarkFlagRequired(flagProposalID)
 	cmd.MarkFlagRequired(flagDepositor)
 	cmd.MarkFlagRequired(flagAmount)

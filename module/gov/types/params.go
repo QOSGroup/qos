@@ -48,7 +48,7 @@ var (
 type Params struct {
 	// params of normal level
 	// DepositParams
-	NormalMinDeposit             uint64        `json:"normal_min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
+	NormalMinDeposit             btypes.BigInt `json:"normal_min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
 	NormalMinProposerDepositRate qtypes.Dec    `json:"normal_min_proposer_deposit_rate"` //  Minimum deposit rate for proposer to submit a proposal.
 	NormalMaxDepositPeriod       time.Duration `json:"normal_max_deposit_period"`        //  Maximum period for Atom holders to deposit on a proposal.
 	// VotingParams
@@ -63,7 +63,7 @@ type Params struct {
 
 	// params of important level
 	// DepositParams
-	ImportantMinDeposit             uint64        `json:"important_min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
+	ImportantMinDeposit             btypes.BigInt `json:"important_min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
 	ImportantMinProposerDepositRate qtypes.Dec    `json:"important_min_proposer_deposit_rate"` //  Minimum deposit rate for proposer to submit a proposal.
 	ImportantMaxDepositPeriod       time.Duration `json:"important_max_deposit_period"`        //  Maximum period for Atom holders to deposit on a proposal.
 	// VotingParams
@@ -78,7 +78,7 @@ type Params struct {
 
 	// params of critical level
 	// DepositParams
-	CriticalMinDeposit             uint64        `json:"critical_min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
+	CriticalMinDeposit             btypes.BigInt `json:"critical_min_deposit"`               //  Minimum deposit for a proposal to enter voting period.
 	CriticalMinProposerDepositRate qtypes.Dec    `json:"critical_min_proposer_deposit_rate"` //  Minimum deposit rate for proposer to submit a proposal.
 	CriticalMaxDepositPeriod       time.Duration `json:"critical_max_deposit_period"`        //  Maximum period for Atom holders to deposit on a proposal.
 	// VotingParams
@@ -95,7 +95,7 @@ type Params struct {
 func DefaultParams() Params {
 	return Params{
 		// normal level
-		NormalMinDeposit:             10,
+		NormalMinDeposit:             btypes.NewInt(10),
 		NormalMinProposerDepositRate: qtypes.NewDecWithPrec(334, 3),
 		NormalMaxDepositPeriod:       DefaultPeriod,
 		NormalVotingPeriod:           DefaultPeriod,
@@ -105,7 +105,7 @@ func DefaultParams() Params {
 		NormalPenalty:                qtypes.ZeroDec(),
 		NormalBurnRate:               qtypes.NewDecWithPrec(5, 1),
 		// important level
-		ImportantMinDeposit:             10,
+		ImportantMinDeposit:             btypes.NewInt(10),
 		ImportantMinProposerDepositRate: qtypes.NewDecWithPrec(334, 3),
 		ImportantMaxDepositPeriod:       DefaultPeriod,
 		ImportantVotingPeriod:           DefaultPeriod,
@@ -115,7 +115,7 @@ func DefaultParams() Params {
 		ImportantPenalty:                qtypes.ZeroDec(),
 		ImportantBurnRate:               qtypes.NewDecWithPrec(5, 1),
 		// critical level
-		CriticalMinDeposit:             10,
+		CriticalMinDeposit:             btypes.NewInt(10),
 		CriticalMinProposerDepositRate: qtypes.NewDecWithPrec(334, 3),
 		CriticalMaxDepositPeriod:       DefaultPeriod,
 		CriticalVotingPeriod:           DefaultPeriod,
@@ -164,11 +164,11 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyNormalMinDeposit), string(KeyImportantMinDeposit), string(KeyCriticalMinDeposit):
-		v, err := strconv.ParseUint(value, 10, 64)
+		v, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
-		return v, nil
+		return btypes.NewInt(v), nil
 	case string(KeyNormalMaxDepositPeriod), string(KeyImportantMaxDepositPeriod), string(KeyCriticalMaxDepositPeriod),
 		string(KeyNormalVotingPeriod), string(KeyImportantVotingPeriod), string(KeyCriticalVotingPeriod):
 		v, err := strconv.ParseUint(value, 10, 64)
@@ -194,7 +194,7 @@ func (p *Params) GetParamSpace() string {
 }
 
 type LevelParams struct {
-	MinDeposit             uint64
+	MinDeposit             btypes.BigInt
 	MinProposerDepositRate qtypes.Dec
 	MaxDepositPeriod       time.Duration
 	VotingPeriod           time.Duration

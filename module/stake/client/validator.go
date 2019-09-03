@@ -59,7 +59,7 @@ example:
 	}
 
 	cmd.Flags().String(flagOwner, "", "keystore name or account creator address")
-	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
+	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagNodeHome, qtypes.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
 	cmd.Flags().String(flagMoniker, "", "The validator's name")
@@ -178,12 +178,12 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				tokens := viper.GetInt64(flagBondTokens)
-				if tokens < 0 {
-					return nil, errors.New("tokens lt zero")
+				tokens, err := qtypes.GetIntFromFlag(flagBondTokens, true)
+				if err != nil {
+					return nil, err
 				}
 
-				return txs.NewActiveValidatorTx(owner, validator, uint64(tokens)), nil
+				return txs.NewActiveValidatorTx(owner, validator, tokens), nil
 			})
 
 		},
@@ -191,7 +191,7 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagOwner, "", "keystore name or account of validator address")
 	cmd.Flags().String(flagValidator, "", "validator address")
-	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount to increase")
+	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount to increase")
 
 	cmd.MarkFlagRequired(flagOwner)
 	cmd.MarkFlagRequired(flagValidator)
@@ -205,8 +205,8 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 		return nil, errors.New("moniker is empty")
 	}
 
-	tokens := viper.GetInt64(flagBondTokens)
-	if tokens <= 0 {
+	tokens, err := qtypes.GetIntFromFlag(flagBondTokens, false)
+	if err != nil {
 		return nil, errors.New("tokens lte zero")
 	}
 	logo := viper.GetString(flagLogo)
@@ -230,7 +230,7 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission, nil), nil
+	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission, nil), nil
 }
 
 func BuildCommissionRates() (*types.CommissionRates, error) {

@@ -25,15 +25,15 @@ func EndBlocker(ctx context.Context, req abci.RequestEndBlock) {
 
 func ReleaseLockedAccount(ctx context.Context, lockInfo LockInfo) {
 	if lockInfo.ReleaseTime.Before(ctx.BlockHeader().Time.UTC()) {
-		releaseAmount := uint64(0)
+		releaseAmount := btypes.ZeroInt()
 		if lockInfo.ReleaseTimes != 1 {
-			releaseAmount = (lockInfo.TotalAmount - lockInfo.ReleasedAmount) / uint64(lockInfo.ReleaseTimes)
+			releaseAmount = lockInfo.TotalAmount.Sub(lockInfo.ReleasedAmount).DivRaw(lockInfo.ReleaseTimes)
 		} else {
-			releaseAmount = lockInfo.TotalAmount - lockInfo.ReleasedAmount
+			releaseAmount = lockInfo.TotalAmount.Sub(lockInfo.ReleasedAmount)
 		}
-		if releaseAmount > 0 {
+		if releaseAmount.GT(btypes.ZeroInt()) {
 			// 更新lockinfo
-			lockInfo.ReleasedAmount += releaseAmount
+			lockInfo.ReleasedAmount = lockInfo.ReleasedAmount.Add(releaseAmount)
 			lockInfo.ReleaseTimes -= 1
 			lockInfo.ReleaseTime = lockInfo.ReleaseTime.Add(time.Hour * 24 * time.Duration(lockInfo.ReleaseInterval))
 			mapper.SetLockInfo(ctx, lockInfo)
@@ -42,20 +42,19 @@ func ReleaseLockedAccount(ctx context.Context, lockInfo LockInfo) {
 			if lockedAccount == nil {
 				panic("LockAccount not exists")
 			}
-			amount := btypes.NewInt(int64(releaseAmount))
-			lockedAccount.MustMinusQOS(amount)
+			lockedAccount.MustMinusQOS(releaseAmount)
 			mapper.GetMapper(ctx).SetAccount(lockedAccount)
 			// 更新接收账户
 			receiver := mapper.GetAccount(ctx, lockInfo.Receiver)
 			if receiver == nil {
 				receiver = qtypes.NewQOSAccountWithAddress(lockInfo.Receiver)
 			}
-			receiver.MustPlusQOS(amount)
+			receiver.MustPlusQOS(releaseAmount)
 			mapper.GetMapper(ctx).SetAccount(receiver)
 		}
 
 		// 释放完成删除锁定信息
-		if lockInfo.TotalAmount == lockInfo.ReleasedAmount {
+		if lockInfo.TotalAmount.Equal(lockInfo.ReleasedAmount) {
 			mapper.DelLockInfo(ctx)
 		}
 	}

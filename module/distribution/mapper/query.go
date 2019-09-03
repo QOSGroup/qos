@@ -126,20 +126,20 @@ type ValidatorPeriodInfoQueryResult struct {
 	OperatorAddress    btypes.ValAddress `json:"validator_address"`
 	ConsPubKey         string            `json:"consensus_pubkey"`
 	Fees               btypes.BigInt     `json:"fees"`
-	CurrentTokens      uint64            `json:"current_tokens"`
-	CurrentPeriod      uint64            `json:"current_period"`
-	LastPeriod         uint64            `json:"last_period"`
+	CurrentTokens      btypes.BigInt     `json:"current_tokens"`
+	CurrentPeriod      int64             `json:"current_period"`
+	LastPeriod         int64             `json:"last_period"`
 	LastPeriodFraction qtypes.Fraction   `json:"last_period_fraction"`
 }
 
 type DelegatorIncomeInfoQueryResult struct {
 	OperatorAddress       btypes.ValAddress `json:"validator_address"`
 	ConsPubKey            string            `json:"consensus_pubkey"`
-	PreviousPeriod        uint64            `json:"previous_validator_period"`
-	BondToken             uint64            `json:"bond_token"`
-	CurrentStartingHeight uint64            `json:"earns_starting_height"`
-	FirstDelegateHeight   uint64            `json:"first_delegate_height"`
+	PreviousPeriod        int64             `json:"previous_validator_period"`
+	BondToken             btypes.BigInt     `json:"bond_token"`
+	CurrentStartingHeight int64             `json:"earns_starting_height"`
+	FirstDelegateHeight   int64             `json:"first_delegate_height"`
 	HistoricalRewardFees  btypes.BigInt     `json:"historical_rewards"`
-	LastIncomeCalHeight   uint64            `json:"last_income_calHeight"`
+	LastIncomeCalHeight   int64             `json:"last_income_calHeight"`
 	LastIncomeCalFees     btypes.BigInt     `json:"last_income_calFees"`
 }

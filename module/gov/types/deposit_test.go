@@ -16,17 +16,17 @@ func TestDeposit_Equals(t *testing.T) {
 		input2   Deposit
 		expected bool
 	}{
-		{Deposit{addr1, 1, 1},
-			Deposit{addr1, 1, 1},
+		{Deposit{addr1, 1, btypes.NewInt(1)},
+			Deposit{addr1, 1, btypes.NewInt(1)},
 			true},
-		{Deposit{addr1, 1, 1},
-			Deposit{addr2, 1, 1},
+		{Deposit{addr1, 1, btypes.NewInt(1)},
+			Deposit{addr2, 1, btypes.NewInt(1)},
 			false},
-		{Deposit{addr1, 1, 1},
-			Deposit{addr1, 2, 1},
+		{Deposit{addr1, 1, btypes.NewInt(1)},
+			Deposit{addr1, 2, btypes.NewInt(1)},
 			false},
-		{Deposit{addr1, 1, 1},
-			Deposit{addr1, 1, 2},
+		{Deposit{addr1, 1, btypes.NewInt(1)},
+			Deposit{addr1, 1, btypes.NewInt(2)},
 			false},
 	}
 

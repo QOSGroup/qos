@@ -28,7 +28,7 @@ func (mapper *Mapper) DelValidatorVoteInfo(valAddr btypes.ValAddress) {
 	mapper.Del(key)
 }
 
-func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.ValAddress, index uint64) (vote bool) {
+func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.ValAddress, index int64) (vote bool) {
 	key := types.BuildValidatorVoteInfoInWindowKey(index, valAddr)
 	vote, exists := mapper.GetBool(key)
 
@@ -39,7 +39,7 @@ func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.ValAddress, index uint6
 	return vote
 }
 
-func (mapper *Mapper) SetVoteInfoInWindow(valAddr btypes.ValAddress, index uint64, vote bool) {
+func (mapper *Mapper) SetVoteInfoInWindow(valAddr btypes.ValAddress, index int64, vote bool) {
 	key := types.BuildValidatorVoteInfoInWindowKey(index, valAddr)
 	mapper.Set(key, vote)
 }
@@ -69,7 +69,7 @@ func (mapper *Mapper) IterateVoteInfos(fn func(btypes.ValAddress, types.Validato
 	}
 }
 
-func (mapper *Mapper) IterateVoteInWindowsInfos(fn func(uint64, btypes.ValAddress, bool)) {
+func (mapper *Mapper) IterateVoteInWindowsInfos(fn func(int64, btypes.ValAddress, bool)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoInWindowKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {

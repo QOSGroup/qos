@@ -4,7 +4,6 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"math"
 	"os"
 	"path/filepath"
 	"sort"
@@ -39,7 +38,7 @@ func InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data types.Genesis
 	if len(data.GenTxs) > 0 || ctx.BlockHeight() == 0 {
 		return initGentxs(ctx, bapp, data.GenTxs)
 	} else {
-		return GetUpdatedValidators(ctx, uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt))
+		return GetUpdatedValidators(ctx, validatorMapper.GetParams(ctx).MaxValidatorCnt)
 	}
 }
 
@@ -148,7 +147,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var validatorsVoteInWindow []types.ValidatorVoteInWindowInfoState
-	sm.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.ValAddress, vote bool) {
+	sm.IterateVoteInWindowsInfos(func(index int64, valAddr btypes.ValAddress, vote bool) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
@@ -271,32 +270,28 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 		// validate delegator and validator addresses and funds against the accounts in the state
 		ownerAddr := txCreateValidator.Operator
 
-		if txCreateValidator.BondTokens >= math.MaxInt64 {
-			continue
-		}
-
 		delegations := txCreateValidator.Delegations
 		if len(delegations) == 0 {
 			delegations = append(delegations, NewDelegationInfo(ownerAddr, btypes.ValAddress(ownerAddr), txCreateValidator.BondTokens, txCreateValidator.IsCompound))
 		}
-		totalDelegationAmount := uint64(0)
+		totalDelegationAmount := btypes.ZeroInt()
 		for _, delegation := range delegations {
-			totalDelegationAmount += delegation.Amount
+			totalDelegationAmount = totalDelegationAmount.Add(delegation.Amount)
 			delAcc, delOk := addrMap[delegation.DelegatorAddr.String()]
 			if !delOk {
 				accsNotInGenesis = append(accsNotInGenesis, simpleName+"-"+delegation.DelegatorAddr.String())
 				continue
-			} else if !delAcc.EnoughOfQOS(btypes.NewInt(int64(delegation.Amount))) {
+			} else if !delAcc.EnoughOfQOS(delegation.Amount) {
 				accsNoEnoughQOS = append(accsNoEnoughQOS, simpleName+"-"+delegation.DelegatorAddr.String())
 				continue
 			} else {
-				delAcc.MustMinusQOS(btypes.NewInt(int64(delegation.Amount)))
+				delAcc.MustMinusQOS(delegation.Amount)
 				addrMap[delAcc.AccountAddress.String()] = delAcc
 			}
 		}
 
 		// bondTokens != sum(amount) of delegations
-		if totalDelegationAmount != txCreateValidator.BondTokens {
+		if !totalDelegationAmount.Equal(txCreateValidator.BondTokens) {
 			delegatonsNotEqual = append(delegatonsNotEqual, simpleName)
 		}
 

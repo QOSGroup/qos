@@ -19,17 +19,17 @@ func TestTxDeposit_ValidateData(t *testing.T) {
 	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
-	proposal := NewTxProposal("p1", "p1", addr, 10)
+	proposal := NewTxProposal("p1", "p1", addr, btypes.NewInt(10))
 	proposal.Exec(ctx)
 
 	cases := []struct {
 		input *TxDeposit
 		valid bool
 	}{
-		{NewTxDeposit(1, addr, 10), true},
-		{NewTxDeposit(2, addr, 10), false},
-		{NewTxDeposit(1, nil, 10), false},
-		{NewTxDeposit(1, addr, 0), false},
+		{NewTxDeposit(1, addr, btypes.NewInt(10)), true},
+		{NewTxDeposit(2, addr, btypes.NewInt(10)), false},
+		{NewTxDeposit(1, nil, btypes.NewInt(10)), false},
+		{NewTxDeposit(1, addr, btypes.ZeroInt()), false},
 	}
 
 	for tcIndex, tc := range cases {
@@ -45,20 +45,20 @@ func TestTxDeposit_Exec(t *testing.T) {
 	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
-	proposal := NewTxProposal("p1", "p1", addr, 10)
+	proposal := NewTxProposal("p1", "p1", addr, btypes.NewInt(10))
 	proposal.Exec(ctx)
 
 	govMapper := mapper.GetMapper(ctx)
 	deposit, exists := govMapper.GetDeposit(1, addr)
 	require.True(t, true, exists)
 	require.NotNil(t, deposit)
-	require.Equal(t, uint64(10), deposit.Amount)
+	require.Equal(t, btypes.NewInt(10), deposit.Amount)
 
-	tx := NewTxDeposit(1, addr, 10)
+	tx := NewTxDeposit(1, addr, btypes.NewInt(10))
 	tx.Exec(ctx)
 
 	deposit, exists = govMapper.GetDeposit(1, addr)
 	require.True(t, true, exists)
 	require.NotNil(t, deposit)
-	require.Equal(t, uint64(20), deposit.Amount)
+	require.Equal(t, btypes.NewInt(20), deposit.Amount)
 }

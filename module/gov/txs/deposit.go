@@ -12,12 +12,12 @@ import (
 )
 
 type TxDeposit struct {
-	ProposalID uint64            `json:"proposal_id"` // ID of the proposal
+	ProposalID int64             `json:"proposal_id"` // ID of the proposal
 	Depositor  btypes.AccAddress `json:"depositor"`   // Address of the depositor
-	Amount     uint64            `json:"amount"`      // Percent of QOS to add to the proposal's deposit
+	Amount     btypes.BigInt     `json:"amount"`      // Percent of QOS to add to the proposal's deposit
 }
 
-func NewTxDeposit(proposalID uint64, depositor btypes.AccAddress, amount uint64) *TxDeposit {
+func NewTxDeposit(proposalID int64, depositor btypes.AccAddress, amount btypes.BigInt) *TxDeposit {
 	return &TxDeposit{
 		ProposalID: proposalID,
 		Depositor:  depositor,
@@ -32,7 +32,7 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("depositor is empty")
 	}
 
-	if tx.Amount == 0 {
+	if tx.Amount.Equal(btypes.ZeroInt()) {
 		return types.ErrInvalidInput("amount of deposit is zero")
 	}
 
@@ -47,7 +47,7 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	account := accountMapper.GetAccount(tx.Depositor).(*qtypes.QOSAccount)
-	if !account.EnoughOfQOS(btypes.NewInt(int64(tx.Amount))) {
+	if !account.EnoughOfQOS(tx.Amount) {
 		return types.ErrInvalidInput("depositor has no enough qos")
 	}
 
@@ -93,9 +93,7 @@ func (tx TxDeposit) GetGasPayer() btypes.AccAddress {
 }
 
 func (tx TxDeposit) GetSignData() (ret []byte) {
-	ret = append(ret, qtypes.Uint64ToBigEndian(tx.ProposalID)...)
-	ret = append(ret, tx.Depositor...)
-	ret = append(ret, qtypes.Uint64ToBigEndian(tx.Amount)...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 
 	return
 }

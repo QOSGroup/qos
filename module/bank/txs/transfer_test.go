@@ -93,7 +93,7 @@ func TestTransferTx_CalcGas(t *testing.T) {
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
 	}
-	require.Equal(t, tx.CalcGas(), btypes.NewInt(int64(GasForTransfer)))
+	require.Equal(t, tx.CalcGas(), btypes.NewInt(GasForTransfer))
 }
 
 func TestTransferTx_GetGasPayer(t *testing.T) {

@@ -74,20 +74,20 @@ func TestMintMapper_GetAllTotalMintQOSAmount(t *testing.T) {
 	mapper := defaultMintContext().Mapper(types.MapperName).(*Mapper)
 
 	amount := mapper.GetAllTotalMintQOSAmount()
-	require.Equal(t, amount, uint64(0))
+	require.Equal(t, amount, btypes.ZeroInt())
 
-	mapper.SetAllTotalMintQOSAmount(uint64(100))
-
-	amount = mapper.GetAllTotalMintQOSAmount()
-	require.Equal(t, amount, uint64(100))
-
-	mapper.AddAllTotalMintQOSAmount(uint64(100))
+	mapper.SetAllTotalMintQOSAmount(btypes.NewInt(100))
 
 	amount = mapper.GetAllTotalMintQOSAmount()
-	require.Equal(t, amount, uint64(200))
+	require.Equal(t, amount, btypes.NewInt(100))
+
+	mapper.AddAllTotalMintQOSAmount(btypes.NewInt(100))
+
+	amount = mapper.GetAllTotalMintQOSAmount()
+	require.Equal(t, amount, btypes.NewInt(200))
 
 	mapper.DelAllTotalMintQOSAmount()
 
 	amount = mapper.GetAllTotalMintQOSAmount()
-	require.Equal(t, amount, uint64(0))
+	require.Equal(t, amount, btypes.ZeroInt())
 }

@@ -55,9 +55,9 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 			if len(name) == 0 {
 				return errors.New("moniker is empty")
 			}
-			tokens := viper.GetInt64(flagBondTokens)
-			if tokens <= 0 {
-				return errors.New("tokens lte zero")
+			tokens, err := types.GetIntFromFlag(flagBondTokens, false)
+			if err != nil {
+				return err
 			}
 			logo := viper.GetString(flagLogo)
 			website := viper.GetString(flagWebsite)
@@ -100,11 +100,6 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 				}
 			}
 
-			err = validGenesisAccount(cdc, genesisState, info.GetAddress(), btypes.NewInt(tokens))
-			if err != nil {
-				return err
-			}
-
 			isCompound := viper.GetBool(flagCompound)
 
 			delegations := viper.GetString(flagDelegations)
@@ -126,15 +121,20 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 					}
 					totalBondTokens = totalBondTokens.Add(delegator.QOS)
 					delegatorMap[delegator.AccountAddress.String()] = true
-					delegationInfos = append(delegationInfos, stake.NewDelegationInfo(delegator.AccountAddress, btypes.ValAddress(info.GetAddress()), uint64(delegator.QOS.Int64()), isCompound))
+					delegationInfos = append(delegationInfos, stake.NewDelegationInfo(delegator.AccountAddress, btypes.ValAddress(info.GetAddress()), delegator.QOS, isCompound))
 				}
 
-				if totalBondTokens.Int64() != tokens {
+				if !totalBondTokens.Equal(tokens) {
 					return errors.New("tokens must equal sum(amount) of delegations")
+				}
+			} else {
+				err = validGenesisAccount(cdc, genesisState, info.GetAddress(), tokens)
+				if err != nil {
+					return err
 				}
 			}
 
-			itx := stake.NewCreateValidatorTx(info.GetAddress(), privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission, delegationInfos)
+			itx := stake.NewCreateValidatorTx(info.GetAddress(), privValidator.GetPubKey(), tokens, isCompound, desc, *commission, delegationInfos)
 			if err != nil {
 				return err
 			}
@@ -164,7 +164,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 
 	cmd.Flags().String(flagMoniker, "", "name for validator")
 	cmd.Flags().String(flagOwner, "", "keystore name or account address for validator's owner")
-	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
+	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
 	cmd.Flags().String(flagIP, "127.0.0.1", "ip of your node")

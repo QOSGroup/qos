@@ -50,7 +50,7 @@ func DefaultGenesisState() GenesisState {
 type ValidatorHistoryPeriodState struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
 	ConsPubKey      string            `json:"consensus_pubkey"`
-	Period          uint64            `json:"period"`
+	Period          int64             `json:"period"`
 	Summary         qtypes.Fraction   `json:"summary"`
 }
 
@@ -71,7 +71,7 @@ type DelegatorIncomeHeightState struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
 	ConsPubKey      string            `json:"consensus_pubkey"`
 	DeleAddress     btypes.AccAddress `json:"delegator_address"`
-	Height          uint64            `json:"height"`
+	Height          int64             `json:"height"`
 }
 
 type ValidatorEcoFeePoolState struct {

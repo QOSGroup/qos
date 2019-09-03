@@ -2,6 +2,7 @@ package mint
 
 import (
 	"github.com/QOSGroup/qbase/context"
+	qtypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/mint/mapper"
 	"github.com/QOSGroup/qos/module/mint/types"
 )
@@ -14,11 +15,11 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 		mapper.SetFirstBlockTime(data.FirstBlockTime)
 	}
 
-	if data.AppliedQOSAmount > 0 {
+	if data.AppliedQOSAmount.GT(qtypes.ZeroInt()) {
 		mapper.SetAllTotalMintQOSAmount(data.AppliedQOSAmount)
 	}
 
-	if data.TotalQOSAmount > 0 {
+	if data.TotalQOSAmount.GT(qtypes.ZeroInt()) {
 		mapper.SetTotalQOSAmount(data.TotalQOSAmount)
 	}
 

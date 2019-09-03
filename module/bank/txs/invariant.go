@@ -9,7 +9,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
-const GasForInvariantCheck = uint64(200000*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 200000QOS
+const GasForInvariantCheck = int64(200000*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 200000QOS
 
 // 全网账户数据检查
 type TxInvariantCheck struct {
@@ -41,7 +41,7 @@ func (tx TxInvariantCheck) GetSigner() []btypes.AccAddress {
 }
 
 func (tx TxInvariantCheck) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForInvariantCheck))
+	return btypes.NewInt(GasForInvariantCheck)
 }
 
 func (tx TxInvariantCheck) GetGasPayer() btypes.AccAddress {

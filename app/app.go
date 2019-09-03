@@ -205,7 +205,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 		if validator, exists := sm.GetValidator(valAddr); exists {
 			validators[valAddr.String()] = validator
 			delegations = append(delegations, sm.GetDelegationsByValidator(valAddr)...)
-			sm.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), stake.Revoke)
+			sm.MakeValidatorInactive(valAddr, ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), stake.Revoke)
 		}
 	}
 
@@ -213,8 +213,8 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	stake.CloseInactiveValidator(ctx, -1)
 
 	// return unbond tokens
-	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondFrozenHeight) + ctx.BlockHeight()); h++ {
-		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(uint64(h))
+	for h := ctx.BlockHeight(); h <= sm.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight(); h++ {
+		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(h)
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 		for ; iter.Valid(); iter.Next() {
@@ -224,7 +224,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			sm.BaseMapper.DecodeObject(iter.Value(), &unbond)
 			_, delAddr, _ := stake.GetUnbondingDelegationHeightAddress(k)
 			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-			delegator.PlusQOS(btypes.NewInt(int64(unbond.Amount)))
+			delegator.PlusQOS(unbond.Amount)
 			am.SetAccount(delegator)
 		}
 		iter.Close()
@@ -232,7 +232,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 
 	// return redelegation tokens
 	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationActiveHeight) + ctx.BlockHeight()); h++ {
-		prePrefix := stake.BuildRedelegationByHeightPrefix(uint64(h))
+		prePrefix := stake.BuildRedelegationByHeightPrefix(h)
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 		for ; iter.Valid(); iter.Next() {
@@ -242,7 +242,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			sm.BaseMapper.DecodeObject(iter.Value(), &reDelegation)
 			_, delAddr, _ := stake.GetRedelegationHeightAddress(k)
 			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-			delegator.PlusQOS(btypes.NewInt(int64(reDelegation.Amount)))
+			delegator.PlusQOS(reDelegation.Amount)
 			am.SetAccount(delegator)
 		}
 		iter.Close()
@@ -302,8 +302,8 @@ func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.AccAddress) (gas
 
 	dm := distribution.GetMapper(ctx)
 	uint := dm.GetParams(ctx).GasPerUnitCost
-	gasFeeUsed := btypes.NewInt(int64(gasUsed / uint))
-	gasUsed = gasUsed / uint * uint
+	gasFeeUsed := btypes.NewInt(int64(gasUsed) / uint)
+	gasUsed = gasUsed / uint64(uint) * uint64(uint)
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
@@ -316,7 +316,7 @@ func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.AccAddress) (gas
 		}
 
 		account.MustMinusQOS(gasFeeUsed)
-		app.Logger.Info(fmt.Sprintf("cost %d QOS from %s for gas", gasFeeUsed.Int64(), payer))
+		app.Logger.Info(fmt.Sprintf("cost %d QOS from %s for gas", gasFeeUsed.String(), payer))
 		accountMapper.SetAccount(account)
 
 		dm.AddPreDistributionQOS(gasFeeUsed)

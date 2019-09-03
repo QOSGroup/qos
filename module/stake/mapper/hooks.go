@@ -26,13 +26,13 @@ func (mapper *Mapper) AfterDelegationCreated(ctx context.Context, val btypes.Val
 	}
 }
 
-func (mapper *Mapper) BeforeDelegationModified(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress, updateTokes uint64) {
+func (mapper *Mapper) BeforeDelegationModified(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress, updateTokes btypes.BigInt) {
 	if mapper.hooks != nil {
 		mapper.hooks.BeforeDelegationModified(ctx, val, del, updateTokes)
 	}
 }
 
-func (mapper *Mapper) AfterValidatorSlashed(ctx context.Context, slashedTokes uint64) {
+func (mapper *Mapper) AfterValidatorSlashed(ctx context.Context, slashedTokes btypes.BigInt) {
 	if mapper.hooks != nil {
 		mapper.hooks.AfterValidatorSlashed(ctx, slashedTokes)
 	}

@@ -2,7 +2,6 @@ package client
 
 import (
 	"errors"
-	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
@@ -40,36 +39,37 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				deposit := viper.GetInt64(flagDeposit)
-				if deposit <= 0 {
-					return nil, errors.New("deposit must be positive")
+				deposit, err := types.GetIntFromFlag(flagDeposit, false)
+				if err != nil {
+					return nil, err
 				}
 
 				switch proposalType {
 				case gtypes.ProposalTypeText:
-					return gtxs.NewTxProposal(title, description, proposer, uint64(deposit)), nil
+					return gtxs.NewTxProposal(title, description, proposer, deposit), nil
 				case gtypes.ProposalTypeTaxUsage:
 					destAddress, err := qcliacc.GetAddrFromFlag(ctx, flagDestAddress)
 					if err != nil {
 						return nil, err
 					}
-					percent := viper.GetFloat64(flagPercent)
-					if percent <= 0 {
-						return nil, errors.New("percent must be positive")
+					percent := strings.TrimSpace(viper.GetString(flagPercent))
+					if len(percent) == 0 {
+						return nil, errors.New("empty percent")
 					}
-
-					ps, _ := types.NewDecFromStr(fmt.Sprintf("%f", percent))
-					if ps.GT(types.OneDec()){
-						return nil, errors.New("percent must less then 100%")
+					ps, err := types.NewDecFromStr(percent)
+					if err != nil {
+						return nil, err
 					}
-
-					return gtxs.NewTxTaxUsage(title, description, proposer, uint64(deposit), destAddress, ps), nil
+					if ps.GT(types.OneDec()) || ps.LTE(types.ZeroDec()) {
+						return nil, errors.New("percent ranges (0, 1]")
+					}
+					return gtxs.NewTxTaxUsage(title, description, proposer, deposit, destAddress, ps), nil
 				case gtypes.ProposalTypeParameterChange:
 					params, err := parseParams(viper.GetString(flagParams))
 					if err != nil {
 						return nil, err
 					}
-					return gtxs.NewTxParameterChange(title, description, proposer, uint64(deposit), params), nil
+					return gtxs.NewTxParameterChange(title, description, proposer, deposit, params), nil
 				case gtypes.ProposalTypeModifyInflation:
 					inflationPhrasesStr := viper.GetString(flagInflationPhrases)
 					if len(inflationPhrasesStr) == 0 {
@@ -81,11 +81,11 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					if err != nil {
 						return nil, err
 					}
-					totalAmount := uint64(viper.GetFloat64(flagTotalAmount))
-					if totalAmount <= 0 {
-						return nil, errors.New("total-amount must be positive")
+					totalAmount, err := types.GetIntFromFlag(flagTotalAmount, false)
+					if err != nil {
+						return nil, err
 					}
-					return gtxs.NewTxModifyInflation(title, description, proposer, uint64(deposit), totalAmount, inflationPhrases), nil
+					return gtxs.NewTxModifyInflation(title, description, proposer, deposit, totalAmount, inflationPhrases), nil
 				case gtypes.ProposalTypeSoftwareUpgrade:
 					version := viper.GetString(flagVersion)
 					if len(version) == 0 {
@@ -106,8 +106,8 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 							return nil, errors.New("genesis-md5 is empty")
 						}
 					}
-					return gtxs.NewTxSoftwareUpgrade(title, description, proposer, uint64(deposit),
-						version, uint64(dataHeight), genesisFile, genesisMD5, forZeroHeight), nil
+					return gtxs.NewTxSoftwareUpgrade(title, description, proposer, deposit,
+						version, dataHeight, genesisFile, genesisMD5, forZeroHeight), nil
 				}
 
 				return nil, errors.New("unknown proposal-type")
@@ -119,12 +119,12 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagDescription, "", "Proposal description")
 	cmd.Flags().String(flagProposalType, gtypes.ProposalTypeText.String(), "")
 	cmd.Flags().String(flagProposer, "", "Proposer who submit the proposal")
-	cmd.Flags().Uint64(flagDeposit, 0, "Initial deposit paid by proposer. Must be strictly positive")
+	cmd.Flags().String(flagDeposit, "0", "Initial deposit paid by proposer. Must be strictly positive")
 	cmd.Flags().String(flagDestAddress, "", "Address to receive QOS, for TaxUsage proposal")
-	cmd.Flags().Float64(flagPercent, 0, "Percent of QOS in fee pool send to dest-address, for TaxUsage proposal")
+	cmd.Flags().String(flagPercent, "0", "Percent of QOS in fee pool send to dest-address, for TaxUsage proposal")
 	cmd.Flags().String(flagParams, "", "params, format:<module>/<key>:<value>,<module>/<key>:<value>, for ParameterChange proposal")
 	cmd.Flags().String(flagInflationPhrases, "", "Inflation phrases, json marshaled")
-	cmd.Flags().Float64(flagTotalAmount, 0, "Total QOS amount")
+	cmd.Flags().String(flagTotalAmount, "0", "Total QOS amount")
 	cmd.Flags().String(flagVersion, "", "qosd version, for software upgrade")
 	cmd.Flags().Uint64(flagDataHeight, 0, "data version, for software upgrade")
 	cmd.Flags().String(flagGenesisFile, "", "url of genesis file, for software upgrade")

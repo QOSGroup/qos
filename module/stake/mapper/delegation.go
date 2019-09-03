@@ -9,7 +9,6 @@ import (
 )
 
 func (mapper *Mapper) SetDelegationInfo(info types.DelegationInfo) {
-	qtypes.AssertUint64NotOverflow(info.Amount)
 	mapper.Set(types.BuildDelegationByDelValKey(info.DelegatorAddr, info.ValidatorAddr), info)
 	mapper.Set(types.BuildDelegationByValDelKey(info.ValidatorAddr, info.DelegatorAddr), true)
 }
@@ -77,13 +76,10 @@ func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.AccAddress, fn func
 }
 
 func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, reDelegate bool) {
-
-	qtypes.AssertUint64NotOverflow(info.Amount)
-
 	if !reDelegate {
 		am := baseabci.GetAccountMapper(ctx)
 		delegator := am.GetAccount(info.DelegatorAddr).(*qtypes.QOSAccount)
-		delegator.MustMinusQOS(btypes.NewInt(int64(info.Amount)))
+		delegator.MustMinusQOS(info.Amount)
 		am.SetAccount(delegator)
 	}
 
@@ -92,32 +88,25 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, r
 		mapper.SetDelegationInfo(info)
 		mapper.AfterDelegationCreated(ctx, info.ValidatorAddr, info.DelegatorAddr)
 	} else {
-		delegation.Amount += info.Amount
+		delegation.Amount = delegation.Amount.Add(info.Amount)
 		delegation.IsCompound = info.IsCompound
-
-		qtypes.AssertUint64NotOverflow(delegation.Amount)
-
 		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount)
 		mapper.SetDelegationInfo(delegation)
 	}
 
 }
 
-func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens uint64) {
-	info.Amount = info.Amount - tokens
-	qtypes.AssertUint64NotOverflow(info.Amount)
-
+func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens btypes.BigInt) {
+	info.Amount = info.Amount.Sub(tokens)
 	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount)
-	unbondHeight := uint64(mapper.GetParams(ctx).DelegatorUnbondFrozenHeight) + uint64(ctx.BlockHeight())
-	mapper.AddUnbondingDelegation(types.NewUnbondingDelegationInfo(info.DelegatorAddr, info.ValidatorAddr, uint64(ctx.BlockHeight()), unbondHeight, tokens))
+	unbondHeight := mapper.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight()
+	mapper.AddUnbondingDelegation(types.NewUnbondingDelegationInfo(info.DelegatorAddr, info.ValidatorAddr, ctx.BlockHeight(), unbondHeight, tokens))
 	mapper.SetDelegationInfo(info)
 }
 
 func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.RedelegationInfo) {
 	// update origin delegation
-	delegation.Amount -= info.Amount
-	qtypes.AssertUint64NotOverflow(delegation.Amount)
-
+	delegation.Amount = delegation.Amount.Sub(info.Amount)
 	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
 	mapper.SetDelegationInfo(delegation)
 
@@ -170,25 +159,20 @@ func (mapper *Mapper) GetUnbondingDelegationsByValidator(validator btypes.ValAdd
 }
 
 func (mapper *Mapper) SetUnbondingDelegation(unbonding types.UnbondingDelegationInfo) {
-	qtypes.AssertUint64NotOverflow(unbonding.Amount)
-
 	mapper.Set(types.BuildUnbondingHeightDelegatorValidatorKey(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr), unbonding)
 	mapper.Set(types.BuildUnbondingDelegatorHeightValidatorKey(unbonding.DelegatorAddr, unbonding.CompleteHeight, unbonding.ValidatorAddr), true)
 	mapper.Set(types.BuildUnbondingValidatorHeightDelegatorKey(unbonding.ValidatorAddr, unbonding.CompleteHeight, unbonding.DelegatorAddr), true)
 }
 
-func (mapper *Mapper) GetUnbondingDelegation(height uint64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) (unbonding types.UnbondingDelegationInfo, exist bool) {
+func (mapper *Mapper) GetUnbondingDelegation(height int64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) (unbonding types.UnbondingDelegationInfo, exist bool) {
 	exist = mapper.Get(types.BuildUnbondingHeightDelegatorValidatorKey(height, delAddr, valAddr), &unbonding)
 	return
 }
 
 func (mapper *Mapper) AddUnbondingDelegation(unbonding types.UnbondingDelegationInfo) {
-
-	qtypes.AssertUint64NotOverflow(unbonding.Amount)
-
 	origin, exist := mapper.GetUnbondingDelegation(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr)
 	if exist {
-		origin.Amount += unbonding.Amount
+		origin.Amount = origin.Amount.Add(unbonding.Amount)
 		unbonding = origin
 	}
 	mapper.SetUnbondingDelegation(unbonding)
@@ -200,7 +184,7 @@ func (mapper *Mapper) AddUnbondingDelegations(unbondingsAdd []types.UnbondingDel
 	}
 }
 
-func (mapper *Mapper) RemoveUnbondingDelegation(height uint64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
+func (mapper *Mapper) RemoveUnbondingDelegation(height int64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
 	mapper.Del(types.BuildUnbondingHeightDelegatorValidatorKey(height, delAddr, valAddr))
 	mapper.Del(types.BuildUnbondingDelegatorHeightValidatorKey(delAddr, height, valAddr))
 	mapper.Del(types.BuildUnbondingValidatorHeightDelegatorKey(valAddr, height, delAddr))
@@ -256,7 +240,7 @@ func (mapper *Mapper) SetRedelegation(redelegation types.RedelegationInfo) {
 	mapper.Set(types.BuildRedelegationFromValidatorHeightDelegatorKey(redelegation.FromValidator, redelegation.CompleteHeight, redelegation.DelegatorAddr), true)
 }
 
-func (mapper *Mapper) GetRedelegation(height uint64, delAdd btypes.AccAddress, valAddr btypes.ValAddress) (reDelegation types.RedelegationInfo, exist bool) {
+func (mapper *Mapper) GetRedelegation(height int64, delAdd btypes.AccAddress, valAddr btypes.ValAddress) (reDelegation types.RedelegationInfo, exist bool) {
 	exist = mapper.Get(types.BuildRedelegationHeightDelegatorFromValidatorKey(height, delAdd, valAddr), &reDelegation)
 	return
 }
@@ -264,7 +248,7 @@ func (mapper *Mapper) GetRedelegation(height uint64, delAdd btypes.AccAddress, v
 func (mapper *Mapper) AddRedelegation(redelegation types.RedelegationInfo) {
 	origin, exist := mapper.GetRedelegation(redelegation.CompleteHeight, redelegation.DelegatorAddr, redelegation.FromValidator)
 	if exist {
-		redelegation.Amount += origin.Amount
+		redelegation.Amount = redelegation.Amount.Add(origin.Amount)
 	}
 	mapper.SetRedelegation(redelegation)
 }
@@ -275,54 +259,54 @@ func (mapper *Mapper) AddRedelegations(reDelegations []types.RedelegationInfo) {
 	}
 }
 
-func (mapper *Mapper) RemoveRedelegation(height uint64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
+func (mapper *Mapper) RemoveRedelegation(height int64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
 	mapper.Del(types.BuildRedelegationHeightDelegatorFromValidatorKey(height, delAddr, valAddr))
 	mapper.Del(types.BuildRedelegationDelegatorHeightFromValidatorKey(delAddr, height, valAddr))
 	mapper.Del(types.BuildRedelegationFromValidatorHeightDelegatorKey(valAddr, height, delAddr))
 }
 
-func (mapper *Mapper) SlashUnbondings(valAddr btypes.ValAddress, infractionHeight int64, fraction qtypes.Dec, maxSlash int64) int64 {
+func (mapper *Mapper) SlashUnbondings(valAddr btypes.ValAddress, infractionHeight int64, fraction qtypes.Dec, maxSlash btypes.BigInt) btypes.BigInt {
 	unbondings := mapper.GetUnbondingDelegationsByValidator(valAddr)
 	for _, unbonding := range unbondings {
-		if unbonding.Height >= uint64(infractionHeight) {
-			if maxSlash <= 0 {
+		if unbonding.Height >= infractionHeight {
+			if !maxSlash.GT(btypes.ZeroInt()) {
 				break
 			}
-			amountSlash := fraction.MulInt(btypes.NewInt(int64(unbonding.Amount))).TruncateInt64()
-			if maxSlash-amountSlash <= 0 {
+			amountSlash := fraction.MulInt(unbonding.Amount).TruncateInt()
+			if !maxSlash.GT(amountSlash) {
 				amountSlash = maxSlash
 			}
-			if amountSlash == int64(unbonding.Amount) {
+			if amountSlash.Equal(unbonding.Amount) {
 				mapper.RemoveUnbondingDelegation(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr)
 			} else {
-				unbonding.Amount -= uint64(amountSlash)
+				unbonding.Amount = unbonding.Amount.Sub(amountSlash)
 				mapper.SetUnbondingDelegation(unbonding)
 			}
-			maxSlash -= amountSlash
+			maxSlash = maxSlash.Sub(amountSlash)
 		}
 	}
 
 	return maxSlash
 }
 
-func (mapper *Mapper) SlashRedelegations(valAddr btypes.ValAddress, infractionHeight int64, fraction qtypes.Dec, maxSlash int64) int64 {
+func (mapper *Mapper) SlashRedelegations(valAddr btypes.ValAddress, infractionHeight int64, fraction qtypes.Dec, maxSlash btypes.BigInt) btypes.BigInt {
 	redelegations := mapper.GetRedelegationsByFromValidator(valAddr)
 	for _, redelegation := range redelegations {
-		if redelegation.Height >= uint64(infractionHeight) {
-			if maxSlash == 0 {
+		if redelegation.Height >= infractionHeight {
+			if maxSlash.Equal(btypes.ZeroInt()) {
 				break
 			}
-			amountSlash := fraction.MulInt(btypes.NewInt(int64(redelegation.Amount))).TruncateInt64()
-			if maxSlash-amountSlash <= 0 {
+			amountSlash := fraction.MulInt(redelegation.Amount).TruncateInt()
+			if !maxSlash.GT(amountSlash) {
 				amountSlash = maxSlash
 			}
-			if amountSlash == int64(redelegation.Amount) {
+			if amountSlash.Equal(redelegation.Amount) {
 				mapper.RemoveRedelegation(redelegation.CompleteHeight, redelegation.DelegatorAddr, redelegation.FromValidator)
 			} else {
-				redelegation.Amount -= uint64(amountSlash)
+				redelegation.Amount = redelegation.Amount.Sub(amountSlash)
 				mapper.SetRedelegation(redelegation)
 			}
-			maxSlash -= amountSlash
+			maxSlash = maxSlash.Sub(amountSlash)
 		}
 	}
 

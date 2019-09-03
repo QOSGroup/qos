@@ -63,7 +63,7 @@ Example:
 
 			bankState.Accounts = append(bankState.Accounts, accounts...)
 			for _, acc := range accounts {
-				mintState.AppliedQOSAmount = mintState.AppliedQOSAmount + uint64(acc.QOS.Int64())
+				mintState.AppliedQOSAmount = mintState.AppliedQOSAmount.Add(acc.QOS)
 			}
 
 			appState[bank.ModuleName] = cdc.MustMarshalJSON(bankState)
@@ -114,22 +114,22 @@ Example:
 				return errors.New("invalid receiver address")
 			}
 
-			totalAmount := viper.GetInt64(flagTotalAmount)
-			if totalAmount <= 0 {
-				return errors.New("total-amount must be positive")
+			totalAmount, err := types.GetIntFromFlag(flagTotalAmount, false)
+			if err != nil {
+				return err
 			}
-			releasedAmount := viper.GetInt64(flagReleasedAmount)
-			if releasedAmount < 0 {
-				return errors.New("released-amount can not be negative")
+			releasedAmount, err := types.GetIntFromFlag(flagReleasedAmount, false)
+			if err != nil {
+				return err
 			}
-			if totalAmount <= releasedAmount {
+			if !totalAmount.GT(releasedAmount) {
 				return errors.New("released-amount must lt total-amount")
 			}
-			releaseInterval := viper.GetInt(flagReleaseInterval)
+			releaseInterval := viper.GetInt64(flagReleaseInterval)
 			if releaseInterval <= 0 {
 				return errors.New("release-interval must be positive")
 			}
-			releaseTimes := viper.GetInt(flagReleaseTimes)
+			releaseTimes := viper.GetInt64(flagReleaseTimes)
 			if releaseTimes <= 0 {
 				return errors.New("release-times must be positive")
 			}
@@ -158,12 +158,12 @@ Example:
 			cdc.MustUnmarshalJSON(appState[mint.ModuleName], &mintState)
 
 			lockedAddress := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-			lockAccount := types.NewQOSAccount(lockedAddress, btypes.NewInt(totalAmount-releasedAmount), nil)
-			lockInfo := bank.NewLockInfo(lockedAddress, receiver, uint64(totalAmount), uint64(releasedAmount), releaseTime, uint(releaseInterval), uint(releaseTimes))
+			lockAccount := types.NewQOSAccount(lockedAddress, totalAmount.Sub(releasedAmount), nil)
+			lockInfo := bank.NewLockInfo(lockedAddress, receiver, totalAmount, releasedAmount, releaseTime, releaseInterval, releaseTimes)
 			bankState.Accounts = append(bankState.Accounts, lockAccount)
 			bankState.LockInfo = &lockInfo
 
-			mintState.AppliedQOSAmount = mintState.AppliedQOSAmount + uint64(lockAccount.QOS.Int64())
+			mintState.AppliedQOSAmount = mintState.AppliedQOSAmount.Add(lockAccount.QOS)
 
 			appState[bank.ModuleName] = cdc.MustMarshalJSON(bankState)
 			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)

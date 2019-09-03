@@ -19,8 +19,8 @@ const (
 	MaxDescriptionLen = 1000
 	MaxQSCNameLen     = 8
 
-	GasForCreateQSC = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
-	GasForIssueQSC  = uint64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+	GasForCreateQSC = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
+	GasForIssueQSC  = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
 )
 
 // create QSC
@@ -135,7 +135,7 @@ func (tx TxCreateQSC) GetSigner() []btypes.AccAddress {
 }
 
 func (tx TxCreateQSC) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForCreateQSC))
+	return btypes.NewInt(GasForCreateQSC)
 }
 
 func (tx TxCreateQSC) GetGasPayer() btypes.AccAddress {
@@ -234,7 +234,7 @@ func (tx TxIssueQSC) GetSigner() []btypes.AccAddress {
 }
 
 func (tx TxIssueQSC) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForIssueQSC))
+	return btypes.NewInt(GasForIssueQSC)
 }
 
 func (tx TxIssueQSC) GetGasPayer() btypes.AccAddress {

@@ -61,7 +61,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	params := distributionMapper.GetParams(ctx)
 
 	var validatorHistoryPeriods []types.ValidatorHistoryPeriodState
-	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.ValAddress, period uint64, frac qtypes.Fraction) {
+	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.ValAddress, period int64, frac qtypes.Fraction) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
@@ -105,7 +105,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var delegatorIncomeHeights []types.DelegatorIncomeHeightState
-	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height uint64) {
+	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height int64) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {

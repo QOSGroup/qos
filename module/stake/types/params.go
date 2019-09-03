@@ -11,15 +11,15 @@ import (
 )
 
 var (
-	defaultMaxValidatorCnt             = uint32(21)
-	defaultValidatorVotingStatusLen    = uint32(10000)
-	defaultValidatorVotingStatusLeast  = uint32(7000)
-	defaultValidatorSurvivalSecs       = uint32(8 * 60 * 60)
-	defaultDelegatorUnbondReturnHeight = uint32(15 * 24 * 60 * 60 / qtypes.DefaultBlockInterval) // 1 day
-	defaultDelegatorRedelegationHeight = uint32(24 * 60 * 60 / qtypes.DefaultBlockInterval)      // 15 days
-	defaultMaxEvidenceAge              = time.Duration(1814400000000000)                         // ~= 21 days
-	defaultSlashFractionDoubleSign     = types.NewDecWithPrec(2, 1)                              // 0.2
-	defaultSlashFractionDowntime       = types.NewDecWithPrec(1, 4)                              // 0.0001
+	defaultMaxValidatorCnt             = int64(21)
+	defaultValidatorVotingStatusLen    = int64(10000)
+	defaultValidatorVotingStatusLeast  = int64(7000)
+	defaultValidatorSurvivalSecs       = int64(8 * 60 * 60)
+	defaultDelegatorUnbondReturnHeight = int64(15 * 24 * 60 * 60 / qtypes.DefaultBlockInterval) // 1 day
+	defaultDelegatorRedelegationHeight = int64(24 * 60 * 60 / qtypes.DefaultBlockInterval)      // 15 days
+	defaultMaxEvidenceAge              = time.Duration(1814400000000000)                        // ~= 21 days
+	defaultSlashFractionDoubleSign     = types.NewDecWithPrec(2, 1)                             // 0.2
+	defaultSlashFractionDowntime       = types.NewDecWithPrec(1, 4)                             // 0.0001
 )
 
 var (
@@ -38,12 +38,12 @@ var (
 )
 
 type Params struct {
-	MaxValidatorCnt                   uint32        `json:"max_validator_cnt"`
-	ValidatorVotingStatusLen          uint32        `json:"voting_status_len"`
-	ValidatorVotingStatusLeast        uint32        `json:"voting_status_least"`
-	ValidatorSurvivalSecs             uint32        `json:"survival_secs"`
-	DelegatorUnbondFrozenHeight       uint32        `json:"unbond_frozen_height"`
-	DelegatorRedelegationActiveHeight uint32        `json:"redelegation_active_height"`
+	MaxValidatorCnt                   int64         `json:"max_validator_cnt"`
+	ValidatorVotingStatusLen          int64         `json:"voting_status_len"`
+	ValidatorVotingStatusLeast        int64         `json:"voting_status_least"`
+	ValidatorSurvivalSecs             int64         `json:"survival_secs"`
+	DelegatorUnbondFrozenHeight       int64         `json:"unbond_frozen_height"`
+	DelegatorRedelegationActiveHeight int64         `json:"redelegation_active_height"`
 	MaxEvidenceAge                    time.Duration `json:"max_evidence_age"`
 	SlashFractionDoubleSign           types.Dec     `json:"slash_fraction_double_sign"`
 	SlashFractionDowntime             types.Dec     `json:"slash_fraction_downtime"`
@@ -87,7 +87,7 @@ func (p *Params) GetParamSpace() string {
 }
 
 func NewParams(maxValidatorCnt, validatorVotingStatusLen, validatorVotingStatusLeast, validatorSurvivalSecs,
-	delegatorUnbondFrozenHeight uint32, delegatorRedelegationActiveHeight uint32, maxEvidenceAge time.Duration,
+	delegatorUnbondFrozenHeight, delegatorRedelegationActiveHeight int64, maxEvidenceAge time.Duration,
 	slashFractionDoubleSign types.Dec, slashFractionDowntime types.Dec) Params {
 
 	return Params{

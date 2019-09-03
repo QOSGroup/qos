@@ -48,13 +48,13 @@ func TestUnbondingInvariant(t *testing.T) {
 
 	val := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 	del := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	unbonding := types.NewUnbondingDelegationInfo(del, val, 10, 100, 100)
+	unbonding := types.NewUnbondingDelegationInfo(del, val, 10, 100, btypes.NewInt(100))
 	sm.SetUnbondingDelegation(unbonding)
 	_, coins, broken := UnbondingInvariant("stake")(ctx)
 	assert.False(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(100))
 
-	unbonding = types.NewUnbondingDelegationInfo(del, val, 10, 100, 100)
+	unbonding = types.NewUnbondingDelegationInfo(del, val, 10, 100, btypes.NewInt(100))
 	sm.SetUnbondingDelegation(unbonding)
 	_, coins, broken = UnbondingInvariant("stake")(ctx)
 	assert.False(t, broken)
@@ -67,13 +67,13 @@ func TestRedelegationInvariant(t *testing.T) {
 
 	val := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 	del := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	redelegation := types.NewRedelegateInfo(del, val, val, 100, 10, 100, false)
+	redelegation := types.NewRedelegateInfo(del, val, val, btypes.NewInt(100), 10, 100, false)
 	sm.SetRedelegation(redelegation)
 	_, coins, broken := RedelegationInvariant("stake")(ctx)
 	assert.False(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(100))
 
-	redelegation = types.NewRedelegateInfo(del, val, val, 100, 10, 100, false)
+	redelegation = types.NewRedelegateInfo(del, val, val, btypes.NewInt(100), 10, 100, false)
 	sm.AddRedelegation(redelegation)
 	_, coins, broken = RedelegationInvariant("stake")(ctx)
 	assert.False(t, broken)
@@ -88,13 +88,13 @@ func TestDelegationInvariant(t *testing.T) {
 	del1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	del2 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
-	sm.CreateValidator(types.Validator{OperatorAddress: owner, ConsPubKey: val, BondTokens: 100})
-	sm.SetDelegationInfo(types.NewDelegationInfo(del1, btypes.ValAddress(val.Address()), 100, false))
+	sm.CreateValidator(types.Validator{OperatorAddress: owner, ConsPubKey: val, BondTokens: btypes.NewInt(100)})
+	sm.SetDelegationInfo(types.NewDelegationInfo(del1, btypes.ValAddress(val.Address()), btypes.NewInt(100), false))
 	_, coins, broken := DelegationInvariant("stake")(ctx)
 	assert.True(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(100))
 
-	sm.SetDelegationInfo(types.NewDelegationInfo(del2, btypes.ValAddress(val.Address()), 100, false))
+	sm.SetDelegationInfo(types.NewDelegationInfo(del2, btypes.ValAddress(val.Address()), btypes.NewInt(100), false))
 	_, coins, broken = DelegationInvariant("stake")(ctx)
 	assert.True(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(100))

@@ -60,11 +60,11 @@ func ErrInvalidGenesis(msg string) btypes.Error {
 	return newError(DefaultCodeSpace, CodeInvalidGenesis, msg)
 }
 
-func ErrUnknownProposal(proposalID uint64) btypes.Error {
+func ErrUnknownProposal(proposalID int64) btypes.Error {
 	return newError(DefaultCodeSpace, CodeUnknownProposal, fmt.Sprintf("unknown proposal %v", proposalID))
 }
 
-func ErrInactiveProposal(proposalID uint64) btypes.Error {
+func ErrInactiveProposal(proposalID int64) btypes.Error {
 	return newError(DefaultCodeSpace, CodeInactiveProposal, fmt.Sprintf("inactive proposal %v", proposalID))
 }
 
@@ -72,10 +72,10 @@ func ErrInvalidVote(voteOption VoteOption) btypes.Error {
 	return newError(DefaultCodeSpace, CodeInvalidVote, fmt.Sprintf("'%v' is not a valid voting option", voteOption))
 }
 
-func ErrFinishedProposal(proposalID uint64) btypes.Error {
+func ErrFinishedProposal(proposalID int64) btypes.Error {
 	return newError(DefaultCodeSpace, CodeInvalidVote, fmt.Sprintf("'%v' already finished", proposalID))
 }
 
-func ErrWrongProposalStatus(proposalID uint64) btypes.Error {
+func ErrWrongProposalStatus(proposalID int64) btypes.Error {
 	return newError(DefaultCodeSpace, CodeWrongProposalStatus, fmt.Sprintf("wrong status of proposal %v", proposalID))
 }
