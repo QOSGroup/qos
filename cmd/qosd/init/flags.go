@@ -16,6 +16,7 @@ const (
 	flagBondTokens  = "tokens"
 	flagDescription = "description"
 	flagCompound    = "compound"
+	flagDelegations = "delegations"
 
 	flagMoniker = "moniker"
 	flagLogo    = "logo"

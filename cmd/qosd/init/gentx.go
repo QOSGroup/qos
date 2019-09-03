@@ -19,8 +19,10 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
+	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/libs/cli"
 	"github.com/tendermint/tendermint/libs/common"
+	"github.com/tendermint/tendermint/privval"
 	tmtypes "github.com/tendermint/tendermint/types"
 )
 
@@ -49,12 +51,36 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 				return err
 			}
 
+			name := viper.GetString(flagMoniker)
+			if len(name) == 0 {
+				return errors.New("moniker is empty")
+			}
+			tokens := viper.GetInt64(flagBondTokens)
+			if tokens <= 0 {
+				return errors.New("tokens lte zero")
+			}
+			logo := viper.GetString(flagLogo)
+			website := viper.GetString(flagWebsite)
+			details := viper.GetString(flagDetails)
+			desc := stake.Description{
+				name, logo, website, details,
+			}
+
+			commission, err := stake.BuildCommissionRates()
+			if err != nil {
+				return err
+			}
+
+			privValidator := privval.LoadOrGenFilePV(filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorKeyFile()),
+				filepath.Join(viper.GetString(cli.HomeFlag), cfg.DefaultConfig().PrivValidatorKeyFile()))
+
 			owner := viper.GetString(flagOwner)
 			var info keys.Info
 			if len(owner) == 0 {
 				return errors.New("creator is empty")
 			}
-			keybase, err := clikeys.GetKeyBaseFromDir(cliCtx, viper.GetString(flagClientHome))
+			clientHome := viper.GetString(flagClientHome)
+			keybase, err := clikeys.GetKeyBaseFromDir(cliCtx, clientHome)
 			if err != nil {
 				return err
 			}
@@ -74,14 +100,41 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 				}
 			}
 
-			tokens := viper.GetInt64(flagBondTokens)
-			if tokens <= 0 {
-				return errors.New("tokens lte zero")
+			err = validGenesisAccount(cdc, genesisState, info.GetAddress(), btypes.NewInt(tokens))
+			if err != nil {
+				return err
 			}
 
-			validGenesisAccount(cdc, genesisState, info.GetAddress(), btypes.NewInt(tokens))
+			isCompound := viper.GetBool(flagCompound)
 
-			itx, err := stake.TxCreateValidatorBuilder(cliCtx)
+			delegations := viper.GetString(flagDelegations)
+			var delegationInfos []stake.DelegationInfo
+			if len(delegations) != 0 {
+				delegators, err := types.ParseAccounts(delegations, clientHome)
+				if err != nil {
+					return err
+				}
+				totalBondTokens := btypes.ZeroInt()
+				delegatorMap := map[string]bool{}
+				for _, delegator := range delegators {
+					if _, ok := delegatorMap[delegator.AccountAddress.String()]; ok {
+						return errors.New("duplicate delegator in delegations")
+					}
+					err = validGenesisAccount(cdc, genesisState, delegator.AccountAddress, delegator.QOS)
+					if err != nil {
+						return err
+					}
+					totalBondTokens = totalBondTokens.Add(delegator.QOS)
+					delegatorMap[delegator.AccountAddress.String()] = true
+					delegationInfos = append(delegationInfos, stake.NewDelegationInfo(delegator.AccountAddress, btypes.ValAddress(info.GetAddress()), uint64(delegator.QOS.Int64()), isCompound))
+				}
+
+				if totalBondTokens.Int64() != tokens {
+					return errors.New("tokens must equal sum(amount) of delegations")
+				}
+			}
+
+			itx := stake.NewCreateValidatorTx(info.GetAddress(), privValidator.GetPubKey(), uint64(tokens), isCompound, desc, *commission, delegationInfos)
 			if err != nil {
 				return err
 			}
@@ -114,7 +167,6 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagClientHome, types.DefaultCLIHome, "directory for keybase")
-	cmd.Flags().String(flagNodeHome, types.DefaultNodeHome, "directory for your node")
 	cmd.Flags().String(flagIP, "127.0.0.1", "ip of your node")
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
@@ -122,6 +174,7 @@ qosd gentx --moniker validatorName --owner ownerName --tokens 100
 	cmd.Flags().String(flagCommissionRate, stake.DefaultCommissionRate, "The initial commission rate percentage")
 	cmd.Flags().String(flagCommissionMaxRate, stake.DefaultCommissionMaxRate, "The maximum commission rate percentage")
 	cmd.Flags().String(flagCommissionMaxChangeRate, stake.DefaultCommissionMaxChangeRate, "The maximum commission change rate percentage (per day)")
+	cmd.Flags().String(flagDelegations, "", "init delegations, 'address1,10000QOS,address2,10000QOS'")
 
 	cmd.MarkFlagRequired(flagMoniker)
 	cmd.MarkFlagRequired(flagOwner)
@@ -153,7 +206,7 @@ func validGenesisAccount(cdc *amino.Codec, genesisState types.GenesisState, addr
 		return nil
 	}
 
-	return fmt.Errorf("account %s in not in the app_state.accounts array of genesis.json", address)
+	return fmt.Errorf("account %s is not in genesis accounts, you can use `qosd add-genesis-accounts` to add it", address)
 }
 
 func writeSignedGenTx(cdc *amino.Codec, genTxDir, nodeID, ip string, tx *txs.TxStd) error {
