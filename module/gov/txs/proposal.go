@@ -161,6 +161,10 @@ func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("Percent lte zero")
 	}
 
+	if tx.Percent.GT(qtypes.OneDec()){
+		return types.ErrInvalidInput("Percent gte 100%")
+	}
+
 	// 接受账户必须是guardian
 	if _, exists := guardian.GetMapper(ctx).GetGuardian(tx.DestAddress); !exists {
 		return types.ErrInvalidInput("DestAddress must be guardian")
