@@ -55,9 +55,14 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					}
 					percent := viper.GetFloat64(flagPercent)
 					if percent <= 0 {
-						return nil, errors.New("deposit must be positive")
+						return nil, errors.New("percent must be positive")
 					}
+
 					ps, _ := types.NewDecFromStr(fmt.Sprintf("%f", percent))
+					if ps.GT(types.OneDec()){
+						return nil, errors.New("percent must less then 100%")
+					}
+
 					return gtxs.NewTxTaxUsage(title, description, proposer, uint64(deposit), destAddress, ps), nil
 				case gtypes.ProposalTypeParameterChange:
 					params, err := parseParams(viper.GetString(flagParams))

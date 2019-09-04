@@ -261,6 +261,11 @@ func executeTaxUsage(ctx context.Context, proposal types.Proposal, logger log.Lo
 	}
 	feePool := dm.GetCommunityFeePool()
 	qos := qtypes.NewDec(feePool.Int64()).Mul(proposalContent.Percent).TruncateInt()
+
+	if feePool.LT(qos) {
+		return fmt.Errorf("Percent %s may be too bigger. feePoo %s, usage %s", proposalContent.Percent, feePool, qos)
+	}
+
 	account.MustPlusQOS(qos)
 	accountMapper.SetAccount(account)
 

@@ -38,13 +38,13 @@ func TestParams_Validate(t *testing.T) {
 
 func TestParams_GetParamSpace(t *testing.T) {
 	params := Params{
-		MinDeposit:       10,
-		MaxDepositPeriod: DefaultPeriod,
-		VotingPeriod:     DefaultPeriod,
-		Quorum:           types.NewDecWithPrec(334, 3),
-		Threshold:        types.NewDecWithPrec(5, 1),
-		Veto:             types.NewDecWithPrec(334, 3),
-		Penalty:          types.ZeroDec(),
+		NormalMinDeposit:       10,
+		NormalMaxDepositPeriod: DefaultPeriod,
+		NormalVotingPeriod:     DefaultPeriod,
+		NormalQuorum:           types.NewDecWithPrec(334, 3),
+		NormalThreshold:        types.NewDecWithPrec(5, 1),
+		NormalVeto:             types.NewDecWithPrec(334, 3),
+		NormalPenalty:          types.ZeroDec(),
 	}
 
 	require.Equal(t, ParamSpace, params.GetParamSpace())
