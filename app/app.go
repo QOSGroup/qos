@@ -213,7 +213,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	stake.CloseInactiveValidator(ctx, -1)
 
 	// return unbond tokens
-	for h := ctx.BlockHeight(); h <= sm.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight(); h++ {
+	for h := ctx.BlockHeight(); h <= sm.GetParams(ctx).DelegatorUnbondFrozenHeight+ctx.BlockHeight(); h++ {
 		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(h)
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
@@ -231,7 +231,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	}
 
 	// return redelegation tokens
-	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationActiveHeight) + ctx.BlockHeight()); h++ {
+	for h := ctx.BlockHeight(); h <= sm.GetParams(ctx).DelegatorUnbondFrozenHeight+ctx.BlockHeight(); h++ {
 		prePrefix := stake.BuildRedelegationByHeightPrefix(h)
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)

@@ -270,7 +270,7 @@ func (p *Params) Validate() btypes.Error {
 				levelParams.VotingPeriod, levelParams.MaxDepositPeriod))
 		}
 
-		if levelParams.MinDeposit <= 0 {
+		if !levelParams.MinDeposit.GT(btypes.ZeroInt()) {
 			return params.ErrInvalidParam(fmt.Sprintf("governance deposit amount must be a valid sdk.Coins amount, is %v",
 				levelParams.MinDeposit))
 		}

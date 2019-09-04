@@ -316,7 +316,7 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 	}
 
 	// redelegate
-	redelegateHeight := sm.GetParams(ctx).DelegatorRedelegationActiveHeight + ctx.BlockHeight()
+	redelegateHeight := sm.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight()
 	sm.ReDelegate(ctx, delegation, types.NewRedelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, ctx.BlockHeight(), redelegateHeight, tx.IsCompound))
 
 	// update validator
