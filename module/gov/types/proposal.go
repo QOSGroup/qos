@@ -225,7 +225,7 @@ func (pt ProposalType) Level() ProposalLevel {
 	case ProposalTypeTaxUsage:
 		return LevelNormal
 	case ProposalTypeModifyInflation:
-		return LevelImportant
+		return LevelCritical
 	case ProposalTypeSoftwareUpgrade:
 		return LevelCritical
 	default:
