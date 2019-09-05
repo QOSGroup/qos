@@ -7,6 +7,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
+// 数据检查
 func ApproveInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		var msg string
@@ -14,6 +15,7 @@ func ApproveInvariant(module string) qtypes.Invariant {
 
 		approves := GetMapper(ctx).GetApproves()
 		for _, approve := range approves {
+			// 不能包含负值
 			if approve.QOS.LT(btypes.ZeroInt()) || !approve.QSCs.IsNotNegative() {
 				count++
 				msg += fmt.Sprintf("approve from %s to %s has a negative values %s\n",

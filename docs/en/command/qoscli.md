@@ -144,7 +144,7 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query account`                [账户查询](#账户（account）)
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
-* `qoscli query approve`                [预授权](#查询预授权)
+* `qoscli query approve`                [Approve](#query-approve)
 * `qoscli query qcp`                    [跨链相关信息查询](#查询联盟链)
 * `qoscli query qsc`                    [联盟币信息查询](#查询联盟币)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
@@ -614,11 +614,11 @@ $ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78ls
 QOS支持以下几种交易类型：
 
 * `qoscli tx transfer`         [转账](#转账（transfer）)
-* `qoscli tx create-approve`   [创建预授权](#创建预授权)
-* `qoscli tx increase-approve` [增加预授权](#增加预授权)
-* `qoscli tx decrease-approve` [减少预授权](#减少预授权)
-* `qoscli tx use-approve`      [使用预授权](#使用预授权)
-* `qoscli tx cancel-approve`   [取消预授权](#取消预授权)
+* `qoscli tx create-approve`   [Create approve](#create-approve)
+* `qoscli tx increase-approve` [Increase approve](#increase-approve)
+* `qoscli tx decrease-approve` [Decrease approve](#decrease-approve)
+* `qoscli tx use-approve`      [Use approve](#use-approve)
+* `qoscli tx cancel-approve`   [Cancel approve](#cancel-approve)
 * `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
 * `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
 * `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
@@ -636,7 +636,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
 * `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
 
-分为[转账](#转账（transfer）)、[预授权](#预授权)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
+分为[转账](#转账（transfer）)、[Approve](#approve)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
 
 ### 转账（transfer）
 
@@ -659,48 +659,48 @@ Password to sign with 'Arya':<输入密码>
 
 转账成功可通过[账户查询](#账户（account）)查看最新账户状态，交易执行可能会有一定时间的延迟。
 
-### 预授权
+### Approve
 
-[QOS预授权设计](../spec/approve.md)包含以下操作指令：
+[QOS Approve](../spec/approve/) includes:
 
-* `qoscli tx create-approve`    [创建预授权](#创建预授权)
-* `qoscli query approve`        [查询预授权](#查询预授权)
-* `qoscli tx increase-approve`  [增加预授权](#增加预授权)
-* `qoscli tx decrease-approve`  [减少预授权](#减少预授权)
-* `qoscli tx use-approve`       [使用预授权](#使用预授权)
-* `qoscli tx cancel-approve`    [取消预授权](#取消预授权)
+* `qoscli tx create-approve`    [Create approve](#create-approve)
+* `qoscli query approve`        [Query approve](#query-approve)
+* `qoscli tx increase-approve`  [Increase approve](#increase-approve)
+* `qoscli tx decrease-approve`  [Decrease approve](#decrease-approve)
+* `qoscli tx use-approve`       [Use approve](#use-approve)
+* `qoscli tx cancel-approve`    [Cancel approve](#cancel-approve)
 
-> 下面实例中假设`Sansa`地址为`qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639`
+> We use `qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639` as `Sansa`'s address.
 
-#### 创建预授权
+#### Create approve
 
 `qoscli tx create-approve --from <key_name_or_account_address> --to <account_address> --coins <qos_and_qscs>`
 
-主要参数：
+main parameters:
 
-- `--from`  授权账户本地密钥库名字或账户地址
-- `--to`    被授权账户地址
-- `--coins` 授权币种、币值列表，[amount1][coin1],[amount2][coin2],...，以半角逗号相隔
+- `--from`  approver's keybase name or address
+- `--to`    approvee's keybase name or address
+- `--coins` QOS and QSCs, [amount1][coin1],[amount2][coin2],..., comma separated.
 
-`Arya`向`Sansa`授权100个QOS，100个AOE：
+`Arya` approve `Sansa` 100QOS,100AOE:
 ```
 $ qoscli tx create-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639 --coins 100QOS,100AOE
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase password>
 ```
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"9917953D8CDE80F457CD072DBCE73A36449B7A7C","height":"333"}
 ```
 
-#### 查询预授权
+#### Query approve
 
 `qoscli query approve --from <key_name_or_account_address> --to <account_address>`
 
-查询`Arya`对`Sansa`的预授权：
+query approve from `Arya` to `Sansa`:
 ```bash
 qoscli query approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639
 ```
-执行结果：
+result:
 ```bash
 {
   "from": "qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y",
@@ -715,61 +715,61 @@ qoscli query approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc
 }
 ```
 
-#### 增加预授权
+#### Increase approve
 
 `qoscli tx increase-approve --from <key_name_or_account_address> --to <account_address> --coins <qos_and_qscs>`
 
-`Arya`向`Sansa`增加授权100个QOS，100个AOE：
+`Arya` add 100QOS,100AOE to the approve for `Sansa`:
 ```bash
 $ qoscli tx increase-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639 --coins 100QOS,100AOE
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase password>
 ```
 
-执行结果：
+result：
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"3C06676C53A5439D39CB4D0FBA3213C44DC1BA8E","height":"406"}
 ```
 
-#### 减少预授权
+#### Decrease approve
 
 `qoscli tx decrease-approve --from <key_name_or_account_address> --to <account_address> --coins <qos_and_qscs>`
 
-`Arya`向`Sansa`减少授权10个QOS，10个AOE：
+`Arya` reduce 10QOS,10AOE of the approve to `Sansa`:
 ```bash
 $ qoscli tx decrease-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639 --coins 10QOS,10AOE
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase  password>
 ```
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"3C06676C53A5439D39CB4D0FBA3213C44DC1BA8E","height":"410"}
 ```
 
-#### 使用预授权
+#### Use approve
 
 `qoscli tx use-approve --from <account_address> --to <key_name_or_account_address> --coins <qos_and_qscs>`
 
-`Sansa`使用`Arya`向自己预授权中的10个QOS，10个AOE：
+`Sansa` use 10QOS,10AOE of the approve from `Arya`:
 ```bash
 $ qoscli tx use-approve --from Arya --to Sansa --coins 10QOS,10AOE
-Password to sign with 'Sansa':<输入Sansa本地密钥库密码>
+Password to sign with 'Sansa':<input Sansa's keybase password>
 ```
-执行结果：
+result：
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"3C06676C53A5439D39CB4D0FBA3213C44DC1BA8E","height":"430"}
 ```
 
-可通过[账户查询](#账户（account）)查看`Arya`和`Sansa`最新账户状态
+We can use [账户查询](#账户（account）) to see the latest state of `Arya` and `Sansa`.
 
-#### 取消预授权
+#### Cancel approve
 
 `qoscli tx cancel-approve --from <account_address> --to <key_name_or_account_address>'
 
-`Arya`取消对`Sansa`的授权：
+`Arya` cancel the approve to `Sansa`:
 ```bash
 $ qoscli tx cancel-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase password>
 ```
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"484"}
 ```

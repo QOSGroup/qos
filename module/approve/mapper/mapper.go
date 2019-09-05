@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/module/approve/types"
 )
 
+// 预授权模块存储操作
 type Mapper struct {
 	*mapper.BaseMapper
 }

@@ -8,7 +8,6 @@ import (
 
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
-	"github.com/pkg/errors"
 )
 
 // 授权 Common 结构
@@ -28,44 +27,41 @@ func NewApprove(from btypes.AccAddress, to btypes.AccAddress, qos btypes.BigInt,
 	}
 }
 
-func (approve Approve) IsValid() (bool, error) {
-
-	if len(approve.From) == 0 || len(approve.To) == 0 || !approve.IsPositive() {
-		return false, errors.New("From、To is nil or coins is not positive")
+// 校验
+func (approve Approve) Valid() error {
+	// 地址不能为空
+	if len(approve.From) == 0 {
+		return ErrInvalidInput("from address is empty")
 	}
-
+	if len(approve.To) == 0 {
+		return ErrInvalidInput("to address is empty")
+	}
+	// 地址不能相同
+	if approve.From.Equals(approve.To) {
+		return ErrInvalidInput("addresses of from and to are the same")
+	}
+	// 币值为正
+	if !approve.IsPositive() {
+		return ErrInvalidInput("coins must be positive")
+	}
+	// QSCs中不能包含QOS，不能包含重复币种
 	m := make(map[string]bool)
 	for _, val := range approve.QSCs {
 		val.Name = strings.ToUpper(strings.TrimSpace(val.Name))
 		// 不能包含QOS
 		if strings.ToUpper(val.Name) == types.QOSCoinName {
-			return false, errors.New("QSCs can not contain qos, not case sensitive")
+			return ErrInvalidInput("QSCs can not contain qos, not case sensitive")
 		}
 
 		// 不能重复
 		if _, ok := m[val.Name]; !ok {
 			m[val.Name] = true
 		} else {
-			return false, errors.New(fmt.Sprintf("repeat qsc:%s", val.Name))
+			return ErrInvalidInput(fmt.Sprintf("repeat qsc:%s", val.Name))
 		}
 	}
 
-	return true, nil
-}
-
-// 签名字节
-func (approve Approve) GetSignData() (ret []byte) {
-	approve.QOS = approve.QOS.NilToZero()
-
-	ret = append(ret, approve.From...)
-	ret = append(ret, approve.To...)
-	ret = append(ret, approve.QOS.String()...)
-	for _, coin := range approve.QSCs {
-		ret = append(ret, []byte(coin.Name)...)
-		ret = append(ret, []byte(coin.Amount.String())...)
-	}
-
-	return ret
+	return nil
 }
 
 // 是否为正值

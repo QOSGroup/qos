@@ -1,6 +1,7 @@
 package txs
 
 import (
+	"github.com/QOSGroup/qos/module/bank"
 	"testing"
 
 	bacc "github.com/QOSGroup/qbase/account"
@@ -39,6 +40,9 @@ func genTestApprove() types.Approve {
 func TestValidateData(t *testing.T) {
 	ctx := defaultContext()
 	approve := genTestApprove()
+	require.NotNil(t, ValidateData(ctx, approve))
+
+	bank.GetMapper(ctx).SetAccount(qtypes.NewQOSAccountWithAddress(testFromAddr))
 	require.NotNil(t, ValidateData(ctx, approve))
 
 	saveQSCInfo(ctx, "QSTAR")
@@ -130,9 +134,12 @@ func TestTxApproveCreate_ValidateData(t *testing.T) {
 	tx := TxCreateApprove{
 		genTestApprove(),
 	}
+	require.NotNil(t, tx.ValidateData(ctx))
+
+	bank.GetMapper(ctx).SetAccount(qtypes.NewQOSAccountWithAddress(testFromAddr))
 	require.Nil(t, tx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(tx.Approve)
 
 	require.NotNil(t, tx.ValidateData(ctx))
@@ -148,7 +155,7 @@ func TestTxApproveCreate_Exec(t *testing.T) {
 	require.Nil(t, cross)
 	require.Equal(t, result.Code, btypes.CodeOK)
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approve, exists := approveMapper.GetApprove(tx.From, tx.To)
 	require.True(t, exists)
 	require.True(t, tx.Approve.Equals(approve))
@@ -156,6 +163,7 @@ func TestTxApproveCreate_Exec(t *testing.T) {
 
 func TestTxApproveIncrease_ValidateData(t *testing.T) {
 	ctx := defaultContextWithQSC()
+	bank.GetMapper(ctx).SetAccount(qtypes.NewQOSAccountWithAddress(testFromAddr))
 
 	createTx := TxCreateApprove{
 		genTestApprove(),
@@ -165,7 +173,7 @@ func TestTxApproveIncrease_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, increaseTx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	require.Nil(t, increaseTx.ValidateData(ctx))
@@ -181,7 +189,7 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 		genTestApprove(),
 	}
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	result, cross := increaseTx.Exec(ctx)
@@ -195,6 +203,7 @@ func TestTxApproveIncrease_Exec(t *testing.T) {
 
 func TestTxApproveDecrease_ValidateData(t *testing.T) {
 	ctx := defaultContextWithQSC()
+	bank.GetMapper(ctx).SetAccount(qtypes.NewQOSAccountWithAddress(testFromAddr))
 
 	createTx := TxCreateApprove{
 		genTestApprove(),
@@ -204,7 +213,7 @@ func TestTxApproveDecrease_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, decreaseTx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	require.Nil(t, decreaseTx.ValidateData(ctx))
@@ -225,16 +234,17 @@ func TestTxApproveDecrease_Exec(t *testing.T) {
 	decreaseTx := TxDecreaseApprove{
 		genTestApprove(),
 	}
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	result, cross := decreaseTx.Exec(ctx)
 	require.Nil(t, cross)
 	require.Equal(t, result.Code, btypes.CodeOK)
 
-	approve, exists := approveMapper.GetApprove(createTx.From, createTx.To)
-	require.True(t, exists)
-	require.True(t, createTx.Approve.Minus(decreaseTx.QOS, decreaseTx.QSCs).Equals(approve))
+	_, exists := approveMapper.GetApprove(createTx.From, createTx.To)
+	require.False(t, exists)
+	require.False(t, createTx.Approve.Minus(decreaseTx.QOS, decreaseTx.QSCs).IsPositive())
+	require.True(t, createTx.Approve.Minus(decreaseTx.QOS, decreaseTx.QSCs).IsNotNegative())
 }
 
 func TestTxApproveUse_ValidateData(t *testing.T) {
@@ -248,13 +258,13 @@ func TestTxApproveUse_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, useTx.ValidateData(ctx))
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(createTx.Approve)
 	require.NotNil(t, useTx.ValidateData(ctx))
 
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.From)))
-	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.To)))
+	accountMapper := bank.GetMapper(ctx)
+	accountMapper.SetAccount(genTestAccount(useTx.From))
+	accountMapper.SetAccount(genTestAccount(useTx.To))
 
 	require.Nil(t, useTx.ValidateData(ctx))
 
@@ -279,6 +289,7 @@ func TestTxApproveUse_GetGasPayer(t *testing.T) {
 
 func TestTxApproveUse_Exec(t *testing.T) {
 	ctx := defaultContext()
+	bank.GetMapper(ctx).SetAccount(qtypes.NewQOSAccountWithAddress(testFromAddr))
 
 	createTx := TxCreateApprove{
 		genTestApprove(),
@@ -286,11 +297,11 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	useTx := TxUseApprove{
 		genTestApprove(),
 	}
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.From)))
-	accountMapper.SetAccount(genTestAccount(btypes.AccAddress(useTx.To)))
+	accountMapper := bank.GetMapper(ctx)
+	accountMapper.SetAccount(genTestAccount(useTx.From))
+	accountMapper.SetAccount(genTestAccount(useTx.To))
 
-	approveMapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	approveMapper := mapper.GetMapper(ctx)
 	approveMapper.SaveApprove(createTx.Approve)
 
 	result, cross := useTx.Exec(ctx)
@@ -298,8 +309,8 @@ func TestTxApproveUse_Exec(t *testing.T) {
 	require.Equal(t, result.Code, btypes.CodeOK)
 
 	approve, exists := approveMapper.GetApprove(useTx.From, useTx.To)
-	require.True(t, exists)
-	require.True(t, createTx.Minus(useTx.QOS, useTx.QSCs).Equals(approve))
+	require.False(t, exists)
+	require.False(t, createTx.Minus(useTx.QOS, useTx.QSCs).Equals(approve))
 
 }
 
@@ -314,7 +325,7 @@ func TestTxApproveCancel_ValidateData(t *testing.T) {
 	}
 	require.NotNil(t, cancelTx.ValidateData(ctx))
 
-	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	mapper := mapper.GetMapper(ctx)
 	mapper.SaveApprove(createTx.Approve)
 
 	require.Nil(t, cancelTx.ValidateData(ctx))
@@ -330,7 +341,7 @@ func TestTxApproveCancel_Exec(t *testing.T) {
 		createTx.To,
 	}
 
-	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
+	mapper := mapper.GetMapper(ctx)
 	mapper.SaveApprove(createTx.Approve)
 
 	result, _ := cancelTx.Exec(ctx)
@@ -355,8 +366,6 @@ func TestTxApproveCancel_CalcGas(t *testing.T) {
 
 func TestTxApproveCancel_GetSignData(t *testing.T) {
 	cancelTx := genApproveCancelTx()
-	ret := []byte{}
-	ret = append(ret, cancelTx.From...)
-	ret = append(ret, cancelTx.To...)
+	ret := Cdc.MustMarshalBinaryBare(cancelTx)
 	require.Equal(t, cancelTx.GetSignData(), ret)
 }
