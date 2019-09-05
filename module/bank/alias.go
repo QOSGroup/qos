@@ -11,6 +11,7 @@ var (
 	ModuleName      = "bank"
 	Cdc             = txs.Cdc
 	GetMapper       = mapper.GetMapper
+	GetAccount      = mapper.GetAccount
 	RegisterCodec   = txs.RegisterCodec
 	NewGenesisState = types.NewGenesisState
 	DefaultGenesis  = types.DefaultGenesisState

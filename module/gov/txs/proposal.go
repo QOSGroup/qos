@@ -24,10 +24,10 @@ type TxProposal struct {
 	Description    string             `json:"description"`     //  Description of the proposal
 	ProposalType   types.ProposalType `json:"proposal_type"`   //  Type of proposal. Initial set {PlainTextProposal, SoftwareUpgradeProposal}
 	Proposer       btypes.AccAddress  `json:"proposer"`        //  Address of the proposer
-	InitialDeposit uint64             `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
+	InitialDeposit btypes.BigInt      `json:"initial_deposit"` //  Initial deposit paid by sender. Must be strictly positive.
 }
 
-func NewTxProposal(title, description string, proposer btypes.AccAddress, deposit uint64) *TxProposal {
+func NewTxProposal(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt) *TxProposal {
 	return &TxProposal{
 		Title:          title,
 		Description:    description,
@@ -52,7 +52,7 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 
 	govMapper := mapper.GetMapper(ctx)
 	params := govMapper.GetLevelParams(ctx, tx.ProposalType.Level())
-	if qtypes.NewDec(int64(tx.InitialDeposit)).LT(qtypes.NewDec(int64(params.MinDeposit)).Mul(params.MinProposerDepositRate)) {
+	if qtypes.NewDecFromInt(tx.InitialDeposit).LT(qtypes.NewDecFromInt(params.MinDeposit).Mul(params.MinProposerDepositRate)) {
 		return types.ErrInvalidInput("initial deposit is too small")
 	}
 
@@ -62,7 +62,7 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("proposer not exists")
 	}
 
-	if !account.(*qtypes.QOSAccount).EnoughOfQOS(btypes.NewInt(int64(tx.InitialDeposit))) {
+	if !account.(*qtypes.QOSAccount).EnoughOfQOS(tx.InitialDeposit) {
 		return types.ErrInvalidInput("proposer has no enough qos")
 	}
 
@@ -116,11 +116,7 @@ func (tx TxProposal) GetGasPayer() btypes.AccAddress {
 }
 
 func (tx TxProposal) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Title...)
-	ret = append(ret, tx.Description...)
-	ret = append(ret, byte(tx.ProposalType))
-	ret = append(ret, tx.Proposer...)
-	ret = append(ret, qtypes.Uint64ToBigEndian(tx.InitialDeposit)...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 
 	return
 }
@@ -131,7 +127,7 @@ type TxTaxUsage struct {
 	Percent     qtypes.Dec        `json:"percent"`
 }
 
-func NewTxTaxUsage(title, description string, proposer btypes.AccAddress, deposit uint64, destAddress btypes.AccAddress, percent qtypes.Dec) *TxTaxUsage {
+func NewTxTaxUsage(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt, destAddress btypes.AccAddress, percent qtypes.Dec) *TxTaxUsage {
 	return &TxTaxUsage{
 		TxProposal: TxProposal{
 			Title:          title,
@@ -232,7 +228,7 @@ type TxParameterChange struct {
 	Params []types.Param `json:"params"`
 }
 
-func NewTxParameterChange(title, description string, proposer btypes.AccAddress, deposit uint64, params []types.Param) *TxParameterChange {
+func NewTxParameterChange(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt, params []types.Param) *TxParameterChange {
 	return &TxParameterChange{
 		TxProposal: TxProposal{
 			Title:          title,
@@ -259,6 +255,13 @@ func (tx TxParameterChange) ValidateData(ctx context.Context) error {
 
 	paramMapper := params.GetMapper(ctx)
 	for _, param := range tx.Params {
+		ps, exists := paramMapper.GetModuleParamSet(param.Module);
+		if !exists {
+			return types.ErrInvalidInput(fmt.Sprintf("No params in module:%s", param.Module))
+		}
+		if err = ps.Validate(); err != nil {
+			return err
+		}
 		if err = paramMapper.Validate(param.Module, param.Key, param.Value); err != nil {
 			return err
 		}
@@ -323,11 +326,11 @@ func (tx TxParameterChange) GetSignData() (ret []byte) {
 
 type TxModifyInflation struct {
 	TxProposal
-	TotalAmount      uint64                `json:"total_amount"`      // 总发行量
+	TotalAmount      btypes.BigInt         `json:"total_amount"`      // 总发行量
 	InflationPhrases mint.InflationPhrases `json:"inflation_phrases"` // 通胀阶段
 }
 
-func NewTxModifyInflation(title, description string, proposer btypes.AccAddress, deposit uint64, totalAmount uint64, phrases []mint.InflationPhrase) *TxModifyInflation {
+func NewTxModifyInflation(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt, totalAmount btypes.BigInt, phrases []mint.InflationPhrase) *TxModifyInflation {
 	return &TxModifyInflation{
 		TxProposal: TxProposal{
 			Title:          title,
@@ -348,7 +351,7 @@ func (tx TxModifyInflation) ValidateData(ctx context.Context) error {
 	}
 
 	// 校验QOS发行总量
-	if tx.TotalAmount <= 0 {
+	if !tx.TotalAmount.GT(btypes.ZeroInt()) {
 		return types.ErrInvalidInput("TotalAmount must be positive")
 	}
 
@@ -427,14 +430,14 @@ func (tx TxModifyInflation) GetSignData() (ret []byte) {
 type TxSoftwareUpgrade struct {
 	TxProposal
 	Version       string `json:"version"`         // qosd version
-	DataHeight    uint64 `json:"data_height"`     // data version
+	DataHeight    int64  `json:"data_height"`     // data version
 	GenesisFile   string `json:"genesis_file"`    // url of genesis file
 	GenesisMD5    string `json:"genesis_md5"`     // signature of genesis.json
 	ForZeroHeight bool   `json:"for_zero_height"` // restart from zero height
 }
 
-func NewTxSoftwareUpgrade(title, description string, proposer btypes.AccAddress, deposit uint64,
-	version string, dataHeight uint64, genesisFile string, genesisMd5 string, forZeroHeight bool) *TxSoftwareUpgrade {
+func NewTxSoftwareUpgrade(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt,
+	version string, dataHeight int64, genesisFile string, genesisMd5 string, forZeroHeight bool) *TxSoftwareUpgrade {
 	return &TxSoftwareUpgrade{
 		TxProposal: TxProposal{
 			Title:          title,

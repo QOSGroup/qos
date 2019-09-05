@@ -10,7 +10,7 @@ import (
 // Vote
 type Vote struct {
 	Voter      types.AccAddress `json:"voter"`       //  address of the voter
-	ProposalID uint64           `json:"proposal_id"` //  proposalID of the proposal
+	ProposalID int64            `json:"proposal_id"` //  proposalID of the proposal
 	Option     VoteOption       `json:"option"`      //  option from OptionSet chosen by the voter
 }
 

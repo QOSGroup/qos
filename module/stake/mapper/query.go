@@ -130,11 +130,11 @@ type DelegationQueryResult struct {
 	DelegatorAddr            btypes.AccAddress `json:"delegator_address"`
 	ValidatorAddr            btypes.ValAddress `json:"validator_address"`
 	ValidatorConsensusPubKey string            `json:"validator_cons_pub_key"`
-	Amount                   uint64            `json:"delegate_amount"`
+	Amount                   btypes.BigInt     `json:"delegate_amount"`
 	IsCompound               bool              `json:"is_compound"`
 }
 
-func NewDelegationQueryResult(deleAddr btypes.AccAddress, ownerAddr btypes.ValAddress, bench32ConPubKey string, amount uint64, compound bool) DelegationQueryResult {
+func NewDelegationQueryResult(deleAddr btypes.AccAddress, ownerAddr btypes.ValAddress, bench32ConPubKey string, amount btypes.BigInt, compound bool) DelegationQueryResult {
 	return DelegationQueryResult{
 		DelegatorAddr:            deleAddr,
 		ValidatorAddr:            ownerAddr,

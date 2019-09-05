@@ -91,7 +91,7 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 func queryProposal(ctx context.Context, pid string) ([]byte, error) {
 	govMapper := GetMapper(ctx)
 
-	proposalID, err := strconv.ParseUint(pid, 10, 64)
+	proposalID, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
@@ -120,7 +120,7 @@ func queryProposalsByParams(ctx context.Context, paramsData []byte) ([]byte, err
 func queryVotesByProposalID(ctx context.Context, pid string) ([]byte, error) {
 	govMapper := GetMapper(ctx)
 
-	proposalID, err := strconv.ParseUint(pid, 10, 64)
+	proposalID, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
@@ -145,7 +145,7 @@ func queryVotesByProposalID(ctx context.Context, pid string) ([]byte, error) {
 func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string) ([]byte, error) {
 	govMapper := GetMapper(ctx)
 
-	proposalID, err := strconv.ParseUint(pid, 10, 64)
+	proposalID, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
@@ -171,7 +171,7 @@ func queryVoteByProposalIDAndVoter(ctx context.Context, pid string, voter string
 func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depositer string) ([]byte, error) {
 	govMapper := GetMapper(ctx)
 
-	proposalID, err := strconv.ParseUint(pid, 10, 64)
+	proposalID, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
@@ -196,7 +196,7 @@ func queryDepositsByProposalIDAndDepositer(ctx context.Context, pid string, depo
 func queryDepositsByProposalID(ctx context.Context, pid string) ([]byte, error) {
 	govMapper := GetMapper(ctx)
 
-	proposalID, err := strconv.ParseUint(pid, 10, 64)
+	proposalID, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
@@ -222,7 +222,7 @@ func queryDepositsByProposalID(ctx context.Context, pid string) ([]byte, error) 
 func queryTallyByProposalID(ctx context.Context, pid string) ([]byte, error) {
 	govMapper := GetMapper(ctx)
 
-	proposalID, err := strconv.ParseUint(pid, 10, 64)
+	proposalID, err := strconv.ParseInt(pid, 10, 64)
 	if err != nil {
 		return nil, fmt.Errorf("pid %s is not a valid uint value", pid)
 	}
@@ -265,11 +265,11 @@ type QueryProposalsParam struct {
 	Depositor btypes.AccAddress    `json:"depositor"`
 	Voter     btypes.AccAddress    `json:"voter"`
 	Status    types.ProposalStatus `json:"status"`
-	Limit     uint64               `json:"limit"`
+	Limit     int64                `json:"limit"`
 }
 
 //nolint
-func BuildQueryProposalPath(pid uint64) string {
+func BuildQueryProposalPath(pid int64) string {
 	return fmt.Sprintf("custom/%s/%s/%d", GOV, Proposal, pid)
 }
 
@@ -279,27 +279,27 @@ func BuildQueryProposalsPath() string {
 }
 
 //nolint
-func BuildQueryVotePath(pid uint64, voterAddr string) string {
+func BuildQueryVotePath(pid int64, voterAddr string) string {
 	return fmt.Sprintf("custom/%s/%s/%d/%s", GOV, Vote, pid, voterAddr)
 }
 
 //nolint
-func BuildQueryVotesPath(pid uint64) string {
+func BuildQueryVotesPath(pid int64) string {
 	return fmt.Sprintf("custom/%s/%s/%d", GOV, Votes, pid)
 }
 
 //nolint
-func BuildQueryDepositPath(pid uint64, depositAddr string) string {
+func BuildQueryDepositPath(pid int64, depositAddr string) string {
 	return fmt.Sprintf("custom/%s/%s/%d/%s", GOV, Deposit, pid, depositAddr)
 }
 
 //nolint
-func BuildQueryDepositsPath(pid uint64) string {
+func BuildQueryDepositsPath(pid int64) string {
 	return fmt.Sprintf("custom/%s/%s/%d", GOV, Deposits, pid)
 }
 
 //nolint
-func BuildQueryTallyPath(pid uint64) string {
+func BuildQueryTallyPath(pid int64) string {
 	return fmt.Sprintf("custom/%s/%s/%d", GOV, TallyQuery, pid)
 }
 

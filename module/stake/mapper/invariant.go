@@ -12,15 +12,15 @@ func UnbondingInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		sm := GetMapper(ctx)
 
-		tokens := uint64(0)
+		tokens := btypes.ZeroInt()
 		sm.IterateUnbondingDelegations(func(unbondings []types.UnbondingDelegationInfo) {
 			for _, unbonding := range unbondings {
-				tokens += unbonding.Amount
+				tokens = tokens.Add(unbonding.Amount)
 			}
 		})
 
 		return qtypes.FormatInvariant(module, "unbonding",
-			fmt.Sprintf("total unbond tokens %d\n", tokens), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, btypes.NewInt(int64(tokens)))}, false)
+			fmt.Sprintf("total unbond tokens %d\n", tokens), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, tokens)}, false)
 	}
 }
 
@@ -28,15 +28,15 @@ func RedelegationInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		sm := GetMapper(ctx)
 
-		tokens := uint64(0)
+		tokens := btypes.ZeroInt()
 		sm.IterateRedelegationsInfo(func(redelegations []types.RedelegationInfo) {
 			for _, redelegation := range redelegations {
-				tokens += redelegation.Amount
+				tokens = tokens.Add(redelegation.Amount)
 			}
 		})
 
 		return qtypes.FormatInvariant(module, "redelegation",
-			fmt.Sprintf("total redelegation tokens %d\n", tokens), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, btypes.NewInt(int64(tokens)))}, false)
+			fmt.Sprintf("total redelegation tokens %d\n", tokens), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, tokens)}, false)
 	}
 }
 
@@ -51,15 +51,15 @@ func DelegationInvariant(module string) qtypes.Invariant {
 			validators = append(validators, validator)
 		})
 
-		valTokens := uint64(0)
+		valTokens := btypes.ZeroInt()
 		for _, validator := range validators {
-			valTokens += validator.BondTokens
-			delTokens := uint64(0)
+			valTokens = valTokens.Add(validator.BondTokens)
+			delTokens := btypes.ZeroInt()
 			delegations := sm.GetDelegationsByValidator(validator.GetValidatorAddress())
 			for _, delegation := range delegations {
-				delTokens += delegation.Amount
+				delTokens = delTokens.Add(delegation.Amount)
 			}
-			if validator.BondTokens != delTokens {
+			if !validator.BondTokens.Equal(delTokens) {
 				count++
 				msg += fmt.Sprintf("validator %s bond tokens %d not equals its delegations %d\n",
 					validator.GetValidatorAddress().String(), validator.BondTokens, delTokens)
@@ -68,6 +68,6 @@ func DelegationInvariant(module string) qtypes.Invariant {
 		broken := count != 0
 
 		return qtypes.FormatInvariant(module, "delegation",
-			fmt.Sprintf("validator delegations not equals found %d\n%s", count, msg), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, btypes.NewInt(int64(valTokens)))}, broken)
+			fmt.Sprintf("validator delegations not equals found %d\n%s", count, msg), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, valTokens)}, broken)
 	}
 }

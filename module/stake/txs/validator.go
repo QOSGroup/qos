@@ -18,24 +18,24 @@ const (
 	MaxLinkLen        = 255
 	MaxDescriptionLen = 1000
 
-	GasForCreateValidator = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
-	GasForModifyValidator = uint64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
-	GasForRevokeValidator = uint64(18*qtypes.QOSUnit) * qtypes.GasPerUnitCost   // 18 QOS
+	GasForCreateValidator = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
+	GasForModifyValidator = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+	GasForRevokeValidator = int64(18*qtypes.QOSUnit) * qtypes.GasPerUnitCost   // 18 QOS
 )
 
 type TxCreateValidator struct {
-	Operator    btypes.AccAddress     //操作者, self delegator
-	ConsPubKey  crypto.PubKey         //validator公钥
-	BondTokens  uint64                //绑定Token数量
-	IsCompound  bool                  //周期收益是否复投
-	Description types.Description     //描述信息
-	Commission  types.CommissionRates //佣金比例
+	Operator    btypes.AccAddress      //操作者, self delegator
+	ConsPubKey  crypto.PubKey          //validator公钥
+	BondTokens  btypes.BigInt          //绑定Token数量
+	IsCompound  bool                   //周期收益是否复投
+	Description types.Description      //描述信息
+	Commission  types.CommissionRates  //佣金比例
 	Delegations []types.DelegationInfo //初始委托，仅在iniChainer中执行有效
 }
 
 var _ txs.ITx = (*TxCreateValidator)(nil)
 
-func NewCreateValidatorTx(operator btypes.AccAddress, bech32ConPubKey crypto.PubKey, bondTokens uint64, isCompound bool, description types.Description, commission types.CommissionRates, delegations []types.DelegationInfo) *TxCreateValidator {
+func NewCreateValidatorTx(operator btypes.AccAddress, bech32ConPubKey crypto.PubKey, bondTokens btypes.BigInt, isCompound bool, description types.Description, commission types.CommissionRates, delegations []types.DelegationInfo) *TxCreateValidator {
 	return &TxCreateValidator{
 		Operator:    operator,
 		ConsPubKey:  bech32ConPubKey,
@@ -55,28 +55,32 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 		len(tx.Description.Website) > MaxLinkLen ||
 		len(tx.Description.Details) > MaxDescriptionLen ||
 		len(tx.Operator) == 0 ||
-		tx.BondTokens <= 0 {
+		!tx.BondTokens.GT(btypes.ZeroInt()) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
 	if ctx.BlockHeader().Height == 0 && len(tx.Delegations) != 0 {
-		totalDelegation := uint64(0)
+		totalDelegation := btypes.ZeroInt()
 		for _, delegation := range tx.Delegations {
-			totalDelegation += delegation.Amount
+			totalDelegation = totalDelegation.Add(delegation.Amount)
+			err = validateQOSAccount(ctx, delegation.DelegatorAddr, delegation.Amount)
+			if nil != err {
+				return err
+			}
 		}
-		if totalDelegation != tx.BondTokens {
+		if !totalDelegation.Equal(tx.BondTokens) {
 			return types.ErrInvalidInput(types.DefaultCodeSpace, "validator bondTokens must equal sum(amount) of delegations")
+		}
+	} else {
+		err = validateQOSAccount(ctx, tx.Operator, tx.BondTokens)
+		if nil != err {
+			return err
 		}
 	}
 
 	err = tx.Commission.Validate()
 	if err != nil {
 		return
-	}
-
-	err = validateQOSAccount(ctx, tx.Operator, tx.BondTokens)
-	if nil != err {
-		return err
 	}
 
 	mapper := mapper.GetMapper(ctx)
@@ -105,8 +109,8 @@ func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		BondTokens:      tx.BondTokens,
 		Description:     tx.Description,
 		Status:          types.Active,
-		MinPeriod:       uint64(0),
-		BondHeight:      uint64(ctx.BlockHeight()),
+		MinPeriod:       int64(0),
+		BondHeight:      ctx.BlockHeight(),
 		Commission:      types.NewCommissionWithTime(tx.Commission.Rate, tx.Commission.MaxRate, tx.Commission.MaxChangeRate, ctx.BlockHeader().Time.UTC()),
 	}
 
@@ -151,7 +155,7 @@ func (tx *TxCreateValidator) GetSigner() []btypes.AccAddress {
 }
 
 func (tx *TxCreateValidator) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForCreateValidator))
+	return btypes.NewInt(GasForCreateValidator)
 }
 
 func (tx *TxCreateValidator) GetGasPayer() btypes.AccAddress {
@@ -189,7 +193,7 @@ func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, false, tx.Owner, true)
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, tx.Owner, true)
 	if err != nil {
 		return err
 	}
@@ -253,7 +257,7 @@ func (tx *TxModifyValidator) GetSigner() []btypes.AccAddress {
 }
 
 func (tx *TxModifyValidator) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForModifyValidator))
+	return btypes.NewInt(GasForModifyValidator)
 }
 
 func (tx *TxModifyValidator) GetGasPayer() btypes.AccAddress {
@@ -283,7 +287,7 @@ func (tx *TxRevokeValidator) ValidateData(ctx context.Context) (err error) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Active, true, tx.Owner, true)
+	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Active, tx.Owner, true)
 	if nil != err {
 		return err
 	}
@@ -301,7 +305,7 @@ func (tx *TxRevokeValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	}
 
 	valAddr := validator.GetValidatorAddress()
-	mapper.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.Revoke)
+	mapper.MakeValidatorInactive(valAddr, ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), types.Revoke)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -324,7 +328,7 @@ func (tx *TxRevokeValidator) GetSigner() []btypes.AccAddress {
 }
 
 func (tx *TxRevokeValidator) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForRevokeValidator))
+	return btypes.NewInt(GasForRevokeValidator)
 }
 
 func (tx *TxRevokeValidator) GetGasPayer() btypes.AccAddress {
@@ -340,12 +344,12 @@ func (tx *TxRevokeValidator) GetSignData() (ret []byte) {
 type TxActiveValidator struct {
 	Owner         btypes.AccAddress //验证人Owner地址
 	ValidatorAddr btypes.ValAddress //验证人地址
-	BondTokens    uint64            //绑定Token数量
+	BondTokens    btypes.BigInt     //绑定Token数量
 }
 
 var _ txs.ITx = (*TxActiveValidator)(nil)
 
-func NewActiveValidatorTx(owner btypes.AccAddress, validatorAddr btypes.ValAddress, bondTokens uint64) *TxActiveValidator {
+func NewActiveValidatorTx(owner btypes.AccAddress, validatorAddr btypes.ValAddress, bondTokens btypes.BigInt) *TxActiveValidator {
 	return &TxActiveValidator{
 		Owner:         owner,
 		ValidatorAddr: validatorAddr,
@@ -364,7 +368,7 @@ func (tx *TxActiveValidator) ValidateData(ctx context.Context) (err error) {
 		return err
 	}
 
-	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Inactive, true, tx.Owner, true)
+	_, err = validateValidator(ctx, tx.ValidatorAddr, true, types.Inactive, tx.Owner, true)
 	if nil != err {
 		return err
 	}
@@ -398,10 +402,10 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	delegator := accountMapper.GetAccount(delegatorAddr).(*qtypes.QOSAccount)
 
 	// 当增加委托的tokens大于0时
-	if tx.BondTokens > 0 {
+	if tx.BondTokens.GT(btypes.ZeroInt()) {
 
 		// 从 delegator 账户, 扣去增加的自委托token数量
-		delegator.MustMinusQOS(btypes.NewInt(int64(tx.BondTokens)))
+		delegator.MustMinusQOS(tx.BondTokens)
 		accountMapper.SetAccount(delegator)
 
 		// 获取 delegationInfo
@@ -411,7 +415,7 @@ func (tx *TxActiveValidator) Exec(ctx context.Context) (result btypes.Result, cr
 		}
 
 		// 修改 delegationInfo 中的token amount, 并保存.
-		delegationInfo.Amount += tx.BondTokens
+		delegationInfo.Amount = delegationInfo.Amount.Add(tx.BondTokens)
 		stakeMapper.BeforeDelegationModified(ctx, validatorAddr, delegatorAddr, delegationInfo.Amount)
 		stakeMapper.SetDelegationInfo(delegationInfo)
 	}
@@ -449,22 +453,12 @@ func (tx *TxActiveValidator) GetSignData() (ret []byte) {
 	return Cdc.MustMarshalJSON(*tx)
 }
 
-func validateQOSAccount(ctx context.Context, addr btypes.AccAddress, toPay uint64) error {
+func validateQOSAccount(ctx context.Context, addr btypes.AccAddress, toPay btypes.BigInt) error {
 	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
 	acc := accountMapper.GetAccount(addr)
-
-	qtypes.AssertUint64NotOverflow(toPay)
-
-	if toPay > 0 {
+	if toPay.GT(btypes.ZeroInt()) {
 		if acc != nil {
 			qosAccount := acc.(*qtypes.QOSAccount)
-			toPay := btypes.NewInt(int64(toPay))
-
-			//溢出校验
-			if toPay.LT(btypes.ZeroInt()) {
-				return types.ErrInvalidInput(types.DefaultCodeSpace, "Bind tokens is lt zero: "+addr.String())
-			}
-
 			if !qosAccount.EnoughOfQOS(toPay) {
 				return types.ErrOwnerNoEnoughToken(types.DefaultCodeSpace, "No enough QOS in account: "+addr.String())
 			}
@@ -475,7 +469,7 @@ func validateQOSAccount(ctx context.Context, addr btypes.AccAddress, toPay uint6
 	return nil
 }
 
-func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, checkStatus bool, expectedStatus int8, checkJail bool, owner btypes.AccAddress, checkOwner bool) (validator types.Validator, err error) {
+func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, checkStatus bool, expectedStatus int8, owner btypes.AccAddress, checkOwner bool) (validator types.Validator, err error) {
 	valMapper := mapper.GetMapper(ctx)
 	validator, exists := valMapper.GetValidator(validatorAddr)
 	if !exists {
@@ -490,9 +484,6 @@ func validateValidator(ctx context.Context, validatorAddr btypes.ValAddress, che
 		if validator.Status != expectedStatus {
 			return validator, fmt.Errorf("Validator status not match. except: %d, actual:%d.", expectedStatus, validator.Status)
 		}
-	}
-	if checkJail {
-		// TODO: block jailed validator
 	}
 	return validator, nil
 }

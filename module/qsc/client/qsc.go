@@ -19,7 +19,6 @@ import (
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
 	"github.com/tendermint/tendermint/libs/common"
-	"strconv"
 	"strings"
 )
 
@@ -71,9 +70,9 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 						if err != nil {
 							return nil, err
 						}
-						amount, err := strconv.ParseInt(strings.TrimSpace(accArr[1]), 10, 64)
-						if err != nil {
-							return nil, err
+						amount, ok := btypes.NewIntFromString(strings.TrimSpace(accArr[1]))
+						if !ok {
+							return nil, fmt.Errorf("%s parse error", accArr[1])
 						}
 						acc := qtypes.QOSAccount{
 							BaseAccount: bacc.BaseAccount{
@@ -85,7 +84,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 							QSCs: qtypes.QSCs{
 								{
 									subj.Name,
-									btypes.NewInt(amount),
+									amount,
 								},
 							},
 						}
@@ -152,18 +151,21 @@ func IssueQSCCmd(cdc *amino.Codec) *cobra.Command {
 		Short: "issue qsc",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
-				amount := viper.GetInt64(flagAmount)
+				amount, err := qtypes.GetIntFromFlag(flagAmount, false)
+				if err != nil {
+					return nil, err
+				}
 				qscName := viper.GetString(flagQscname)
 				bankerAddr, err := qcliacc.GetAddrFromFlag(ctx, flagBanker)
 				if err != nil {
 					return nil, err
 				}
-				return txs.TxIssueQSC{qscName, btypes.NewInt(amount), bankerAddr}, nil
+				return txs.TxIssueQSC{qscName, amount, bankerAddr}, nil
 			})
 		},
 	}
 
-	cmd.Flags().Int64(flagAmount, 100000, "coin amount send to banker")
+	cmd.Flags().String(flagAmount, "0", "coin amount send to banker")
 	cmd.Flags().String(flagQscname, "", "qsc name")
 	cmd.Flags().String(flagBanker, "", "address or name of banker")
 	cmd.MarkFlagRequired(flagAmount)

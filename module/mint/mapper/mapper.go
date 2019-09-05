@@ -3,6 +3,7 @@ package mapper
 import (
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/mapper"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/mint/types"
 )
 
@@ -56,7 +57,7 @@ func (mapper *Mapper) GetFirstBlockTime() (t int64) {
 }
 
 //获取总分配的QOS总数
-func (mapper *Mapper) GetAllTotalMintQOSAmount() (amount uint64) {
+func (mapper *Mapper) GetAllTotalMintQOSAmount() (amount btypes.BigInt) {
 	mapper.Get(types.BuildAllTotalMintQOSKey(), &amount)
 	return
 }
@@ -66,27 +67,27 @@ func (mapper *Mapper) DelAllTotalMintQOSAmount() {
 }
 
 //设置总分配的QOS总数
-func (mapper *Mapper) SetAllTotalMintQOSAmount(amount uint64) {
+func (mapper *Mapper) SetAllTotalMintQOSAmount(amount btypes.BigInt) {
 	mapper.Set(types.BuildAllTotalMintQOSKey(), amount)
 }
 
 //增加总分配的QOS总数
-func (mapper *Mapper) AddAllTotalMintQOSAmount(amount uint64) {
+func (mapper *Mapper) AddAllTotalMintQOSAmount(amount btypes.BigInt) {
 
 	totalAmount := mapper.GetAllTotalMintQOSAmount()
-	totalAmount += amount
+	totalAmount = totalAmount.Add(amount)
 
 	mapper.SetAllTotalMintQOSAmount(totalAmount)
 }
 
 //设置QOS发行总量
-func (mapper *Mapper) SetTotalQOSAmount(amount uint64) {
+func (mapper *Mapper) SetTotalQOSAmount(amount btypes.BigInt) {
 	mapper.Set(types.BuildTotalQOSKey(), amount)
 	return
 }
 
 //获取QOS发行总量（已发行+待发行）
-func (mapper *Mapper) GetTotalQOSAmount() (amount uint64) {
+func (mapper *Mapper) GetTotalQOSAmount() (amount btypes.BigInt) {
 	mapper.Get(types.BuildTotalQOSKey(), &amount)
 	return
 }

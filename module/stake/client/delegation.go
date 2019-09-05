@@ -5,7 +5,9 @@ import (
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
+	"github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/stake/txs"
+	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
@@ -27,9 +29,9 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
-				tokens := viper.GetInt64(flagBondTokens)
-				if tokens <= 0 {
-					return nil, errors.New("delegate QOS amount must gt 0")
+				tokens, err := qtypes.GetIntFromFlag(flagBondTokens, false)
+				if err != nil {
+					return nil, err
 				}
 
 				validatorAddr, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
@@ -45,7 +47,7 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 				return &txs.TxCreateDelegation{
 					Delegator:     delegator,
 					ValidatorAddr: validatorAddr,
-					Amount:        uint64(tokens),
+					Amount:        tokens,
 					IsCompound:    viper.GetBool(flagCompound),
 				}, nil
 			})
@@ -54,7 +56,7 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
 	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
-	cmd.Flags().Int64(flagBondTokens, 0, "amount of QOS to delegate")
+	cmd.Flags().String(flagBondTokens, "0", "amount of QOS to delegate")
 	cmd.Flags().Bool(flagCompound, false, " whether the income is calculated as compound interest")
 
 	cmd.MarkFlagRequired(flagDelegator)
@@ -107,14 +109,17 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
-				tokens := viper.GetInt64(flagBondTokens)
+				tokens, err := qtypes.GetIntFromFlag(flagBondTokens, true)
+				if err != nil {
+					return nil, err
+				}
 				isUnbondAll := viper.GetBool(flagAll)
 
 				if isUnbondAll {
-					tokens = 0
+					tokens = types.ZeroInt()
 				}
 
-				if !isUnbondAll && tokens <= 0 {
+				if !isUnbondAll && !tokens.GT(types.ZeroInt()) {
 					return nil, errors.New("unbond QOS amount must gt 0")
 				}
 
@@ -131,7 +136,7 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 				return &txs.TxUnbondDelegation{
 					Delegator:     delegator,
 					ValidatorAddr: validatorAddr,
-					UnbondAmount:  uint64(tokens),
+					UnbondAmount:  tokens,
 					IsUnbondAll:   isUnbondAll,
 				}, nil
 			})
@@ -140,7 +145,7 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
 	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
-	cmd.Flags().Int64(flagBondTokens, 0, "amount of QOS to unbond")
+	cmd.Flags().String(flagBondTokens, "0", "amount of QOS to unbond")
 	cmd.Flags().Bool(flagAll, false, "whether unbond all QOS amount. override --tokens if true")
 
 	cmd.MarkFlagRequired(flagDelegator)
@@ -156,14 +161,17 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 
-				tokens := viper.GetInt64(flagBondTokens)
+				tokens, err := qtypes.GetIntFromFlag(flagBondTokens, true)
+				if err != nil {
+					return nil, err
+				}
 				all := viper.GetBool(flagAll)
 
 				if all {
-					tokens = 0
+					tokens = types.ZeroInt()
 				}
 
-				if !all && tokens <= 0 {
+				if !all && !tokens.GT(types.ZeroInt()) {
 					return nil, errors.New("redelegate QOS amount must gt 0")
 				}
 
@@ -186,7 +194,7 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					Delegator:         delegator,
 					FromValidatorAddr: fromValidatorAddr,
 					ToValidatorAddr:   toValidatorAddr,
-					Amount:            uint64(tokens),
+					Amount:            tokens,
 					IsCompound:        viper.GetBool(flagCompound),
 					IsRedelegateAll:   all,
 				}, nil
@@ -197,7 +205,7 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
 	cmd.Flags().String(flagFromValidator, "", "keystore name or account of validator address")
 	cmd.Flags().String(flagToValidator, "", "keystore name or account of validator address")
-	cmd.Flags().Int64(flagBondTokens, 0, "amount of QOS to redelegate")
+	cmd.Flags().String(flagBondTokens, "0", "amount of QOS to redelegate")
 	cmd.Flags().Bool(flagAll, false, "whether redelegate all QOS amount. override --tokens if true")
 	cmd.Flags().Bool(flagCompound, false, "whether the income is calculated as compound interest")
 

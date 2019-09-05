@@ -27,7 +27,7 @@ func queryProposalCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query details of a signal proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -89,7 +89,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 				Depositor: depositorAddr,
 				Voter:     voterAddr,
 				Status:    status,
-				Limit:     uint64(limit),
+				Limit:     limit,
 			}
 
 			data, err := cliCtx.Codec.MarshalJSON(queryParam)
@@ -149,7 +149,7 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -186,7 +186,7 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query votes on a proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -223,7 +223,7 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -260,7 +260,7 @@ func queryDepositsCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query deposits on a proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -292,7 +292,7 @@ func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Get the tally of a proposal vote",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}

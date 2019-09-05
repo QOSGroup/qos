@@ -1,6 +1,7 @@
 package types
 
 import (
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -14,31 +15,31 @@ func TestParams_Validate(t *testing.T) {
 		value    string
 		expected interface{}
 	}{
-		{"min_deposit", "1", uint64(1)},
-		{"min_deposit", "0.5", nil},
-		{"max_deposit_period", "1", time.Duration(1)},
-		{"max_deposit_period", "aa", nil},
-		{"voting_period", "1", time.Duration(1)},
-		{"voting_period", "lk", nil},
-		{"quorum", "0.5", types.MustNewDecFromStr("0.5")},
-		{"quorum", "www", nil},
-		{"threshold", "0.5", types.MustNewDecFromStr("0.5")},
-		{"threshold", "", nil},
-		{"veto", "0.5", types.MustNewDecFromStr("0.5")},
-		{"veto", "ee", nil},
-		{"penalty", "0.5", types.MustNewDecFromStr("0.5")},
-		{"penalty", "6h", nil},
+		{"normal_min_deposit", "1", btypes.NewInt(1)},
+		{"normal_min_deposit", "0.5", nil},
+		{"normal_max_deposit_period", "1", time.Duration(1)},
+		{"normal_max_deposit_period", "aa", nil},
+		{"normal_voting_period", "1", time.Duration(1)},
+		{"normal_voting_period", "lk", nil},
+		{"normal_quorum", "0.5", types.MustNewDecFromStr("0.5")},
+		{"normal_quorum", "www", nil},
+		{"normal_threshold", "0.5", types.MustNewDecFromStr("0.5")},
+		{"normal_threshold", "", nil},
+		{"normal_veto", "0.5", types.MustNewDecFromStr("0.5")},
+		{"normal_veto", "ee", nil},
+		{"normal_penalty", "0.5", types.MustNewDecFromStr("0.5")},
+		{"normal_penalty", "6h", nil},
 	}
 
 	for tcIndex, tc := range cases {
-		v, _ := p.Validate(tc.key, tc.value)
+		v, _ := p.ValidateKeyValue(tc.key, tc.value)
 		require.Equal(t, tc.expected, v, "tc #%d", tcIndex)
 	}
 }
 
 func TestParams_GetParamSpace(t *testing.T) {
 	params := Params{
-		NormalMinDeposit:       10,
+		NormalMinDeposit:       btypes.NewInt(10),
 		NormalMaxDepositPeriod: DefaultPeriod,
 		NormalVotingPeriod:     DefaultPeriod,
 		NormalQuorum:           types.NewDecWithPrec(334, 3),

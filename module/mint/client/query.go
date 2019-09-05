@@ -3,6 +3,7 @@ package client
 import (
 	"errors"
 	"github.com/QOSGroup/qbase/client/context"
+	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/mint/mapper"
 	"github.com/QOSGroup/qos/module/mint/types"
 	"github.com/spf13/cobra"
@@ -52,7 +53,7 @@ func queryTotal(cdc *go_amino.Codec) *cobra.Command {
 				return errors.New("no result found")
 			}
 
-			var result uint64
+			var result btypes.BigInt
 			err = cdc.UnmarshalJSON(res, &result)
 			if err != nil {
 				return err
@@ -80,7 +81,7 @@ func queryApplied(cdc *go_amino.Codec) *cobra.Command {
 				return errors.New("no result found")
 			}
 
-			var result uint64
+			var result btypes.BigInt
 			err = cdc.UnmarshalJSON(res, &result)
 			if err != nil {
 				return err

@@ -85,7 +85,7 @@ func TestQOSAccount_PlusQOS(t *testing.T) {
 
 	for tcIndex, tc := range cases {
 		res := tc.input1.PlusQOS(tc.input2)
-		require.Equal(t, tc.expect.Int64(), tc.input1.QOS.Int64(), "tc #%d", tcIndex)
+		require.Equal(t, tc.expect, tc.input1.QOS, "tc #%d", tcIndex)
 		require.Equal(t, tc.correct, res == nil, "tc #%d", tcIndex)
 	}
 }
@@ -109,7 +109,7 @@ func TestQOSAccount_MinusQOS(t *testing.T) {
 
 	for tcIndex, tc := range cases {
 		res := tc.input1.MinusQOS(tc.input2)
-		require.Equal(t, tc.expect.Int64(), tc.input1.QOS.Int64(), "tc #%d", tcIndex)
+		require.Equal(t, tc.expect, tc.input1.QOS, "tc #%d", tcIndex)
 		require.Equal(t, tc.correct, res == nil, "tc #%d", tcIndex)
 	}
 }
@@ -191,7 +191,7 @@ func TestQOSAccount_MinusQSC(t *testing.T) {
 			require.Equal(t, len(tc.expected), len(tc.input1.QSCs))
 			for i := range tc.input1.QSCs {
 				require.Equal(t, tc.expected[i].Name, tc.input1.QSCs[i].Name, "tc #%d", tcIndex)
-				require.Equal(t, tc.expected[i].Amount.Int64(), tc.input1.QSCs[i].Amount.Int64(), "tc #%d", tcIndex)
+				require.Equal(t, tc.expected[i].Amount, tc.input1.QSCs[i].Amount, "tc #%d", tcIndex)
 			}
 		}
 	}

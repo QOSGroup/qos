@@ -42,7 +42,7 @@ func BuildDistributionStoreQueryPath() []byte {
 
 //初始化validator历史计费点汇总收益,当前计费点收益信息.
 func (mapper *Mapper) InitValidatorPeriodSummaryInfo(valAddr btypes.ValAddress) types.ValidatorCurrentPeriodSummary {
-	mapper.Set(types.BuildValidatorHistoryPeriodSummaryKey(valAddr, uint64(0)), qtypes.ZeroFraction())
+	mapper.Set(types.BuildValidatorHistoryPeriodSummaryKey(valAddr, 0), qtypes.ZeroFraction())
 	current := types.ValidatorCurrentPeriodSummary{
 		Period: 1,
 		Fees:   btypes.ZeroInt(),
@@ -68,7 +68,7 @@ func (mapper *Mapper) DeleteValidatorPeriodSummaryInfo(valAddr btypes.ValAddress
 //首次Delegate:
 //1. first delegate
 //2. unbond all , then delegate
-func (mapper *Mapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr btypes.ValAddress, deleAddr btypes.AccAddress, bondTokens, currHeight uint64) {
+func (mapper *Mapper) InitDelegatorIncomeInfo(ctx context.Context, valAddr btypes.ValAddress, deleAddr btypes.AccAddress, bondTokens btypes.BigInt, currHeight int64) {
 	//初始化delegaotr 收益计算信息
 	vcps, _ := mapper.GetValidatorCurrentPeriodSummary(valAddr)
 	params := mapper.GetParams(ctx)
@@ -111,7 +111,7 @@ func (mapper *Mapper) DeleteDelegatorIncomeInfo(valAddr btypes.ValAddress, deleA
 //增加validator收益计费点
 //1. 保存历史计费点收益汇总信息
 //2. 更新当前计费点收益信息,返回上一计费点数值
-func (mapper *Mapper) IncrementValidatorPeriod(validator stake.Validator) uint64 {
+func (mapper *Mapper) IncrementValidatorPeriod(validator stake.Validator) int64 {
 	valAddr := validator.GetValidatorAddress()
 	vcps, exists := mapper.GetValidatorCurrentPeriodSummary(valAddr)
 	if !exists {
@@ -119,14 +119,14 @@ func (mapper *Mapper) IncrementValidatorPeriod(validator stake.Validator) uint64
 	}
 
 	var currentFraction qtypes.Fraction
-	if validator.GetBondTokens() == uint64(0) {
+	if validator.GetBondTokens().Equal(btypes.ZeroInt()) {
 		communityFee := mapper.GetCommunityFeePool()
 		communityFee = communityFee.Add(vcps.Fees)
 		mapper.SetCommunityFeePool(communityFee)
 
 		currentFraction = qtypes.ZeroFraction()
 	} else {
-		currentFraction = qtypes.NewFractionFromBigInt(vcps.Fees, btypes.NewInt(int64(validator.GetBondTokens())))
+		currentFraction = qtypes.NewFractionFromBigInt(vcps.Fees, validator.GetBondTokens())
 	}
 
 	historySummaryFrac := mapper.GetValidatorHistoryPeriodSummary(valAddr, vcps.Period-1)
@@ -147,7 +147,7 @@ func (mapper *Mapper) IncrementValidatorPeriod(validator stake.Validator) uint64
 //1. 增加validator的计费点
 //2. 计算delegator在两次计费点间的收益
 //3. 追加该收益到delegator 收益计算信息中
-func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr btypes.AccAddress, updatedToken, blockHeight uint64) error {
+func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr btypes.AccAddress, updatedToken btypes.BigInt, blockHeight int64) error {
 	valAddr := validator.GetValidatorAddress()
 	info, exists := mapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
 	if !exists {
@@ -168,10 +168,10 @@ func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr 
 	return nil
 }
 
-func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.ValAddress) uint64 {
+func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.ValAddress) int64 {
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
 
-	minPeriod := uint64(0)
+	minPeriod := int64(0)
 	i := int64(0)
 
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), prefixKey)
@@ -181,7 +181,7 @@ func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.ValAddr
 		var info types.DelegatorEarningsStartInfo
 		mapper.BaseMapper.DecodeObject(iter.Value(), &info)
 
-		if i == int64(0) {
+		if i == 0 {
 			minPeriod = info.PreviousPeriod
 			i = i + 1
 		}
@@ -195,8 +195,8 @@ func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.ValAddr
 }
 
 //删除validator历史计费点信息,额外保留2个历史数据
-func (mapper *Mapper) ClearValidatorHistoryPeroid(valAddr btypes.ValAddress, minPeroid uint64) {
-	if minPeroid <= uint64(2) {
+func (mapper *Mapper) ClearValidatorHistoryPeroid(valAddr btypes.ValAddress, minPeroid int64) {
+	if minPeroid <= 2 {
 		return
 	}
 
@@ -213,7 +213,7 @@ func (mapper *Mapper) ClearValidatorHistoryPeroid(valAddr btypes.ValAddress, min
 }
 
 //计算delegator在计费点区间的收益
-func (mapper *Mapper) CalculateDelegatorPeriodRewards(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, endPeriod, blockHeight uint64) (btypes.BigInt, error) {
+func (mapper *Mapper) CalculateDelegatorPeriodRewards(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, endPeriod, blockHeight int64) (btypes.BigInt, error) {
 	info, exists := mapper.GetDelegatorEarningStartInfo(valAddr, deleAddr)
 	if !exists {
 		return btypes.BigInt{}, fmt.Errorf("DelegatorEarningStartInfo not exsist. deleAddr: %s, valAddr: %s ", deleAddr, valAddr)
@@ -236,20 +236,20 @@ func (mapper *Mapper) CalculateDelegatorPeriodRewards(valAddr btypes.ValAddress,
 }
 
 //计算bondTokens在validator的两个计费点区间的收益
-func (mapper *Mapper) CalculateRewardsBetweenPeriod(valAddr btypes.ValAddress, startPeriod, endPeriod, bondTokens uint64) btypes.BigInt {
+func (mapper *Mapper) CalculateRewardsBetweenPeriod(valAddr btypes.ValAddress, startPeriod, endPeriod int64, bondTokens btypes.BigInt) btypes.BigInt {
 
 	if startPeriod > endPeriod {
 		return btypes.ZeroInt()
 	}
 
-	if bondTokens == uint64(0) {
+	if bondTokens.Equal(btypes.ZeroInt()) {
 		return btypes.ZeroInt()
 	}
 
 	startFraction := mapper.GetValidatorHistoryPeriodSummary(valAddr, startPeriod)
 	endFraction := mapper.GetValidatorHistoryPeriodSummary(valAddr, endPeriod)
 
-	return (endFraction.Sub(startFraction)).MultiInt64(int64(bondTokens))
+	return (endFraction.Sub(startFraction)).MultiBigInt(bondTokens)
 }
 
 //-----------------------------------------------------------------
@@ -307,7 +307,7 @@ func (mapper *Mapper) AddToCommunityFeePool(fee btypes.BigInt) {
 	mapper.SetCommunityFeePool(communityFee.Add(fee))
 }
 
-func (mapper *Mapper) GetValidatorHistoryPeriodSummary(valAddr btypes.ValAddress, period uint64) (frac qtypes.Fraction) {
+func (mapper *Mapper) GetValidatorHistoryPeriodSummary(valAddr btypes.ValAddress, period int64) (frac qtypes.Fraction) {
 	key := types.BuildValidatorHistoryPeriodSummaryKey(valAddr, period)
 	exists := mapper.Get(key, &frac)
 	if !exists {
@@ -351,7 +351,7 @@ func (mapper *Mapper) ClearPreDistributionQOS() {
 
 //------------------------ genesis export
 
-func (mapper *Mapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.ValAddress, period uint64, frac qtypes.Fraction)) {
+func (mapper *Mapper) IteratorValidatorsHistoryPeriod(fn func(valAddr btypes.ValAddress, period int64, frac qtypes.Fraction)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorHistoryPeriodSummaryPrefixKey())
 	defer iter.Close()
 
@@ -407,7 +407,7 @@ func (mapper *Mapper) DeleteDelegatorsEarningStartInfo() {
 	}
 }
 
-func (mapper *Mapper) IteratorDelegatorsIncomeHeight(fn func(btypes.ValAddress, btypes.AccAddress, uint64)) {
+func (mapper *Mapper) IteratorDelegatorsIncomeHeight(fn func(btypes.ValAddress, btypes.AccAddress, int64)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetDelegatorPeriodIncomePrefixKey())
 	defer iter.Close()
 

@@ -43,15 +43,15 @@ func TestReleaseLockedAccount(t *testing.T) {
 	// init lock info
 	lockAddress := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	receiverAddress := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	totalAmount := uint64(10000000000000)
-	releasedAmountInit := uint64(8333332)
+	totalAmount := btypes.NewInt(10000000000000)
+	releasedAmountInit := btypes.NewInt(8333332)
 	releaseTime := ctx.BlockHeader().Time.Add(-time.Hour)
-	releaseInterval := uint(30)
-	releaseTimesInit := uint(22)
+	releaseInterval := int64(30)
+	releaseTimesInit := int64(22)
 	lockInfo := types.NewLockInfo(lockAddress, receiverAddress, totalAmount, releasedAmountInit, releaseTime, releaseInterval, releaseTimesInit)
-	am.SetAccount(qtypes.NewQOSAccount(lockAddress, btypes.NewInt(int64(totalAmount-releasedAmountInit)), nil))
+	am.SetAccount(qtypes.NewQOSAccount(lockAddress, totalAmount.Sub(releasedAmountInit), nil))
 	lockAccount := mapper.GetAccount(ctx, lockAddress)
-	require.Equal(t, lockAccount.QOS, btypes.NewInt(int64(totalAmount-releasedAmountInit)))
+	require.Equal(t, lockAccount.QOS, totalAmount.Sub(releasedAmountInit))
 	mapper.SetLockInfo(ctx, lockInfo)
 	lockInfo, exists = mapper.GetLockInfo(ctx)
 	require.True(t, exists)
@@ -61,18 +61,18 @@ func TestReleaseLockedAccount(t *testing.T) {
 	lockInfo, exists = mapper.GetLockInfo(ctx)
 	require.True(t, exists)
 	require.Equal(t, lockInfo.ReleaseTimes, releaseTimesInit-1)
-	require.Equal(t, lockInfo.ReleasedAmount, releasedAmountInit+(totalAmount-releasedAmountInit)/uint64(releaseTimesInit))
+	require.Equal(t, lockInfo.ReleasedAmount, totalAmount.Sub(releasedAmountInit).DivRaw(releaseTimesInit).Add(releasedAmountInit))
 	ReleaseLockedAccount(ctx, lockInfo)
 	lockInfo, exists = mapper.GetLockInfo(ctx)
 	require.True(t, exists)
 	require.Equal(t, lockInfo.ReleaseTimes, releaseTimesInit-1)
-	require.Equal(t, lockInfo.ReleasedAmount, releasedAmountInit+(totalAmount-releasedAmountInit)/uint64(releaseTimesInit))
+	require.Equal(t, lockInfo.ReleasedAmount, totalAmount.Sub(releasedAmountInit).DivRaw(releaseTimesInit).Add(releasedAmountInit))
 	require.Equal(t, lockInfo.ReleaseTime, releaseTime.Add(time.Hour*24*time.Duration(releaseInterval)))
 
 	headerTime := ctx.BlockHeader().Time
 	releasedAmount := lockInfo.ReleasedAmount
 	releaseTimes := lockInfo.ReleaseTimes
-	for i := uint(1); i < releaseTimesInit; i++ {
+	for i := int64(1); i < releaseTimesInit; i++ {
 
 		// before release time
 		ctx = ctx.WithBlockHeader(abci.Header{Time: releaseTime.Add(time.Hour * 24 * time.Duration(i*releaseInterval))})
@@ -90,7 +90,7 @@ func TestReleaseLockedAccount(t *testing.T) {
 		if i != releaseTimesInit-1 {
 			require.True(t, exists)
 			require.Equal(t, lockInfo.ReleaseTimes, releaseTimes-1)
-			require.Equal(t, lockInfo.ReleasedAmount, releasedAmount+(totalAmount-releasedAmount)/uint64(releaseTimes))
+			require.Equal(t, lockInfo.ReleasedAmount, totalAmount.Sub(releasedAmount).DivRaw(releaseTimes).Add(releasedAmount))
 			require.Equal(t, lockInfo.ReleaseTime, releaseTime.Add(time.Hour*24*time.Duration((i+1)*releaseInterval)))
 
 			releasedAmount = lockInfo.ReleasedAmount
@@ -103,5 +103,5 @@ func TestReleaseLockedAccount(t *testing.T) {
 	lockAccount = mapper.GetAccount(ctx, lockAddress)
 	require.Equal(t, lockAccount.QOS, btypes.ZeroInt())
 	receiver := mapper.GetAccount(ctx, receiverAddress)
-	require.Equal(t, receiver.QOS, btypes.NewInt(int64(totalAmount-releasedAmountInit)))
+	require.Equal(t, receiver.QOS, totalAmount.Sub(releasedAmountInit))
 }

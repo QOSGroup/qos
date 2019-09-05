@@ -144,7 +144,7 @@ Example:
 				if err != nil {
 					return err
 				}
-				txCreateValidator := stake.NewCreateValidatorTx(btypes.AccAddress(owner.PubKey().Address()), valPubKey, validatorBondTokens, compound, desc, *commission, nil)
+				txCreateValidator := stake.NewCreateValidatorTx(btypes.AccAddress(owner.PubKey().Address()), valPubKey, btypes.NewInt(validatorBondTokens), compound, desc, *commission, nil)
 				txStd := txs.NewTxStd(txCreateValidator, chainId, btypes.NewInt(1000000))
 				sig, err := owner.Sign(txStd.BuildSignatureBytes(1, ""))
 				if err != nil {
@@ -196,7 +196,7 @@ Example:
 			appState[bank.ModuleName] = cdc.MustMarshalJSON(bank.NewGenesisState(genesisAccounts, nil))
 			appState[guardian.ModuleName] = cdc.MustMarshalJSON(guardianState)
 			mintState := mint.DefaultGenesis()
-			mintState.AppliedQOSAmount = uint64(appliedQOSAmount.Int64())
+			mintState.AppliedQOSAmount = appliedQOSAmount
 			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
 
 			rawState, _ := cdc.MarshalJSON(appState)

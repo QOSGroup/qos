@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 )
 
-const GasForCreateQCP = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.8 QOS
+const GasForCreateQCP = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.8 QOS
 
 // init QCP
 type TxInitQCP struct {
@@ -95,7 +95,7 @@ func (tx TxInitQCP) GetSigner() []btypes.AccAddress {
 }
 
 func (tx TxInitQCP) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForCreateQCP))
+	return btypes.NewInt(GasForCreateQCP)
 }
 
 func (tx TxInitQCP) GetGasPayer() btypes.AccAddress {

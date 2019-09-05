@@ -22,7 +22,12 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	}
 
 	distributionMapper.SetPreDistributionQOS(data.PreDistributionQOSAmount.NilToZero())
-	distributionMapper.SetParams(ctx, data.Params)
+
+	if err := data.Params.Validate(); err == nil {
+		distributionMapper.SetParams(ctx, data.Params)
+	} else {
+		panic(err)
+	}
 
 	for _, validatorHistoryPeriodState := range data.ValidatorHistoryPeriods {
 		key := types.BuildValidatorHistoryPeriodSummaryKey(validatorHistoryPeriodState.OperatorAddress, validatorHistoryPeriodState.Period)
@@ -61,7 +66,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	params := distributionMapper.GetParams(ctx)
 
 	var validatorHistoryPeriods []types.ValidatorHistoryPeriodState
-	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.ValAddress, period uint64, frac qtypes.Fraction) {
+	distributionMapper.IteratorValidatorsHistoryPeriod(func(valAddr btypes.ValAddress, period int64, frac qtypes.Fraction) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
@@ -105,7 +110,7 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var delegatorIncomeHeights []types.DelegatorIncomeHeightState
-	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height uint64) {
+	distributionMapper.IteratorDelegatorsIncomeHeight(func(valAddr btypes.ValAddress, deleAddr btypes.AccAddress, height int64) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {

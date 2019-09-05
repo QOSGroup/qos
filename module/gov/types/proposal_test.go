@@ -1,6 +1,7 @@
 package types
 
 import (
+	qtypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"testing"
@@ -30,11 +31,11 @@ func TestTallyResult_Equals(t *testing.T) {
 		input2   TallyResult
 		expected bool
 	}{
-		{TallyResult{0, 0, 0, 0}, TallyResult{0, 0, 0, 0}, true},
-		{TallyResult{0, 0, 0, 0}, TallyResult{1, 0, 0, 0}, false},
-		{TallyResult{0, 0, 0, 0}, TallyResult{0, 1, 0, 0}, false},
-		{TallyResult{0, 0, 0, 0}, TallyResult{0, 0, 1, 0}, false},
-		{TallyResult{0, 0, 0, 0}, TallyResult{0, 0, 0, 1}, false},
+		{TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, true},
+		{TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, TallyResult{qtypes.NewInt(1), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, false},
+		{TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, TallyResult{qtypes.NewInt(0), qtypes.NewInt(1), qtypes.NewInt(0), qtypes.NewInt(0)}, false},
+		{TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(1), qtypes.NewInt(0)}, false},
+		{TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0)}, TallyResult{qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(0), qtypes.NewInt(1)}, false},
 	}
 
 	for tcIndex, tc := range cases {
@@ -110,12 +111,12 @@ func TestProposalType_String(t *testing.T) {
 }
 
 func TestGetProposalType(t *testing.T) {
-	p1 := NewTextProposal("p1", "p1", 1)
+	p1 := NewTextProposal("p1", "p1", qtypes.NewInt(1))
 	require.Equal(t, ProposalTypeText, p1.GetProposalType())
 
-	p2 := NewParameterProposal("p2", "p2", 1, []Param{})
+	p2 := NewParameterProposal("p2", "p2", qtypes.NewInt(1), []Param{})
 	require.Equal(t, ProposalTypeParameterChange, p2.GetProposalType())
 
-	p3 := NewTaxUsageProposal("p3", "p3", 1, nil, types.NewDec(1))
+	p3 := NewTaxUsageProposal("p3", "p3", qtypes.NewInt(1), nil, types.NewDec(1))
 	require.Equal(t, ProposalTypeTaxUsage, p3.GetProposalType())
 }

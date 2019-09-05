@@ -47,7 +47,7 @@ func (mapper Mapper) Validate(paramSpace string, key string, value string) btype
 	if !ok {
 		return types.ErrInvalidParam("unknown module")
 	}
-	_, err := module.Validate(key, value)
+	_, err := module.ValidateKeyValue(key, value)
 	return err
 }
 

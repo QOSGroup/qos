@@ -5,6 +5,7 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/module/stake/types"
 	qtypes "github.com/QOSGroup/qos/types"
@@ -53,17 +54,17 @@ func EndBlocker(ctx context.Context) []abci.ValidatorUpdate {
 	// close inactive validators
 	sm := mapper.GetMapper(ctx)
 	survivalSecs := sm.GetParams(ctx).ValidatorSurvivalSecs
-	CloseInactiveValidator(ctx, int32(survivalSecs))
+	CloseInactiveValidator(ctx, survivalSecs)
 
 	// return updated validators
-	maxValidatorCount := uint64(sm.GetParams(ctx).MaxValidatorCnt)
+	maxValidatorCount := sm.GetParams(ctx).MaxValidatorCnt
 	return GetUpdatedValidators(ctx, maxValidatorCount)
 }
 
 func returnUnBondTokens(ctx context.Context) {
 	sm := mapper.GetMapper(ctx)
 	am := baseabci.GetAccountMapper(ctx)
-	prePrefix := types.BuildUnbondingDelegationByHeightPrefix(uint64(ctx.BlockHeight()))
+	prePrefix := types.BuildUnbondingDelegationByHeightPrefix(ctx.BlockHeight())
 	iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -75,7 +76,7 @@ func returnUnBondTokens(ctx context.Context) {
 
 		height, delAddr, valAddr := types.GetUnbondingDelegationHeightDelegatorValidator(k)
 		delegator := am.GetAccount(delAddr).(*qtypes.QOSAccount)
-		delegator.PlusQOS(btypes.NewInt(int64(unbonding.Amount)))
+		delegator.PlusQOS(unbonding.Amount)
 		am.SetAccount(delegator)
 		sm.RemoveUnbondingDelegation(height, delAddr, valAddr)
 	}
@@ -83,7 +84,7 @@ func returnUnBondTokens(ctx context.Context) {
 
 func handlerReDelegations(ctx context.Context) {
 	sm := mapper.GetMapper(ctx)
-	prePrefix := types.BuildRedelegationByHeightPrefix(uint64(ctx.BlockHeight()))
+	prePrefix := types.BuildRedelegationByHeightPrefix(ctx.BlockHeight())
 	iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -94,26 +95,27 @@ func handlerReDelegations(ctx context.Context) {
 		sm.BaseMapper.DecodeObject(iter.Value(), &reDelegation)
 
 		height, delAddr, valAddr := types.GetRedelegationHeightDelegatorFromValidator(k)
-		validator, _ := sm.GetValidator(reDelegation.ToValidator)
-		sm.Delegate(ctx, NewDelegationInfo(reDelegation.DelegatorAddr, reDelegation.ToValidator, reDelegation.Amount, reDelegation.IsCompound), true)
-		sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()+reDelegation.Amount)
-
+		validator, exists := sm.GetValidator(reDelegation.ToValidator)
+		if exists {
+			sm.Delegate(ctx, NewDelegationInfo(reDelegation.DelegatorAddr, reDelegation.ToValidator, reDelegation.Amount, reDelegation.IsCompound), true)
+			sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens().Add(reDelegation.Amount))
+		} else {
+			// to validator 不存在时，返还待质押 tokens
+			delegator := bank.GetAccount(ctx, reDelegation.DelegatorAddr)
+			delegator.MustPlusQOS(reDelegation.Amount)
+			bank.GetMapper(ctx).SetAccount(delegator)
+		}
 		sm.RemoveRedelegation(height, delAddr, valAddr)
 	}
 }
 
-func CloseInactiveValidator(ctx context.Context, survivalSecs int32) {
+func CloseInactiveValidator(ctx context.Context, survivalSecs int64) {
 	sm := mapper.GetMapper(ctx)
 
-	blockTimeSec := uint64(ctx.BlockHeader().Time.UTC().Unix())
-	var lastCloseValidatorSec uint64
-	if survivalSecs >= 0 {
-		lastCloseValidatorSec = blockTimeSec - uint64(survivalSecs)
-	} else { // close all
-		lastCloseValidatorSec = blockTimeSec + uint64(-survivalSecs)
-	}
+	blockTimeSec := ctx.BlockHeader().Time.UTC().Unix()
+	lastCloseValidatorSec := blockTimeSec - survivalSecs
 
-	iterator := sm.IteratorInactiveValidator(uint64(0), lastCloseValidatorSec)
+	iterator := sm.IteratorInactiveValidator(0, lastCloseValidatorSec)
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
 		valAddress := btypes.ValAddress(key[9:])
@@ -149,7 +151,7 @@ func removeValidator(ctx context.Context, valAddr btypes.ValAddress) error {
 	return nil
 }
 
-func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.ValidatorUpdate {
+func GetUpdatedValidators(ctx context.Context, maxValidatorCount int64) []abci.ValidatorUpdate {
 	sm := mapper.GetMapper(ctx)
 
 	//获取当前的validator集合
@@ -165,7 +167,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	//返回更新的validator
 	updateValidators := make([]abci.ValidatorUpdate, 0, len(currentValidatorMap))
 
-	i := uint64(0)
+	i := int64(0)
 	newValidatorsMap := make(map[string]types.Validator)
 	newValidators := make([]types.Validator, 0, len(currentValidators))
 
@@ -176,7 +178,8 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
 
-		tokens, valAddr, err := types.ParseValidatorVotePowerKey(key)
+		power, valAddr, err := types.ParseValidatorVotePowerKey(key)
+		tokens := types.PowerReduction.MulRaw(power)
 		if err != nil {
 			ctx.Logger().Error("parse validatorVotePowerKey error", "key", key)
 			panic(err)
@@ -185,7 +188,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 		if i >= maxValidatorCount {
 			//超出MaxValidatorCnt的validator修改为Inactive状态
 			if validator, exists := sm.GetValidator(valAddr); exists {
-				sm.MakeValidatorInactive(validator.GetValidatorAddress(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.MaxValidator)
+				sm.MakeValidatorInactive(validator.GetValidatorAddress(), ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), types.MaxValidator)
 			}
 		} else {
 			if validator, exists := sm.GetValidator(valAddr); exists {
@@ -193,7 +196,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 					continue
 				}
 
-				if validator.BondTokens != tokens {
+				if !validator.BondTokens.Equal(tokens) {
 					ctx.Logger().Error("validator votePower list may have dup record. if you forgot delete?",
 						"validator", validator.OperatorAddress.String(),
 						"tokens", validator.BondTokens,
@@ -209,7 +212,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 
 				//新增或修改
 				curValidator, exists := currentValidatorMap[newValidatorAddressString]
-				if !exists || (validator.GetBondTokens() != curValidator.BondTokens) {
+				if !exists || !(validator.GetBondTokens().Equal(curValidator.BondTokens)) {
 					updateValidators = append(updateValidators, validator.ToABCIValidatorUpdate(false))
 				}
 			}
@@ -237,7 +240,7 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount uint64) []abci.
 func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAddress, isVote bool, params types.Params) {
 
 	log := ctx.Logger()
-	height := uint64(ctx.BlockHeight())
+	height := ctx.BlockHeight()
 	sm := mapper.GetMapper(ctx)
 
 	validator, exists := sm.GetValidator(valAddr)
@@ -257,7 +260,7 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAdd
 		voteInfo = types.NewValidatorVoteInfo(height, 0, 0)
 	}
 
-	index := voteInfo.IndexOffset % uint64(params.ValidatorVotingStatusLen)
+	index := voteInfo.IndexOffset % params.ValidatorVotingStatusLen
 	voteInfo.IndexOffset++
 
 	previousVote := sm.GetVoteInfoInWindow(valAddr, index)
@@ -281,15 +284,15 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAdd
 	maxMissedCounter := params.ValidatorVotingStatusLen - params.ValidatorVotingStatusLeast
 
 	// if height > minHeight && voteInfo.MissedBlocksCounter > maxMissedCounter
-	if voteInfo.MissedBlocksCounter > uint64(maxMissedCounter) {
+	if voteInfo.MissedBlocksCounter > maxMissedCounter {
 
 		// slash delegations
 		delegationSlashTokens := slashDelegations(ctx, validator, params.SlashFractionDowntime, types.AttributeValueDoubleSign)
-		updatedValidatorTokens := validator.BondTokens - delegationSlashTokens
+		updatedValidatorTokens := validator.BondTokens.Sub(delegationSlashTokens)
 		log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", delegationSlashTokens, "afterTokens", updatedValidatorTokens)
 
 		log.Info("validator gets inactive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
-		sm.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.MissVoteBlock)
+		sm.MakeValidatorInactive(valAddr, ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), types.MissVoteBlock)
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
 				types.EventTypeInactiveValidator,
@@ -350,7 +353,7 @@ func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHei
 		panic(fmt.Errorf("attempted to slash with a negative/gtone slash factor: %v", fraction))
 	}
 
-	slashAmount := fraction.MulInt(btypes.NewInt(power)).TruncateInt64()
+	slashAmount := fraction.MulInt(btypes.NewInt(power)).MulInt(types.PowerReduction).TruncateInt()
 	remainingSlashAmount := slashAmount
 	switch {
 	case infractionHeight > ctx.BlockHeight():
@@ -375,27 +378,27 @@ func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHei
 		remainingSlashAmount = sm.SlashRedelegations(validator.GetValidatorAddress(), infractionHeight, fraction, remainingSlashAmount)
 	}
 
-	tokensToBurn := slashAmount - remainingSlashAmount
-	if remainingSlashAmount == 0 {
-		sm.AfterValidatorSlashed(ctx, uint64(tokensToBurn))
+	tokensToBurn := slashAmount.Sub(remainingSlashAmount)
+	if remainingSlashAmount.Equal(btypes.ZeroInt()) {
+		sm.AfterValidatorSlashed(ctx, tokensToBurn)
 		return
 	}
 
 	// cannot decrease balance below zero
-	if remainingSlashAmount > int64(validator.BondTokens) {
-		remainingSlashAmount = int64(validator.BondTokens)
+	if remainingSlashAmount.GT(validator.BondTokens) {
+		remainingSlashAmount = validator.BondTokens
 	}
 
 	// calculate delegations slash fraction
-	fraction = qtypes.NewDec(int64(remainingSlashAmount)).QuoInt(btypes.NewInt(int64(validator.BondTokens)))
+	fraction = qtypes.NewDecFromInt(remainingSlashAmount).QuoInt(validator.BondTokens)
 
 	// slash delegations
 	delegationSlashTokens := slashDelegations(ctx, validator, fraction, types.AttributeValueDoubleSign)
 
 	// update validator
-	updatedValidatorTokens := validator.BondTokens - delegationSlashTokens
+	updatedValidatorTokens := validator.BondTokens.Sub(delegationSlashTokens)
 	logger.Info("validator gets inactive", "height", ctx.BlockHeight(), "validator", validator.GetValidatorAddress().String())
-	sm.MakeValidatorInactive(validator.GetValidatorAddress(), uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), types.DoubleSign)
+	sm.MakeValidatorInactive(validator.GetValidatorAddress(), ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), types.DoubleSign)
 	ctx.EventManager().EmitEvent(
 		btypes.NewEvent(
 			types.EventTypeInactiveValidator,
@@ -411,7 +414,7 @@ func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHei
 
 }
 
-func slashDelegations(ctx context.Context, validator types.Validator, fraction qtypes.Dec, reason string) uint64 {
+func slashDelegations(ctx context.Context, validator types.Validator, fraction qtypes.Dec, reason string) btypes.BigInt {
 	sm := mapper.GetMapper(ctx)
 	logger := ctx.Logger()
 
@@ -423,19 +426,19 @@ func slashDelegations(ctx context.Context, validator types.Validator, fraction q
 		}
 	})
 
-	delegationSlashTokens := int64(0)
+	delegationSlashTokens := btypes.ZeroInt()
 	for _, delegation := range delegations {
-		bondTokens := int64(delegation.Amount)
+		bondTokens := delegation.Amount
 
 		// calculate slash amount
-		amountSlash := qtypes.NewDec(bondTokens).Mul(fraction).TruncateInt64()
-		if amountSlash > bondTokens {
+		amountSlash := qtypes.NewDecFromInt(bondTokens).Mul(fraction).TruncateInt()
+		if amountSlash.GT(bondTokens) {
 			amountSlash = bondTokens
 		}
-		delegationSlashTokens += amountSlash
+		delegationSlashTokens = delegationSlashTokens.Add(amountSlash)
 
 		// update delegation
-		remainTokens := uint64(bondTokens - amountSlash)
+		remainTokens := bondTokens.Sub(amountSlash)
 		delegation.Amount = remainTokens
 		sm.BeforeDelegationModified(ctx, validator.GetValidatorAddress(), delegation.DelegatorAddr, delegation.Amount)
 		sm.SetDelegationInfo(delegation)
@@ -445,7 +448,7 @@ func slashDelegations(ctx context.Context, validator types.Validator, fraction q
 				types.EventTypeSlash,
 				btypes.NewAttribute(types.AttributeKeyValidator, validator.GetValidatorAddress().String()),
 				btypes.NewAttribute(types.AttributeKeyDelegator, delegation.DelegatorAddr.String()),
-				btypes.NewAttribute(types.AttributeKeyTokens, string(amountSlash)),
+				btypes.NewAttribute(types.AttributeKeyTokens, amountSlash.String()),
 				btypes.NewAttribute(types.AttributeKeyReason, reason),
 			),
 		)
@@ -453,7 +456,7 @@ func slashDelegations(ctx context.Context, validator types.Validator, fraction q
 	}
 
 	// update validator
-	sm.ChangeValidatorBondTokens(validator, validator.BondTokens-uint64(delegationSlashTokens))
+	sm.ChangeValidatorBondTokens(validator, validator.BondTokens.Sub(delegationSlashTokens))
 
-	return uint64(delegationSlashTokens)
+	return delegationSlashTokens
 }

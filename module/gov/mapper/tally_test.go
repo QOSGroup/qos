@@ -37,10 +37,10 @@ func TestTally(t *testing.T) {
 			Owner:           addr,
 			OperatorAddress: btypes.ValAddress(addr),
 			ConsPubKey:      pub,
-			BondTokens:      1000,
+			BondTokens:      btypes.NewInt(1000),
 			Status:          stake.Active,
-			MinPeriod:       uint64(0),
-			BondHeight:      uint64(ctx.BlockHeight()),
+			MinPeriod:       int64(0),
+			BondHeight:      int64(ctx.BlockHeight()),
 		}
 
 		delegationInfo := stake.NewDelegationInfo(validator.Owner, validator.GetValidatorAddress(), validator.BondTokens, false)
@@ -49,21 +49,21 @@ func TestTally(t *testing.T) {
 	}
 
 	// no one votes, proposal fails
-	textContent := types.NewTextProposal("p1", "p1", 10)
+	textContent := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addrs[0], textContent.Deposit)
 	require.Nil(t, err)
-	id := uint64(1)
+	id := int64(1)
 	proposal, exists := govMapper.GetProposal(id)
 	require.True(t, exists)
 	passes, tallyResult, validatorSet, _ := Tally(ctx, govMapper, proposal)
 	require.Equal(t, passes, types.REJECT)
-	require.Equal(t, int64(0), tallyResult.Abstain)
+	require.Equal(t, btypes.ZeroInt(), tallyResult.Abstain)
 	require.Equal(t, 0, len(validatorSet))
 
 	// more than 1/3 of voters abstain, proposal fails
-	textContent = types.NewTextProposal("p2", "p2", 10)
+	textContent = types.NewTextProposal("p2", "p2", btypes.NewInt(10))
 	proposal, err = govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addrs[0], textContent.Deposit)
@@ -74,13 +74,13 @@ func TestTally(t *testing.T) {
 	proposal, _ = govMapper.GetProposal(id)
 	passes, tallyResult, validatorSet, _ = Tally(ctx, govMapper, proposal)
 	require.Equal(t, passes, types.REJECT)
-	require.Equal(t, int64(2000), tallyResult.Abstain)
+	require.Equal(t, btypes.NewInt(2000), tallyResult.Abstain)
 	require.Equal(t, 2, len(validatorSet))
 	require.NotNil(t, validatorSet[string(addrs[0])])
 	require.NotNil(t, validatorSet[string(addrs[1])])
 
 	// more than 1/3 of voters veto, proposal fails
-	textContent = types.NewTextProposal("p3", "p3", 10)
+	textContent = types.NewTextProposal("p3", "p3", btypes.NewInt(10))
 	proposal, err = govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addrs[0], textContent.Deposit)
@@ -92,15 +92,15 @@ func TestTally(t *testing.T) {
 	proposal, _ = govMapper.GetProposal(id)
 	passes, tallyResult, validatorSet, _ = Tally(ctx, govMapper, proposal)
 	require.Equal(t, passes, types.REJECTVETO)
-	require.Equal(t, int64(1000), tallyResult.Yes)
-	require.Equal(t, int64(2000), tallyResult.NoWithVeto)
+	require.Equal(t, btypes.NewInt(1000), tallyResult.Yes)
+	require.Equal(t, btypes.NewInt(2000), tallyResult.NoWithVeto)
 	require.Equal(t, 3, len(validatorSet))
 	require.NotNil(t, validatorSet[string(addrs[0])])
 	require.NotNil(t, validatorSet[string(addrs[1])])
 	require.NotNil(t, validatorSet[string(addrs[2])])
 
 	// more than 1/2 of non-abstaining voters vote Yes, proposal passes
-	textContent = types.NewTextProposal("p4", "p4", 10)
+	textContent = types.NewTextProposal("p4", "p4", btypes.NewInt(10))
 	proposal, err = govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addrs[0], textContent.Deposit)
@@ -112,15 +112,15 @@ func TestTally(t *testing.T) {
 	proposal, _ = govMapper.GetProposal(id)
 	passes, tallyResult, validatorSet, _ = Tally(ctx, govMapper, proposal)
 	require.Equal(t, passes, types.PASS)
-	require.Equal(t, int64(2000), tallyResult.Yes)
-	require.Equal(t, int64(1000), tallyResult.No)
+	require.Equal(t, btypes.NewInt(2000), tallyResult.Yes)
+	require.Equal(t, btypes.NewInt(1000), tallyResult.No)
 	require.Equal(t, 3, len(validatorSet))
 	require.NotNil(t, validatorSet[string(addrs[0])])
 	require.NotNil(t, validatorSet[string(addrs[1])])
 	require.NotNil(t, validatorSet[string(addrs[2])])
 
 	// more than 1/2 of non-abstaining voters vote No, proposal fails
-	textContent = types.NewTextProposal("p5", "p5o", 10)
+	textContent = types.NewTextProposal("p5", "p5o", btypes.NewInt(10))
 	proposal, err = govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addrs[0], textContent.Deposit)
@@ -132,8 +132,8 @@ func TestTally(t *testing.T) {
 	proposal, _ = govMapper.GetProposal(id)
 	passes, tallyResult, validatorSet, _ = Tally(ctx, govMapper, proposal)
 	require.Equal(t, passes, types.REJECT)
-	require.Equal(t, int64(2000), tallyResult.No)
-	require.Equal(t, int64(1000), tallyResult.Yes)
+	require.Equal(t, btypes.NewInt(2000), tallyResult.No)
+	require.Equal(t, btypes.NewInt(1000), tallyResult.Yes)
 	require.Equal(t, 3, len(validatorSet))
 	require.NotNil(t, validatorSet[string(addrs[0])])
 	require.NotNil(t, validatorSet[string(addrs[1])])

@@ -50,7 +50,7 @@ func EndBlocker(ctx context.Context) {
 	inactiveIterator := gm.InactiveProposalQueueIterator(ctx.BlockHeader().Time)
 	defer inactiveIterator.Close()
 	for ; inactiveIterator.Valid(); inactiveIterator.Next() {
-		var proposalID uint64
+		var proposalID int64
 
 		gm.GetCodec().UnmarshalBinaryBare(inactiveIterator.Value(), &proposalID)
 		inactiveProposal, ok := gm.GetProposal(proposalID)
@@ -83,7 +83,7 @@ func EndBlocker(ctx context.Context) {
 	activeIterator := gm.ActiveProposalQueueIterator(ctx.BlockHeader().Time)
 	defer activeIterator.Close()
 	for ; activeIterator.Valid(); activeIterator.Next() {
-		var proposalID uint64
+		var proposalID int64
 
 		gm.GetCodec().UnmarshalBinaryBare(activeIterator.Value(), &proposalID)
 		activeProposal, ok := gm.GetProposal(proposalID)
@@ -163,7 +163,7 @@ func EndBlocker(ctx context.Context) {
 
 }
 
-func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, proposalID uint64) error {
+func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, proposalID int64) error {
 
 	log := ctx.Logger().With("module", "module/gov")
 
@@ -177,21 +177,21 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 		}
 	})
 
-	totalSlashTokens := int64(0)
+	totalSlashTokens := btypes.ZeroInt()
 	log.Debug("slash delegations", "delegations", delegations)
 
 	for _, delegation := range delegations {
-		bondTokens := int64(delegation.Amount)
+		bondTokens := delegation.Amount
 
 		// 计算惩罚
-		tokenSlashed := qtypes.NewDec(bondTokens).Mul(penalty).TruncateInt64()
-		if tokenSlashed >= bondTokens {
+		tokenSlashed := qtypes.NewDecFromInt(bondTokens).Mul(penalty).TruncateInt()
+		if !tokenSlashed.LT(bondTokens) {
 			tokenSlashed = bondTokens
 		}
-		totalSlashTokens += tokenSlashed
+		totalSlashTokens = totalSlashTokens.Add(tokenSlashed)
 
 		// 修改delegator绑定收益
-		remainTokens := uint64(bondTokens - tokenSlashed)
+		remainTokens := bondTokens.Sub(tokenSlashed)
 		delegation.Amount = remainTokens
 		sm.BeforeDelegationModified(ctx, validator.GetValidatorAddress(), delegation.DelegatorAddr, delegation.Amount)
 
@@ -201,16 +201,16 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 		log.Debug("slash validator's delegators", "delegator", delegation.DelegatorAddr.String(), "preToken", bondTokens, "slashToken", tokenSlashed, "remainTokens", remainTokens)
 	}
 
-	if uint64(totalSlashTokens) > validator.BondTokens {
+	if totalSlashTokens.GT(validator.BondTokens) {
 		panic("slash token is greater then validator bondTokens")
 	}
 
 	// 更新validator
-	sm.ChangeValidatorBondTokens(validator, validator.BondTokens-uint64(totalSlashTokens))
-	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", validator.BondTokens-uint64(totalSlashTokens))
+	sm.ChangeValidatorBondTokens(validator, validator.BondTokens.Sub(totalSlashTokens))
+	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", validator.BondTokens.Sub(totalSlashTokens))
 
 	// slash放入社区费池
-	sm.AfterValidatorSlashed(ctx, uint64(totalSlashTokens))
+	sm.AfterValidatorSlashed(ctx, totalSlashTokens)
 
 	return nil
 }
@@ -239,7 +239,7 @@ func executeParameterChange(ctx context.Context, proposal types.Proposal, logger
 		if !exists {
 			panic(fmt.Sprintf("%s should exists", param.Module))
 		}
-		v, _ := paramSet.Validate(param.Key, param.Value)
+		v, _ := paramSet.ValidateKeyValue(param.Key, param.Value)
 		paramMapper.SetParam(param.Module, param.Key, v)
 	}
 
@@ -260,7 +260,7 @@ func executeTaxUsage(ctx context.Context, proposal types.Proposal, logger log.Lo
 		account = acc.(*qtypes.QOSAccount)
 	}
 	feePool := dm.GetCommunityFeePool()
-	qos := qtypes.NewDec(feePool.Int64()).Mul(proposalContent.Percent).TruncateInt()
+	qos := proposalContent.Percent.MulInt(feePool).TruncateInt()
 
 	if feePool.LT(qos) {
 		return fmt.Errorf("Percent %s may be too bigger. feePoo %s, usage %s", proposalContent.Percent, feePool, qos)

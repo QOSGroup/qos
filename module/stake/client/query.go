@@ -35,17 +35,17 @@ type validatorDisplayInfo struct {
 	Owner           btypes.AccAddress  `json:"owner"`
 	ConsAddress     btypes.ConsAddress `json:"consensusAddress"`
 	ConsPubKey      string             `json:"consensusPubKey"`
-	BondTokens      uint64             `json:"bondTokens"` //不能超过int64最大值
+	BondTokens      btypes.BigInt      `json:"bondTokens"`
 	Description     types.Description  `json:"description"`
 	Commission      types.Commission   `json:"commission"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
 	InactiveTime   time.Time `json:"inactiveTime"`
-	InactiveHeight uint64    `json:"inactiveHeight"`
+	InactiveHeight int64     `json:"inactiveHeight"`
 
-	MinPeriod  uint64 `json:"minPeriod"`
-	BondHeight uint64 `json:"bondHeight"`
+	MinPeriod  int64 `json:"minPeriod"`
+	BondHeight int64 `json:"bondHeight"`
 }
 
 func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
@@ -325,15 +325,15 @@ func queryVotesInfoByOwner(ctx context.CLIContext, validatorAddr btypes.ValAddre
 	votedBlockLength := voteInfo.IndexOffset - 1
 
 	endWindowHeight := voteInfo.StartHeight + votedBlockLength
-	startWindowHeight := uint64(1)
+	startWindowHeight := int64(1)
 	if votedBlockLength <= windownLength {
 		startWindowHeight = voteInfo.StartHeight
 	} else {
 		startWindowHeight = endWindowHeight - windownLength + 1
 	}
 
-	voteSummaryDisplay.StartHeight = int64(startWindowHeight)
-	voteSummaryDisplay.EndHeight = int64(endWindowHeight)
+	voteSummaryDisplay.StartHeight = startWindowHeight
+	voteSummaryDisplay.EndHeight = endWindowHeight
 
 	i := int8(0)
 	for h := endWindowHeight; h >= startWindowHeight; h-- {
@@ -355,7 +355,7 @@ func queryVotesInfoByOwner(ctx context.CLIContext, validatorAddr btypes.ValAddre
 	return voteSummaryDisplay, nil
 }
 
-func getStakeConfig(ctx context.CLIContext) (uint64, error) {
+func getStakeConfig(ctx context.CLIContext) (int64, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
 		return 0, err
@@ -374,7 +374,7 @@ func getStakeConfig(ctx context.CLIContext) (uint64, error) {
 		return 0, errors.New("response empty value. getStakeConfig is empty")
 	}
 
-	var length uint64
+	var length int64
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &length)
 
 	return length, nil
@@ -407,9 +407,9 @@ func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.ValAddres
 	return voteInfo, nil
 }
 
-func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.ValAddress) (map[uint64]bool, int64, error) {
+func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.ValAddress) (map[int64]bool, int64, error) {
 
-	voteInWindowInfo := make(map[uint64]bool)
+	voteInWindowInfo := make(map[int64]bool)
 
 	node, err := ctx.GetNode()
 	if err != nil {
@@ -435,7 +435,7 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Va
 	for _, kv := range vKVPair {
 		k := kv.Key
 		var vote bool
-		index := binary.LittleEndian.Uint64(k[(len(k) - 8):])
+		index := int64(binary.LittleEndian.Uint64(k[(len(k) - 8):]))
 		ctx.Codec.UnmarshalBinaryBare(kv.Value, &vote)
 		voteInWindowInfo[index] = vote
 	}

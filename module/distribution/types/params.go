@@ -21,15 +21,17 @@ var (
 type Params struct {
 	ProposerRewardRate           qtypes.Fraction `json:"proposer_reward_rate"`
 	CommunityRewardRate          qtypes.Fraction `json:"community_reward_rate"`
-	DelegatorsIncomePeriodHeight uint64          `json:"delegator_income_period_height"`
-	GasPerUnitCost               uint64          `json:"gas_per_unit_cost"` // how much gas = 1 QOS
+	DelegatorsIncomePeriodHeight int64           `json:"delegator_income_period_height"`
+	GasPerUnitCost               int64           `json:"gas_per_unit_cost"` // how much gas = 1 QOS
 }
+
+var _ qtypes.ParamSet = (*Params)(nil)
 
 func DefaultParams() Params {
 	return Params{
-		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)),      // 1%
-		CommunityRewardRate:          qtypes.NewFraction(int64(2), int64(100)),      // 2%
-		DelegatorsIncomePeriodHeight: uint64(60 * 60 / qtypes.DefaultBlockInterval), // 1 hour
+		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)), // 1%
+		CommunityRewardRate:          qtypes.NewFraction(int64(2), int64(100)), // 2%
+		DelegatorsIncomePeriodHeight: 60 * 60 / qtypes.DefaultBlockInterval,    // 1 hour
 		GasPerUnitCost:               qtypes.GasPerUnitCost,
 	}
 }
@@ -43,7 +45,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
-func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
+func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyProposerRewardRate), string(KeyCommunityRewardRate):
 		rate, err := qtypes.NewDecFromStr(value)
@@ -64,4 +66,8 @@ func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) 
 
 func (p *Params) GetParamSpace() string {
 	return ParamSpace
+}
+
+func (p *Params) Validate() btypes.Error {
+	return nil
 }
