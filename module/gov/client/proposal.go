@@ -2,6 +2,8 @@ package client
 
 import (
 	"errors"
+	"strings"
+
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
@@ -13,7 +15,6 @@ import (
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	"github.com/tendermint/go-amino"
-	"strings"
 )
 
 const (

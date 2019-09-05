@@ -157,7 +157,7 @@ func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("Percent lte zero")
 	}
 
-	if tx.Percent.GT(qtypes.OneDec()){
+	if tx.Percent.GT(qtypes.OneDec()) {
 		return types.ErrInvalidInput("Percent gte 100%")
 	}
 
