@@ -16,6 +16,7 @@ const (
 	CodeQSCExists           btypes.CodeType = 306 // QSC已存在
 	CodeQSCNotExists        btypes.CodeType = 307 // QSC不存在
 	CodeBankerNotExists     btypes.CodeType = 308 // Banker账户不存在
+	CodeRootCANotConfigure  btypes.CodeType = 309
 )
 
 func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
@@ -49,6 +50,8 @@ func codeToDefaultMsg(code btypes.CodeType) string {
 		return "qsc not exists"
 	case CodeBankerNotExists:
 		return "banker not exists"
+	case CodeRootCANotConfigure:
+		return "root ca not configure"
 	default:
 		return btypes.CodeToDefaultMsg(code)
 	}
@@ -84,4 +87,8 @@ func ErrQSCNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
 
 func ErrBankerNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
 	return newError(codeSpace, CodeBankerNotExists, msg)
+}
+
+func ErrRootCANotConfigure(codeSpace btypes.CodespaceType, msg string) btypes.Error {
+	return newError(codeSpace, CodeRootCANotConfigure, msg)
 }

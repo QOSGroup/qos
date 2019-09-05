@@ -48,6 +48,9 @@ func (tx TxInitQCP) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidQCPCA(types.DefaultCodeSpace, "")
 	}
 	rootCA := mapper.GetQCPRootCA(ctx)
+	if rootCA == nil || len(rootCA.Bytes()) == 0 {
+		return types.ErrRootCANotConfigure(types.DefaultCodeSpace, "")
+	}
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QCPCA) {
 		return types.ErrWrongQCPCA(types.DefaultCodeSpace, "")
 	}

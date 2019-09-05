@@ -37,7 +37,12 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
-	if _, err := strconv.ParseFloat(tx.Extrate, 64); err != nil {
+	f, err := strconv.ParseFloat(tx.Extrate, 64)
+	if err != nil {
+		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+	}
+
+	if f <= float64(0) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
 	}
 
@@ -55,6 +60,10 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 
 	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
 	rootCA := qscMapper.GetQSCRootCA()
+	if rootCA == nil || len(rootCA.Bytes()) == 0 {
+		return types.ErrRootCANotConfigure(types.DefaultCodeSpace, "root CA not configure")
+	}
+
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
 		return types.ErrWrongQSCCA(types.DefaultCodeSpace, "")
 	}
