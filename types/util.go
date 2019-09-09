@@ -107,7 +107,11 @@ func GetIntFromFlag(flag string, allowZero bool) (amount btypes.BigInt, err erro
 		return btypes.ZeroInt(), fmt.Errorf("invalid value of %s", flag)
 	}
 
-	if !amount.GT(btypes.ZeroInt()) && !allowZero {
+	if amount.IsZero() && !allowZero {
+		return btypes.ZeroInt(), fmt.Errorf("%s must be positive", flag)
+	}
+
+	if btypes.ZeroInt().GT(amount) {
 		return btypes.ZeroInt(), fmt.Errorf("%s must be positive", flag)
 	}
 

@@ -97,35 +97,35 @@ var _ qtypes.ParamSet = (*Params)(nil)
 func DefaultParams() Params {
 	return Params{
 		// normal level
-		NormalMinDeposit:             btypes.NewInt(10),
+		NormalMinDeposit:             btypes.NewInt(100000),
 		NormalMinProposerDepositRate: qtypes.NewDecWithPrec(334, 3),
-		NormalMaxDepositPeriod:       DefaultPeriod,
-		NormalVotingPeriod:           DefaultPeriod,
+		NormalMaxDepositPeriod:       DefaultDepositPeriod,
+		NormalVotingPeriod:           DefaultVotingPeriod,
 		NormalQuorum:                 qtypes.NewDecWithPrec(334, 3),
 		NormalThreshold:              qtypes.NewDecWithPrec(5, 1),
 		NormalVeto:                   qtypes.NewDecWithPrec(334, 3),
 		NormalPenalty:                qtypes.ZeroDec(),
-		NormalBurnRate:               qtypes.NewDecWithPrec(5, 1),
+		NormalBurnRate:               qtypes.NewDecWithPrec(2, 1),
 		// important level
-		ImportantMinDeposit:             btypes.NewInt(10),
+		ImportantMinDeposit:             btypes.NewInt(500000),
 		ImportantMinProposerDepositRate: qtypes.NewDecWithPrec(334, 3),
-		ImportantMaxDepositPeriod:       DefaultPeriod,
-		ImportantVotingPeriod:           DefaultPeriod,
+		ImportantMaxDepositPeriod:       DefaultDepositPeriod,
+		ImportantVotingPeriod:           DefaultVotingPeriod,
 		ImportantQuorum:                 qtypes.NewDecWithPrec(334, 3),
 		ImportantThreshold:              qtypes.NewDecWithPrec(5, 1),
 		ImportantVeto:                   qtypes.NewDecWithPrec(334, 3),
 		ImportantPenalty:                qtypes.ZeroDec(),
-		ImportantBurnRate:               qtypes.NewDecWithPrec(5, 1),
+		ImportantBurnRate:               qtypes.NewDecWithPrec(2, 1),
 		// critical level
-		CriticalMinDeposit:             btypes.NewInt(10),
+		CriticalMinDeposit:             btypes.NewInt(1000000),
 		CriticalMinProposerDepositRate: qtypes.NewDecWithPrec(334, 3),
-		CriticalMaxDepositPeriod:       DefaultPeriod,
-		CriticalVotingPeriod:           DefaultPeriod,
+		CriticalMaxDepositPeriod:       DefaultDepositPeriod,
+		CriticalVotingPeriod:           DefaultVotingPeriod,
 		CriticalQuorum:                 qtypes.NewDecWithPrec(334, 3),
 		CriticalThreshold:              qtypes.NewDecWithPrec(5, 1),
 		CriticalVeto:                   qtypes.NewDecWithPrec(334, 3),
 		CriticalPenalty:                qtypes.ZeroDec(),
-		CriticalBurnRate:               qtypes.NewDecWithPrec(5, 1),
+		CriticalBurnRate:               qtypes.NewDecWithPrec(2, 1),
 	}
 }
 
