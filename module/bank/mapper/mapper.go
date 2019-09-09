@@ -11,14 +11,16 @@ import (
 )
 
 var (
-	InvariantCheckKey = []byte("0x10")
-	LockInfoKey       = []byte("0x11")
+	InvariantCheckKey = []byte("0x10") // 数据检查
+	LockInfoKey       = []byte("0x11") // 锁定-释放信息
 )
 
+// 基于qbase中定义的AccountMapper，扩展qos所需操作
 func GetMapper(ctx context.Context) *account.AccountMapper {
 	return baseabci.GetAccountMapper(ctx)
 }
 
+// 获取QOS账户信息
 func GetAccount(ctx context.Context, addr btypes.AccAddress) *qtypes.QOSAccount {
 	account := baseabci.GetAccountMapper(ctx).GetAccount(addr)
 	if account != nil {
@@ -28,6 +30,7 @@ func GetAccount(ctx context.Context, addr btypes.AccAddress) *qtypes.QOSAccount 
 	}
 }
 
+// 获取QOS账户列表
 func GetAccounts(ctx context.Context) []*qtypes.QOSAccount {
 	accounts := []*qtypes.QOSAccount{}
 	baseabci.GetAccountMapper(ctx).IterateAccounts(func(acc account.Account) (stop bool) {

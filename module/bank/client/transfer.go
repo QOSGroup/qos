@@ -20,6 +20,7 @@ const (
 	flagReceivers = "receivers"
 )
 
+// 转账
 func TransferCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer",

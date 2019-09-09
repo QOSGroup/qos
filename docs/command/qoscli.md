@@ -141,7 +141,7 @@ qoscli keys import Arya --file Arya.pri
 
 ## 查询（query）
 
-* `qoscli query account`                [账户查询](#账户（account）)
+* `qoscli query account`                [账户查询](#账户)
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [预授权](#查询预授权)
@@ -349,7 +349,7 @@ $ qoscli query block 10 --indent
 }
 ```
 
-### 账户（account）
+### 账户
 
 查询账户
 `qoscli query account <key_name_or_account_address>`
@@ -613,7 +613,8 @@ $ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78ls
 
 QOS支持以下几种交易类型：
 
-* `qoscli tx transfer`         [转账](#转账（transfer）)
+* `qoscli tx transfer`         [转账](#转账)
+* `qoscli tx invariant-check`  [数据检查](#数据检查)
 * `qoscli tx create-approve`   [创建预授权](#创建预授权)
 * `qoscli tx increase-approve` [增加预授权](#增加预授权)
 * `qoscli tx decrease-approve` [减少预授权](#减少预授权)
@@ -636,11 +637,11 @@ QOS支持以下几种交易类型：
 * `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
 * `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
 
-分为[转账](#转账（transfer）)、[预授权](#预授权)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
+主要分为[转账](#转账)、[预授权](#预授权)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
 
-### 转账（transfer）
+### 转账
 
-查阅[转账设计](../spec/transfer.md)了解QOS转账交易设计。
+查阅[转账设计](../spec/bank)了解QOS转账交易设计。
 
 `qoscli tx transfer --senders <senders_and_coins> --receivers <receivers_and_coins>`
 
@@ -657,7 +658,27 @@ Password to sign with 'Arya':<输入密码>
 {"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"300"}
 ```
 
-转账成功可通过[账户查询](#账户（account）)查看最新账户状态，交易执行可能会有一定时间的延迟。
+转账成功可通过[账户查询](#账户)查看最新账户状态，交易执行可能会有一定时间的延迟。
+
+### 数据检查
+
+QOS设计了一套[数据检查机制](../spec/bank)，用户可以通过下面的指令执行数据检查操作：
+
+`qoscli tx invariant-check --sender <sender's keybase name or address>`
+
+主要参数：
+- `--sender` 发送此交易的账户keystore name 或 address
+
+::: warning Note 
+此交易设置了特别大的交易费，仅限持币账户发现QOS网络数据异常时提交，数据验证异常会停止整个QOS网络，以保护持币账户权益。
+:::
+
+`Arya`发现QOS网络中某处数值溢出，发现数据检查：
+```bash
+$ qoscli tx invariant-check --sender Arya
+Password to sign with 'Arya':<输入密码>
+```
+如果数据并无异常，将返回正常交易执行结果，否则全网停止运行。
 
 ### 预授权
 

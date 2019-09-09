@@ -141,7 +141,7 @@ qoscli keys import Arya --file Arya.pri
 
 ## 查询（query）
 
-* `qoscli query account`                [账户查询](#账户（account）)
+* `qoscli query account`                [Account](#account)
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [Approve](#query-approve)
@@ -349,22 +349,22 @@ $ qoscli query block 10 --indent
 }
 ```
 
-### 账户（account）
+### Account
 
-查询账户
+Query account state:
 `qoscli query account <key_name_or_account_address>`
 
-<key_name_or_account_address>为本地密钥库存储的密钥名字或对应账户的地址。
+<key_name_or_account_address> is the name of the key stored for the local keybase or the address of the corresponding account。
 
-假设本地密钥库中`Arya`地址为`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`，且QOS网络中已经创建了`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`对应账号，可执行：
+Assume in the local keybase `Arya`'s address is `qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`:
 ```bash
 qoscli query account Arya --indent
 ```
-或
+or
 ```bash
 qoscli query account qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y --indent
 ```
-输出类似如下信息：
+Will display the following information:
 ```bash
 {
   "type": "qos/types/QOSAccount",
@@ -382,7 +382,7 @@ qoscli query account qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y --indent
   }
 }
 ```
-可以看到`Arya`持有10000个QOS、10000个AOE，更多账户说明请阅读[QOS账户设计](../spec/account.md)文档。
+We can find out that `Arya` has 10000QOS and 10000sAOE.
 
 ### 存储（store）
 
@@ -613,7 +613,8 @@ $ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78ls
 
 QOS支持以下几种交易类型：
 
-* `qoscli tx transfer`         [转账](#转账（transfer）)
+* `qoscli tx transfer`         [Transfer](#transfer)
+* `qoscli tx invariant-check`  [Invariant check](#invariant-check)
 * `qoscli tx create-approve`   [Create approve](#create-approve)
 * `qoscli tx increase-approve` [Increase approve](#increase-approve)
 * `qoscli tx decrease-approve` [Decrease approve](#decrease-approve)
@@ -638,26 +639,44 @@ QOS支持以下几种交易类型：
 
 分为[转账](#转账（transfer）)、[Approve](#approve)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
 
-### 转账（transfer）
+### Transfer
 
-查阅[转账设计](../spec/transfer.md)了解QOS转账交易设计。
+See [Bank Spec](../spec/bank) to learn about QOS transfer transaction design.
 
 `qoscli tx transfer --senders <senders_and_coins> --receivers <receivers_and_coins>`
 
-支持一次转账中包含多币种，多账户
+main params:
+- `--senders`   send set
+- `--receivers` receive set
 
-主要参数：
-- `--senders`   发送集合，账户传keystore name 或 address，多个账户半角分号分隔
-- `--receivers` 接收集合，账户传keystore name 或 address，多个账户半角分号分隔
-
-`Arya`向地址`qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639`转账1个QOS，1个AOE
+`Arya` send `qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639` 1QOS and 1AOE:
 ```bash
 $ qoscli tx transfer --senders Arya,1QOS,1AOE --receivers qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639,1QOS,1AOE
-Password to sign with 'Arya':<输入密码>
+Password to sign with 'Arya':<imput keybase password>
 {"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"300"}
 ```
 
-转账成功可通过[账户查询](#账户（account）)查看最新账户状态，交易执行可能会有一定时间的延迟。
+Execute [Query account](#account) to see the latest account state.
+
+### Invariant check
+
+QOS has designed a [Invariant checking mechanism] (../spec/bank), user can perform invariant checking operation by the following instructions:
+
+`qoscli tx invariant-check --sender <sender's keybase name or address>`
+
+main params:
+- `--sender` sender's keybase name or address
+
+::: warning Note 
+This transaction sets a very large transaction fee. It is only submitted when the holder of the currency account finds that the QOS network data is abnormal. The data verification abnormality will stop the entire QOS network to protect the rights of the holder.
+:::
+
+`Arya` found a value overflow in the QOS network:
+```bash
+$ qoscli tx invariant-check --sender Arya
+Password to sign with 'Arya':<input keystor password>
+```
+If there is no abnormality in the data, the normal transaction execution result will be returned, otherwise the whole network will stop running.
 
 ### Approve
 

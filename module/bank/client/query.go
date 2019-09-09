@@ -9,6 +9,7 @@ import (
 	"github.com/tendermint/go-amino"
 )
 
+// 查询锁定-释放账户信息
 func QueryLockAccountCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "lock-account",

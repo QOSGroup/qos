@@ -120,17 +120,7 @@ func TestTransferTx_GetSignData(t *testing.T) {
 		},
 	}
 
-	ret := make([]byte, 0)
-	for _, sender := range tx.Senders {
-		ret = append(ret, sender.Address...)
-		ret = append(ret, sender.QOS.String()...)
-		ret = append(ret, sender.QSCs.String()...)
-	}
-	for _, receiver := range tx.Receivers {
-		ret = append(ret, receiver.Address...)
-		ret = append(ret, receiver.QOS.String()...)
-		ret = append(ret, receiver.QSCs.String()...)
-	}
+	ret := Cdc.MustMarshalBinaryBare(tx)
 
 	require.Equal(t, tx.GetSignData(), ret)
 }
