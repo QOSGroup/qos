@@ -174,12 +174,12 @@ type TxIssueQSC struct {
 func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
 	// QscName不能为空，且不能超过8个字符
 	if len(tx.QSCName) == 0 || len(tx.QSCName) > MaxQSCNameLen {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad qsc name. qsc name not empty and less then 8 characters")
 	}
 
 	// Amount大于0
 	if !tx.Amount.GT(btypes.ZeroInt()) {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad amount. amount must gt than zero.")
 	}
 
 	// QSC存在
@@ -196,12 +196,12 @@ func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
 
 	// QSC名称一致
 	if tx.QSCName != qscInfo.Name {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad Bad qsc name. qsc name not match")
 	}
 
 	// banker 地址一致
 	if !bytes.Equal(tx.Banker, qscInfo.Banker) {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad banker. banker not match")
 	}
 
 	return nil

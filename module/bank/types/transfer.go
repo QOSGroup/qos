@@ -19,7 +19,7 @@ func (item TransItem) IsValid() (bool, error) {
 	item.QOS = item.QOS.NilToZero()
 
 	if item.QOS.IsZero() && item.QSCs.IsZero() {
-		return false, errors.New(fmt.Sprintf("QOS and QSCs in %s are zero", item.Address.String()))
+		return false, errors.New("QOS and QSCs in transfer are zero")
 	}
 	if btypes.ZeroInt().GT(item.QOS) {
 		return false, errors.New(fmt.Sprintf("QOS in %s is lte zero", item.Address.String()))
