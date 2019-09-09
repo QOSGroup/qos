@@ -6,8 +6,10 @@ Bank module contains transfer, invariant check transactions.
 
 QOS supports multi-account multi-currency transfers.
 
-### Struct
 [Sending TxTransfer](../../command/qoscli.md#transfer) is simple and convenient.
+
+### Struct
+
 ```go
 type TxTransfer struct {
 	Senders   types.TransItems `json:"senders"`   // trans items of sender
@@ -47,8 +49,10 @@ The first send account
 
 Check all data in the QOS network.
 
+[Sending TxInvariantCheck](../../command/qoscli.md#invariant-check) will send a specific event for checking all data in the QOS network.
+
 ### Struct
-[Sending TxInvariantCheck](../../command/qoscli.md#invariant-check) will send a specific event for checking all data in teh QOS network.
+
 ```go
 type TxInvariantCheck struct {
 	Sender btypes.AccAddress `json:"sender"` // address of tx sender

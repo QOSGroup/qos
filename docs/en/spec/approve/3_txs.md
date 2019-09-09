@@ -4,8 +4,9 @@ We introduce approve txs here，these txs affect [State](2_state.md).
 
 ## TxCreateApprove
 
+[Sending TxCreateApprove](../../command/qoscli.md#create-approve) to create an `approve`. 
+
 ### Struct
-[Sending TxCreateApprove](../../command/qoscli.md#create-approve) to create an `approve`. The struct of this tx is:
 ```go
 type TxCreateApprove struct {
 	types.Approve
@@ -31,8 +32,9 @@ This tx is expected to fail if:
 
 ## TxIncreaseApprove
 
+[Sending TxIncreaseApprove](../../command/qoscli.md#increase-approve) to increase an `approve`.
+
 ### Struct
-[Sending TxIncreaseApprove](../../command/qoscli.md#increase-approve) to increase an `approve`. The struct of this tx is:
 ```go
 type TxIncreaseApprove struct {
 	types.Approve
@@ -55,8 +57,10 @@ This tx is expected to fail if:
 
 ## TxDecreaseApprove
 
+[Sending TxDecreaseApprove](../../command/qoscli.md#decrease-approve) to decrease an `approve`. 
+
 ### Struct
-[Sending TxDecreaseApprove](../../command/qoscli.md#decrease-approve) to decrease an `approve`. The struct of this tx is:
+
 ```go
 type TxDecreaseApprove struct {
 	types.Approve
@@ -85,8 +89,10 @@ deducts the approve creator account balance accordingly, and reduces the approve
 
 > Approve will be deleted when there is no QOS and QSCs left after this tx done. 
 
+[Sending TxUseApprove](../../command/qoscli.md#use-approve) to use an `approve`. 
+
 ### Struct
-[Sending TxUseApprove](../../command/qoscli.md#use-approve) to use an `approve`. The struct of this tx is:
+
 ```go
 type TxUseApprove struct {
 	types.Approve
@@ -112,8 +118,10 @@ This tx is expected to fail if:
 
 Cancel an existing approve and remove from the database.
 
+[Sending TxCancelApprove](../../command/qoscli.md#cancel-approve) to cancel an `approve`.
+
 ### Struct
-[Sending TxCancelApprove](../../command/qoscli.md#cancel-approve) to cancel an `approve`. The struct of this tx is:
+
 ```go
 type TxCancelApprove struct {
     From btypes.AccAddress `json:"from"`

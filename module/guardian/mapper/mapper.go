@@ -13,18 +13,21 @@ const (
 )
 
 var (
-	guardianKey = []byte{0x00}
-	haltKey     = []byte{0x01}
+	guardianKey = []byte{0x00} // 系统账户存储前缀
+	haltKey     = []byte{0x01} // 停网标志存储键值
 )
 
+// 系统账户存储键
 func KeyGuardian(address btypes.AccAddress) []byte {
 	return append(guardianKey, address...)
 }
 
+// 系统账户存储前缀
 func KeyGuardiansSubspace() []byte {
 	return guardianKey
 }
 
+// 系统账户模块数据库操作
 type Mapper struct {
 	*mapper.BaseMapper
 }
@@ -47,29 +50,35 @@ func NewMapper() *Mapper {
 	return &guardianMapper
 }
 
+// 添加系统账户
 func (mapper Mapper) AddGuardian(guardian types.Guardian) {
 	mapper.Set(KeyGuardian(guardian.Address), guardian)
 }
 
+// 删除系统账户
 func (mapper Mapper) DeleteGuardian(address btypes.AccAddress) {
 	mapper.Del(KeyGuardian(address))
 }
 
+// 获取系统账户
 func (mapper Mapper) GetGuardian(address btypes.AccAddress) (guardian types.Guardian, exists bool) {
 	exists = mapper.Get(KeyGuardian(address), &guardian)
 	return guardian, exists
 }
 
+// 系统账户迭代器
 func (mapper Mapper) GuardiansIterator() store.Iterator {
 	return btypes.KVStorePrefixIterator(mapper.GetStore(), KeyGuardiansSubspace())
 }
 
-func (mapper Mapper) SetHalt(halt string) {
-	mapper.Set(haltKey, halt)
+// 设置停网标识
+func (mapper Mapper) SetHalt(reason string) {
+	mapper.Set(haltKey, reason)
 }
 
-func (mapper Mapper) NeedHalt(height uint64) bool {
-	var halt string
-	exists := mapper.Get(haltKey, &halt)
-	return exists
+// 查询停止网络标志
+func (mapper Mapper) GetHalt() (string, bool) {
+	var reason string
+	exists := mapper.Get(haltKey, &reason)
+	return reason, exists
 }

@@ -4,8 +4,10 @@
 
 ## 创建预授权
 
+[发送创建预授权交易](../../command/qoscli.md#创建预授权)创建预授权。
+
 ### 结构
-[发送创建预授权交易](../../command/qoscli.md#创建预授权)，创建预授权，结构如下：
+
 ```go
 type TxCreateApprove struct {
 	types.Approve
@@ -33,8 +35,10 @@ type TxCreateApprove struct {
 
 ## 增加预授权
 
+[发送增加预授权交易](../../command/qoscli.md#增加预授权)增加预授权。
+
 ### 结构
-[发送增加预授权交易](../../command/qoscli.md#增加预授权)，增加预授权，结构如下：
+
 ```go
 type TxIncreaseApprove struct {
 	types.Approve
@@ -57,8 +61,10 @@ type TxIncreaseApprove struct {
 
 ## 减少预授权
 
+[发送减少预授权交易](../../command/qoscli.md#减少预授权)减少预授权。
+
 ### 结构
-[发送减少预授权交易](../../command/qoscli.md#减少预授权)，减少预授权，结构如下：
+
 ```go
 type TxDecreaseApprove struct {
 	types.Approve
@@ -84,8 +90,10 @@ type TxDecreaseApprove struct {
 
 被授权账户提取授权币种币值到账户，相应扣除授权账户余额，减少更新预授权额度。
 
+[发送使用预授权交易](../../command/qoscli.md#使用预授权)，使用预授权。
+
 ### 结构
-[发送使用预授权交易](../../command/qoscli.md#使用预授权)，使用预授权，结构如下：
+
 ```go
 type TxUseApprove struct {
 	types.Approve
@@ -113,8 +121,10 @@ type TxUseApprove struct {
 
 取消已存在的预授权，将从数据库中删除授权信息。
 
+[发送取消预授权交易](../../command/qoscli.md#取消预授权)，取消预授权
+
 ### 结构
-[发送取消预授权交易](../../command/qoscli.md#取消预授权)，取消预授权，结构如下：
+
 ```go
 type TxCancelApprove struct {
     From btypes.AccAddress `json:"from"` // 授权账号

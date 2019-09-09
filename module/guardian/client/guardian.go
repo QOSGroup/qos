@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
@@ -15,6 +16,7 @@ import (
 	"github.com/tendermint/go-amino"
 )
 
+// 添加系统账户
 func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-guardian",
@@ -33,8 +35,8 @@ func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				description := viper.GetString(flagDescription)
-				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
-
+				if len(description) > gtxs.MaxDescriptionLen {
+					return nil, fmt.Errorf("description is too long, max length is %d", gtxs.MaxDescriptionLen)
 				}
 
 				return gtxs.NewTxAddGuardian(description, address, creator), nil
@@ -42,9 +44,9 @@ func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagAddress, "", "address of guardian")
-	cmd.Flags().String(flagCreator, "", "address of creator")
-	cmd.Flags().String(flagDescription, "", "description")
+	cmd.Flags().String(flagAddress, "", "Address of guardian")
+	cmd.Flags().String(flagCreator, "", "Address of creator")
+	cmd.Flags().String(flagDescription, "", "Description")
 	cmd.MarkFlagRequired(flagAddress)
 	cmd.MarkFlagRequired(flagCreator)
 	cmd.MarkFlagRequired(flagDescription)
@@ -52,6 +54,7 @@ func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
+// 删除系统账户
 func DeleteGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete-guardian",
@@ -69,24 +72,20 @@ func DeleteGuardianCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				description := viper.GetString(flagDescription)
-				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
-
-				}
-
 				return gtxs.NewTxDeleteGuardian(address, deleteBy), nil
 			})
 		},
 	}
 
-	cmd.Flags().String(flagAddress, "", "address of guardian")
-	cmd.Flags().String(flagDeletedBy, "", "address of deleteBy guardian")
+	cmd.Flags().String(flagAddress, "", "Address of guardian")
+	cmd.Flags().String(flagDeletedBy, "", "Address of deleteBy guardian")
 	cmd.MarkFlagRequired(flagAddress)
 	cmd.MarkFlagRequired(flagDeletedBy)
 
 	return cmd
 }
 
+// 查询系统账户
 func QueryGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "guardian [guardian]",
@@ -121,6 +120,7 @@ func QueryGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
+// 系统账户列表
 func QueryGuardiansCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "guardians",
@@ -159,6 +159,7 @@ func QueryGuardiansCmd(cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
+// 停网操作
 func HaltCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "halt-network",
@@ -171,8 +172,11 @@ func HaltCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				description := viper.GetString(flagDescription)
-				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
-
+				if len(description) == 0 {
+					return nil, errors.New("description is empty")
+				}
+				if len(description) > gtxs.MaxDescriptionLen {
+					return nil, fmt.Errorf("description is too long, max length is %d", gtxs.MaxDescriptionLen)
 				}
 
 				return gtxs.NewTxHaltNetwork(address, description), nil
@@ -180,8 +184,8 @@ func HaltCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagAddress, "", "address of guardian")
-	cmd.Flags().String(flagDescription, "", "description for this operation")
+	cmd.Flags().String(flagAddress, "", "Address of guardian")
+	cmd.Flags().String(flagDescription, "", "Description for this operation")
 	cmd.MarkFlagRequired(flagAddress)
 	cmd.MarkFlagRequired(flagDescription)
 

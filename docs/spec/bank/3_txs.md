@@ -6,8 +6,10 @@ Bank 模块包含交易类型如下：
 
 QOS支持一次多账户多币种转账
 
+[发送转账交易](../../command/qoscli.md#转账)
+
 ### 结构
-[发送转账交易](../../command/qoscli.md#转账)， 转账交易体结构：
+
 ```go
 type TxTransfer struct {
 	Senders   types.TransItems `json:"senders"`   // 发送集合
@@ -43,8 +45,10 @@ type TransItem struct {
 
 检查QOS网络中所有状态数据。
 
+[发送数据检查交易](../../command/qoscli.md#数据检查)
+
 ### 结构
-[发送数据检查交易](../../command/qoscli.md#数据检查)，其结构如下：
+
 ```go
 type TxInvariantCheck struct {
 	Sender btypes.AccAddress `json:"sender"` // 发送交易账户地址

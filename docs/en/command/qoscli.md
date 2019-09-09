@@ -168,8 +168,8 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query tally`                  [投票统计](#投票统计)
 * `qoscli query params`                 [参数查询](#参数查询)
 * `qoscli query inflation-phrases`      [通胀查询](#通胀查询)
-* `qoscli query guardian`               [特权账户查询](#特权账户查询)
-* `qoscli query guardians`              [特权账户列表](#特权账户列表)
+* `qoscli query guardian`               [Query guardian](#query-guardian)
+* `qoscli query guardians`              [Query guardians](#query-guardians)
 * `qoscli query status`                 [查询节点状态](#状态（status）)
 * `qoscli query tendermint-validators`  [获取指定高度验证节点集合](#获取指定高度验证节点集合)
 * `qoscli query block`                  [获取指定高度区块信息](#区块（block）)
@@ -634,14 +634,20 @@ QOS支持以下几种交易类型：
 * `qoscli tx submit-proposal`  [提交提议](#提交提议)
 * `qoscli tx deposit`          [提议抵押](#提议抵押)
 * `qoscli tx vote`             [提议投票](#提议投票)
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
+* `qoscli tx add-guardian`     [Add guardian](#add-guardian)
+* `qoscli tx delete-guardian`  [Delete guardian](#delete-guardian)
+* `qoscli tx halt-network`     [Halt network](#halt-network)
 
-分为[转账](#转账（transfer）)、[Approve](#approve)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
+分为[Bank](#bank),[Approve](#approve),[联盟币](#联盟币（qsc）),[联盟链](#联盟链（qcp）),[验证节点](#验证节点（validator）),[治理](#治理（governance）),[Guardian](#guardian)这几大类。
 
-### Transfer
+### Bank
 
-See [Bank Spec](../spec/bank) to learn about QOS transfer transaction design.
+See [Bank Spec](../spec/bank) to learn about bank module design.
+
+* `qoscli tx transfer`          [Transfer](#transfer)
+* `qoscli invariant-check`      [Invariant check](#invariant-check)
+
+#### Transfer
 
 `qoscli tx transfer --senders <senders_and_coins> --receivers <receivers_and_coins>`
 
@@ -658,9 +664,9 @@ Password to sign with 'Arya':<imput keybase password>
 
 Execute [Query account](#account) to see the latest account state.
 
-### Invariant check
+#### Invariant check
 
-QOS has designed a [Invariant checking mechanism] (../spec/bank), user can perform invariant checking operation by the following instructions:
+QOS has designed a [Invariant checking mechanism](../spec/bank), user can perform invariant checking operation by the following instructions:
 
 `qoscli tx invariant-check --sender <sender's keybase name or address>`
 
@@ -1418,10 +1424,6 @@ $ qoscli query redelegations Sansa
 * `qoscli query votes`         [投票列表](#投票列表)
 * `qoscli query tally`         [投票统计](#投票统计)
 * `qoscli query params`        [参数查询](#参数查询)
-* `qoscli query guardian`      [特权账户查询](#特权账户查询)
-* `qoscli query guardians`     [特权账户列表](#特权账户列表)
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
 
 #### 提交提议
 
@@ -1794,16 +1796,25 @@ $ qoscli query params --module gov --key min_deposit
 "10000000"
 ```
 
-#### 特权账户查询
+### Guardian
+
+* `qoscli query guardian`      [Query guardian](#query-guardian)
+* `qoscli query guardians`     [Query guardians](#query-guardians)
+* `qoscli tx add-guardian`     [Add guardian](#add-guardian)
+* `qoscli tx delete-guardian`  [Delete guardian](#delete-guardian)
+* `qoscli tx halt-network`     [Halt network](#halt-network)
+
+
+#### Query guardian
 
 `qoscli query guardian <guardian_key_name_or_account_address>`
 
-查询`Arya`特权信息：
+query `Arya`'s information as guardian:
 ```bash
 $ qoscli query guardian Arya --indent
 ```
 
-查询结果：
+result:
 ```bash
 {
   "description": "Arya",
@@ -1813,16 +1824,16 @@ $ qoscli query guardian Arya --indent
 }
 ```
 
-#### 特权账户列表
+#### Query guardians
 
 `qoscli query guardians`
 
-查询所有特权账户：
+query all guardians:
 ```bash
 $ qoscli query guardians --indent
 ```
 
-查询结果：
+result:
 ```bash
 [
   {
@@ -1834,35 +1845,51 @@ $ qoscli query guardians --indent
 ]
 ```
 
-#### 添加特权账户
+#### Add guardian
 
-在`genesis.json`中配置的特权账户可通过下面的添加指令添加新的特权账户：
+`Genesis` guardian can execute `add-guardian` to add `Oridinary` guardian.
 
 `qoscli tx add-guardian --address <new_guardian_key_name_or_account_address> --creator <creator_key_name_or_account_address> --description <description>`
 
-主要参数：
+main params:
 
-- `--address`         新特权账户，账户地址或密钥库中密钥名字
-- `--creator`         创建账户，账户地址或密钥库中密钥名字
-- `--description`     描述
+- `--address`         address of guardian to be added
+- `--creator`         address of guardian who execute this transaction
+- `--description`     description
 
-`Arya`添加`Sansa`为特权账户：
+`Arya` add `Sansa` as guardian:
 ```bash
 $ qoscli tx add-guardian --address Sansa --creator Arya --description 'set Sansa to be a guardian'
 ```
 
-#### 删除特权账户
+#### Delete guardian
 
-在`genesis.json`中配置的特权账户可通过下面的指令删除非`genesis.json`中配置的特权账户：
+`Genesis` guardian can execute `delete-guardian` to delete `Oridinary` guardian.
 
 `qoscli tx delete-guardian --address <new_guardian_key_name_or_account_address> --deleted-by <delete_operator_key_name_or_account_address>`
 
-主要参数：
+main params:
 
-- `--address`         新特权账户，账户地址或密钥库中密钥名字
-- `--deleted-by`      删除操作账户，账户地址或密钥库中密钥名字
+- `--address`         address of guardian to be removed
+- `--deleted-by`      address of guardian who execute this transaction
 
-`Arya`将`Sansa`从特权账户中删除：
+`Arya` remove `Sansa` from guardians:
 ```bash
 $ qoscli tx delete-guardian --address Sansa --deleted-by Arya
+```
+
+#### Halt network
+
+In an emergency, the guardians can stop the network in time.
+
+`qoscli tx halt-network --guardian <guardian_key_name_or_account_address> --reason <reason_for_halting_network>`
+
+main params:
+
+- `--guardian`   address of guardian
+- `--reason`     reason for halting the network
+
+A major bug occurred on the network, `Arya` stop the QOS network:
+```bash
+$ qoscli tx halt-network --guardian Arya --reason 'bug'
 ```
