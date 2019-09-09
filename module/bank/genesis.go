@@ -22,7 +22,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	}
 }
 
-// 状态数据到处
+// 状态数据导出
 func ExportGenesis(ctx context.Context) types.GenesisState {
 	lockInfo, exists := mapper.GetLockInfo(ctx)
 	if !exists {
