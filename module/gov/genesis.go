@@ -18,7 +18,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 		panic(err)
 	}
 	err = data.Params.Validate()
-	if err != nil {
+	if err == nil {
 		mapper.SetParams(ctx, data.Params)
 	}
 	for _, proposal := range data.Proposals {
