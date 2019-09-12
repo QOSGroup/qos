@@ -19,19 +19,40 @@ var (
 )
 
 type Params struct {
-	ProposerRewardRate           qtypes.Fraction `json:"proposer_reward_rate"`
-	CommunityRewardRate          qtypes.Fraction `json:"community_reward_rate"`
-	DelegatorsIncomePeriodHeight int64           `json:"delegator_income_period_height"`
-	GasPerUnitCost               int64           `json:"gas_per_unit_cost"` // how much gas = 1 QOS
+	ProposerRewardRate           qtypes.Dec `json:"proposer_reward_rate"`
+	CommunityRewardRate          qtypes.Dec `json:"community_reward_rate"`
+	DelegatorsIncomePeriodHeight int64      `json:"delegator_income_period_height"`
+	GasPerUnitCost               int64      `json:"gas_per_unit_cost"` // how much gas = 1 QOS
+}
+
+func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
+	switch key {
+	case string(KeyProposerRewardRate):
+		p.ProposerRewardRate = value.(qtypes.Dec)
+		break
+	case string(KeyCommunityRewardRate):
+		p.CommunityRewardRate = value.(qtypes.Dec)
+		break
+	case string(KeyDelegatorsIncomePeriodHeight):
+		p.DelegatorsIncomePeriodHeight = value.(int64)
+		break
+	case string(KeyGasPerUnitCost):
+		p.GasPerUnitCost = value.(int64)
+		break
+	default:
+		return params.ErrInvalidParam(fmt.Sprintf("%s not exists", key))
+	}
+
+	return nil
 }
 
 var _ qtypes.ParamSet = (*Params)(nil)
 
 func DefaultParams() Params {
 	return Params{
-		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)), // 1%
-		CommunityRewardRate:          qtypes.NewFraction(int64(2), int64(100)), // 2%
-		DelegatorsIncomePeriodHeight: 60 * 60 / qtypes.DefaultBlockInterval,    // 1 hour
+		ProposerRewardRate:           qtypes.NewDecWithPrec(1, 2),           // 1%
+		CommunityRewardRate:          qtypes.NewDecWithPrec(2, 2),           // 2%
+		DelegatorsIncomePeriodHeight: 60 * 60 / qtypes.DefaultBlockInterval, // 1 hour
 		GasPerUnitCost:               qtypes.GasPerUnitCost,
 	}
 }
@@ -54,7 +75,7 @@ func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes
 		}
 		return rate, nil
 	case string(KeyDelegatorsIncomePeriodHeight), string(KeyGasPerUnitCost):
-		height, err := strconv.ParseUint(value, 10, 64)
+		height, err := strconv.ParseInt(value, 10, 64)
 		if err != nil {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}

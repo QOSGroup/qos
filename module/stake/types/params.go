@@ -46,6 +46,39 @@ type Params struct {
 	SlashFractionDowntime       types.Dec     `json:"slash_fraction_downtime"`
 }
 
+func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
+	switch key {
+	case string(KeyMaxValidatorCnt):
+		p.MaxValidatorCnt = value.(int64)
+		break
+	case string(KeyValidatorVotingStatusLen):
+		p.ValidatorVotingStatusLen = value.(int64)
+		break
+	case string(KeyValidatorVotingStatusLeast):
+		p.ValidatorVotingStatusLeast = value.(int64)
+		break
+	case string(KeyValidatorSurvivalSecs):
+		p.ValidatorSurvivalSecs = value.(int64)
+		break
+	case string(KeyDelegatorUnbondFrozenHeight):
+		p.DelegatorUnbondFrozenHeight = value.(int64)
+		break
+	case string(KeyMaxEvidenceAge):
+		p.MaxEvidenceAge = value.(time.Duration)
+		break
+	case string(KeySlashFractionDoubleSign):
+		p.SlashFractionDoubleSign = value.(qtypes.Dec)
+		break
+	case string(KeySlashFractionDowntime):
+		p.SlashFractionDowntime = value.(qtypes.Dec)
+		break
+	default:
+		return params.ErrInvalidParam(fmt.Sprintf("%s not exists", key))
+	}
+
+	return nil
+}
+
 var _ qtypes.ParamSet = (*Params)(nil)
 
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
@@ -67,13 +100,25 @@ func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes
 		string(KeyValidatorVotingStatusLen),
 		string(KeyValidatorVotingStatusLeast),
 		string(KeyValidatorSurvivalSecs),
-		string(KeyDelegatorUnbondFrozenHeight),
-		string(KeyMaxEvidenceAge):
-		v, err := strconv.ParseUint(value, 10, 64)
+		string(KeyDelegatorUnbondFrozenHeight):
+		v, err := strconv.ParseInt(value, 10, 64)
 		if err != nil || v <= 0 {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
 		return v, nil
+	case string(KeySlashFractionDoubleSign),
+		string(KeySlashFractionDowntime):
+		v, err := qtypes.NewDecFromStr(value)
+		if err != nil {
+			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
+		}
+		return v, nil
+	case string(KeyMaxEvidenceAge):
+		v, err := strconv.ParseInt(value, 10, 64)
+		if err != nil {
+			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
+		}
+		return time.Duration(v), nil
 	default:
 		return nil, params.ErrInvalidParam(fmt.Sprintf("%s not exists", key))
 	}
