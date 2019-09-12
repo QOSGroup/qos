@@ -30,9 +30,8 @@ func TestTransItem_IsValid(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		valid, err := tc.input.IsValid()
-		require.Equal(t, valid, err == nil, "tc #%d", tcIndex)
-		require.Equal(t, valid, tc.valid)
+		err := tc.input.Valid()
+		require.Equal(t, tc.valid, err == nil, "tc #%d", tcIndex)
 	}
 }
 
@@ -71,9 +70,8 @@ func TestTransItems_IsValid(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		valid, err := tc.input.IsValid()
+		err := tc.input.Valid()
 		require.Equal(t, tc.valid, err == nil, "tc #%d", tcIndex)
-		require.Equal(t, tc.valid, valid)
 	}
 }
 
@@ -96,8 +94,7 @@ func TestTransItems_Match(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		match, err := tc.input1.Match(tc.input2)
+		err := tc.input1.Match(tc.input2)
 		require.Equal(t, tc.match, err == nil, "tc #%d", tcIndex)
-		require.Equal(t, tc.match, match)
 	}
 }

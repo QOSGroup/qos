@@ -4,11 +4,12 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 )
 
+// 系统账户
 type Guardian struct {
-	Description  string            `json:"description"`
-	GuardianType GuardianType      `json:"guardian_type"`
-	Address      btypes.AccAddress `json:"address"`
-	Creator      btypes.AccAddress `json:"creator"`
+	Description  string            `json:"description"`   // 描述
+	GuardianType GuardianType      `json:"guardian_type"` // 账户类型：Genesis 创世配置 Ordinary 交易创建
+	Address      btypes.AccAddress `json:"address"`       // 账户地址
+	Creator      btypes.AccAddress `json:"creator"`       // 创建者账户地址
 }
 
 func (g Guardian) Equals(g1 Guardian) bool {
@@ -30,6 +31,6 @@ func NewGuardian(description string, guardianType GuardianType, address, creator
 type GuardianType byte
 
 const (
-	Genesis  GuardianType = 0x01
-	Ordinary GuardianType = 0x02
+	Genesis  GuardianType = 0x01 // 创世配置
+	Ordinary GuardianType = 0x02 // 交易创建
 )

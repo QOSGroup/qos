@@ -59,12 +59,12 @@ module.exports = {
                             ["/spec/eco_module.v1", "经济模型"],
                             ["/spec/validators/all_about_validators", "验证节点详解"],
                             ["/spec/staking", "验证节点"],
-                            ["/spec/account", "账户"],
+                            ["/spec/bank/", "Bank"],
                             ["/spec/genesis", "创世"],
-                            ["/spec/transfer", "转账"],
-                            ["/spec/approve", "预授权"],
+                            ["/spec/approve/", "预授权"],
                             ["/spec/governance", "治理"],
-                            ["/spec/guardian", "系统用户"],
+                            ["/spec/guardian/", "系统用户"],
+                            ["/spec/params/", "参数"],
                             ["/spec/indexing", "索引"],
                             ["/spec/qsc", "代币"],
                             ["/spec/qcp", "联盟链"],
@@ -81,24 +81,24 @@ module.exports = {
                         title: "Introduction",
                         collapsable: false,
                         children: [
-                            ["/introduction/qos", "QOS"]
+                            ["/en/introduction/qos", "QOS"]
                         ]
                     },
                     {
                         title: "Getting Started",
                         collapsable: false,
                         children: [
-                            ["/install/installation", "Install"],
-                            ["/install/networks", "Networks"],
-                            ["/install/testnet", "Testnet"]
+                            ["/en/install/installation", "Install"],
+                            ["/en/install/networks", "Networks"],
+                            ["/en/install/testnet", "Testnet"]
                         ]
                     },
                     {
                         title: "Command",
                         collapsable: false,
                         children: [
-                            ["/command/qoscli", "qoscli"],
-                            ["/command/qosd", "qosd"],
+                            ["/en/command/qoscli", "qoscli"],
+                            ["/en/command/qosd", "qosd"],
                         ]
                     }
                     ,
@@ -109,12 +109,12 @@ module.exports = {
                             ["/spec/eco_module.v1", "ECO"],
                             ["/spec/validators/all_about_validators", "Validators"],
                             ["/spec/staking", "Stake"],
-                            ["/spec/account", "Account"],
+                            ["/en/spec/bank/", "Bank"],
                             ["/spec/genesis", "Genesis"],
-                            ["/spec/transfer", "Transfer"],
-                            ["/spec/approve", "Approve"],
+                            ["/en/spec/approve/", "Approve"],
                             ["/spec/governance", "Governance"],
-                            ["/spec/guardian", "Guardian"],
+                            ["/en/spec/guardian/", "Guardian"],
+                            ["/en/spec/params/", "Parameters"],
                             ["/spec/indexing", "Index"],
                             ["/spec/qsc", "QSC"],
                             ["/spec/qcp", "QCP"],

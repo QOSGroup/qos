@@ -7,6 +7,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
+// 账户数据检查
 func AccountInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		var msg string
@@ -16,6 +17,7 @@ func AccountInvariant(module string) qtypes.Invariant {
 		accounts := GetAccounts(ctx)
 		for _, account := range accounts {
 			coins = coins.Plus(append(btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, account.QOS)}, account.QSCs...))
+			// 不能有负值
 			if account.QOS.LT(btypes.ZeroInt()) || !account.QSCs.IsNotNegative() {
 				count++
 				msg += fmt.Sprintf("account %s has a negative values %s %s\n",

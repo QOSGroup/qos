@@ -141,7 +141,7 @@ qoscli keys import Arya --file Arya.pri
 
 ## 查询（query）
 
-* `qoscli query account`                [账户查询](#账户（account）)
+* `qoscli query account`                [账户查询](#账户)
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [预授权](#查询预授权)
@@ -168,8 +168,8 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query tally`                  [投票统计](#投票统计)
 * `qoscli query params`                 [参数查询](#参数查询)
 * `qoscli query inflation-phrases`      [通胀查询](#通胀查询)
-* `qoscli query guardian`               [特权账户查询](#特权账户查询)
-* `qoscli query guardians`              [特权账户列表](#特权账户列表)
+* `qoscli query guardian`               [系统账户查询](#系统账户查询)
+* `qoscli query guardians`              [系统账户列表](#系统账户列表)
 * `qoscli query status`                 [查询节点状态](#状态（status）)
 * `qoscli query tendermint-validators`  [获取指定高度验证节点集合](#获取指定高度验证节点集合)
 * `qoscli query block`                  [获取指定高度区块信息](#区块（block）)
@@ -349,7 +349,7 @@ $ qoscli query block 10 --indent
 }
 ```
 
-### 账户（account）
+### 账户
 
 查询账户
 `qoscli query account <key_name_or_account_address>`
@@ -613,7 +613,8 @@ $ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78ls
 
 QOS支持以下几种交易类型：
 
-* `qoscli tx transfer`         [转账](#转账（transfer）)
+* `qoscli tx transfer`         [转账](#转账)
+* `qoscli tx invariant-check`  [数据检查](#数据检查)
 * `qoscli tx create-approve`   [创建预授权](#创建预授权)
 * `qoscli tx increase-approve` [增加预授权](#增加预授权)
 * `qoscli tx decrease-approve` [减少预授权](#减少预授权)
@@ -633,14 +634,22 @@ QOS支持以下几种交易类型：
 * `qoscli tx submit-proposal`  [提交提议](#提交提议)
 * `qoscli tx deposit`          [提议抵押](#提议抵押)
 * `qoscli tx vote`             [提议投票](#提议投票)
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
+* `qoscli tx add-guardian`     [添加系统账户](#添加系统账户)
+* `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
+* `qoscli tx halt-network`     [停止网络](#停止网络)
 
-分为[转账](#转账（transfer）)、[预授权](#预授权（approve）)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
+主要分为[Bank](#bank)，[预授权](#预授权)，[联盟币](#联盟币（qsc）)，[联盟链](#联盟链（qcp）)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
 
-### 转账（transfer）
+### Bank
 
-查阅[转账设计](../spec/transfer.md)了解QOS转账交易设计。
+See [Bank模块](../spec/bank) to learn about bank module design.
+
+* `qoscli tx transfer`          [转账](#转账)
+* `qoscli invariant-check`      [数据检查](#数据检查)
+
+#### 转账
+
+查阅[转账设计](../spec/bank)了解QOS转账交易设计。
 
 `qoscli tx transfer --senders <senders_and_coins> --receivers <receivers_and_coins>`
 
@@ -657,9 +666,29 @@ Password to sign with 'Arya':<输入密码>
 {"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"300"}
 ```
 
-转账成功可通过[账户查询](#账户（account）)查看最新账户状态，交易执行可能会有一定时间的延迟。
+转账成功可通过[账户查询](#账户)查看最新账户状态，交易执行可能会有一定时间的延迟。
 
-### 预授权（approve）
+#### 数据检查
+
+QOS设计了一套[数据检查机制](../spec/bank)，用户可以通过下面的指令执行数据检查操作：
+
+`qoscli tx invariant-check --sender <sender's keybase name or address>`
+
+主要参数：
+- `--sender` 发送此交易的账户keystore name 或 address
+
+::: warning Note 
+此交易设置了特别大的交易费，仅限持币账户发现QOS网络数据异常时提交，数据验证异常会停止整个QOS网络，以保护持币账户权益。
+:::
+
+`Arya`发现QOS网络中某处数值溢出，发现数据检查：
+```bash
+$ qoscli tx invariant-check --sender Arya
+Password to sign with 'Arya':<输入密码>
+```
+如果数据并无异常，将返回正常交易执行结果，否则全网停止运行。
+
+### 预授权
 
 [QOS预授权设计](../spec/approve.md)包含以下操作指令：
 
@@ -1399,10 +1428,6 @@ $ qoscli query redelegations Sansa
 * `qoscli query votes`         [投票列表](#投票列表)
 * `qoscli query tally`         [投票统计](#投票统计)
 * `qoscli query params`        [参数查询](#参数查询)
-* `qoscli query guardian`      [特权账户查询](#特权账户查询)
-* `qoscli query guardians`     [特权账户列表](#特权账户列表)
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
 
 #### 提交提议
 
@@ -1455,7 +1480,7 @@ $ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer
 $ qoscli tx submit-proposal --title 'update parameters' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
 ```
 
-假设`Arya`在QOS初始化时已经通过[添加特权账户](qosd.md#添加特权账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
+假设`Arya`在QOS初始化时已经通过[添加系统账户](qosd.md#添加系统账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
 ```bash
 $ qoscli tx submit-proposal --title 'use tax' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
 ```
@@ -1775,11 +1800,19 @@ $ qoscli query params --module gov --key min_deposit
 "10000000"
 ```
 
-#### 特权账户查询
+### 系统账户
+
+* `qoscli query guardian`      [系统账户查询](#系统账户查询)
+* `qoscli query guardians`     [系统账户列表](#系统账户列表)
+* `qoscli tx add-guardian`     [添加系统账户](#添加系统账户)
+* `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
+* `qoscli tx halt-network`     [停止网络](#停止网络)
+
+#### 系统账户查询
 
 `qoscli query guardian <guardian_key_name_or_account_address>`
 
-查询`Arya`特权信息：
+查询`Arya`系统账户信息：
 ```bash
 $ qoscli query guardian Arya --indent
 ```
@@ -1794,11 +1827,11 @@ $ qoscli query guardian Arya --indent
 }
 ```
 
-#### 特权账户列表
+#### 系统账户列表
 
 `qoscli query guardians`
 
-查询所有特权账户：
+查询所有系统账户：
 ```bash
 $ qoscli query guardians --indent
 ```
@@ -1815,35 +1848,51 @@ $ qoscli query guardians --indent
 ]
 ```
 
-#### 添加特权账户
+#### 添加系统账户
 
-在`genesis.json`中配置的特权账户可通过下面的添加指令添加新的特权账户：
+在`genesis.json`中配置的系统账户可通过下面的添加指令添加新的系统账户：
 
 `qoscli tx add-guardian --address <new_guardian_key_name_or_account_address> --creator <creator_key_name_or_account_address> --description <description>`
 
 主要参数：
 
-- `--address`         新特权账户，账户地址或密钥库中密钥名字
+- `--address`         新系统账户，账户地址或密钥库中密钥名字
 - `--creator`         创建账户，账户地址或密钥库中密钥名字
 - `--description`     描述
 
-`Arya`添加`Sansa`为特权账户：
+`Arya`添加`Sansa`为系统账户：
 ```bash
 $ qoscli tx add-guardian --address Sansa --creator Arya --description 'set Sansa to be a guardian'
 ```
 
-#### 删除特权账户
+#### 删除系统账户
 
-在`genesis.json`中配置的特权账户可通过下面的指令删除非`genesis.json`中配置的特权账户：
+在`genesis.json`中配置的系统账户可通过下面的指令删除非`genesis.json`中配置的系统账户：
 
 `qoscli tx delete-guardian --address <new_guardian_key_name_or_account_address> --deleted-by <delete_operator_key_name_or_account_address>`
 
 主要参数：
 
-- `--address`         新特权账户，账户地址或密钥库中密钥名字
+- `--address`         系统账户，账户地址或密钥库中密钥名字
 - `--deleted-by`      删除操作账户，账户地址或密钥库中密钥名字
 
-`Arya`将`Sansa`从特权账户中删除：
+`Arya`将`Sansa`从系统账户中删除：
 ```bash
 $ qoscli tx delete-guardian --address Sansa --deleted-by Arya
+```
+
+#### 停止网络
+
+紧急情况下，系统账户可及时停止网络运行。
+
+`qoscli tx halt-network --guardian <guardian_key_name_or_account_address> --reason <reason_for_halting_network>`
+
+主要参数：
+
+- `--guardian`   系统账户，账户地址或密钥库中密钥名字
+- `--reason`     停网原因
+
+网络出现重大bug，`Arya`停止QOS网络：
+```bash
+$ qoscli tx halt-network --guardian Arya --reason 'bug'
 ```

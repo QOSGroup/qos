@@ -4,6 +4,7 @@ import (
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/bank/mapper"
+	"github.com/QOSGroup/qos/module/bank/types"
 	qtypes "github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"time"
@@ -51,6 +52,14 @@ func ReleaseLockedAccount(ctx context.Context, lockInfo LockInfo) {
 			}
 			receiver.MustPlusQOS(releaseAmount)
 			mapper.GetMapper(ctx).SetAccount(receiver)
+
+			// 发送事件
+			ctx.EventManager().EmitEvent(
+				btypes.NewEvent(types.EventTypeRelease,
+					btypes.NewAttribute(types.AttributeKeyAddress, receiver.AccountAddress.String()),
+					btypes.NewAttribute(types.AttributeKeyQOS, releaseAmount.String()),
+				),
+			)
 		}
 
 		// 释放完成删除锁定信息
