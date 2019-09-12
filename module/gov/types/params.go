@@ -14,7 +14,7 @@ var (
 	ParamSpace = "gov"
 
 	KeyNormalMinDeposit             = []byte("normal_min_deposit")
-	keyNormalMinProposerDepositRate = []byte("normal_min_proposer_deposit_rate")
+	KeyNormalMinProposerDepositRate = []byte("normal_min_proposer_deposit_rate")
 	KeyNormalMaxDepositPeriod       = []byte("normal_max_deposit_period")
 	KeyNormalVotingPeriod           = []byte("normal_voting_period")
 	KeyNormalQuorum                 = []byte("normal_quorum")
@@ -24,7 +24,7 @@ var (
 	KeyNormalBurnRate               = []byte("normal_burn_rate")
 
 	KeyImportantMinDeposit             = []byte("important_min_deposit")
-	keyImportantMinProposerDepositRate = []byte("important_min_proposer_deposit_rate")
+	KeyImportantMinProposerDepositRate = []byte("important_min_proposer_deposit_rate")
 	KeyImportantMaxDepositPeriod       = []byte("important_max_deposit_period")
 	KeyImportantVotingPeriod           = []byte("important_voting_period")
 	KeyImportantQuorum                 = []byte("important_quorum")
@@ -34,7 +34,7 @@ var (
 	KeyImportantBurnRate               = []byte("important_burn_rate")
 
 	KeyCriticalMinDeposit             = []byte("critical_min_deposit")
-	keyCriticalMinProposerDepositRate = []byte("critical_min_proposer_deposit_rate")
+	KeyCriticalMinProposerDepositRate = []byte("critical_min_proposer_deposit_rate")
 	KeyCriticalMaxDepositPeriod       = []byte("critical_max_deposit_period")
 	KeyCriticalVotingPeriod           = []byte("critical_voting_period")
 	KeyCriticalQuorum                 = []byte("critical_quorum")
@@ -92,6 +92,96 @@ type Params struct {
 	CriticalBurnRate qtypes.Dec `json:"critical_burn_rate"` // Deposit burning rate when proposals pass or reject.
 }
 
+func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
+	switch key {
+	case string(KeyNormalMinDeposit):
+		p.NormalMinDeposit = value.(btypes.BigInt)
+		break
+	case string(KeyNormalMinProposerDepositRate):
+		p.NormalMinProposerDepositRate = value.(qtypes.Dec)
+		break
+	case string(KeyNormalMaxDepositPeriod):
+		p.NormalMaxDepositPeriod = value.(time.Duration)
+		break
+	case string(KeyNormalVotingPeriod):
+		p.NormalVotingPeriod = value.(time.Duration)
+		break
+	case string(KeyNormalQuorum):
+		p.NormalQuorum = value.(qtypes.Dec)
+		break
+	case string(KeyNormalThreshold):
+		p.NormalThreshold = value.(qtypes.Dec)
+		break
+	case string(KeyNormalVeto):
+		p.NormalVeto = value.(qtypes.Dec)
+		break
+	case string(KeyNormalPenalty):
+		p.NormalPenalty = value.(qtypes.Dec)
+		break
+	case string(KeyNormalBurnRate):
+		p.NormalBurnRate = value.(qtypes.Dec)
+		break
+	case string(KeyImportantMinDeposit):
+		p.ImportantMinDeposit = value.(btypes.BigInt)
+		break
+	case string(KeyImportantMinProposerDepositRate):
+		p.ImportantMinProposerDepositRate = value.(qtypes.Dec)
+		break
+	case string(KeyImportantMaxDepositPeriod):
+		p.ImportantMaxDepositPeriod = value.(time.Duration)
+		break
+	case string(KeyImportantVotingPeriod):
+		p.ImportantVotingPeriod = value.(time.Duration)
+		break
+	case string(KeyImportantQuorum):
+		p.ImportantQuorum = value.(qtypes.Dec)
+		break
+	case string(KeyImportantThreshold):
+		p.ImportantThreshold = value.(qtypes.Dec)
+		break
+	case string(KeyImportantVeto):
+		p.ImportantVeto = value.(qtypes.Dec)
+		break
+	case string(KeyImportantPenalty):
+		p.ImportantPenalty = value.(qtypes.Dec)
+		break
+	case string(KeyImportantBurnRate):
+		p.ImportantBurnRate = value.(qtypes.Dec)
+		break
+	case string(KeyCriticalMinDeposit):
+		p.CriticalMinDeposit = value.(btypes.BigInt)
+		break
+	case string(KeyCriticalMinProposerDepositRate):
+		p.CriticalMinProposerDepositRate = value.(qtypes.Dec)
+		break
+	case string(KeyCriticalMaxDepositPeriod):
+		p.CriticalMaxDepositPeriod = value.(time.Duration)
+		break
+	case string(KeyCriticalVotingPeriod):
+		p.CriticalVotingPeriod = value.(time.Duration)
+		break
+	case string(KeyCriticalQuorum):
+		p.CriticalQuorum = value.(qtypes.Dec)
+		break
+	case string(KeyCriticalThreshold):
+		p.CriticalThreshold = value.(qtypes.Dec)
+		break
+	case string(KeyCriticalVeto):
+		p.CriticalVeto = value.(qtypes.Dec)
+		break
+	case string(KeyCriticalPenalty):
+		p.CriticalPenalty = value.(qtypes.Dec)
+		break
+	case string(KeyCriticalBurnRate):
+		p.CriticalBurnRate = value.(qtypes.Dec)
+		break
+	default:
+		return params.ErrInvalidParam(fmt.Sprintf("%s not exists", key))
+	}
+
+	return nil
+}
+
 var _ qtypes.ParamSet = (*Params)(nil)
 
 func DefaultParams() Params {
@@ -132,7 +222,7 @@ func DefaultParams() Params {
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	return qtypes.KeyValuePairs{
 		{KeyNormalMinDeposit, &p.NormalMinDeposit},
-		{keyNormalMinProposerDepositRate, &p.NormalMinProposerDepositRate},
+		{KeyNormalMinProposerDepositRate, &p.NormalMinProposerDepositRate},
 		{KeyNormalMaxDepositPeriod, &p.NormalMaxDepositPeriod},
 		{KeyNormalVotingPeriod, &p.NormalVotingPeriod},
 		{KeyNormalQuorum, &p.NormalQuorum},
@@ -142,7 +232,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 		{KeyNormalBurnRate, &p.NormalBurnRate},
 
 		{KeyImportantMinDeposit, &p.ImportantMinDeposit},
-		{keyImportantMinProposerDepositRate, &p.ImportantMinProposerDepositRate},
+		{KeyImportantMinProposerDepositRate, &p.ImportantMinProposerDepositRate},
 		{KeyImportantMaxDepositPeriod, &p.ImportantMaxDepositPeriod},
 		{KeyImportantVotingPeriod, &p.ImportantVotingPeriod},
 		{KeyImportantQuorum, &p.ImportantQuorum},
@@ -152,7 +242,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 		{KeyImportantBurnRate, &p.ImportantBurnRate},
 
 		{KeyCriticalMinDeposit, &p.CriticalMinDeposit},
-		{keyCriticalMinProposerDepositRate, &p.CriticalMinProposerDepositRate},
+		{KeyCriticalMinProposerDepositRate, &p.CriticalMinProposerDepositRate},
 		{KeyCriticalMaxDepositPeriod, &p.CriticalMaxDepositPeriod},
 		{KeyCriticalVotingPeriod, &p.CriticalVotingPeriod},
 		{KeyCriticalQuorum, &p.CriticalQuorum},
@@ -166,23 +256,23 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyNormalMinDeposit), string(KeyImportantMinDeposit), string(KeyCriticalMinDeposit):
-		v, err := strconv.ParseInt(value, 10, 64)
-		if err != nil {
+		v, ok := btypes.NewIntFromString(value)
+		if !ok || !v.GT(btypes.ZeroInt()) {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
-		return btypes.NewInt(v), nil
+		return v, nil
 	case string(KeyNormalMaxDepositPeriod), string(KeyImportantMaxDepositPeriod), string(KeyCriticalMaxDepositPeriod),
 		string(KeyNormalVotingPeriod), string(KeyImportantVotingPeriod), string(KeyCriticalVotingPeriod):
-		v, err := strconv.ParseUint(value, 10, 64)
-		if err != nil {
+		v, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || v <= 0 {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
 		return time.Duration(v), nil
-	case string(keyNormalMinProposerDepositRate), string(KeyNormalQuorum), string(KeyNormalThreshold), string(KeyNormalVeto), string(KeyNormalPenalty), string(KeyNormalBurnRate),
-		string(keyImportantMinProposerDepositRate), string(KeyImportantQuorum), string(KeyImportantThreshold), string(KeyImportantVeto), string(KeyImportantPenalty), string(KeyImportantBurnRate),
-		string(keyCriticalMinProposerDepositRate), string(KeyCriticalQuorum), string(KeyCriticalThreshold), string(KeyCriticalVeto), string(KeyCriticalPenalty), string(KeyCriticalBurnRate):
+	case string(KeyNormalMinProposerDepositRate), string(KeyNormalQuorum), string(KeyNormalThreshold), string(KeyNormalVeto), string(KeyNormalPenalty), string(KeyNormalBurnRate),
+		string(KeyImportantMinProposerDepositRate), string(KeyImportantQuorum), string(KeyImportantThreshold), string(KeyImportantVeto), string(KeyImportantPenalty), string(KeyImportantBurnRate),
+		string(KeyCriticalMinProposerDepositRate), string(KeyCriticalQuorum), string(KeyCriticalThreshold), string(KeyCriticalVeto), string(KeyCriticalPenalty), string(KeyCriticalBurnRate):
 		v, err := qtypes.NewDecFromStr(value)
-		if err != nil {
+		if err != nil || v.LT(qtypes.ZeroDec()) {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
 		return v, nil
@@ -253,26 +343,32 @@ func (p *Params) GetLevelParams(level ProposalLevel) LevelParams {
 func (p *Params) Validate() btypes.Error {
 	for _, level := range ProposalLevels {
 		levelParams := p.GetLevelParams(level)
-		threshold := levelParams.Threshold
-		if threshold.IsNegative() || threshold.GT(qtypes.OneDec()) {
-			return params.ErrInvalidParam(fmt.Sprintf("governance vote threshold should be positive and less or equal to one, is %s",
-				threshold.String()))
-		}
-
-		veto := levelParams.Veto
-		if veto.IsNegative() || veto.GT(qtypes.OneDec()) {
-			return params.ErrInvalidParam(fmt.Sprintf("governance vote veto threshold should be positive and less or equal to one, is %s",
-				veto.String()))
-		}
-
-		if levelParams.MaxDepositPeriod > levelParams.VotingPeriod {
-			return params.ErrInvalidParam(fmt.Sprintf("governance deposit period should be less than or equal to the voting period (%ds), is %ds",
-				levelParams.VotingPeriod, levelParams.MaxDepositPeriod))
-		}
-
 		if !levelParams.MinDeposit.GT(btypes.ZeroInt()) {
-			return params.ErrInvalidParam(fmt.Sprintf("governance deposit amount must be a valid sdk.Coins amount, is %v",
-				levelParams.MinDeposit))
+			params.ErrInvalidParam(fmt.Sprintf("%s_min_deposit must gt 0", level))
+		}
+		if levelParams.MinProposerDepositRate.GT(qtypes.OneDec()) || levelParams.MinProposerDepositRate.IsNegative() {
+			params.ErrInvalidParam(fmt.Sprintf("%s_min_proposer_deposit_rate must gte 0 and lte 1", level))
+		}
+		if levelParams.MaxDepositPeriod.Nanoseconds() <= 0 {
+			params.ErrInvalidParam(fmt.Sprintf("%s_max_deposit_period must gt 0", level))
+		}
+		if levelParams.VotingPeriod.Nanoseconds() <= 0 {
+			params.ErrInvalidParam(fmt.Sprintf("%s_voting_period must gt 0", level))
+		}
+		if levelParams.Quorum.GT(qtypes.OneDec()) || levelParams.Quorum.IsNegative() {
+			params.ErrInvalidParam(fmt.Sprintf("%s_quorum must gte 0 and lte 1", level))
+		}
+		if levelParams.Threshold.GT(qtypes.OneDec()) || levelParams.Threshold.IsNegative() {
+			params.ErrInvalidParam(fmt.Sprintf("%s_threshold must gte 0 and lte 1", level))
+		}
+		if levelParams.Veto.GT(qtypes.OneDec()) || levelParams.Veto.IsNegative() {
+			params.ErrInvalidParam(fmt.Sprintf("%s_veto must gte 0 and lte 1", level))
+		}
+		if levelParams.Penalty.GT(qtypes.OneDec()) || levelParams.Penalty.IsNegative() {
+			params.ErrInvalidParam(fmt.Sprintf("%s_penalty must gte 0 and lte 1", level))
+		}
+		if levelParams.BurnRate.GT(qtypes.OneDec()) || levelParams.BurnRate.IsNegative() {
+			params.ErrInvalidParam(fmt.Sprintf("%s_burn_rate must gte 0 and lte 1", level))
 		}
 	}
 
