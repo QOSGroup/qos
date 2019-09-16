@@ -24,9 +24,8 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 			continue
 		}
 
-		valAddr := voteInfo.Validator.Address
-
-		v, exists := sm.GetValidator(valAddr)
+		consAddr := voteInfo.Validator.Address
+		v, exists := sm.GetValidatorByConsensusAddr(consAddr)
 		if !(exists && v.IsActive()) {
 			continue
 		}
