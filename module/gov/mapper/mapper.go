@@ -427,3 +427,32 @@ func (mapper Mapper) InsertInactiveProposalQueue(endTime time.Time, proposalID i
 func (mapper Mapper) RemoveFromInactiveProposalQueue(endTime time.Time, proposalID int64) {
 	mapper.Del(types.KeyInactiveProposalQueueProposal(endTime, proposalID))
 }
+
+// exists unfinished proposals
+func (mapper Mapper) ExistsUnfinishedProposals(ctx context.Context, proposalType types.ProposalType) bool {
+	params := mapper.GetParams(ctx)
+	levelParams := params.GetLevelParams(proposalType.Level())
+	activeIterator := mapper.ActiveProposalQueueIterator(ctx.BlockHeader().Time.Add(levelParams.VotingPeriod))
+	defer activeIterator.Close()
+	for ; activeIterator.Valid(); activeIterator.Next() {
+		var proposalID int64
+		mapper.GetCodec().UnmarshalBinaryBare(activeIterator.Value(), &proposalID)
+		activeProposal, ok := mapper.GetProposal(proposalID)
+		if ok && activeProposal.GetProposalType() == proposalType {
+			return true
+		}
+	}
+
+	inactiveIterator := mapper.InactiveProposalQueueIterator(ctx.BlockHeader().Time.Add(levelParams.MaxDepositPeriod))
+	defer inactiveIterator.Close()
+	for ; inactiveIterator.Valid(); inactiveIterator.Next() {
+		var proposalID int64
+		mapper.GetCodec().UnmarshalBinaryBare(inactiveIterator.Value(), &proposalID)
+		inactiveProposal, ok := mapper.GetProposal(proposalID)
+		if ok && inactiveProposal.GetProposalType() == proposalType {
+			return true
+		}
+	}
+
+	return false
+}

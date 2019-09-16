@@ -245,7 +245,7 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.ConsAddress, tokenToke
 	dm.ClearPreDistributionQOS()
 
 	//proposer奖励,直接归属proposer
-	proposerRewards := params.ProposerRewardRate.MultiBigInt(totalAmount)
+	proposerRewards := params.ProposerRewardRate.MulInt(totalAmount).TruncateInt()
 	proposerValidater, validatorExsits := sm.GetValidatorByConsensusAddr(proposerAddr)
 	proposerInfo, proposerInfoExsits := dm.GetDelegatorEarningStartInfo(proposerValidater.OperatorAddress, proposerValidater.Owner)
 
@@ -264,10 +264,10 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.ConsAddress, tokenToke
 	}
 
 	//vote奖励(漏签和inactive的validator不分配奖励)
-	votePercent := qtypes.OneFraction().Sub(params.ProposerRewardRate).Sub(params.CommunityRewardRate)
+	votePercent := qtypes.OneDec().Sub(params.ProposerRewardRate).Sub(params.CommunityRewardRate)
 	for _, validator := range validators {
 		votePowerFrac := qtypes.NewFractionFromBigInt(validator.BondTokens, tokenTokens)
-		rewards := votePowerFrac.Mul(votePercent).MultiBigInt(totalAmount)
+		rewards := votePowerFrac.MultiBigInt(votePercent.MulInt(totalAmount).TruncateInt())
 		remainQOS = remainQOS.Sub(rewards)
 		rewardToValidator(ctx, validator, rewards)
 	}

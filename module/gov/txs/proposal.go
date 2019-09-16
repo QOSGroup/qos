@@ -253,16 +253,44 @@ func (tx TxParameterChange) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("Params is empty")
 	}
 
+	// 不存在质押或投票期参数修改提议
+	existsUnfinished := mapper.GetMapper(ctx).ExistsUnfinishedProposals(ctx, types.ProposalTypeParameterChange)
+	if existsUnfinished {
+		return types.ErrInvalidInput("There are unfinished parameterchange proposals")
+	}
+
 	paramMapper := params.GetMapper(ctx)
+	paramSets := paramMapper.GetParams()
 	for _, param := range tx.Params {
-		ps, exists := paramMapper.GetModuleParamSet(param.Module)
+		exists := false
+		for _, paramSet := range paramSets {
+			if param.Module == paramSet.GetParamSpace() {
+				exists = true
+
+				// 参数值类型校验
+				value, err := paramSet.ValidateKeyValue(param.Key, param.Value)
+				if err != nil {
+					return err
+				}
+
+				// 设置新值
+				err = paramSet.SetKeyValue(param.Key, value)
+				if err != nil {
+					return err
+				}
+
+				break
+			}
+		}
+
 		if !exists {
 			return types.ErrInvalidInput(fmt.Sprintf("No params in module:%s", param.Module))
 		}
-		if err = ps.Validate(); err != nil {
-			return err
-		}
-		if err = paramMapper.Validate(param.Module, param.Key, param.Value); err != nil {
+	}
+
+	for _, paramSet := range paramSets {
+		// 模块参数整体校验
+		if paramSet.Validate() != nil {
 			return err
 		}
 	}

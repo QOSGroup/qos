@@ -25,4 +25,7 @@ type ParamSet interface {
 
 	// 参数校验
 	Validate() btypes.Error
+
+	// 设置单个参数
+	SetKeyValue(key string, value interface{}) btypes.Error
 }
