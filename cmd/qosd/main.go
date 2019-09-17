@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/tendermint/tendermint/config"
 	"io"
 	_ "net/http/pprof"
 
@@ -13,8 +14,8 @@ import (
 	"github.com/spf13/cobra"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/libs/cli"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 )
 
 const flagInvCheckPeriod = "inv-check-period"
@@ -59,6 +60,6 @@ func main() {
 	}
 }
 
-func newApp(logger log.Logger, db dbm.DB, storeTracer io.Writer) abci.Application {
-	return app.NewApp(logger, db, storeTracer, invCheckPeriod)
+func newApp(cfg *config.Config, logger log.Logger, db dbm.DB, storeTracer io.Writer) abci.Application {
+	return app.NewApp(cfg, logger, db, storeTracer, invCheckPeriod)
 }

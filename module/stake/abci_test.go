@@ -19,8 +19,8 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
