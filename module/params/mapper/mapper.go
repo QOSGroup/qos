@@ -7,7 +7,10 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/params/types"
 	qtypes "github.com/QOSGroup/qos/types"
+	"github.com/tendermint/tendermint/config"
 	"reflect"
+	"strconv"
+	"time"
 )
 
 const MapperName = "params"
@@ -18,12 +21,15 @@ type Mapper struct {
 
 	// 参数表：模块名-参数
 	paramSets map[string]qtypes.ParamSet
+
+	Metrics *Metrics
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {
 	paramMapper := &Mapper{}
 	paramMapper.BaseMapper = mapper.BaseMapper.Copy()
 	paramMapper.paramSets = mapper.paramSets
+	paramMapper.Metrics = mapper.Metrics
 	return paramMapper
 }
 
@@ -35,6 +41,11 @@ var _ mapper.IMapper = (*Mapper)(nil)
 
 func GetMapper(ctx context.Context) *Mapper {
 	return ctx.Mapper(MapperName).(*Mapper)
+}
+
+// 设置prometheus监控项
+func (mapper *Mapper) SetUpMetrics(cfg *config.InstrumentationConfig) {
+	mapper.Metrics = PrometheusMetrics(cfg)
 }
 
 func NewMapper() *Mapper {
@@ -72,6 +83,7 @@ func (mapper Mapper) SetParamSet(params qtypes.ParamSet) {
 	for _, pair := range params.KeyValuePairs() {
 		v := reflect.Indirect(reflect.ValueOf(pair.Value)).Interface()
 		mapper.Set(BuildParamKey(params.GetParamSpace(), pair.Key), v)
+		mapper.UpdateMetrics(params.GetParamSpace(), string(pair.Key), v)
 	}
 }
 
@@ -85,6 +97,7 @@ func (mapper Mapper) GetParamSet(params qtypes.ParamSet) {
 // 设置单个参数
 func (mapper Mapper) SetParam(paramSpace string, key string, value interface{}) {
 	mapper.Set(BuildParamKey(paramSpace, []byte(key)), value)
+	mapper.UpdateMetrics(paramSpace, key, value)
 }
 
 // 获取单个参数
@@ -126,4 +139,35 @@ func (mapper Mapper) GetParams() (params []qtypes.ParamSet) {
 	}
 
 	return params
+}
+
+// metrics
+func (mapper Mapper) UpdateMetrics(paramSpace, key string, value interface{}) {
+	defer func() {
+		if r := recover(); r != nil {
+			return
+		}
+	}()
+
+	var floatValue float64
+	var err error
+	switch value.(type) {
+	case btypes.BigInt:
+		floatValue, err = strconv.ParseFloat(value.(btypes.BigInt).String(), 64)
+		break
+	case qtypes.Dec:
+		floatValue, err = strconv.ParseFloat(value.(qtypes.Dec).String(), 64)
+		break
+	case time.Duration:
+		floatValue = float64(value.(time.Duration).Nanoseconds())
+		break
+	case int64:
+		floatValue = float64(value.(int64))
+		break
+	default:
+		return
+	}
+	if err == nil {
+		mapper.Metrics.Param.With(ParamLabel, paramSpace+"_"+key).Set(floatValue)
+	}
 }

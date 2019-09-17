@@ -175,6 +175,7 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	}
 
 	govMapper := mapper.GetMapper(ctx)
+	guardianMapper := guardian.GetMapper(ctx)
 
 	textContent := types.NewTaxUsageProposal(tx.Title, tx.Description, tx.InitialDeposit, tx.DestAddress, tx.Percent)
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
@@ -199,6 +200,9 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
 		),
 	}
+
+	// metrics
+	guardianMapper.Metrics.Guardian.With(guardian.AddressLabel, tx.Proposer.String(), guardian.OperationLabel, "TxTaxUsage").Set(1)
 
 	return
 }

@@ -60,6 +60,7 @@ func EndBlocker(ctx context.Context) {
 
 		gm.DeleteProposal(proposalID)
 		gm.DeleteDeposits(ctx, proposalID) // delete any associated deposits (burned)
+		gm.Metrics.ProposalStatus.With(mapper.ProposalIdLabel, fmt.Sprintf("%d", proposalID)).Set(float64(types.StatusNil))
 
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
@@ -125,6 +126,7 @@ func EndBlocker(ctx context.Context) {
 		activeProposal.FinalTallyResult = tallyResults
 		gm.SetProposal(activeProposal)
 		gm.RemoveFromActiveProposalQueue(activeProposal.VotingEndTime, activeProposal.ProposalID)
+		gm.Metrics.ProposalStatus.With(mapper.ProposalIdLabel, fmt.Sprintf("%d", proposalID)).Set(float64(activeProposal.Status))
 
 		logger.Info(
 			fmt.Sprintf(

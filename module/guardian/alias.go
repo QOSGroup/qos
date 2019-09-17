@@ -24,6 +24,9 @@ var (
 
 	QueryCommands = client.QueryCommands
 	TxCommands    = client.TxCommands
+
+	AddressLabel   = mapper.AddressLabel
+	OperationLabel = mapper.OperationLabel
 )
 
 type (

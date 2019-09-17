@@ -65,6 +65,11 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 					btypes.NewAttribute(types.AttributeKeyTokens, rewardPerBlock.String()),
 				),
 			)
+
+			// metrics
+			mintMapper.Metrics.TotalAppliedQOS.Set(float64(mintMapper.GetAllTotalMintQOSAmount().Int64()))
+			mintMapper.Metrics.MintPerBlockQOS.Set(float64(rewardPerBlock.Int64()))
+			mintMapper.Metrics.GasFeePerBlockQOS.Set(float64(distributionMapper.GetPreDistributionQOS().Sub(rewardPerBlock).Int64()))
 		}
 	}
 }
