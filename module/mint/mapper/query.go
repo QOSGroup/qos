@@ -48,11 +48,11 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	var e error
 
 	switch route[0] {
-	case Phrases:
+	case Phrases: // 查询通胀规则
 		data, e = queryPhrases(ctx)
-	case Total:
+	case Total: // 查询QOS发行总量
 		data, e = queryTotal(ctx)
-	case Applied:
+	case Applied: // 查询QOS流通总量
 		data, e = queryApplied(ctx)
 	default:
 		data = nil
@@ -88,14 +88,17 @@ func queryApplied(ctx context.Context) ([]byte, error) {
 }
 
 //nolint
+// 通胀规则查询路径
 func BuildQueryPhrasesPath() string {
 	return fmt.Sprintf("custom/%s/%s", Mint, Phrases)
 }
 
+// QOS发行总量查询路径
 func BuildQueryTotalPath() string {
 	return fmt.Sprintf("custom/%s/%s", Mint, Total)
 }
 
+// QOS流通总量查询路径
 func BuildQueryAppliedPath() string {
 	return fmt.Sprintf("custom/%s/%s", Mint, Applied)
 }

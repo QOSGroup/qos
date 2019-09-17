@@ -1,14 +1,14 @@
 package types
 
 const (
-	MapperName          = "mint"
-	InflationPhrasesKey = "phrases"
+	MapperName = "mint"
 )
 
 var (
-	firstBlockTimeKey  = []byte("first_block_time")
-	allTotalMintQOSKey = []byte("total_mint_qos")
-	totalQOSKey        = []byte("total_qos")
+	firstBlockTimeKey   = []byte("first_block_time")
+	allTotalMintQOSKey  = []byte("total_mint_qos")
+	totalQOSKey         = []byte("total_qos")
+	InflationPhrasesKey = []byte("phrases")
 )
 
 func BuildAllTotalMintQOSKey() []byte {
@@ -20,7 +20,7 @@ func BuildFirstBlockTimeKey() []byte {
 }
 
 func BuildInflationPhrasesKey() []byte {
-	return []byte(InflationPhrasesKey)
+	return InflationPhrasesKey
 }
 
 func BuildTotalQOSKey() []byte {

@@ -7,16 +7,19 @@ import (
 	"time"
 )
 
+// 通胀阶段
 type InflationPhrase struct {
-	EndTime       time.Time    `json:"end_time"`
-	TotalAmount   types.BigInt `json:"total_amount"`
-	AppliedAmount types.BigInt `json:"applied_amount"`
+	EndTime       time.Time    `json:"end_time"`       // 结束时间
+	TotalAmount   types.BigInt `json:"total_amount"`   // 通胀总量
+	AppliedAmount types.BigInt `json:"applied_amount"` // 发行总量
 }
 
+// 两通胀阶段是否相等：通胀时间，通胀总量和已发行均相等
 func (phrase InflationPhrase) Equals(p InflationPhrase) bool {
 	return phrase.EndTime.Equal(p.EndTime) && phrase.TotalAmount.Equal(p.TotalAmount)
 }
 
+// 通胀规则
 type InflationPhrases []InflationPhrase
 
 func DefaultInflationPhrases() InflationPhrases {
@@ -59,6 +62,7 @@ func DefaultInflationPhrases() InflationPhrases {
 	}
 }
 
+// 通胀规则相等，对应所有通胀阶段均相等
 func (phrases InflationPhrases) Equals(ips InflationPhrases) bool {
 	if len(phrases) != len(ips) {
 		return false
@@ -126,7 +130,7 @@ func (phrases InflationPhrases) ApplyQOS(phraseEndTime time.Time, amount types.B
 	return
 }
 
-// 校验
+// 通胀规则校验
 func (phrases InflationPhrases) Valid() error {
 	if len(phrases) == 0 {
 		return errors.New("phrases is empty")
@@ -148,7 +152,7 @@ func (phrases InflationPhrases) Valid() error {
 	return nil
 }
 
-// 校验新通胀
+// 校验新通胀规则
 func (phrases InflationPhrases) ValidNewPhrases(newTotal, totalApplied types.BigInt, newPhrases InflationPhrases) error {
 	if phrases.Equals(newPhrases) {
 		return errors.New("phrases not change")
@@ -188,7 +192,7 @@ func (phrases InflationPhrases) ValidNewPhrases(newTotal, totalApplied types.Big
 
 }
 
-// 适配旧通胀阶段，填充已发行
+// 适配旧通胀规则，填充已发行
 func (phrases InflationPhrases) Adapt(oldPhrases InflationPhrases) (newPhrase InflationPhrases) {
 	newPhrases := InflationPhrases{}
 	for _, p := range phrases {
