@@ -1,6 +1,8 @@
 package mapper
 
 import (
+	"fmt"
+	"github.com/tendermint/tendermint/config"
 	"time"
 
 	"github.com/QOSGroup/qos/module/distribution"
@@ -22,11 +24,14 @@ const (
 
 type Mapper struct {
 	*mapper.BaseMapper
+
+	Metrics *Metrics
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {
 	govMapper := &Mapper{}
 	govMapper.BaseMapper = mapper.BaseMapper.Copy()
+	govMapper.Metrics = mapper.Metrics
 	return govMapper
 }
 
@@ -34,6 +39,11 @@ var _ mapper.IMapper = (*Mapper)(nil)
 
 func GetMapper(ctx context.Context) *Mapper {
 	return ctx.Mapper(MapperName).(*Mapper)
+}
+
+// 设置prometheus监控项
+func (mapper *Mapper) SetUpMetrics(cfg *config.InstrumentationConfig) {
+	mapper.Metrics = PrometheusMetrics(cfg)
 }
 
 func NewMapper() *Mapper {
@@ -65,6 +75,7 @@ func (mapper Mapper) SubmitProposal(ctx context.Context, content types.ProposalC
 
 	mapper.SetProposal(proposal)
 	mapper.InsertInactiveProposalQueue(proposal.DepositEndTime, proposalID)
+	mapper.Metrics.ProposalStatus.With(ProposalIdLabel, fmt.Sprintf("%d", proposalID)).Set(float64(types.StatusDepositPeriod))
 	return
 }
 
@@ -198,7 +209,7 @@ func (mapper Mapper) activateVotingPeriod(ctx context.Context, proposal types.Pr
 	proposal.VotingEndTime = proposal.VotingStartTime.Add(votingPeriod)
 	proposal.Status = types.StatusVotingPeriod
 	mapper.SetProposal(proposal)
-
+	mapper.Metrics.ProposalStatus.With(ProposalIdLabel, fmt.Sprintf("%d", proposal.ProposalID)).Set(float64(types.StatusVotingPeriod))
 	mapper.RemoveFromInactiveProposalQueue(proposal.DepositEndTime, proposal.ProposalID)
 	mapper.InsertActiveProposalQueue(proposal.VotingEndTime, proposal.ProposalID)
 
@@ -250,7 +261,7 @@ func (mapper Mapper) AddVote(proposalID int64, voterAddr btypes.AccAddress, opti
 		Option:     option,
 	}
 	mapper.SetVote(proposalID, voterAddr, vote)
-
+	mapper.Metrics.Vote.With(ProposalIdLabel, fmt.Sprintf("%d", proposalID), VoterLabel, voterAddr.String(), OptionLabel, option.String()).Set(1)
 	return nil
 }
 

@@ -5,10 +5,13 @@ import (
 	"github.com/QOSGroup/qbase/mapper"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/mint/types"
+	"github.com/tendermint/tendermint/config"
 )
 
 type Mapper struct {
 	*mapper.BaseMapper
+
+	Metrics *Metrics
 }
 
 func NewMapper() *Mapper {
@@ -22,9 +25,15 @@ func GetMapper(ctx context.Context) *Mapper {
 	return ctx.Mapper(types.MapperName).(*Mapper)
 }
 
+// 设置prometheus监控项
+func (mapper *Mapper) SetUpMetrics(cfg *config.InstrumentationConfig) {
+	mapper.Metrics = PrometheusMetrics(cfg)
+}
+
 func (mapper *Mapper) Copy() mapper.IMapper {
 	qscMapper := &Mapper{}
 	qscMapper.BaseMapper = mapper.BaseMapper.Copy()
+	qscMapper.Metrics = mapper.Metrics
 	return qscMapper
 }
 

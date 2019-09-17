@@ -6,6 +6,7 @@ import (
 	"github.com/QOSGroup/qbase/store"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/guardian/types"
+	"github.com/tendermint/tendermint/config"
 )
 
 const (
@@ -30,11 +31,14 @@ func KeyGuardiansSubspace() []byte {
 // 系统账户模块数据库操作
 type Mapper struct {
 	*mapper.BaseMapper
+
+	Metrics *Metrics
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {
 	govMapper := &Mapper{}
 	govMapper.BaseMapper = mapper.BaseMapper.Copy()
+	govMapper.Metrics = mapper.Metrics
 	return govMapper
 }
 
@@ -48,6 +52,11 @@ func NewMapper() *Mapper {
 	var guardianMapper = Mapper{}
 	guardianMapper.BaseMapper = mapper.NewBaseMapper(nil, MapperName)
 	return &guardianMapper
+}
+
+// 设置prometheus监控项
+func (mapper *Mapper) SetUpMetrics(cfg *config.InstrumentationConfig) {
+	mapper.Metrics = PrometheusMetrics(cfg)
 }
 
 // 添加系统账户

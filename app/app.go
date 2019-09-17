@@ -90,7 +90,7 @@ func NewApp(cfg *config.Config, logger log.Logger, db dbm.DB, traceStore io.Writ
 	// 注册invariants
 	app.mm.RegisterInvariants(app)
 
-	// 注册mappers and hooks, 初始化参数配置
+	// 注册mappers and hooks, 初始化参数配置, 设置metrics
 	app.mm.RegisterMapperAndHooks(app, params.ModuleName, &stake.Params{}, &distribution.Params{}, &gov.Params{})
 
 	// 设置gas处理逻辑
@@ -366,6 +366,10 @@ func (app *QOSApp) RegisterHooksMapper(mhs map[string]types.MapperWithHooks) {
 		// register mapper hooks
 		if mh.Hooks != nil {
 			mhs[mh.Hooks.HookMapper()].Mapper.(types.HooksMapper).SetHooks(mh.Hooks)
+		}
+		// setup metrics
+		if mapper, ok := mh.Mapper.(types.MetricsMapper); ok {
+			mapper.SetUpMetrics(app.Config.Instrumentation)
 		}
 		// register mapper
 		app.BaseApp.RegisterMapper(mh.Mapper)

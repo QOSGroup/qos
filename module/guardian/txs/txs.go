@@ -68,8 +68,10 @@ func (tx TxAddGuardian) Exec(ctx context.Context) (result btypes.Result, crossTx
 		Code: btypes.CodeOK,
 	}
 
+	gm := mapper.GetMapper(ctx)
+
 	// 保存系统账户
-	mapper.GetMapper(ctx).AddGuardian(*types.NewGuardian(tx.Description, types.Ordinary, tx.Address, tx.Creator))
+	gm.AddGuardian(*types.NewGuardian(tx.Description, types.Ordinary, tx.Address, tx.Creator))
 
 	// 发送事件
 	result.Events = btypes.Events{
@@ -85,6 +87,9 @@ func (tx TxAddGuardian) Exec(ctx context.Context) (result btypes.Result, crossTx
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetGasPayer().String()),
 		),
 	}
+
+	// metrics
+	gm.Metrics.Guardian.With(mapper.AddressLabel, tx.Address.String(), mapper.OperationLabel, "TxAddGuardian").Set(1)
 
 	return
 }
@@ -166,8 +171,10 @@ func (tx TxDeleteGuardian) Exec(ctx context.Context) (result btypes.Result, cros
 		Code: btypes.CodeOK,
 	}
 
+	gm := mapper.GetMapper(ctx)
+
 	// 删除特权账户
-	mapper.GetMapper(ctx).DeleteGuardian(tx.Address)
+	gm.DeleteGuardian(tx.Address)
 
 	// 发送事件
 	result.Events = btypes.Events{
@@ -183,6 +190,9 @@ func (tx TxDeleteGuardian) Exec(ctx context.Context) (result btypes.Result, cros
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetGasPayer().String()),
 		),
 	}
+
+	// metrics
+	gm.Metrics.Guardian.With(mapper.AddressLabel, tx.Address.String(), mapper.OperationLabel, "TxDeleteGuardian").Set(1)
 
 	return
 }
@@ -261,8 +271,10 @@ func (tx TxHaltNetwork) Exec(ctx context.Context) (result btypes.Result, crossTx
 		Code: btypes.CodeOK,
 	}
 
+	gm := mapper.GetMapper(ctx)
+
 	// 设置停网标志
-	mapper.GetMapper(ctx).SetHalt(tx.Reason)
+	gm.SetHalt(tx.Reason)
 
 	// 发送事件
 	result.Events = btypes.Events{
@@ -278,6 +290,9 @@ func (tx TxHaltNetwork) Exec(ctx context.Context) (result btypes.Result, crossTx
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetGasPayer().String()),
 		),
 	}
+
+	// metrics
+	gm.Metrics.Guardian.With(mapper.AddressLabel, tx.Guardian.String(), mapper.OperationLabel, "TxHaltNetwork").Set(1)
 
 	return
 }
