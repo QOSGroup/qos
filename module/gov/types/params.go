@@ -44,7 +44,7 @@ var (
 	KeyCriticalBurnRate               = []byte("critical_burn_rate")
 )
 
-// Params returns all of the governance p
+// Params for governance, there are three levels: normal,important,critical.
 type Params struct {
 	// params of normal level
 	// DepositParams
@@ -92,6 +92,7 @@ type Params struct {
 	CriticalBurnRate qtypes.Dec `json:"critical_burn_rate"` // Deposit burning rate when proposals pass or reject.
 }
 
+// Set new value
 func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
 	switch key {
 	case string(KeyNormalMinDeposit):
@@ -253,6 +254,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
+// Valid single parameter, return the value
 func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyNormalMinDeposit), string(KeyImportantMinDeposit), string(KeyCriticalMinDeposit):
@@ -281,10 +283,12 @@ func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes
 	}
 }
 
+// Param space, the same as the module name.
 func (p *Params) GetParamSpace() string {
 	return ParamSpace
 }
 
+// Params struct for different level
 type LevelParams struct {
 	MinDeposit             btypes.BigInt
 	MinProposerDepositRate qtypes.Dec
@@ -297,6 +301,7 @@ type LevelParams struct {
 	BurnRate               qtypes.Dec
 }
 
+// Return levelParams for the specific level
 func (p *Params) GetLevelParams(level ProposalLevel) LevelParams {
 	switch level {
 	case LevelNormal:
@@ -340,6 +345,7 @@ func (p *Params) GetLevelParams(level ProposalLevel) LevelParams {
 	return LevelParams{}
 }
 
+// Validate the params as a whole
 func (p *Params) Validate() btypes.Error {
 	for _, level := range ProposalLevels {
 		levelParams := p.GetLevelParams(level)

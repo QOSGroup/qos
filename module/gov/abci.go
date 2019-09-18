@@ -27,11 +27,13 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		if exists {
 			proposalContent := proposal.ProposalContent.(*types.SoftwareUpgradeProposal)
 
+			// start network from zero height
 			if proposalContent.ForZeroHeight {
 				panic(fmt.Sprintf("PLEASE INSTALL VERSION: %s, THEN SET THE CORRECT `genesis.json`(DataHeight:%d, MD5:%s) FOR UPGRADING TO %s, YOU CAN DOWNLOAD THE `genesis.json` FROM %s",
 					proposalContent.Version, proposalContent.DataHeight, proposalContent.GenesisMD5, proposalContent.Version, proposalContent.GenesisFile))
 			}
 
+			// need the new software version
 			if version.Version != proposalContent.Version {
 				panic(fmt.Sprintf("PLEASE INSTALL VERSION: %s , THEN RESTART YOUR NODE FOR THE SOFTWARE UPGRADING", proposalContent.Version))
 			}
@@ -42,7 +44,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	}
 }
 
-// Called every block, process inflation, update validator set
+// Process proposals
 func EndBlocker(ctx context.Context) {
 	logger := ctx.Logger().With("module", "module/gov")
 
@@ -92,9 +94,9 @@ func EndBlocker(ctx context.Context) {
 			panic(fmt.Sprintf("proposal %d does not exist", proposalID))
 		}
 
-		proposalResult, tallyResults, votingValidators, deductOprion := mapper.Tally(ctx, gm, activeProposal)
+		proposalResult, tallyResults, votingValidators, deductOption := mapper.Tally(ctx, gm, activeProposal)
 
-		switch deductOprion {
+		switch deductOption {
 		case types.DepositDeductNone:
 			gm.RefundDeposits(ctx, activeProposal.ProposalID, activeProposal.GetProposalLevel(), false)
 			break
@@ -143,6 +145,7 @@ func EndBlocker(ctx context.Context) {
 			),
 		)
 
+		// slash not voted validators
 		penalty := gm.GetLevelParams(ctx, activeProposal.GetProposalLevel()).Penalty
 		if penalty.GT(qtypes.ZeroDec()) {
 			sm := stake.GetMapper(ctx)

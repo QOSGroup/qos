@@ -40,8 +40,8 @@ func TestParams_Validate(t *testing.T) {
 func TestParams_GetParamSpace(t *testing.T) {
 	params := Params{
 		NormalMinDeposit:       btypes.NewInt(10),
-		NormalMaxDepositPeriod: DefaultPeriod,
-		NormalVotingPeriod:     DefaultPeriod,
+		NormalMaxDepositPeriod: DefaultDepositPeriod,
+		NormalVotingPeriod:     DefaultVotingPeriod,
 		NormalQuorum:           types.NewDecWithPrec(334, 3),
 		NormalThreshold:        types.NewDecWithPrec(5, 1),
 		NormalVeto:             types.NewDecWithPrec(334, 3),

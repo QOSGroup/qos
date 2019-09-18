@@ -143,8 +143,8 @@ func (phrases InflationPhrases) Valid() error {
 		} else {
 			return errors.New("duplicate end time in phrases")
 		}
-		// 通胀量不能为0
-		if p.TotalAmount.Equal(types.ZeroInt()) {
+		// 通胀量必须为正
+		if !p.TotalAmount.GT(types.ZeroInt()) {
 			return fmt.Errorf("total amount not positive in phrase:%v", p.EndTime)
 		}
 	}
@@ -154,6 +154,7 @@ func (phrases InflationPhrases) Valid() error {
 
 // 校验新通胀规则
 func (phrases InflationPhrases) ValidNewPhrases(newTotal, totalApplied types.BigInt, newPhrases InflationPhrases) error {
+	// 不能完全相同
 	if phrases.Equals(newPhrases) {
 		return errors.New("phrases not change")
 	}

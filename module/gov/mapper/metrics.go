@@ -9,10 +9,10 @@ import (
 )
 
 const (
-	MetricsSubsystem = "gov"
-	VoterLabel       = "voter"
-	ProposalIdLabel  = "proposal"
-	OptionLabel      = "option"
+	MetricsSubsystem = "gov"      // metrics module name
+	VoterLabel       = "voter"    // voter address
+	ProposalIdLabel  = "proposal" // proposal id
+	OptionLabel      = "option"   // vote option
 )
 
 type Metrics struct {

@@ -50,9 +50,9 @@ type DeductOption byte
 
 //nolint
 const (
-	DepositDeductNone DeductOption = 0x00
-	DepositDeductPart DeductOption = 0x01
-	DepositDeductAll  DeductOption = 0x02
+	DepositDeductNone DeductOption = 0x00 // 全部返还
+	DepositDeductPart DeductOption = 0x01 // 按参数BurnRate扣除部分
+	DepositDeductAll  DeductOption = 0x02 // 扣除全部
 )
 
 // String to proposalType byte.  Returns ff if invalid.
