@@ -638,7 +638,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
 * `qoscli tx halt-network`     [停止网络](#停止网络)
 
-主要分为[Bank](#bank)，[预授权](#预授权)，[联盟币](#联盟币（qsc）)，[联盟链](#联盟链（qcp）)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
+主要分为[Bank](#bank)，[预授权](#预授权)，[联盟币](#联盟币（qsc）)，[联盟链](#联盟链)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
 
 ### Bank
 
@@ -880,7 +880,7 @@ Password to sign with 'ATM':<输入ATM本地密钥库密码>
 
 可通过[账户查询](#账户（account）)查看`ATM`账户所持有AOE数量。
 
-### 联盟链（qcp）
+### 联盟链
 
 QOS跨链协议QCP，支持跨链交易
 

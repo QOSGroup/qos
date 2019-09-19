@@ -145,7 +145,7 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [Approve](#query-approve)
-* `qoscli query qcp`                    [跨链相关信息查询](#查询联盟链)
+* `qoscli query qcp`                    [QCP](#query-qcp)
 * `qoscli query qsc`                    [联盟币信息查询](#查询联盟币)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
 * `qoscli query validator`              [验证节点查询](#查询验证节点)
@@ -622,7 +622,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx cancel-approve`   [Cancel approve](#cancel-approve)
 * `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
 * `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
-* `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
+* `qoscli tx init-qcp`         [Init QCP](#init-qcp)
 * `qoscli tx create-validator` [成为验证节点](#成为验证节点)
 * `qoscli tx create-validator` [编辑验证节点](#编辑验证节点)
 * `qoscli tx revoke-validator` [撤销验证节点](#撤销验证节点)
@@ -876,47 +876,46 @@ Password to sign with 'ATM':<输入ATM本地密钥库密码>
 
 可通过[账户查询](#账户（account）)查看`ATM`账户所持有AOE数量。
 
-### 联盟链（qcp）
+### qcp
 
-QOS跨链协议QCP，支持跨链交易
+QCP is a QOS cross-chain protocol, supporting cross-chain transactions.
 
-> 创建联盟链前需要申请[CA](../spec/ca.md)，点击[联盟链设计文档](../spec/qcp.md)了解更多。
+You need to apply before creating a federation chain
+> Before initialing a QCP chain, you need to apply the [CA](../spec/ca.md). View [QCP spec](../spec/qcp) for more information。
 
-联盟链相关指令：
-* `qoscli tx init-qcp`: [初始化联盟链](#初始化联盟链)
-* `qoscli query qcp`:   [查询qcp信息](#查询联盟链)
+* `qoscli tx init-qcp`: [Init QCP](#init-qcp)
+* `qoscli query qcp`:   [Query QCP](#query-qcp)
 
-#### 初始化联盟链
+#### Init QCP
 
 `qoscli tx init-qcp --creator <key_name_or_account_address> --qcp.crt <qcp.crt_file_path>`
 
-主要参数：
+main parameters:
 
-- `--creator`       创建账号
-- `--qcp.crt`       证书位置
+- `--creator`       creator assdress
+- `--qcp.crt`       crt file path
 
-> 假设`Arya`已在CA中心申请`qcp.crt`证书，`qcp.crt`中联盟链ID为`aoe-1000`
+> Suppose `Arya` has applied for the `qcp.crt` certificate at CA Center, and the chain ID is `aoe-1000` in `qcp.crt`.
 
-`Arya`在QOS网络中初始化联盟链信息：
+`Arya` initializes the chain information in the QOS network:
 ```bash
 $ qoscli tx init-qcp --creator Arya --qcp.crt qcp.crt
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase password>
 ```
 
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"243"}
 ```
 
-#### 查询联盟链
+#### Query QCP
 
-跨链协议是[qbase](https://www.github.com/QOSGroup/qbase)提供支持，主要有以下四个查询指令：
 - `qoscli query qcp list`
 - `qoscli query qcp out`
 - `qoscli query qcp in`
 - `qoscli query qcp tx`
 
-指令说明请参照[qbase-Qcp](https://github.com/QOSGroup/qbase/blob/master/docs/client/command.md#Qcp)。
+See [qbase-Qcp](https://github.com/QOSGroup/qbase/blob/master/docs/client/command.md#Qcp).
 
 ### 验证节点（validator）
 
