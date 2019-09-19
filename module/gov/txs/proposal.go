@@ -62,7 +62,7 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("proposer not exists")
 	}
 
-	if !account.(*qtypes.QOSAccount).EnoughOfQOS(tx.InitialDeposit) {
+	if !account.(*qtypes.QOSAccount).EnoughOfQOS(tx.InitialDeposit.Add(tx.CalcGas())) {
 		return types.ErrInvalidInput("proposer has no enough qos")
 	}
 

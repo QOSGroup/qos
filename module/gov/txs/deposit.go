@@ -32,8 +32,8 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("depositor is empty")
 	}
 
-	if tx.Amount.Equal(btypes.ZeroInt()) {
-		return types.ErrInvalidInput("amount of deposit is zero")
+	if !tx.Amount.GT(btypes.ZeroInt()) {
+		return types.ErrInvalidInput("amount of deposit must be more than zero")
 	}
 
 	proposal, ok := mapper.GetMapper(ctx).GetProposal(tx.ProposalID)
@@ -47,7 +47,7 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	account := accountMapper.GetAccount(tx.Depositor).(*qtypes.QOSAccount)
-	if !account.EnoughOfQOS(tx.Amount) {
+	if !account.EnoughOfQOS(tx.Amount.Add(tx.CalcGas())) {
 		return types.ErrInvalidInput("depositor has no enough qos")
 	}
 
