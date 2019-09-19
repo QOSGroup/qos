@@ -11,21 +11,21 @@ func TotalAppliedInvariant(module string) qtypes.Invariant {
 	// always return negative coins
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		mm := GetMapper(ctx)
-		coins := btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, btypes.NewInt(int64(mm.GetAllTotalMintQOSAmount())))}
+		coins := btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, mm.GetAllTotalMintQOSAmount())}
 		var broken bool
 		if !coins.IsNotNegative() {
 			broken = true
 		}
 
 		phrases, _ := mm.GetInflationPhrases()
-		phraseApplied := uint64(0)
-		phraseTotal := uint64(0)
+		phraseApplied := btypes.ZeroInt()
+		phraseTotal := btypes.ZeroInt()
 		for _, phrase := range phrases {
-			phraseApplied += phrase.AppliedAmount
-			phraseTotal += phrase.TotalAmount
+			phraseApplied = phraseApplied.Add(phrase.AppliedAmount)
+			phraseTotal = phraseTotal.Add(phrase.TotalAmount)
 		}
 
-		if mm.GetAllTotalMintQOSAmount()-phraseApplied+phraseTotal != mm.GetTotalQOSAmount() {
+		if !(mm.GetAllTotalMintQOSAmount().Sub(phraseApplied).Add(phraseTotal)).Equal(mm.GetTotalQOSAmount()) {
 			broken = true
 		}
 

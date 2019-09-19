@@ -23,32 +23,32 @@ func KeyProposalSubspace() []byte {
 }
 
 // Key for getting a specific proposal from the store
-func KeyProposal(proposalID uint64) []byte {
+func KeyProposal(proposalID int64) []byte {
 	return []byte(fmt.Sprintf("proposals:%d", proposalID))
 }
 
 // Key for getting a specific deposit from the store
-func KeyDeposit(proposalID uint64, depositorAddr btypes.Address) []byte {
+func KeyDeposit(proposalID int64, depositorAddr btypes.AccAddress) []byte {
 	return []byte(fmt.Sprintf("deposits:%d:%s", proposalID, depositorAddr.String()))
 }
 
 // Key for getting a specific vote from the store
-func KeyVote(proposalID uint64, voterAddr btypes.Address) []byte {
+func KeyVote(proposalID int64, voterAddr btypes.AccAddress) []byte {
 	return []byte(fmt.Sprintf("votes:%d:%s", proposalID, voterAddr.String()))
 }
 
 // Key for validators set at entering voting period.
-func KeyVotingPeriodValidators(proposalID uint64) []byte {
+func KeyVotingPeriodValidators(proposalID int64) []byte {
 	return []byte(fmt.Sprintf("validators:%d", proposalID))
 }
 
 // Key for getting all deposits on a proposal from the store
-func KeyDepositsSubspace(proposalID uint64) []byte {
+func KeyDepositsSubspace(proposalID int64) []byte {
 	return []byte(fmt.Sprintf("deposits:%d:", proposalID))
 }
 
 // Key for getting all votes on a proposal from the store
-func KeyVotesSubspace(proposalID uint64) []byte {
+func KeyVotesSubspace(proposalID int64) []byte {
 	return []byte(fmt.Sprintf("votes:%d:", proposalID))
 }
 
@@ -61,11 +61,11 @@ func PrefixActiveProposalQueueTime(endTime time.Time) []byte {
 }
 
 // Returns the key for a proposalID in the activeProposalQueue
-func KeyActiveProposalQueueProposal(endTime time.Time, proposalID uint64) []byte {
+func KeyActiveProposalQueueProposal(endTime time.Time, proposalID int64) []byte {
 	return bytes.Join([][]byte{
 		PrefixActiveProposalQueue,
 		btypes.FormatTimeBytes(endTime),
-		types.Uint64ToBigEndian(proposalID),
+		types.Uint64ToBigEndian(uint64(proposalID)),
 	}, KeyDelimiter)
 }
 
@@ -78,10 +78,10 @@ func PrefixInactiveProposalQueueTime(endTime time.Time) []byte {
 }
 
 // Returns the key for a proposalID in the activeProposalQueue
-func KeyInactiveProposalQueueProposal(endTime time.Time, proposalID uint64) []byte {
+func KeyInactiveProposalQueueProposal(endTime time.Time, proposalID int64) []byte {
 	return bytes.Join([][]byte{
 		PrefixInactiveProposalQueue,
 		btypes.FormatTimeBytes(endTime),
-		types.Uint64ToBigEndian(proposalID),
+		types.Uint64ToBigEndian(uint64(proposalID)),
 	}, KeyDelimiter)
 }

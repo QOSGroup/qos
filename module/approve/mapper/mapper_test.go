@@ -12,8 +12,8 @@ import (
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
 )
 
@@ -40,10 +40,10 @@ func defaultContext() context.Context {
 	return ctx
 }
 
-var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-var testToAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+var testFromAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+var testToAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
-func genTestApprove(from, to btypes.Address, qos, qsc int64) types.Approve {
+func genTestApprove(from, to btypes.AccAddress, qos, qsc int64) types.Approve {
 	return types.Approve{
 		From: from,
 		To:   to,

@@ -34,7 +34,7 @@ func VoteCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid option")
 				}
 
-				return gtxs.NewTxVote(uint64(proposalID), voter, option), nil
+				return gtxs.NewTxVote(proposalID, voter, option), nil
 			})
 		},
 	}

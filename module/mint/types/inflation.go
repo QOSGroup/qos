@@ -3,17 +3,18 @@ package types
 import (
 	"errors"
 	"fmt"
+	"github.com/QOSGroup/qbase/types"
 	"time"
 )
 
 type InflationPhrase struct {
-	EndTime       time.Time `json:"end_time"`
-	TotalAmount   uint64    `json:"total_amount"`
-	AppliedAmount uint64    `json:"applied_amount"`
+	EndTime       time.Time    `json:"end_time"`
+	TotalAmount   types.BigInt `json:"total_amount"`
+	AppliedAmount types.BigInt `json:"applied_amount"`
 }
 
 func (phrase InflationPhrase) Equals(p InflationPhrase) bool {
-	return phrase.EndTime.Equal(p.EndTime) && phrase.TotalAmount == p.TotalAmount
+	return phrase.EndTime.Equal(p.EndTime) && phrase.TotalAmount.Equal(p.TotalAmount)
 }
 
 type InflationPhrases []InflationPhrase
@@ -22,38 +23,38 @@ func DefaultInflationPhrases() InflationPhrases {
 	return InflationPhrases{
 		{
 			time.Date(2023, 10, 20, 0, 0, 0, 0, time.UTC),
-			25.5e12,
-			0,
+			types.NewInt(25.5e12),
+			types.ZeroInt(),
 		},
 		{
 			time.Date(2027, 10, 20, 0, 0, 0, 0, time.UTC),
-			12.75e12,
-			0,
+			types.NewInt(12.75e12),
+			types.ZeroInt(),
 		},
 		{
 			time.Date(2031, 10, 20, 0, 0, 0, 0, time.UTC),
-			6.375e12,
-			0,
+			types.NewInt(6.375e12),
+			types.ZeroInt(),
 		},
 		{
 			time.Date(2035, 10, 20, 0, 0, 0, 0, time.UTC),
-			3.1875e12,
-			0,
+			types.NewInt(3.1875e12),
+			types.ZeroInt(),
 		},
 		{
 			time.Date(2039, 10, 20, 0, 0, 0, 0, time.UTC),
-			1.59375e12,
-			0,
+			types.NewInt(1.59375e12),
+			types.ZeroInt(),
 		},
 		{
 			time.Date(2043, 10, 20, 0, 0, 0, 0, time.UTC),
-			0.796875e12,
-			0,
+			types.NewInt(0.796875e12),
+			types.ZeroInt(),
 		},
 		{
 			time.Date(2047, 10, 20, 0, 0, 0, 0, time.UTC),
-			0.796875e12,
-			0,
+			types.NewInt(0.796875e12),
+			types.ZeroInt(),
 		},
 	}
 }
@@ -76,6 +77,15 @@ func (phrases InflationPhrases) Equals(ips InflationPhrases) bool {
 	}
 
 	return true
+}
+
+// 获取通胀总量
+func (phrases InflationPhrases) TotalAmount() (total types.BigInt) {
+	for _, p := range phrases {
+		total = total.Add(p.TotalAmount)
+	}
+
+	return
 }
 
 // 获取时间点对应通胀阶段
@@ -105,10 +115,10 @@ func (phrases InflationPhrases) GetPrePhrase(time time.Time) (phrase *InflationP
 }
 
 // 释放通胀
-func (phrases InflationPhrases) ApplyQOS(phraseEndTime time.Time, amount uint64) (newPhrase InflationPhrases) {
+func (phrases InflationPhrases) ApplyQOS(phraseEndTime time.Time, amount types.BigInt) (newPhrase InflationPhrases) {
 	for _, p := range phrases {
 		if p.EndTime.UTC().Equal(phraseEndTime) {
-			p.AppliedAmount += amount
+			p.AppliedAmount = p.AppliedAmount.Add(amount)
 		}
 		newPhrase = append(newPhrase, p)
 	}
@@ -130,7 +140,7 @@ func (phrases InflationPhrases) Valid() error {
 			return errors.New("duplicate end time in phrases")
 		}
 		// 通胀量不能为0
-		if p.TotalAmount == 0 {
+		if p.TotalAmount.Equal(types.ZeroInt()) {
 			return fmt.Errorf("total amount not positive in phrase:%v", p.EndTime)
 		}
 	}
@@ -139,26 +149,26 @@ func (phrases InflationPhrases) Valid() error {
 }
 
 // 校验新通胀
-func (phrases InflationPhrases) ValidNewPhrases(newTotal, totalApplied uint64, newPhrases InflationPhrases) error {
+func (phrases InflationPhrases) ValidNewPhrases(newTotal, totalApplied types.BigInt, newPhrases InflationPhrases) error {
 	if phrases.Equals(newPhrases) {
 		return errors.New("phrases not change")
 	}
-	var phrasesApplied uint64 = 0
+	var phrasesApplied = types.ZeroInt()
 	currentNewPhrase, _ := newPhrases.GetPhrase(time.Now().UTC())
 	for _, p := range phrases {
-		phrasesApplied += p.AppliedAmount
+		phrasesApplied = phrasesApplied.Add(p.AppliedAmount)
 	}
 
 	// 新的通胀规则必须包含当前及之前通胀阶段，且对应通胀阶段TotalAmount一致
-	var newPhrasesTotal uint64
+	var newPhrasesTotal = types.ZeroInt()
 	for _, np := range newPhrases {
-		newPhrasesTotal += np.TotalAmount
+		newPhrasesTotal = newPhrasesTotal.Add(np.TotalAmount)
 		if currentNewPhrase != nil && !np.EndTime.After(currentNewPhrase.EndTime) {
 			exists := false
 			for _, p := range phrases {
 				if p.EndTime == np.EndTime {
 					exists = true
-					if np.TotalAmount != p.TotalAmount {
+					if !np.TotalAmount.Equal(p.TotalAmount) {
 						return fmt.Errorf("total amount not equals in phrase:%v", p.EndTime)
 					}
 				}
@@ -170,7 +180,7 @@ func (phrases InflationPhrases) ValidNewPhrases(newTotal, totalApplied uint64, n
 	}
 
 	// 新总发行数量 = 总已发行数量-已发行通胀总量+新通胀总量
-	if newTotal == totalApplied-phrasesApplied+newPhrasesTotal {
+	if newTotal.Equal(totalApplied.Sub(phrasesApplied).Add(newPhrasesTotal)) {
 		return nil
 	} else {
 		return errors.New("total amount not valid")

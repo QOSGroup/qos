@@ -1,11 +1,14 @@
 package mapper
 
 import (
+	"fmt"
+	"github.com/tendermint/tendermint/config"
+	"time"
+
 	"github.com/QOSGroup/qos/module/distribution"
 	"github.com/QOSGroup/qos/module/gov/types"
 	"github.com/QOSGroup/qos/module/params"
 	"github.com/QOSGroup/qos/module/stake"
-	"time"
 
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
@@ -21,11 +24,14 @@ const (
 
 type Mapper struct {
 	*mapper.BaseMapper
+
+	Metrics *Metrics
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {
 	govMapper := &Mapper{}
 	govMapper.BaseMapper = mapper.BaseMapper.Copy()
+	govMapper.Metrics = mapper.Metrics
 	return govMapper
 }
 
@@ -33,6 +39,11 @@ var _ mapper.IMapper = (*Mapper)(nil)
 
 func GetMapper(ctx context.Context) *Mapper {
 	return ctx.Mapper(MapperName).(*Mapper)
+}
+
+// 设置prometheus监控项
+func (mapper *Mapper) SetUpMetrics(cfg *config.InstrumentationConfig) {
+	mapper.Metrics = PrometheusMetrics(cfg)
 }
 
 func NewMapper() *Mapper {
@@ -49,7 +60,7 @@ func (mapper Mapper) SubmitProposal(ctx context.Context, content types.ProposalC
 	}
 
 	submitTime := ctx.BlockHeader().Time
-	depositPeriod := mapper.GetParams(ctx).MaxDepositPeriod
+	depositPeriod := mapper.GetLevelParams(ctx, content.GetProposalLevel()).MaxDepositPeriod
 
 	proposal = types.Proposal{
 		ProposalContent: content,
@@ -57,18 +68,19 @@ func (mapper Mapper) SubmitProposal(ctx context.Context, content types.ProposalC
 
 		Status:           types.StatusDepositPeriod,
 		FinalTallyResult: types.EmptyTallyResult(),
-		TotalDeposit:     0,
+		TotalDeposit:     btypes.ZeroInt(),
 		SubmitTime:       submitTime,
 		DepositEndTime:   submitTime.Add(depositPeriod),
 	}
 
 	mapper.SetProposal(proposal)
 	mapper.InsertInactiveProposalQueue(proposal.DepositEndTime, proposalID)
+	mapper.Metrics.ProposalStatus.With(ProposalIdLabel, fmt.Sprintf("%d", proposalID)).Set(float64(types.StatusDepositPeriod))
 	return
 }
 
 // Get Proposal from store by ProposalID
-func (mapper Mapper) GetProposal(proposalID uint64) (proposal types.Proposal, ok bool) {
+func (mapper Mapper) GetProposal(proposalID int64) (proposal types.Proposal, ok bool) {
 	ok = mapper.Get(types.KeyProposal(proposalID), &proposal)
 	return
 }
@@ -79,7 +91,7 @@ func (mapper Mapper) SetProposal(proposal types.Proposal) {
 }
 
 // Delete proposal
-func (mapper Mapper) DeleteProposal(proposalID uint64) {
+func (mapper Mapper) DeleteProposal(proposalID int64) {
 	proposal, ok := mapper.GetProposal(proposalID)
 	if !ok {
 		panic("DeleteProposal cannot fail to GetProposal")
@@ -94,7 +106,7 @@ func (mapper Mapper) DeleteProposal(proposalID uint64) {
 // depositorAddr will filter proposals by whether or not that address has deposited to them
 // status will filter proposals by status
 // numLatest will fetch a specified number of the most recent proposals, or 0 for all proposals
-func (mapper Mapper) GetProposalsFiltered(ctx context.Context, voterAddr btypes.Address, depositorAddr btypes.Address, status types.ProposalStatus, numLatest uint64) []types.Proposal {
+func (mapper Mapper) GetProposalsFiltered(ctx context.Context, voterAddr, depositorAddr btypes.AccAddress, status types.ProposalStatus, numLatest int64) []types.Proposal {
 
 	maxProposalID, err := mapper.PeekCurrentProposalID()
 	if err != nil {
@@ -152,7 +164,7 @@ func (mapper Mapper) GetProposals() []types.Proposal {
 }
 
 // Set the initial proposal ID
-func (mapper Mapper) SetInitialProposalID(proposalID uint64) btypes.Error {
+func (mapper Mapper) SetInitialProposalID(proposalID int64) btypes.Error {
 	exists := mapper.Get(types.KeyNextProposalID, &proposalID)
 	if exists {
 		return types.ErrInvalidGenesis("Initial ProposalID already set")
@@ -162,7 +174,7 @@ func (mapper Mapper) SetInitialProposalID(proposalID uint64) btypes.Error {
 }
 
 // Get the last used proposal ID
-func (mapper Mapper) GetLastProposalID() (proposalID uint64) {
+func (mapper Mapper) GetLastProposalID() (proposalID int64) {
 	proposalID, err := mapper.PeekCurrentProposalID()
 	if err != nil {
 		return 0
@@ -172,7 +184,7 @@ func (mapper Mapper) GetLastProposalID() (proposalID uint64) {
 }
 
 // Gets the next available ProposalID and increments it
-func (mapper Mapper) getNewProposalID() (proposalID uint64, err btypes.Error) {
+func (mapper Mapper) getNewProposalID() (proposalID int64, err btypes.Error) {
 	exists := mapper.Get(types.KeyNextProposalID, &proposalID)
 	if !exists {
 		return 0, types.ErrInvalidGenesis("InitialProposalID never set")
@@ -182,7 +194,7 @@ func (mapper Mapper) getNewProposalID() (proposalID uint64, err btypes.Error) {
 }
 
 // Peeks the next available ProposalID without incrementing it
-func (mapper Mapper) PeekCurrentProposalID() (proposalID uint64, err btypes.Error) {
+func (mapper Mapper) PeekCurrentProposalID() (proposalID int64, err btypes.Error) {
 	exists := mapper.Get(types.KeyNextProposalID, &proposalID)
 	if !exists {
 		return 0, types.ErrInvalidGenesis("InitialProposalID never set")
@@ -192,12 +204,12 @@ func (mapper Mapper) PeekCurrentProposalID() (proposalID uint64, err btypes.Erro
 
 func (mapper Mapper) activateVotingPeriod(ctx context.Context, proposal types.Proposal) {
 	proposal.VotingStartTime = ctx.BlockHeader().Time
-	proposal.VotingStartHeight = uint64(ctx.BlockHeight())
-	votingPeriod := mapper.GetParams(ctx).VotingPeriod
+	proposal.VotingStartHeight = ctx.BlockHeight()
+	votingPeriod := mapper.GetLevelParams(ctx, proposal.GetProposalLevel()).VotingPeriod
 	proposal.VotingEndTime = proposal.VotingStartTime.Add(votingPeriod)
 	proposal.Status = types.StatusVotingPeriod
 	mapper.SetProposal(proposal)
-
+	mapper.Metrics.ProposalStatus.With(ProposalIdLabel, fmt.Sprintf("%d", proposal.ProposalID)).Set(float64(types.StatusVotingPeriod))
 	mapper.RemoveFromInactiveProposalQueue(proposal.DepositEndTime, proposal.ProposalID)
 	mapper.InsertActiveProposalQueue(proposal.VotingEndTime, proposal.ProposalID)
 
@@ -205,19 +217,19 @@ func (mapper Mapper) activateVotingPeriod(ctx context.Context, proposal types.Pr
 }
 
 // Save validator set when proposal entering voting period.
-func (mapper Mapper) saveValidatorSet(ctx context.Context, proposalID uint64) {
+func (mapper Mapper) saveValidatorSet(ctx context.Context, proposalID int64) {
 	validators := stake.GetMapper(ctx).GetActiveValidatorSet(false)
 	if validators != nil {
 		mapper.Set(types.KeyVotingPeriodValidators(proposalID), validators)
 	}
 }
 
-func (mapper Mapper) GetValidatorSet(proposalID uint64) (validators []btypes.Address, exists bool) {
+func (mapper Mapper) GetValidatorSet(proposalID int64) (validators []btypes.ValAddress, exists bool) {
 	exists = mapper.Get(types.KeyVotingPeriodValidators(proposalID), &validators)
 	return
 }
 
-func (mapper Mapper) DeleteValidatorSet(proposalID uint64) {
+func (mapper Mapper) DeleteValidatorSet(proposalID int64) {
 	mapper.Del(types.KeyVotingPeriodValidators(proposalID))
 }
 
@@ -229,6 +241,12 @@ func (mapper Mapper) GetParams(ctx context.Context) types.Params {
 	return p
 }
 
+func (mapper Mapper) GetLevelParams(ctx context.Context, level types.ProposalLevel) types.LevelParams {
+	var p types.Params
+	params.GetMapper(ctx).GetParamSet(&p)
+	return p.GetLevelParams(level)
+}
+
 func (mapper Mapper) SetParams(ctx context.Context, p types.Params) {
 	params.GetMapper(ctx).SetParamSet(&p)
 }
@@ -236,19 +254,19 @@ func (mapper Mapper) SetParams(ctx context.Context, p types.Params) {
 // Votes
 
 // Adds a vote on a specific proposal
-func (mapper Mapper) AddVote(proposalID uint64, voterAddr btypes.Address, option types.VoteOption) btypes.Error {
+func (mapper Mapper) AddVote(proposalID int64, voterAddr btypes.AccAddress, option types.VoteOption) btypes.Error {
 	vote := types.Vote{
 		ProposalID: proposalID,
 		Voter:      voterAddr,
 		Option:     option,
 	}
 	mapper.SetVote(proposalID, voterAddr, vote)
-
+	mapper.Metrics.Vote.With(ProposalIdLabel, fmt.Sprintf("%d", proposalID), VoterLabel, voterAddr.String(), OptionLabel, option.String()).Set(1)
 	return nil
 }
 
 // Gets the vote of a specific voter on a specific proposal
-func (mapper Mapper) GetVote(proposalID uint64, voterAddr btypes.Address) (vote types.Vote, exists bool) {
+func (mapper Mapper) GetVote(proposalID int64, voterAddr btypes.AccAddress) (vote types.Vote, exists bool) {
 	exists = mapper.Get(types.KeyVote(proposalID, voterAddr), &vote)
 	if !exists {
 		return types.Vote{}, false
@@ -256,21 +274,21 @@ func (mapper Mapper) GetVote(proposalID uint64, voterAddr btypes.Address) (vote 
 	return
 }
 
-func (mapper Mapper) SetVote(proposalID uint64, voterAddr btypes.Address, vote types.Vote) {
+func (mapper Mapper) SetVote(proposalID int64, voterAddr btypes.AccAddress, vote types.Vote) {
 	mapper.Set(types.KeyVote(proposalID, voterAddr), vote)
 }
 
 // Gets all the votes on a specific proposal
-func (mapper Mapper) GetVotes(proposalID uint64) store.Iterator {
+func (mapper Mapper) GetVotes(proposalID int64) store.Iterator {
 	return btypes.KVStorePrefixIterator(mapper.GetStore(), types.KeyVotesSubspace(proposalID))
 }
 
-func (mapper Mapper) deleteVote(proposalID uint64, voterAddr btypes.Address) {
+func (mapper Mapper) deleteVote(proposalID int64, voterAddr btypes.AccAddress) {
 	mapper.Del(types.KeyVote(proposalID, voterAddr))
 }
 
 // Delete votes
-func (mapper Mapper) DeleteVotes(proposalID uint64) {
+func (mapper Mapper) DeleteVotes(proposalID int64) {
 	iterator := mapper.GetVotes(proposalID)
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
@@ -281,7 +299,7 @@ func (mapper Mapper) DeleteVotes(proposalID uint64) {
 // Deposits
 
 // Gets the deposit of a specific depositor on a specific proposal
-func (mapper Mapper) GetDeposit(proposalID uint64, depositorAddr btypes.Address) (deposit types.Deposit, exists bool) {
+func (mapper Mapper) GetDeposit(proposalID int64, depositorAddr btypes.AccAddress) (deposit types.Deposit, exists bool) {
 	exists = mapper.Get(types.KeyDeposit(proposalID, depositorAddr), &deposit)
 	if !exists {
 		return types.Deposit{}, false
@@ -290,13 +308,13 @@ func (mapper Mapper) GetDeposit(proposalID uint64, depositorAddr btypes.Address)
 	return deposit, true
 }
 
-func (mapper Mapper) SetDeposit(proposalID uint64, depositorAddr btypes.Address, deposit types.Deposit) {
+func (mapper Mapper) SetDeposit(proposalID int64, depositorAddr btypes.AccAddress, deposit types.Deposit) {
 	mapper.Set(types.KeyDeposit(proposalID, depositorAddr), deposit)
 }
 
 // Adds or updates a deposit of a specific depositor on a specific proposal
 // Activates voting period when appropriate
-func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, depositorAddr btypes.Address, depositAmount uint64) (btypes.Error, bool) {
+func (mapper Mapper) AddDeposit(ctx context.Context, proposalID int64, depositorAddr btypes.AccAddress, depositAmount btypes.BigInt) (btypes.Error, bool) {
 	proposal, ok := mapper.GetProposal(proposalID)
 	if !ok {
 		return types.ErrUnknownProposal(proposalID), false
@@ -304,16 +322,16 @@ func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, deposito
 
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	account := accountMapper.GetAccount(depositorAddr).(*qtypes.QOSAccount)
-	account.MustMinusQOS(btypes.NewInt(int64(depositAmount)))
+	account.MustMinusQOS(depositAmount)
 	accountMapper.SetAccount(account)
 
 	// Update proposal
-	proposal.TotalDeposit = proposal.TotalDeposit + depositAmount
+	proposal.TotalDeposit = proposal.TotalDeposit.Add(depositAmount)
 	mapper.SetProposal(proposal)
 
 	// Check if deposit has provided sufficient total funds to transition the proposal into the voting period
 	activatedVotingPeriod := false
-	if proposal.Status == types.StatusDepositPeriod && proposal.TotalDeposit >= mapper.GetParams(ctx).MinDeposit {
+	if proposal.Status == types.StatusDepositPeriod && !proposal.TotalDeposit.LT(mapper.GetLevelParams(ctx, proposal.GetProposalLevel()).MinDeposit) {
 		mapper.activateVotingPeriod(ctx, proposal)
 		activatedVotingPeriod = true
 	}
@@ -324,7 +342,7 @@ func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, deposito
 		newDeposit := types.Deposit{depositorAddr, proposalID, depositAmount}
 		mapper.SetDeposit(proposalID, depositorAddr, newDeposit)
 	} else {
-		currDeposit.Amount = currDeposit.Amount + depositAmount
+		currDeposit.Amount = currDeposit.Amount.Add(depositAmount)
 		mapper.SetDeposit(proposalID, depositorAddr, currDeposit)
 	}
 
@@ -332,15 +350,15 @@ func (mapper Mapper) AddDeposit(ctx context.Context, proposalID uint64, deposito
 }
 
 // Gets all the deposits on a specific proposal as an sdk.Iterator
-func (mapper Mapper) GetDeposits(proposalID uint64) store.Iterator {
+func (mapper Mapper) GetDeposits(proposalID int64) store.Iterator {
 	return btypes.KVStorePrefixIterator(mapper.GetStore(), types.KeyDepositsSubspace(proposalID))
 }
 
 // Refunds and deletes all the deposits on a specific proposal
-func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, deductDeposit bool) {
+func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID int64, level types.ProposalLevel, deductDeposit bool) {
 
 	log := ctx.Logger()
-	params := mapper.GetParams(ctx)
+	params := mapper.GetLevelParams(ctx, level)
 	accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
 	depositsIterator := mapper.GetDeposits(proposalID)
 	defer depositsIterator.Close()
@@ -348,24 +366,24 @@ func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, dedu
 		deposit := &types.Deposit{}
 		mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), deposit)
 
-		depositAmount := int64(deposit.Amount)
+		depositAmount := deposit.Amount
 
 		//需要扣除部分押金时
-		burnAmount := int64(0)
+		burnAmount := btypes.ZeroInt()
 		if deductDeposit {
-			burnAmount = params.BurnRate.Mul(qtypes.NewDec(depositAmount)).TruncateInt64()
+			burnAmount = params.BurnRate.MulInt(depositAmount).TruncateInt()
 		}
 
-		refundAmount := depositAmount - burnAmount
+		refundAmount := depositAmount.Sub(burnAmount)
 
 		// refund deposit
 		depositor := accountMapper.GetAccount(deposit.Depositor).(*qtypes.QOSAccount)
-		depositor.PlusQOS(btypes.NewInt(refundAmount))
+		depositor.PlusQOS(refundAmount)
 		accountMapper.SetAccount(depositor)
 
 		// burn deposit
 		if deductDeposit {
-			distribution.GetMapper(ctx).AddToCommunityFeePool(btypes.NewInt(burnAmount))
+			distribution.GetMapper(ctx).AddToCommunityFeePool(burnAmount)
 		}
 
 		log.Debug("RefundDeposits", "depositAmount", depositAmount, "refundAmount", refundAmount, "burnAmount", burnAmount)
@@ -375,7 +393,7 @@ func (mapper Mapper) RefundDeposits(ctx context.Context, proposalID uint64, dedu
 }
 
 // Deletes all the deposits on a specific proposal without refunding them
-func (mapper Mapper) DeleteDeposits(ctx context.Context, proposalID uint64) {
+func (mapper Mapper) DeleteDeposits(ctx context.Context, proposalID int64) {
 	depositsIterator := mapper.GetDeposits(proposalID)
 	defer depositsIterator.Close()
 	for ; depositsIterator.Valid(); depositsIterator.Next() {
@@ -383,7 +401,7 @@ func (mapper Mapper) DeleteDeposits(ctx context.Context, proposalID uint64) {
 		mapper.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), deposit)
 
 		// burn deposit
-		distribution.GetMapper(ctx).AddToCommunityFeePool(btypes.NewInt(int64(deposit.Amount)))
+		distribution.GetMapper(ctx).AddToCommunityFeePool(deposit.Amount)
 
 		mapper.Del(depositsIterator.Key())
 	}
@@ -397,12 +415,12 @@ func (mapper Mapper) ActiveProposalQueueIterator(endTime time.Time) store.Iterat
 }
 
 // Inserts a ProposalID into the active proposal queue at endTime
-func (mapper Mapper) InsertActiveProposalQueue(endTime time.Time, proposalID uint64) {
+func (mapper Mapper) InsertActiveProposalQueue(endTime time.Time, proposalID int64) {
 	mapper.Set(types.KeyActiveProposalQueueProposal(endTime, proposalID), proposalID)
 }
 
 // removes a proposalID from the Active Proposal Queue
-func (mapper Mapper) RemoveFromActiveProposalQueue(endTime time.Time, proposalID uint64) {
+func (mapper Mapper) RemoveFromActiveProposalQueue(endTime time.Time, proposalID int64) {
 	mapper.Del(types.KeyActiveProposalQueueProposal(endTime, proposalID))
 }
 
@@ -412,11 +430,40 @@ func (mapper Mapper) InactiveProposalQueueIterator(endTime time.Time) store.Iter
 }
 
 // Inserts a ProposalID into the inactive proposal queue at endTime
-func (mapper Mapper) InsertInactiveProposalQueue(endTime time.Time, proposalID uint64) {
+func (mapper Mapper) InsertInactiveProposalQueue(endTime time.Time, proposalID int64) {
 	mapper.Set(types.KeyInactiveProposalQueueProposal(endTime, proposalID), proposalID)
 }
 
 // removes a proposalID from the Inactive Proposal Queue
-func (mapper Mapper) RemoveFromInactiveProposalQueue(endTime time.Time, proposalID uint64) {
+func (mapper Mapper) RemoveFromInactiveProposalQueue(endTime time.Time, proposalID int64) {
 	mapper.Del(types.KeyInactiveProposalQueueProposal(endTime, proposalID))
+}
+
+// exists unfinished proposals
+func (mapper Mapper) ExistsUnfinishedProposals(ctx context.Context, proposalType types.ProposalType) bool {
+	params := mapper.GetParams(ctx)
+	levelParams := params.GetLevelParams(proposalType.Level())
+	activeIterator := mapper.ActiveProposalQueueIterator(ctx.BlockHeader().Time.Add(levelParams.VotingPeriod))
+	defer activeIterator.Close()
+	for ; activeIterator.Valid(); activeIterator.Next() {
+		var proposalID int64
+		mapper.GetCodec().UnmarshalBinaryBare(activeIterator.Value(), &proposalID)
+		activeProposal, ok := mapper.GetProposal(proposalID)
+		if ok && activeProposal.GetProposalType() == proposalType {
+			return true
+		}
+	}
+
+	inactiveIterator := mapper.InactiveProposalQueueIterator(ctx.BlockHeader().Time.Add(levelParams.MaxDepositPeriod))
+	defer inactiveIterator.Close()
+	for ; inactiveIterator.Valid(); inactiveIterator.Next() {
+		var proposalID int64
+		mapper.GetCodec().UnmarshalBinaryBare(inactiveIterator.Value(), &proposalID)
+		inactiveProposal, ok := mapper.GetProposal(proposalID)
+		if ok && inactiveProposal.GetProposalType() == proposalType {
+			return true
+		}
+	}
+
+	return false
 }

@@ -2,6 +2,7 @@ package txs
 
 import (
 	"errors"
+
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -10,28 +11,28 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
-const GasForUnbond = uint64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+const GasForUnbond = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
 
 type TxCreateDelegation struct {
-	Delegator      btypes.Address //委托人
-	ValidatorOwner btypes.Address //验证者Owner
-	Amount         uint64         //委托QOS数量
-	IsCompound     bool           //定期收益是否复投
+	Delegator     btypes.AccAddress //委托人
+	ValidatorAddr btypes.ValAddress // 验证人
+	Amount        btypes.BigInt     //委托QOS数量
+	IsCompound    bool              //定期收益是否复投
 }
 
 var _ txs.ITx = (*TxCreateDelegation)(nil)
 
 func (tx *TxCreateDelegation) ValidateData(ctx context.Context) (err error) {
 
-	if len(tx.Delegator) == 0 || len(tx.ValidatorOwner) == 0 {
+	if len(tx.Delegator) == 0 || len(tx.ValidatorAddr) == 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "Validator and Delegator must be specified.")
 	}
 
-	if tx.Amount == 0 {
+	if !tx.Amount.GT(btypes.ZeroInt()) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "Delegation amount must be a positive integer.")
 	}
 
-	if _, err := validateValidator(ctx, tx.ValidatorOwner, true, types.Active, true); err != nil {
+	if _, err := validateValidator(ctx, tx.ValidatorAddr, false, types.Active, btypes.AccAddress{}, false); err != nil {
 		return err
 	}
 
@@ -47,14 +48,14 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	result = btypes.Result{Code: btypes.CodeOK}
 
 	sm := mapper.GetMapper(ctx)
-	validator, _ := sm.GetValidatorByOwner(tx.ValidatorOwner)
+	validator, _ := sm.GetValidator(tx.ValidatorAddr)
 
 	// delegation
 	info := types.NewDelegationInfo(tx.Delegator, validator.GetValidatorAddress(), tx.Amount, tx.IsCompound)
 	sm.Delegate(ctx, info, false)
 
 	// update validator
-	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()+tx.Amount)
+	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens().Add(tx.Amount))
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -72,47 +73,43 @@ func (tx *TxCreateDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	return
 }
 
-func (tx *TxCreateDelegation) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Delegator}
+func (tx *TxCreateDelegation) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Delegator}
 }
 
 func (tx *TxCreateDelegation) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx *TxCreateDelegation) GetGasPayer() btypes.Address {
-	return btypes.Address(tx.Delegator)
+func (tx *TxCreateDelegation) GetGasPayer() btypes.AccAddress {
+	return btypes.AccAddress(tx.Delegator)
 }
 
 func (tx *TxCreateDelegation) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Delegator...)
-	ret = append(ret, tx.ValidatorOwner...)
-	ret = append(ret, btypes.Int2Byte(int64(tx.Amount))...)
-	ret = append(ret, btypes.Bool2Byte(tx.IsCompound)...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 	return
 }
 
 type TxModifyCompound struct {
-	Delegator      btypes.Address //委托人
-	ValidatorOwner btypes.Address //验证者Owner
-	IsCompound     bool           //周期收益是否复投: 收益发放周期内多次修改,仅最后一次生效
+	Delegator     btypes.AccAddress //委托人
+	ValidatorAddr btypes.ValAddress //验证者
+	IsCompound    bool              //周期收益是否复投: 收益发放周期内多次修改,仅最后一次生效
 }
 
 var _ txs.ITx = (*TxModifyCompound)(nil)
 
 func (tx *TxModifyCompound) ValidateData(ctx context.Context) (err error) {
 
-	if len(tx.Delegator) == 0 || len(tx.ValidatorOwner) == 0 {
+	if len(tx.Delegator) == 0 || len(tx.ValidatorAddr) == 0 {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "Validator and Delegator must be specified.")
 	}
 
-	// TODO:是否允许validator为inactive/jailed时修改
-	validator, err := validateValidator(ctx, tx.ValidatorOwner, true, types.Active, true)
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, 0, btypes.AccAddress{}, false)
 	if nil != err {
 		return err
 	}
 
-	info, err := validateDelegator(ctx, validator.GetValidatorAddress(), tx.Delegator, false, 0)
+	info, err := validateDelegator(ctx, validator.GetValidatorAddress(), tx.Delegator, false, btypes.ZeroInt())
 	if err != nil {
 		return err
 	}
@@ -130,7 +127,7 @@ func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, cro
 
 	sm := mapper.GetMapper(ctx)
 
-	validator, _ := sm.GetValidatorByOwner(tx.ValidatorOwner)
+	validator, _ := sm.GetValidator(tx.ValidatorAddr)
 	info, _ := sm.GetDelegationInfo(tx.Delegator, validator.GetValidatorAddress())
 
 	info.IsCompound = tx.IsCompound
@@ -152,51 +149,49 @@ func (tx *TxModifyCompound) Exec(ctx context.Context) (result btypes.Result, cro
 	return
 }
 
-func (tx *TxModifyCompound) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Delegator}
+func (tx *TxModifyCompound) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Delegator}
 }
 
 func (tx *TxModifyCompound) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx *TxModifyCompound) GetGasPayer() btypes.Address {
-	return btypes.Address(tx.Delegator)
+func (tx *TxModifyCompound) GetGasPayer() btypes.AccAddress {
+	return btypes.AccAddress(tx.Delegator)
 }
 
 func (tx *TxModifyCompound) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Delegator...)
-	ret = append(ret, tx.ValidatorOwner...)
-	ret = append(ret, btypes.Bool2Byte(tx.IsCompound)...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 	return
 }
 
 type TxUnbondDelegation struct {
-	Delegator      btypes.Address //委托人
-	ValidatorOwner btypes.Address //验证者Owner
-	UnbondAmount   uint64         //unbond数量
-	IsUnbondAll    bool           //是否全部解绑, 为true时覆盖UnbondAmount
+	Delegator     btypes.AccAddress //委托人
+	ValidatorAddr btypes.ValAddress //验证者
+	UnbondAmount  btypes.BigInt     //unbond数量
+	IsUnbondAll   bool              //是否全部解绑, 为true时覆盖UnbondAmount
 }
 
 var _ txs.ITx = (*TxUnbondDelegation)(nil)
 
 func (tx *TxUnbondDelegation) ValidateData(ctx context.Context) error {
 
-	if !tx.IsUnbondAll && tx.UnbondAmount == 0 {
-		return errors.New("unbond QOS amount is zero")
+	if !tx.IsUnbondAll && !tx.UnbondAmount.GT(btypes.ZeroInt()) {
+		return errors.New("unbond QOS amount must be positive")
 	}
 
-	validator, err := validateValidator(ctx, tx.ValidatorOwner, false, types.Active, true)
+	validator, err := validateValidator(ctx, tx.ValidatorAddr, false, types.Active, btypes.AccAddress{}, false)
 	if nil != err {
 		return err
 	}
 
-	if !tx.IsUnbondAll && (validator.BondTokens < tx.UnbondAmount) {
+	if !tx.IsUnbondAll && (validator.BondTokens.LT(tx.UnbondAmount)) {
 		return types.ErrInvalidInput(types.DefaultCodeSpace, "validator does't have enough tokens")
 	}
 
 	isCheckAmount := !tx.IsUnbondAll
-	checkAmount := uint64(0)
+	checkAmount := btypes.ZeroInt()
 
 	if isCheckAmount {
 		checkAmount = tx.UnbondAmount
@@ -214,18 +209,22 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	result = btypes.Result{Code: btypes.CodeOK}
 
 	sm := mapper.GetMapper(ctx)
-	validator, _ := sm.GetValidatorByOwner(tx.ValidatorOwner)
+	validator, _ := sm.GetValidator(tx.ValidatorAddr)
 	delegation, _ := sm.GetDelegationInfo(tx.Delegator, validator.GetValidatorAddress())
 
 	if tx.IsUnbondAll {
 		tx.UnbondAmount = delegation.Amount
 	}
 
+	if delegation.Amount.LT(tx.UnbondAmount) || validator.GetBondTokens().LT(tx.UnbondAmount) {
+		return btypes.Result{Code: btypes.CodeInternal}, nil
+	}
+
 	// unBond delegation tokens
 	sm.UnbondTokens(ctx, delegation, tx.UnbondAmount)
 
 	// update validator
-	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens()-tx.UnbondAmount)
+	sm.ChangeValidatorBondTokens(validator, validator.GetBondTokens().Sub(tx.UnbondAmount))
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -243,51 +242,48 @@ func (tx *TxUnbondDelegation) Exec(ctx context.Context) (result btypes.Result, c
 	return
 }
 
-func (tx *TxUnbondDelegation) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Delegator}
+func (tx *TxUnbondDelegation) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Delegator}
 }
 
 func (tx *TxUnbondDelegation) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForUnbond))
+	return btypes.NewInt(GasForUnbond)
 }
 
-func (tx *TxUnbondDelegation) GetGasPayer() btypes.Address {
+func (tx *TxUnbondDelegation) GetGasPayer() btypes.AccAddress {
 	return tx.Delegator
 }
 
 func (tx *TxUnbondDelegation) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Delegator...)
-	ret = append(ret, tx.ValidatorOwner...)
-	ret = append(ret, btypes.Int2Byte(int64(tx.UnbondAmount))...)
-	ret = append(ret, btypes.Bool2Byte(tx.IsUnbondAll)...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 	return
 }
 
 type TxCreateReDelegation struct {
-	Delegator          btypes.Address //委托人
-	FromValidatorOwner btypes.Address //原委托验证人Owner
-	ToValidatorOwner   btypes.Address //现委托验证人Owner
-	Amount             uint64         //委托数量
-	IsRedelegateAll    bool           //
-	IsCompound         bool           //
+	Delegator         btypes.AccAddress //委托人
+	FromValidatorAddr btypes.ValAddress //原委托验证人
+	ToValidatorAddr   btypes.ValAddress //现委托验证人
+	Amount            btypes.BigInt     //委托数量
+	IsRedelegateAll   bool              //
+	IsCompound        bool              //
 }
 
 var _ txs.ITx = (*TxCreateReDelegation)(nil)
 
 func (tx *TxCreateReDelegation) ValidateData(ctx context.Context) error {
 
-	if !tx.IsRedelegateAll && tx.Amount == 0 {
+	if !tx.IsRedelegateAll && !tx.Amount.GT(btypes.ZeroInt()) {
 		return errors.New("redelegate QOS amount is zero")
 	}
 
 	//1. 校验fromValidator是否存在
-	validator, err := validateValidator(ctx, tx.FromValidatorOwner, false, 0, true)
+	validator, err := validateValidator(ctx, tx.FromValidatorAddr, false, 0, btypes.AccAddress{}, false)
 	if err != nil {
 		return err
 	}
 
-	//2. 校验toValidator是否存在 且 状态为active
-	_, err = validateValidator(ctx, tx.ToValidatorOwner, true, types.Active, true)
+	//2. 校验toValidator是否存在 <del>且 状态为active</del>
+	_, err = validateValidator(ctx, tx.ToValidatorAddr, true, 0, btypes.AccAddress{}, false)
 	if err != nil {
 		return err
 	}
@@ -307,20 +303,24 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 
 	sm := mapper.GetMapper(ctx)
 
-	fromValidator, _ := sm.GetValidatorByOwner(tx.FromValidatorOwner)
-	toValidator, _ := sm.GetValidatorByOwner(tx.ToValidatorOwner)
+	fromValidator, _ := sm.GetValidator(tx.FromValidatorAddr)
+	toValidator, _ := sm.GetValidator(tx.ToValidatorAddr)
 	delegation, _ := sm.GetDelegationInfo(tx.Delegator, fromValidator.GetValidatorAddress())
 
 	if tx.IsRedelegateAll {
 		tx.Amount = delegation.Amount
 	}
 
+	if fromValidator.GetBondTokens().LT(tx.Amount) {
+		return btypes.Result{Code: btypes.CodeInternal}, nil
+	}
+
 	// redelegate
-	redelegateHeight := uint64(sm.GetParams(ctx).DelegatorRedelegationHeight) + uint64(ctx.BlockHeight())
-	sm.ReDelegate(ctx, delegation, types.NewRedelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, uint64(ctx.BlockHeight()), redelegateHeight, tx.IsCompound))
+	redelegateHeight := sm.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight()
+	sm.ReDelegate(ctx, delegation, types.NewRedelegateInfo(delegation.DelegatorAddr, fromValidator.GetValidatorAddress(), toValidator.GetValidatorAddress(), tx.Amount, ctx.BlockHeight(), redelegateHeight, tx.IsCompound))
 
 	// update validator
-	sm.ChangeValidatorBondTokens(fromValidator, fromValidator.GetBondTokens()-tx.Amount)
+	sm.ChangeValidatorBondTokens(fromValidator, fromValidator.GetBondTokens().Sub(tx.Amount))
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -340,29 +340,24 @@ func (tx *TxCreateReDelegation) Exec(ctx context.Context) (result btypes.Result,
 
 }
 
-func (tx *TxCreateReDelegation) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Delegator}
+func (tx *TxCreateReDelegation) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Delegator}
 }
 
 func (tx *TxCreateReDelegation) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx *TxCreateReDelegation) GetGasPayer() btypes.Address {
+func (tx *TxCreateReDelegation) GetGasPayer() btypes.AccAddress {
 	return tx.Delegator
 }
 
 func (tx *TxCreateReDelegation) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Delegator...)
-	ret = append(ret, tx.FromValidatorOwner...)
-	ret = append(ret, tx.ToValidatorOwner...)
-	ret = append(ret, btypes.Int2Byte(int64(tx.Amount))...)
-	ret = append(ret, btypes.Bool2Byte(tx.IsCompound)...)
-	ret = append(ret, btypes.Bool2Byte(tx.IsRedelegateAll)...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 	return
 }
 
-func validateDelegator(ctx context.Context, valAddr, deleAddr btypes.Address, checkAmount bool, maxAmount uint64) (types.DelegationInfo, error) {
+func validateDelegator(ctx context.Context, valAddr btypes.ValAddress, deleAddr btypes.AccAddress, checkAmount bool, maxAmount btypes.BigInt) (types.DelegationInfo, error) {
 
 	sm := mapper.GetMapper(ctx)
 	info, exists := sm.GetDelegationInfo(deleAddr, valAddr)
@@ -371,7 +366,7 @@ func validateDelegator(ctx context.Context, valAddr, deleAddr btypes.Address, ch
 	}
 
 	if checkAmount {
-		if info.Amount < maxAmount {
+		if info.Amount.LT(maxAmount) {
 			return info, types.ErrInvalidInput(types.DefaultCodeSpace, "delegator does't have enough amount of QOS")
 		}
 	}

@@ -15,6 +15,6 @@ func init() {
 
 func RegisterCodec(cdc *amino.Codec) {
 
-	cdc.RegisterConcrete(&TxTransfer{}, "transfer/txs/TxTransfer", nil)
-	cdc.RegisterConcrete(&TxInvariantCheck{}, "transfer/txs/TxInvariantCheck", nil)
+	cdc.RegisterConcrete(&TxTransfer{}, "bank/txs/TxTransfer", nil)
+	cdc.RegisterConcrete(&TxInvariantCheck{}, "bank/txs/TxInvariantCheck", nil)
 }

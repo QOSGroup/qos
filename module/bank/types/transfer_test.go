@@ -1,11 +1,12 @@
 package types
 
 import (
+	"testing"
+
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	"testing"
 )
 
 func TestTransItem_IsValid(t *testing.T) {
@@ -29,9 +30,8 @@ func TestTransItem_IsValid(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		valid, err := tc.input.IsValid()
-		require.Equal(t, valid, err == nil, "tc #%d", tcIndex)
-		require.Equal(t, valid, tc.valid)
+		err := tc.input.Valid()
+		require.Equal(t, tc.valid, err == nil, "tc #%d", tcIndex)
 	}
 }
 
@@ -54,7 +54,7 @@ func TestTransItems_IsEmpty(t *testing.T) {
 
 func TestTransItems_IsValid(t *testing.T) {
 	addr := ed25519.GenPrivKey().PubKey().Address()
-	item := TransItem{Address: btypes.Address(addr), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}
+	item := TransItem{Address: btypes.AccAddress(addr), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}
 
 	empty := TransItems{}
 	repeat := TransItems{item, item}
@@ -70,19 +70,18 @@ func TestTransItems_IsValid(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		valid, err := tc.input.IsValid()
+		err := tc.input.Valid()
 		require.Equal(t, tc.valid, err == nil, "tc #%d", tcIndex)
-		require.Equal(t, tc.valid, valid)
 	}
 }
 
 func TestTransItems_Match(t *testing.T) {
 	addr1 := ed25519.GenPrivKey().PubKey().Address()
 	addr2 := ed25519.GenPrivKey().PubKey().Address()
-	item1 := TransItems{TransItem{Address: btypes.Address(addr1), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}}
-	item2 := TransItems{TransItem{Address: btypes.Address(addr2), QOS: btypes.NewInt(2), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}}
-	item3 := TransItems{TransItem{Address: btypes.Address(addr2), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}}
-	item4 := TransItems{TransItem{Address: btypes.Address(addr2), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS1", btypes.NewInt(1)}}}}
+	item1 := TransItems{TransItem{Address: btypes.AccAddress(addr1), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}}
+	item2 := TransItems{TransItem{Address: btypes.AccAddress(addr2), QOS: btypes.NewInt(2), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}}
+	item3 := TransItems{TransItem{Address: btypes.AccAddress(addr2), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS", btypes.NewInt(1)}}}}
+	item4 := TransItems{TransItem{Address: btypes.AccAddress(addr2), QOS: btypes.NewInt(1), QSCs: types.QSCs{&types.QSC{"QSTARS1", btypes.NewInt(1)}}}}
 
 	cases := []struct {
 		input1 TransItems
@@ -95,8 +94,7 @@ func TestTransItems_Match(t *testing.T) {
 	}
 
 	for tcIndex, tc := range cases {
-		match, err := tc.input1.Match(tc.input2)
+		err := tc.input1.Match(tc.input2)
 		require.Equal(t, tc.match, err == nil, "tc #%d", tcIndex)
-		require.Equal(t, tc.match, match)
 	}
 }

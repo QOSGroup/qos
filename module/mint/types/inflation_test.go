@@ -1,15 +1,16 @@
 package types
 
 import (
+	"github.com/QOSGroup/qbase/types"
 	"github.com/stretchr/testify/require"
 	"testing"
 	"time"
 )
 
 func TestInflationPhrase_Equals(t *testing.T) {
-	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), 1000, 0}
-	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), 0, 0}
-	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), 1000, 0}
+	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), types.NewInt(1000), types.ZeroInt()}
+	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), types.ZeroInt(), types.ZeroInt()}
+	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), types.NewInt(1000), types.ZeroInt()}
 
 	cases := []struct {
 		phrases   InflationPhrases
@@ -30,9 +31,9 @@ func TestInflationPhrase_Equals(t *testing.T) {
 }
 
 func TestInflationPhrases_Valid(t *testing.T) {
-	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), 1000, 0}
-	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), 0, 0}
-	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), 1000, 0}
+	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), types.NewInt(1000), types.ZeroInt()}
+	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), types.ZeroInt(), types.ZeroInt()}
+	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), types.NewInt(1000), types.ZeroInt()}
 
 	cases := []struct {
 		inputPhrases InflationPhrases
@@ -52,9 +53,9 @@ func TestInflationPhrases_Valid(t *testing.T) {
 }
 
 func TestInflationPhrases_GetPhrase(t *testing.T) {
-	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), 1000, 0}
-	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), 1000, 0}
-	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), 1000, 0}
+	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), types.NewInt(1000), types.ZeroInt()}
+	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), types.NewInt(1000), types.ZeroInt()}
+	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), types.NewInt(1000), types.ZeroInt()}
 
 	cases := []struct {
 		inputPhrases InflationPhrases
@@ -78,9 +79,9 @@ func TestInflationPhrases_GetPhrase(t *testing.T) {
 }
 
 func TestInflationPhrases_GetPrePhrase(t *testing.T) {
-	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), 1000, 0}
-	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), 1000, 0}
-	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), 1000, 0}
+	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), types.NewInt(1000), types.ZeroInt()}
+	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), types.NewInt(1000), types.ZeroInt()}
+	ip3 := InflationPhrase{time.Now().AddDate(1, 0, 0), types.NewInt(1000), types.ZeroInt()}
 
 	cases := []struct {
 		inputPhrases InflationPhrases
@@ -106,25 +107,25 @@ func TestInflationPhrases_GetPrePhrase(t *testing.T) {
 }
 
 func TestInflationPhrases_ValidNewPhrases(t *testing.T) {
-	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), 1000, 0}
-	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), 1000, 0}
-	ip3 := InflationPhrase{time.Now().AddDate(0, 1, 0), 2000, 0}
-	ip4 := InflationPhrase{time.Now().AddDate(1, 0, 0), 2000, 0}
+	ip1 := InflationPhrase{time.Now().AddDate(-1, 0, 0), types.NewInt(1000), types.ZeroInt()}
+	ip2 := InflationPhrase{time.Now().AddDate(0, 1, 0), types.NewInt(1000), types.ZeroInt()}
+	ip3 := InflationPhrase{time.Now().AddDate(0, 1, 0), types.NewInt(2000), types.ZeroInt()}
+	ip4 := InflationPhrase{time.Now().AddDate(1, 0, 0), types.NewInt(2000), types.ZeroInt()}
 
 	cases := []struct {
 		phrases      InflationPhrases
-		totalApplied uint64
-		newTotal     uint64
+		totalApplied types.BigInt
+		newTotal     types.BigInt
 		newPhrases   InflationPhrases
 		valid        bool
 	}{
-		{InflationPhrases{ip1}, 1000, 1000, InflationPhrases{ip1}, false},
-		{InflationPhrases{ip1, ip2}, 1000, 1000, InflationPhrases{ip1, ip3}, false},
-		{InflationPhrases{ip1, ip2}, 1000, 1000, InflationPhrases{ip1, ip3}, false},
-		{InflationPhrases{ip1, ip2}, 1000, 4000, InflationPhrases{ip1, ip4}, false},
-		{InflationPhrases{ip1, ip2}, 1000, 5000, InflationPhrases{ip1, ip3, ip4}, false},
-		{InflationPhrases{ip1, ip2}, 1000, 4000, InflationPhrases{ip1, ip2, ip4}, false},
-		{InflationPhrases{ip1, ip2}, 1000, 5000, InflationPhrases{ip1, ip2, ip4}, true},
+		{InflationPhrases{ip1}, types.NewInt(1000), types.NewInt(1000), InflationPhrases{ip1}, false},
+		{InflationPhrases{ip1, ip2}, types.NewInt(1000), types.NewInt(1000), InflationPhrases{ip1, ip3}, false},
+		{InflationPhrases{ip1, ip2}, types.NewInt(1000), types.NewInt(1000), InflationPhrases{ip1, ip3}, false},
+		{InflationPhrases{ip1, ip2}, types.NewInt(1000), types.NewInt(4000), InflationPhrases{ip1, ip4}, false},
+		{InflationPhrases{ip1, ip2}, types.NewInt(1000), types.NewInt(5000), InflationPhrases{ip1, ip3, ip4}, false},
+		{InflationPhrases{ip1, ip2}, types.NewInt(1000), types.NewInt(4000), InflationPhrases{ip1, ip2, ip4}, false},
+		{InflationPhrases{ip1, ip2}, types.NewInt(1000), types.NewInt(5000), InflationPhrases{ip1, ip2, ip4}, true},
 	}
 
 	for tcIndex, tc := range cases {

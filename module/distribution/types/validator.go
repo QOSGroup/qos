@@ -7,7 +7,7 @@ import (
 //ValidatorCurrentPeriodSummary validator当前周期收益信息
 type ValidatorCurrentPeriodSummary struct {
 	Fees   btypes.BigInt `json:"fees"`
-	Period uint64        `json:"period"`
+	Period int64         `json:"period"`
 }
 
 //ValidatorEcoFeePool validator收益信息

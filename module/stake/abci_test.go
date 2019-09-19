@@ -19,8 +19,8 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 
 	"github.com/tendermint/tendermint/crypto/ed25519"
 )
@@ -32,15 +32,16 @@ func TestValidatorMapper(t *testing.T) {
 
 	validator := types.Validator{
 		Description:     types.Description{Moniker: "test"},
-		Owner:           btypes.Address(ed25519.GenPrivKey().PubKey().Address()),
-		ValidatorPubKey: ed25519.GenPrivKey().PubKey(),
-		BondTokens:      500,
+		OperatorAddress: btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address()),
+		Owner:           btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address()),
+		ConsPubKey:      ed25519.GenPrivKey().PubKey(),
+		BondTokens:      btypes.NewInt(500),
 		Status:          types.Active,
 		MinPeriod:       0,
 		BondHeight:      1,
 	}
 
-	valAddr := btypes.Address(validator.ValidatorPubKey.Address())
+	valAddr := validator.GetValidatorAddress()
 	key := types.BuildValidatorKey(valAddr)
 	validatorMapper.Set(key, validator)
 
@@ -49,27 +50,27 @@ func TestValidatorMapper(t *testing.T) {
 	require.Equal(t, uint64(500), v.GetBondTokens())
 	require.Equal(t, true, v.IsActive())
 
-	now := uint64(time.Now().UTC().Unix())
-	for i := uint64(0); i <= uint64(100); i++ {
-		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	now := time.Now().UTC().Unix()
+	for i := int64(0); i <= int64(100); i++ {
+		addr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 		validatorMapper.Set(types.BuildInactiveValidatorKey(now+i, addr), i)
 	}
 
-	iter := validatorMapper.IteratorInactiveValidator(0, now+20)
+	iter := validatorMapper.IteratorInactiveValidator(0, now+int64(20))
 	defer iter.Close()
 
 	i := 0
 	for ; iter.Valid(); iter.Next() {
 		i++
 		k := iter.Key()
-		cp := binary.BigEndian.Uint64(k[1:9])
+		cp := int64(binary.BigEndian.Uint64(k[1:9]))
 		require.Equal(t, true, cp >= now)
 		now = cp
 	}
 	require.Equal(t, 20, i)
 
-	for i := uint64(100); i <= uint64(200); i++ {
-		addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	for i := int64(100); i <= int64(200); i++ {
+		addr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 		validatorMapper.Set(types.BuildValidatorByVotePower(i, addr), 1)
 	}
 
@@ -105,7 +106,7 @@ func TestVoteInfoMapper(t *testing.T) {
 
 	sm := mapper.GetMapper(ctx)
 
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
 	voteInfo := types.NewValidatorVoteInfo(1, 1, 1)
 
 	sm.SetValidatorVoteInfo(addr, voteInfo)
@@ -118,7 +119,7 @@ func TestVoteInfoMapper(t *testing.T) {
 	v, exists = sm.GetValidatorVoteInfo(addr)
 	require.Equal(t, false, exists)
 
-	for i := uint64(0); i <= 10; i++ {
+	for i := int64(0); i <= 10; i++ {
 		sm.SetVoteInfoInWindow(addr, i, false)
 	}
 

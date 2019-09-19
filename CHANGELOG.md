@@ -1,4 +1,27 @@
 # Changelog
+## v0.0.7
+2019.08.28
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [bug] fix参数查询bug，分配溢出bug，qsc数据验证失败bug
+
+## v0.0.6
+2019.08.23
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [module] 双签和漏块惩罚
+* [module] 支持验证节点自定义佣金比例
+* [module] 模块代码重构
+* [module] 测试用例库
+
 ## v0.0.5
 2019.06.28
 

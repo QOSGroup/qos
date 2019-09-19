@@ -55,13 +55,13 @@ $ qoscli keys add Arya
 Enter a passphrase for your key:<输入不少于8位的密码>
 Repeat the passphrase:<重复上面输入的密码>
 NAME:	TYPE:	ADDRESS:						PUBKEY:
-Arya	local	address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy	dfYz3Zg+g1VFU52frAiKyXRU4wVulJMYgIuboPuBtZ4=
+Arya	local	qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m	qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh
 **Important** write this seed phrase in a safe place.
 It is the only way to recover your account if you ever forget your password.
 
 thought frame must space few omit muffin fix merge mail ivory clump unveil dirt gadget load glove hub inner final crime churn crop stone
 ```
-其中`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`为适用于QOS网络的账户地址，`dfYz3Zg+g1VFU52frAiKyXRU4wVulJMYgIuboPuBtZ4=`为账户公钥信息，`thought frame must space few omit muffin fix merge mail ivory clump unveil dirt gadget load glove hub inner final crime churn crop stone`为助记词，可用于账户私钥找回，请妥善保管助记词。
+其中`qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m`为适用于QOS网络的账户地址，`qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh`为账户公钥信息，`thought frame must space few omit muffin fix merge mail ivory clump unveil dirt gadget load glove hub inner final crime churn crop stone`为助记词，可用于账户私钥找回，请妥善保管助记词。
 
 ### 列表（list）
 
@@ -69,7 +69,7 @@ thought frame must space few omit muffin fix merge mail ivory clump unveil dirt 
 ```bash
 $ qoscli keys list
 NAME:	TYPE:	ADDRESS:						PUBKEY:
-Arya	local	address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy	dfYz3Zg+g1VFU52frAiKyXRU4wVulJMYgIuboPuBtZ4=
+Arya	local	qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m	qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh
 ```
 
 ### 更新（update）
@@ -96,7 +96,7 @@ Password to sign with 'Arya':<输入>
 **Important** Don't leak your private key information to others.
 Please keep your private key safely, otherwise your account will be attacked.
 
-{"Name":"Arya","address":"address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy","pubkey":{"type":"tendermint/PubKeyEd25519","value":"dfYz3Zg+g1VFU52frAiKyXRU4wVulJMYgIuboPuBtZ4="},"privkey":{"type":"tendermint/PrivKeyEd25519","value":"bXeccNwvLk8w2cloSXtO6FKcHXTQ7sfEecpyPzcUzg119jPdmD6DVUVTnZ+sCIrJdFTjBW6UkxiAi5ug+4G1ng=="}}
+{"Name":"Arya","address":"qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m","pubkey":"qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh","privkey":{"type":"tendermint/PrivKeyEd25519","value":"n/eCiOFjYFf22NCsacMfTXhxI6dV3DfI8cuxlZ48M0S81TpV+JvXB4EeE05iDG6SKV+ztuqUfEWQOhNA3jm6vQ=="}}
 ```
 导出的密钥是通过JSON序列化后的密钥信息，可以将JSON字符串中的`privkey`部分内容保存为文件并妥善保存，可用于密钥导入。
 
@@ -108,7 +108,7 @@ Please keep your private key safely, otherwise your account will be attacked.
 ```bash
 $ qoscli keys delete Arya
 DANGER - enter password to permanently delete key:<输入密码>
-Password deleted forever (uh oh!)
+key deleted forever (uh oh!)
 ```
 
 ### 导入（import）
@@ -117,9 +117,13 @@ Password deleted forever (uh oh!)
 
 导入上面通过`export`导出的私钥文件：
 ```bash
-qoscli keys import Arya --file Arya.pri 
+qoscli keys import Arya --file Arya.pri
 > Enter a passphrase for your key:<输入不少于8位的密码>
 > Repeat the passphrase:<重复上面输入的密码>
+
+其中Arya.pri文件内容为:
+{"type":"tendermint/PrivKeyEd25519","value":"n/eCiOFjYFf22NCsacMfTXhxI6dV3DfI8cuxlZ48M0S81TpV+JvXB4EeE05iDG6SKV+ztuqUfEWQOhNA3jm6vQ=="}
+
 ```
 
 ## 版本（version）
@@ -137,7 +141,7 @@ qoscli keys import Arya --file Arya.pri
 
 ## 查询（query）
 
-* `qoscli query account`                [账户查询](#账户（account）)
+* `qoscli query account`                [账户查询](#账户)
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [预授权](#查询预授权)
@@ -154,9 +158,9 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
 * `qoscli query unbondings`             [待返还委托](#待返还委托)
 * `qoscli query redelegations`          [待执行委托变更](#待执行委托变更)
-* `qoscli query community-fee-pool`     [社区费池](#社区费池)         
+* `qoscli query community-fee-pool`     [社区费池](#社区费池)
 * `qoscli query proposal`               [提议查询](#提议查询)
-* `qoscli query proposals`              [提议列表](#提议列表)   
+* `qoscli query proposals`              [提议列表](#提议列表)
 * `qoscli query vote`                   [投票查询](#投票查询)
 * `qoscli query votes`                  [投票列表](#投票列表)
 * `qoscli query deposit`                [抵押查询](#抵押查询)
@@ -164,13 +168,13 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query tally`                  [投票统计](#投票统计)
 * `qoscli query params`                 [参数查询](#参数查询)
 * `qoscli query inflation-phrases`      [通胀查询](#通胀查询)
-* `qoscli query guardian`               [特权账户查询](#特权账户查询)
-* `qoscli query guardians`              [特权账户列表](#特权账户列表)   
+* `qoscli query guardian`               [系统账户查询](#系统账户查询)
+* `qoscli query guardians`              [系统账户列表](#系统账户列表)
 * `qoscli query status`                 [查询节点状态](#状态（status）)
 * `qoscli query tendermint-validators`  [获取指定高度验证节点集合](#获取指定高度验证节点集合)
 * `qoscli query block`                  [获取指定高度区块信息](#区块（block）)
 * `qoscli query txs`                    [根据标签查找交易](#根据标签查找交易)
-* `qoscli query tx`                     [根据交易hash查询交易信息](#根据交易hash查询交易信息)                     
+* `qoscli query tx`                     [根据交易hash查询交易信息](#根据交易hash查询交易信息)
 
 查询的具体指令将在各自模块进行介绍。
 
@@ -205,13 +209,11 @@ qoscli keys import Arya --file Arya.pri
     "catching_up": false
   },
   "validator_info": {
-    "address": "0E447E66089C9D97EFC2F4C172403F35740DD507",
-    "pub_key": {
-      "type": "tendermint/PubKeyEd25519",
-      "value": "FIGPykhLqi5X5HYrFMiI7hus7x2rNVg18pPevIBRLoU="
-    },
-    "voting_power": "26590937"
+    "address": "qoscons1glmfxaskefe75gat4se48fw0rdftn8h5dveeyw",
+    "pub_key": "qosconspub1zcjduepquqyj75pn6auj725dcjmdyrd7ndlx6mnzhncelwju9lj9j7k0u6vq00rs3r",
+    "voting_power": "10000000"
   }
+
 }
 ```
 
@@ -347,34 +349,29 @@ $ qoscli query block 10 --indent
 }
 ```
 
-### 账户（account）
+### 账户
 
 查询账户
 `qoscli query account <key_name_or_account_address>`
 
 <key_name_or_account_address>为本地密钥库存储的密钥名字或对应账户的地址。
 
-假设本地密钥库中`Arya`地址为`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`，且QOS网络中已经创建了`address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`对应账号，可执行：
+假设本地密钥库中`Arya`地址为`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`，且QOS网络中已经创建了`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`对应账号，可执行：
 ```bash
 qoscli query account Arya --indent
 ```
 或
 ```bash
-qoscli query account address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --indent
+qoscli query account qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y --indent
 ```
 输出类似如下信息：
 ```bash
 {
-  "type": "qbase/account/QOSAccount",
+  "type": "qos/types/QOSAccount",
   "value": {
-    "base_account": {
-      "account_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-      "public_key": {
-        "type": "tendermint/PubKeyEd25519",
-        "value": "dfYz3Zg+g1VFU52frAiKyXRU4wVulJMYgIuboPuBtZ4="
-      },
-      "nonce": "0"
-    },
+    "account_address": "qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639",
+    "public_key": "qosaccpub1zcjduepqhewtk4rn8050sgyws8unnvr9l9rlshvfyargrds7qr9m40crphkscksjqd",
+    "nonce": 1,
     "qos": "10000",
     "qscs": [
         {
@@ -409,27 +406,31 @@ $ qoscli query store --path /store/acc/subspace --data account --indent
 ```bash
 [
   {
-    "key": "account:\ufffdjw15+RMW:wS\ufffd\ufffd\ufffd\ufffd\u0003_\ufffd\ufffd",
+    "key": "account:\ufffd\ufffd\ufffd\u001e_\ufffdD\ufffd T\u001e\ufffd\ufffd\u003c\u0011Kp\ufffd\u001bu",
     "value": {
       "type": "qos/types/QOSAccount",
       "value": {
-        "base_account": {
-          "account_address": "address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk",
-          "public_key": null,
-          "nonce": "0"
-        },
-        "qos": "10000000000",
-        "qscs": null
+        "account_address": "qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639",
+        "public_key": "qosaccpub1zcjduepqhewtk4rn8050sgyws8unnvr9l9rlshvfyargrds7qr9m40crphkscksjqd",
+        "nonce": 1,
+        "qos": "10000",
+        "qscs": [
+            {
+                "coin_name": "AOE",
+                "amount": "10000"
+            }
+        ]
       }
     }
   }
 ]
+
 ```
 
 ### 交易（tx query）
 支持的查询命令：
 
-* `qoscli query tx`            [根据交易hash查询交易信息](#根据交易hash查询交易信息)     
+* `qoscli query tx`            [根据交易hash查询交易信息](#根据交易hash查询交易信息)
 * `qoscli query txs`           [根据标签查找交易](#根据标签查找交易)
 
 #### 根据交易hash查询交易信息
@@ -444,21 +445,78 @@ $ qoscli query tx f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa123
 
 ```bash
 {
-  "hash": "f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa12385",
-  "height": "246",
+  "height": "153",
+  "txhash": "8A317C18448BE7F2B76E05A930FCE0BA45B9C688A630CD50D886A05A7FB1A673",
+  "gas_wanted": "9223372036854775807",
+  "gas_used": "19500",
+  "events": [
+    {
+      "type": "message",
+      "attributes": [
+        {
+          "key": "module",
+          "value": "transfer"
+        },
+        {
+          "key": "gas.payer",
+          "value": "qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y"
+        }
+      ]
+    },
+    {
+      "type": "receive",
+      "attributes": [
+        {
+          "key": "address",
+          "value": "qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639"
+        },
+        {
+          "key": "qos",
+          "value": "100"
+        },
+        {
+          "key": "qscs"
+        }
+      ]
+    },
+    {
+      "type": "send",
+      "attributes": [
+        {
+          "key": "address",
+          "value": "qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y"
+        },
+        {
+          "key": "qos",
+          "value": "100"
+        },
+        {
+          "key": "qscs"
+        }
+      ]
+    }
+  ],
   "tx": {
     "type": "qbase/txs/stdtx",
     "value": {
       "itx": [
         {
-          "type": "approve/txs/TxCreateApprove",
+          "type": "transfer/txs/TxTransfer",
           "value": {
-            "Approve": {
-              "from": "address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk",
-              "to": "address1yqekgyy66v2cxzww6lqg6sdrsugjguxqws6mkf",
-              "qos": "100",
-              "qscs": null
-            }
+            "senders": [
+              {
+                "addr": "qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y",
+                "qos": "100",
+                "qscs": null
+              }
+            ],
+            "receivers": [
+              {
+                "addr": "qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639",
+                "qos": "100",
+                "qscs": null
+              }
+            ]
           }
         }
       ],
@@ -466,44 +524,28 @@ $ qoscli query tx f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa123
         {
           "pubkey": {
             "type": "tendermint/PubKeyEd25519",
-            "value": "B/iatjhcJ4yFyHfGYKw2IneYGu2zG+ZOR8XmRUaji0A="
+            "value": "2WRkEzr8Yd32reYXAmZURHwFm8CAWUTFAQc/IccnATg="
           },
-          "signature": "VrsOsULJx86y8ch529zvl3Sh19TwGm/AldPlQhVWqhtg+calZmBrk25sD9HxCYijAt+ZUWMiLtPg3QZzCCqHAg==",
+          "signature": "tkyobbxwY5sjCTb1ibMEuMpOXHbDhKKHkZq0INZUvnyHODQloh4msRMmc62LLdswL1aY3vdld3OK+1pg2J86Dw==",
           "nonce": "1"
         }
       ],
-      "chainid": "QOS",
-      "maxgas": "100000"
+      "chainid": "qos-test",
+      "maxgas": "9223372036854775807"
     }
   },
-  "result": {
-    "gas_wanted": "100000",
-    "gas_used": "15220",
-    "tags": [
-      {
-        "key": "YWN0aW9u",
-        "value": "Y3JlYXRlLWFwcHJvdmU="
-      },
-      {
-        "key": "YXBwcm92ZS1mcm9t",
-        "value": "YWRkcmVzczFzMzQ4d3ZmNDlkZnk2NGU2d2FmYzkwbGNhdnA0bHJkNnh6aHpoaw=="
-      },
-      {
-        "key": "YXBwcm92ZS10bw==",
-        "value": "YWRkcmVzczF5cWVrZ3l5NjZ2MmN4end3NmxxZzZzZHJzdWdqZ3V4cXdzNm1rZg=="
-      }
-    ]
-  }
+  "timestamp": "2019-08-28T07:15:52Z"
 }
+
 ```
 
 #### 根据标签查找交易
 执行交易后会同时会返回QOS为交易所打tag，通过交易tag可查询交易信息。
 
-根据`approve-from`=`address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk`查询预授权交易信息：
+根据`approve-from`=`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`查询预授权交易信息：
 
 ```bash
-$ qoscli query txs --tag "approve-from='address1s348wvf49dfy64e6wafc90lcavp4lrd6xzhzhk'" --indent
+$ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y'" --indent
 ```
 输出示例：
 
@@ -571,7 +613,8 @@ $ qoscli query txs --tag "approve-from='address1s348wvf49dfy64e6wafc90lcavp4lrd6
 
 QOS支持以下几种交易类型：
 
-* `qoscli tx transfer`         [转账](#转账（transfer）)
+* `qoscli tx transfer`         [转账](#转账)
+* `qoscli tx invariant-check`  [数据检查](#数据检查)
 * `qoscli tx create-approve`   [创建预授权](#创建预授权)
 * `qoscli tx increase-approve` [增加预授权](#增加预授权)
 * `qoscli tx decrease-approve` [减少预授权](#减少预授权)
@@ -591,14 +634,22 @@ QOS支持以下几种交易类型：
 * `qoscli tx submit-proposal`  [提交提议](#提交提议)
 * `qoscli tx deposit`          [提议抵押](#提议抵押)
 * `qoscli tx vote`             [提议投票](#提议投票)
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
+* `qoscli tx add-guardian`     [添加系统账户](#添加系统账户)
+* `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
+* `qoscli tx halt-network`     [停止网络](#停止网络)
 
-分为[转账](#转账（transfer）)、[预授权](#预授权（approve）)、[联盟币](#联盟币（qsc）)、[联盟链](#联盟链（qcp）)、[验证节点](#验证节点（validator）)、[治理](#治理（governance）)这几大类。
+主要分为[Bank](#bank)，[预授权](#预授权)，[联盟币](#联盟币（qsc）)，[联盟链](#联盟链（qcp）)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
 
-### 转账（transfer）
+### Bank
 
-查阅[转账设计](../spec/transfer.md)了解QOS转账交易设计。
+See [Bank模块](../spec/bank) to learn about bank module design.
+
+* `qoscli tx transfer`          [转账](#转账)
+* `qoscli invariant-check`      [数据检查](#数据检查)
+
+#### 转账
+
+查阅[转账设计](../spec/bank)了解QOS转账交易设计。
 
 `qoscli tx transfer --senders <senders_and_coins> --receivers <receivers_and_coins>`
 
@@ -608,16 +659,36 @@ QOS支持以下几种交易类型：
 - `--senders`   发送集合，账户传keystore name 或 address，多个账户半角分号分隔
 - `--receivers` 接收集合，账户传keystore name 或 address，多个账户半角分号分隔
 
-`Arya`向地址`address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh`转账1个QOS，1个AOE
+`Arya`向地址`qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639`转账1个QOS，1个AOE
 ```bash
-$ qoscli tx transfer --senders Arya,1QOS,1AOE --receivers address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh,1QOS,1AOE
+$ qoscli tx transfer --senders Arya,1QOS,1AOE --receivers qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639,1QOS,1AOE
 Password to sign with 'Arya':<输入密码>
 {"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"300"}
 ```
 
-转账成功可通过[账户查询](#账户（account）)查看最新账户状态，交易执行可能会有一定时间的延迟。
+转账成功可通过[账户查询](#账户)查看最新账户状态，交易执行可能会有一定时间的延迟。
 
-### 预授权（approve）
+#### 数据检查
+
+QOS设计了一套[数据检查机制](../spec/bank)，用户可以通过下面的指令执行数据检查操作：
+
+`qoscli tx invariant-check --sender <sender's keybase name or address>`
+
+主要参数：
+- `--sender` 发送此交易的账户keystore name 或 address
+
+::: warning Note 
+此交易设置了特别大的交易费，仅限持币账户发现QOS网络数据异常时提交，数据验证异常会停止整个QOS网络，以保护持币账户权益。
+:::
+
+`Arya`发现QOS网络中某处数值溢出，发现数据检查：
+```bash
+$ qoscli tx invariant-check --sender Arya
+Password to sign with 'Arya':<输入密码>
+```
+如果数据并无异常，将返回正常交易执行结果，否则全网停止运行。
+
+### 预授权
 
 [QOS预授权设计](../spec/approve.md)包含以下操作指令：
 
@@ -628,7 +699,7 @@ Password to sign with 'Arya':<输入密码>
 * `qoscli tx use-approve`       [使用预授权](#使用预授权)
 * `qoscli tx cancel-approve`    [取消预授权](#取消预授权)
 
-> 下面实例中假设`Sansa`地址为`address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh`
+> 下面实例中假设`Sansa`地址为`qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639`
 
 #### 创建预授权
 
@@ -642,7 +713,7 @@ Password to sign with 'Arya':<输入密码>
 
 `Arya`向`Sansa`授权100个QOS，100个AOE：
 ```
-$ qoscli tx create-approve --from Arya --to address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh --coins 100QOS,100AOE
+$ qoscli tx create-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639 --coins 100QOS,100AOE
 Password to sign with 'Arya':<输入Arya本地密钥库密码>
 ```
 执行结果：
@@ -656,13 +727,13 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 查询`Arya`对`Sansa`的预授权：
 ```bash
-qoscli query approve --from Arya --to address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh
+qoscli query approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639
 ```
 执行结果：
 ```bash
 {
-  "from": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "to": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
+  "from": "qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y",
+  "to": "qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639",
   "qos": "100",
   "qscs": [
     {
@@ -679,7 +750,7 @@ qoscli query approve --from Arya --to address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0h
 
 `Arya`向`Sansa`增加授权100个QOS，100个AOE：
 ```bash
-$ qoscli tx increase-approve --from Arya --to address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh --coins 100QOS,100AOE
+$ qoscli tx increase-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639 --coins 100QOS,100AOE
 Password to sign with 'Arya':<输入Arya本地密钥库密码>
 ```
 
@@ -694,7 +765,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 `Arya`向`Sansa`减少授权10个QOS，10个AOE：
 ```bash
-$ qoscli tx decrease-approve --from Arya --to address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh --coins 10QOS,10AOE
+$ qoscli tx decrease-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639 --coins 10QOS,10AOE
 Password to sign with 'Arya':<输入Arya本地密钥库密码>
 ```
 执行结果：
@@ -708,7 +779,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 `Sansa`使用`Arya`向自己预授权中的10个QOS，10个AOE：
 ```bash
-$ qoscli tx use-approve --from address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --to Sansa --coins 10QOS,10AOE
+$ qoscli tx use-approve --from Arya --to Sansa --coins 10QOS,10AOE
 Password to sign with 'Sansa':<输入Sansa本地密钥库密码>
 ```
 执行结果：
@@ -724,7 +795,7 @@ Password to sign with 'Sansa':<输入Sansa本地密钥库密码>
 
 `Arya`取消对`Sansa`的授权：
 ```bash
-$ qoscli tx cancel-approve --from Arya --to address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh
+$ qoscli tx cancel-approve --from Arya --to qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639
 Password to sign with 'Arya':<输入Arya本地密钥库密码>
 ```
 执行结果：
@@ -756,7 +827,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 $ qoscli tx create-qsc --creator Arya --qsc.crt aoe.crt
 Password to sign with 'Arya':<输入Arya本地密钥库密码>
 ```
-> 假设`Arya`已在CA中心申请`aoe.crt`证书，`aoe.crt`中包含`banker`公钥，对应地址`address1rpmtqcexr8m20zpl92llnquhpzdua9stszmhyq`，已经导入到本地私钥库中，名字为`ATM`，。
+> 假设`Arya`已在CA中心申请`aoe.crt`证书，`aoe.crt`中包含`banker`公钥，对应地址`qosacc1djtcyex03vluga35r8lattddkqt76s7f306xuq`，已经导入到本地私钥库中，名字为`ATM`，。
 
 执行结果：
 ```bash
@@ -780,7 +851,7 @@ $ qoscli query qsc QOE --indent
   "chain_id": "capricorn-1000",
   "extrate": "1:280.0000",
   "description": "",
-  "banker": "address1rpmtqcexr8m20zpl92llnquhpzdua9stszmhyq"
+  "banker": "qosacc1djtcyex03vluga35r8lattddkqt76s7f306xuq"
 }
 ```
 
@@ -845,7 +916,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 跨链协议是[qbase](https://www.github.com/QOSGroup/qbase)提供支持，主要有以下四个查询指令：
 - `qoscli query qcp list`
-- `qoscli query qcp out` 
+- `qoscli query qcp out`
 - `qoscli query qcp in`
 - `qoscli query qcp tx`
 
@@ -894,14 +965,14 @@ $ qoscli tx create-validator --moniker "Arya's node" --owner Arya --tokens 1000
 
 #### 编辑验证节点
 
-`qoscli tx modify-validator --owner <key_name_or_account_address> --moniker <validator_name> --logo <logo_url> --website <website_url> --details <description info>`
+`qoscli tx modify-validator --owner <key_name_or_account_address> --validator <validator_address> --moniker <validator_name> --logo <logo_url> --website <website_url> --details <description info>`
 
 主要参数：
 
 - `--owner`         操作者账户地址或密钥库中密钥名字
+- `--validator`     待修改的验证人地址
 - `--moniker`       验证节点名字，`len(moniker) <= 300`
 - `--nodeHome`      节点配置文件和数据所在目录，默认：`$HOME/.qosd`
-- `--tokens`        绑定tokens，不能大于操作者持有QOS数量
 - `--compound`      是否收益复投
 - `--logo`          logo, 可选参数，`len(logo) <= 255`
 - `--website`       网址, 可选参数，`len(website) <= 255`
@@ -909,7 +980,7 @@ $ qoscli tx create-validator --moniker "Arya's node" --owner Arya --tokens 1000
 
 `Arya`可通过`modify-validator`添加/修改节点信息：
 ```bash
-$ qoscli tx modify-validator --moniker "Arya's node" --owner Arya --tokens 1000 --logo "https://..." --website "https://..." --description "Long live Arya."
+$ qoscli tx modify-validator --moniker "Arya's node" --owner Arya --validaotor qosval1fzpaxwrmhqml7d90zuzvhmjfxsdqgvzrjpyvsl --logo "https://..." --website "https://..." --description "Long live Arya."
 ```
 
 执行结果：
@@ -921,33 +992,45 @@ $ qoscli tx modify-validator --moniker "Arya's node" --owner Arya --tokens 1000 
 
 #### 查询验证节点
 
-`qoscli query validator [validator-owner]`
+`qoscli query validator [validator-address]`
 
-`validator-owner`为账户地址或本地秘钥库名字
+`validator-address`为验证人地址
 
 可根据操作者查找与其绑定的验证节点信息。
 
 ```bash
-$ qoscli query validator address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy --indent
+$ qoscli query validator qosval12kjmpgyg23l7axhzzne33jmd0r9y083wzt07hu --indent
 ```
 
 执行结果：
 ```bash
 {
-  "name": "Arya's node",
-  "owner": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "validatorPubkey": {
-    "type": "tendermint/PubKeyEd25519",
-    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+  "validator": "qosval12kjmpgyg23l7axhzzne33jmd0r9y083wzt07hu",
+  "owner": "qosacc12kjmpgyg23l7axhzzne33jmd0r9y083w6mpa33",
+  "consensusPubKey": "qosconspub1zcjduepq200x4crydcd6va90l2v2evz0ddjsv88vraqv7jqgds05e4n2xxfqqr6t45",
+  "bondTokens": "10000000",
+  "description": {
+    "moniker": "Arya's node",
+    "logo": "https://...",
+    "website": "https://...",
+    "details": "Long live Arya."
   },
-  "bondTokens": "1000",
-  "description": "",
-  "status": 0,
-  "inactiveCode": 0,
+  "commission": {
+    "commission_rates": {
+      "rate": "0.100000000000000000",
+      "max_rate": "0.200000000000000000",
+      "max_change_rate": "0.010000000000000000"
+    },
+    "update_time": "0001-01-01T00:00:00Z"
+  },
+  "status": "active",
+  "InactiveDesc": "",
   "inactiveTime": "0001-01-01T00:00:00Z",
   "inactiveHeight": "0",
-  "bondHeight": "258"
+  "minPeriod": "0",
+  "bondHeight": "0"
 }
+
 ```
 
 #### 验证节点列表
@@ -961,22 +1044,35 @@ $ qoscli query validators --indent
 
 执行结果：
 ```bash
-validators: 
-{
-  "name": "Arya's node",
-  "owner": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "validatorPubkey": {
-    "type": "tendermint/PubKeyEd25519",
-    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
+validators:
+[
+  {
+  "validator": "qosval12kjmpgyg23l7axhzzne33jmd0r9y083wzt07hu",
+  "owner": "qosacc12kjmpgyg23l7axhzzne33jmd0r9y083w6mpa33",
+  "consensusPubKey": "qosconspub1zcjduepq200x4crydcd6va90l2v2evz0ddjsv88vraqv7jqgds05e4n2xxfqqr6t45",
+  "bondTokens": "10000000",
+  "description": {
+    "moniker": "Arya's node",
+    "logo": "https://...",
+    "website": "https://...",
+    "details": "Long live Arya."
   },
-  "bondTokens": "1000",
-  "description": "",
-  "status": 0,
-  "inactiveCode": 0,
+  "commission": {
+    "commission_rates": {
+      "rate": "0.100000000000000000",
+      "max_rate": "0.200000000000000000",
+      "max_change_rate": "0.010000000000000000"
+    },
+    "update_time": "0001-01-01T00:00:00Z"
+  },
+  "status": "active",
+  "InactiveDesc": "",
   "inactiveTime": "0001-01-01T00:00:00Z",
   "inactiveHeight": "0",
-  "bondHeight": "258"
+  "minPeriod": "0",
+  "bondHeight": "0"
 }
+]
 ```
 
 #### 获取指定高度验证节点集合
@@ -990,28 +1086,25 @@ $ qoscli query tendermint-validators --indent
 
 执行结果：
 ```bash
-current query height: 260
+current query height: 100
 [
   {
-    "Address": "address1axqkgynrrdp2uwfpw60lm80pyx48g4pz5xj3er",
-    "VotingPower": "1000",
-    "PubKey": {
-      "type": "tendermint/PubKeyEd25519",
-      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
-    }
+    "Address": "qoscons1stp35jzgkecv9qa2u0vh33gqclnrwu5wekgggz",
+    "VotingPower": "10000000",
+    "PubKey": "qosconspub1zcjduepq200x4crydcd6va90l2v2evz0ddjsv88vraqv7jqgds05e4n2xxfqqr6t45"
   }
 ]
 ```
 
 #### 查询验证节点漏块信息
 
-`qoscli query validator-miss-vote [validator-owner]`
+`qoscli query validator-miss-vote [validator-address]`
 
-`validator-owner`为操作者账户地址或密钥库中密钥名字
+`validator-address`为验证人地址
 
-查询`Arya`的节点漏块信息：
+查询`qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2`的节点漏块信息：
 ```bash
-$ qoscli query validator-miss-vote Arya
+$ qoscli query validator-miss-vote qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
 ```
 
 执行结果：
@@ -1020,29 +1113,26 @@ $ qoscli query validator-miss-vote Arya
 ```
 
 #### 验证节点窗口信息
-`qoscli query validator-period --owner  <key_name_or_account_address>`
+`qoscli query validator-period  <validator-address>`
 
-`key_name_or_account_address`为操作者账户地址或密钥库中密钥名字
+`validator-address`为验证人地址
 
 查询`Arya`的节点漏块信息：
 ```bash
-$ qoscli query validator-period --owner Arya
+$ qoscli query validator-period qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
 ```
 
 执行结果：
 ```bash
 {
-  "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "validator_pub_key": {
-    "type": "tendermint/PubKeyEd25519",
-    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
-  },
+  "validator_address": "qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2",
+  "consensus_pubkey": "qosconspub1zcjduepqma0j9e6ky7h06vgkmghrj3g9u3dwlkhxc8y87x9rn956ue8dulls9g3ax0",
   "fees": "0",
-  "current_tokens": "4782741",
-  "current_period": "15",
-  "last_period": "14",
+  "current_tokens": "10222379",
+  "current_period": "105",
+  "last_period": "104",
   "last_period_fraction": {
-    "value": "1177.934327765593760252"
+    "value": "0.000000000000000000"
   }
 }
 ```
@@ -1062,13 +1152,14 @@ $ qoscli query community-fee-pool
 
 #### 撤销验证节点
 
-`qoscli tx revoke-validator --owner <key_name_or_account_address>`
+`qoscli tx revoke-validator --owner <key_name_or_account_address> --validator <validator_address>`
 
-`key_name_or_account_address`为操作者账户地址或密钥库中密钥名字
+`key_name_or_account_address`为验证人所有者的账户地址或密钥库中密钥名字
+`validator_address` 为验证人地址
 
 `Arya`将自己的节点撤销为为验证节点：
 ```bash
-$ qoscli tx revoke-validator --owner Arya
+$ qoscli tx revoke-validator --owner Arya --validator qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
 ```
 
 执行结果：
@@ -1080,13 +1171,14 @@ $ qoscli tx revoke-validator --owner Arya
 
 #### 激活验证节点
 
-`qoscli tx active-validator --owner <key_name_or_account_address>`
+`qoscli tx active-validator --owner <key_name_or_account_address> --validator <validator_address>`
 
 `key_name_or_account_address`为操作者账户地址或密钥库中密钥名字
+`validator_address` 为验证人地址
 
 `Arya`将自己处于pending状态的节点重新激活为验证节点：
 ```bash
-$ qoscli tx active-validator --owner Arya
+$ qoscli tx active-validator --owner Arya --validator qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2
 ```
 
 执行结果：
@@ -1113,12 +1205,12 @@ $ qoscli tx active-validator --owner Arya
 
 #### 委托
 
-`qoscli tx delegate --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --compound <compound_or_not>`
+`qoscli tx delegate --validator <validator_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --compound <compound_or_not>`
 
 主要参数：
 
-- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
-- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--validator`     验证人地址
+- `--delegator`     委托人账户地址或秘钥库中秘钥名字
 - `--tokens`        绑定tokens，不能大于`delegator`持有QOS数量
 - `--compound`      收益是否复投，默认`false`
 
@@ -1129,12 +1221,12 @@ $ qoscli tx delegate --owner Arya --delegator Sansa --tokens 100
 
 #### 委托查询
 
-`qoscli query delegation --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address>`
+`qoscli query delegation --validator <validator_address> --delegator <delegator_key_name_or_account_address>`
 
 主要参数：
 
-- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
-- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--validator`     验证人地址
+- `--delegator`     委托人账户地址或秘钥库中秘钥名字
 
 `Sansa`在`Arya`上的代理信息：
 ```bash
@@ -1144,45 +1236,40 @@ $ qoscli query delegation --owner Arya --delegator Sansa
 查询结果：
 ```bash
 {
-  "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
-  "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "validator_pub_key": {
-    "type": "tendermint/PubKeyEd25519",
-    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
-  },
-  "delegate_amount": "100",
+  "delegator_address": "qosacc12tr0v5uv9xpns79w8q34plakz8gh66855arlrd",
+  "validator_address": "qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q",
+  "validator_cons_pub_key": "qosconspub1zcjduepqgvpv0ky5nzkt238aus9gh90ct96wm3nddmz7pt2qwyn3lwme8dpskrfu76",
+  "delegate_amount": "10000000",
   "is_compound": false
 }
 ```
 
 #### 验证节点委托列表
 
-`qoscli query delegations-to [validator-owner]`
+`qoscli query delegations-to [validator-address]`
 
 主要参数：
 
-- `validator-owner`     代理验证节点操作账户地址或密钥库中密钥名字
+- `validator-address`     验证人地址
 
 `Arya`验证节点上的所有代理信息：
 ```bash
-$ qoscli query delegations-to Arya
+$ qoscli query delegations-to qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q
 ```
 
 查询结果示例：
 ```bash
 [
   {
-    "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
-    "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-    "validator_pub_key": {
-      "type": "tendermint/PubKeyEd25519",
-      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
-    },
-    "delegate_amount": "100",
+    "delegator_address": "qosacc12tr0v5uv9xpns79w8q34plakz8gh66855arlrd",
+    "validator_address": "qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q",
+    "validator_cons_pub_key": "qosconspub1zcjduepqgvpv0ky5nzkt238aus9gh90ct96wm3nddmz7pt2qwyn3lwme8dpskrfu76",
+    "delegate_amount": "10000000",
     "is_compound": false
   }
-  ...
+...
 ]
+
 ```
 
 #### 代理用户委托列表
@@ -1191,7 +1278,7 @@ $ qoscli query delegations-to Arya
 
 主要参数：
 
-- `delegator`     被代理账户地址或秘钥库中秘钥名字
+- `delegator`     委托人账户地址或秘钥库中秘钥名字
 
 `Sansa`的所有代理信息：
 ```bash
@@ -1202,16 +1289,14 @@ $ qoscli query delegations Sansa
 ```bash
 [
   {
-    "delegator_address": "address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh",
-    "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-    "validator_pub_key": {
-      "type": "tendermint/PubKeyEd25519",
-      "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
-    },
-    "delegate_amount": "100",
+    "delegator_address": "qosacc12tr0v5uv9xpns79w8q34plakz8gh66855arlrd",
+    "validator_address": "qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q",
+    "validator_cons_pub_key": "qosconspub1zcjduepqgvpv0ky5nzkt238aus9gh90ct96wm3nddmz7pt2qwyn3lwme8dpskrfu76",
+    "delegate_amount": "10000000",
     "is_compound": false
   }
 ]
+
 ```
 
 #### 社区费池
@@ -1230,65 +1315,64 @@ $ qoscli query community-fee-pool
 
 #### 委托收益查询
 
-`qoscli query delegator-income --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address`
+`qoscli query delegator-income --validator <validator_address> --delegator <delegator_key_name_or_account_address`
 
 主要参数：
 
-- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
-- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--validator`  验证人地址
+- `--delegator`  委托人账户地址或秘钥库中秘钥名字
 
-`Sansa`查询代理给`Arya`的收益信息：
+`Sansa`查询代理给`qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q`的收益信息：
 ```bash
-$ qoscli query delegator-income --owner Arya --delegator Sansa
+$ qoscli query delegator-income --delegator Sansa --validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q --indent
+
 ```
 
 查询结果：
 ```bash
 {
-  "owner_address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "validator_pub_key": {
-    "type": "tendermint/PubKeyEd25519",
-    "value": "VOn2rPx+t7Njdgi+eLb+jBuF175T1b7LAcHElsmIuXA="
-  },
-  "previous_validaotr_period": "1",
-  "bond_token": "100",
-  "earns_starting_height": "101",
-  "first_delegate_height": "1",
-  "historical_rewards": "0",
-  "last_income_calHeight": "101",
+  "validator_address": "qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q",
+  "consensus_pubkey": "qosconspub1zcjduepqgvpv0ky5nzkt238aus9gh90ct96wm3nddmz7pt2qwyn3lwme8dpskrfu76",
+  "previous_validator_period": "0",
+  "bond_token": "10000000",
+  "earns_starting_height": "0",
+  "first_delegate_height": "0",
+  "historical_rewards": "3221431",
+  "last_income_calHeight": "0",
   "last_income_calFees": "0"
 }
+
 ```
 
 #### 修改收益复投方式
 
-`qoscli tx modify-compound --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --compound <compound_or_not>`
+`qoscli tx modify-compound --validator <validator_address> --delegator <delegator_key_name_or_account_address> --compound <compound_or_not>`
 
 主要参数：
 
-- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
-- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--validator`  验证人地址
+- `--delegator`  委托人账户地址或秘钥库中秘钥名字
 - `--compound`      收益是否复投，默认`false`
 
 `Sansa`将收益设置为复投方式：
 ```bash
-$ qoscli tx modify-compound --owner Arya --delegator Sansa --compound
+$ qoscli tx modify-compound --delegator Sansa --validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q --compound
 ```
 
 #### 解除委托
 
-`qoscli tx unbond --owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
+`qoscli tx unbond --validator <validator_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
 
 主要参数：
 
-- `--owner`         代理验证节点操作账户地址或密钥库中密钥名字
-- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--validator`  验证人地址
+- `--delegator`  委托人账户地址或秘钥库中秘钥名字
 - `--tokens`        解绑tokens，不能大于目前代理的QOS数量
 - `--all`           是否取消全部QOS代理，默认false
 
-`Sansa`解除代理给`Arya`的50个QOS：
+`Sansa`解除代理给`qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q`的50个QOS：
 ```bash
-$ qoscli tx unbond --owner Arya --delegator Sansa --tokens 50
+$ qoscli tx unbond --delegator Sansa --validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q --tokens 50
 ```
 
 #### 待返还委托
@@ -1304,20 +1388,20 @@ $ qoscli query unbondings Sansa
 
 #### 变更委托验证节点
 
-`qoscli tx redelegate --from-owner <validator_key_name_or_account_address> --to-owner <validator_key_name_or_account_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
+`qoscli tx redelegate --from-validator <validator_address> --to-validator <validator_address> --delegator <delegator_key_name_or_account_address> --tokens <tokens> --all <unbond_all>`
 
 主要参数：
 
-- `--from-owner`    代理验证节点操作账户地址或密钥库中密钥名字
-- `--to-owner`      新的代理验证节点操作账户地址或密钥库中密钥名字
-- `--delegator`     被代理账户地址或秘钥库中秘钥名字
+- `--from-validator`    原始验证人地址
+- `--to-validator`      新委托的验证人地址
+- `--delegator`         委托人账户地址或秘钥库中秘钥名字
 - `--tokens`        解绑并代理给新代理的tokens，不能大于目前代理的QOS数量
 - `--compound`      新代理收益是否复投，默认`false`
 - `--all`           是否从`from-owner`完全解绑，全部代理给`to-owner`，默认false
 
-`Sansa`将代理给`Arya`的10个QOS转移到`John`操作的验证节点上：
+`Sansa`将代理给`qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q`的10个QOS转移到`qosval67werwer98sr76asdf0sdfsd98`的验证节点上：
 ```bash
-$ qoscli tx redelegate --from-owner Arya --to-owner John --delegator Sansa --tokens 10
+$ qoscli tx redelegate --from-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q --to-owner qosval67werwer98sr76asdf0sdfsd98 --delegator Sansa --tokens 10
 ```
 
 #### 待执行委托变更
@@ -1335,7 +1419,7 @@ $ qoscli query redelegations Sansa
 
 * `qoscli tx submit-proposal`  [提交提议](#提交提议)
 * `qoscli query proposal`      [提议查询](#提议查询)
-* `qoscli query proposals`     [提议列表](#提议列表)   
+* `qoscli query proposals`     [提议列表](#提议列表)
 * `qoscli tx deposit`          [提议抵押](#提议抵押)
 * `qoscli query deposit`       [抵押查询](#抵押查询)
 * `qoscli query deposits`      [抵押列表](#抵押列表)
@@ -1343,19 +1427,15 @@ $ qoscli query redelegations Sansa
 * `qoscli query vote`          [投票查询](#投票查询)
 * `qoscli query votes`         [投票列表](#投票列表)
 * `qoscli query tally`         [投票统计](#投票统计)
-* `qoscli query params`        [参数查询](#参数查询)  
-* `qoscli query guardian`      [特权账户查询](#特权账户查询)
-* `qoscli query guardians`     [特权账户列表](#特权账户列表) 
-* `qoscli tx add-guardian`     [添加特权账户](#添加特权账户)
-* `qoscli tx delete-guardian`  [删除特权账户](#删除特权账户)
+* `qoscli query params`        [参数查询](#参数查询)
 
 #### 提交提议
 
-`qoscli tx submit-proposal 
-    --title <proposal_title> 
-    --proposal-type <proposal_type> 
-    --proposer <proposer_key_name_or_account_address> 
-    --deposit <deposit_amount_of_qos> 
+`qoscli tx submit-proposal
+    --title <proposal_title>
+    --proposal-type <proposal_type>
+    --proposer <proposer_key_name_or_account_address>
+    --deposit <deposit_amount_of_qos>
     --description <description>`
 
 主要参数：
@@ -1400,7 +1480,7 @@ $ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer
 $ qoscli tx submit-proposal --title 'update parameters' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
 ```
 
-假设`Arya`在QOS初始化时已经通过[添加特权账户](qosd.md#添加特权账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
+假设`Arya`在QOS初始化时已经通过[添加系统账户](qosd.md#添加系统账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
 ```bash
 $ qoscli tx submit-proposal --title 'use tax' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
 ```
@@ -1720,11 +1800,19 @@ $ qoscli query params --module gov --key min_deposit
 "10000000"
 ```
 
-#### 特权账户查询
+### 系统账户
+
+* `qoscli query guardian`      [系统账户查询](#系统账户查询)
+* `qoscli query guardians`     [系统账户列表](#系统账户列表)
+* `qoscli tx add-guardian`     [添加系统账户](#添加系统账户)
+* `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
+* `qoscli tx halt-network`     [停止网络](#停止网络)
+
+#### 系统账户查询
 
 `qoscli query guardian <guardian_key_name_or_account_address>`
 
-查询`Arya`特权信息：
+查询`Arya`系统账户信息：
 ```bash
 $ qoscli query guardian Arya --indent
 ```
@@ -1734,16 +1822,16 @@ $ qoscli query guardian Arya --indent
 {
   "description": "Arya",
   "guardian_type": 1,
-  "address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-  "creator": "address1ah9uz0"
+  "address": "qosacc1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+  "creator": "qosacc1ah9uz0"
 }
 ```
 
-#### 特权账户列表
+#### 系统账户列表
 
 `qoscli query guardians`
 
-查询所有特权账户：
+查询所有系统账户：
 ```bash
 $ qoscli query guardians --indent
 ```
@@ -1754,41 +1842,57 @@ $ qoscli query guardians --indent
   {
     "description": "Arya",
     "guardian_type": 1,
-    "address": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
-    "creator": "address1ah9uz0"
+    "address": "qosacc1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
+    "creator": "qosacc1ah9uz0"
   }
 ]
 ```
 
-#### 添加特权账户
+#### 添加系统账户
 
-在`genesis.json`中配置的特权账户可通过下面的添加指令添加新的特权账户：
+在`genesis.json`中配置的系统账户可通过下面的添加指令添加新的系统账户：
 
 `qoscli tx add-guardian --address <new_guardian_key_name_or_account_address> --creator <creator_key_name_or_account_address> --description <description>`
 
 主要参数：
 
-- `--address`         新特权账户，账户地址或密钥库中密钥名字
+- `--address`         新系统账户，账户地址或密钥库中密钥名字
 - `--creator`         创建账户，账户地址或密钥库中密钥名字
 - `--description`     描述
 
-`Arya`添加`Sansa`为特权账户：
+`Arya`添加`Sansa`为系统账户：
 ```bash
 $ qoscli tx add-guardian --address Sansa --creator Arya --description 'set Sansa to be a guardian'
 ```
 
-#### 删除特权账户
+#### 删除系统账户
 
-在`genesis.json`中配置的特权账户可通过下面的指令删除非`genesis.json`中配置的特权账户：
+在`genesis.json`中配置的系统账户可通过下面的指令删除非`genesis.json`中配置的系统账户：
 
 `qoscli tx delete-guardian --address <new_guardian_key_name_or_account_address> --deleted-by <delete_operator_key_name_or_account_address>`
 
 主要参数：
 
-- `--address`         新特权账户，账户地址或密钥库中密钥名字
+- `--address`         系统账户，账户地址或密钥库中密钥名字
 - `--deleted-by`      删除操作账户，账户地址或密钥库中密钥名字
 
-`Arya`将`Sansa`从特权账户中删除：
+`Arya`将`Sansa`从系统账户中删除：
 ```bash
 $ qoscli tx delete-guardian --address Sansa --deleted-by Arya
+```
+
+#### 停止网络
+
+紧急情况下，系统账户可及时停止网络运行。
+
+`qoscli tx halt-network --guardian <guardian_key_name_or_account_address> --reason <reason_for_halting_network>`
+
+主要参数：
+
+- `--guardian`   系统账户，账户地址或密钥库中密钥名字
+- `--reason`     停网原因
+
+网络出现重大bug，`Arya`停止QOS网络：
+```bash
+$ qoscli tx halt-network --guardian Arya --reason 'bug'
 ```

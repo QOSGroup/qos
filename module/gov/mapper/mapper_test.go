@@ -16,8 +16,8 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
 )
 
@@ -107,7 +107,7 @@ func TestGovMapper_SetGetProposal(t *testing.T) {
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
 
-	content := types.NewTextProposal("p1", "p1", 10)
+	content := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	govMapper := GetMapper(ctx)
 	p1, err := govMapper.SubmitProposal(ctx, content)
 	require.Nil(t, err)
@@ -122,7 +122,7 @@ func TestGovMapper_DeleteProposal(t *testing.T) {
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
 
-	content := types.NewTextProposal("p1", "p1", 10)
+	content := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	govMapper := GetMapper(ctx)
 	p1, err := govMapper.SubmitProposal(ctx, content)
 	require.Nil(t, err)
@@ -140,13 +140,13 @@ func TestGovMapper_GetProposalsFiltered(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	govMapper := GetMapper(ctx)
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	addr2 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	addr2 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr1, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
 
-	textContent := types.NewTextProposal("p1", "p1", 10)
+	textContent := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addr1, textContent.Deposit)
@@ -166,11 +166,11 @@ func TestGovMapper_GetProposals(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	govMapper := GetMapper(ctx)
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr1, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
-	textContent := types.NewTextProposal("p1", "p1", 10)
+	textContent := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addr1, textContent.Deposit)
@@ -191,21 +191,21 @@ func TestGovMapper_ProposalID(t *testing.T) {
 
 	id, err := govMapper.getNewProposalID()
 	require.Nil(t, err)
-	require.Equal(t, uint64(1), id)
+	require.Equal(t, int64(1), id)
 
 	id = govMapper.GetLastProposalID()
-	require.Equal(t, uint64(1), id)
+	require.Equal(t, int64(1), id)
 
 	id, err = govMapper.PeekCurrentProposalID()
 	require.Nil(t, err)
-	require.Equal(t, uint64(2), id)
+	require.Equal(t, int64(2), id)
 }
 
 func TestValidatorSet(t *testing.T) {
 	ctx := defaultContext()
 	govMapper := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
-	sm.CreateValidator(stake.Validator{Description: stake.Description{Moniker: "qos"}, Owner: btypes.Address(""), ValidatorPubKey: ed25519.PubKeyEd25519{}})
+	sm.CreateValidator(stake.Validator{Description: stake.Description{Moniker: "qos"}, OperatorAddress: btypes.ValAddress(""), ConsPubKey: ed25519.PubKeyEd25519{}, BondTokens: btypes.ZeroInt()})
 
 	govMapper.saveValidatorSet(ctx, 1)
 	validators, exists := govMapper.GetValidatorSet(1)
@@ -222,20 +222,20 @@ func TestGovMapper_GetSetParams(t *testing.T) {
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 
 	params := govMapper.GetParams(ctx)
-	require.Zero(t, params.MinDeposit)
+	require.Zero(t, params.NormalMinDeposit)
 
 	params = types.DefaultParams()
 	govMapper.SetParams(ctx, params)
 
 	params = govMapper.GetParams(ctx)
 	require.NotNil(t, params)
-	require.NotZero(t, params.MinDeposit)
+	require.NotZero(t, params.NormalMinDeposit)
 }
 
 func TestGovMapper_GetSetVote(t *testing.T) {
 	ctx := defaultContext()
 	govMapper := GetMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	govMapper.SetVote(1, addr, types.Vote{addr, 1, types.OptionYes})
 
@@ -252,11 +252,11 @@ func TestGovMapper_RefundDeposits(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	govMapper := GetMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
-	textContent := types.NewTextProposal("p1", "p1", 10)
+	textContent := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addr, textContent.Deposit)
@@ -265,8 +265,8 @@ func TestGovMapper_RefundDeposits(t *testing.T) {
 	account := accountMapper.GetAccount(addr).(*qtypes.QOSAccount)
 	require.Equal(t, btypes.NewInt(10), account.QOS)
 
-	govMapper.RefundDeposits(ctx, 1, true)
-	govParams := govMapper.GetParams(ctx)
+	govMapper.RefundDeposits(ctx, 1, textContent.GetProposalLevel(), true)
+	govParams := govMapper.GetLevelParams(ctx, textContent.GetProposalLevel())
 	account = accountMapper.GetAccount(addr).(*qtypes.QOSAccount)
 	burn := govParams.BurnRate.Mul(qtypes.MustNewDecFromStr("10")).TruncateInt()
 	require.Equal(t, btypes.NewInt(10).Add(btypes.NewInt(10).Sub(burn)), account.QOS)
@@ -280,11 +280,11 @@ func TestGovMapper_DeleteDeposits(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	govMapper := GetMapper(ctx)
-	addr := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
-	textContent := types.NewTextProposal("p1", "p1", 10)
+	textContent := types.NewTextProposal("p1", "p1", btypes.NewInt(10))
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	require.Nil(t, err)
 	err, _ = govMapper.AddDeposit(ctx, proposal.ProposalID, addr, textContent.Deposit)

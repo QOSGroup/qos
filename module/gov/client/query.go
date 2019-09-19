@@ -3,15 +3,16 @@ package client
 import (
 	"errors"
 	"fmt"
-	"github.com/QOSGroup/qos/module/gov/mapper"
-	"github.com/QOSGroup/qos/module/params"
+
 	"strconv"
 	"strings"
 
+	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/spf13/viper"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	btypes "github.com/QOSGroup/qbase/types"
+	qtypes "github.com/QOSGroup/qos/types"
 
 	"github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qos/module/gov/types"
@@ -26,7 +27,7 @@ func queryProposalCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query details of a signal proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -63,10 +64,15 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 `),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
+			limit := viper.GetInt64(flagNumLimit)
+			if limit <= 0 {
+				limit = int64(10)
+			}
+
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var depositorAddr btypes.Address
-			var voterAddr btypes.Address
+			var depositorAddr btypes.AccAddress
+			var voterAddr btypes.AccAddress
 			var status types.ProposalStatus
 
 			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDepositor); err == nil {
@@ -83,7 +89,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 				Depositor: depositorAddr,
 				Voter:     voterAddr,
 				Status:    status,
-				Limit:     uint64(viper.GetInt64(flagNumLimit)),
+				Limit:     limit,
 			}
 
 			data, err := cliCtx.Codec.MarshalJSON(queryParam)
@@ -143,7 +149,7 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -180,7 +186,7 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query votes on a proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -217,7 +223,7 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -254,7 +260,7 @@ func queryDepositsCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query deposits on a proposal",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -286,7 +292,7 @@ func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Get the tally of a proposal vote",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			pID, err := strconv.ParseUint(args[0], 10, 64)
+			pID, err := strconv.ParseInt(args[0], 10, 64)
 			if err != nil {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
@@ -346,13 +352,13 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 			}
 
 			if mod == 0 {
-				var result []params.ParamSet
+				var result []qtypes.ParamSet
 				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
 					return err
 				}
 				return cliCtx.PrintResult(result)
 			} else if mod == 1 {
-				var result params.ParamSet
+				var result qtypes.ParamSet
 				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
 					return err
 				}

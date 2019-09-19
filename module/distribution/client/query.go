@@ -12,24 +12,25 @@ import (
 )
 
 const (
-	flagOwner     = "owner"
 	flagDelegator = "delegator"
+	flagValidator = "validator"
 )
 
 func queryValidatorPeriodCommand(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator-period",
+		Use:   "validator-period [validator-address]",
+		Args:  cobra.ExactArgs(1),
 		Short: "Query distribution validator period info",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var owner btypes.Address
-			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner); err == nil {
-				owner = o
+			var validator btypes.ValAddress
+			if o, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0]); err == nil {
+				validator = o
 			}
 
-			path := types.BuildQueryValidatorPeriodInfoCustomQueryPath(owner)
+			path := types.BuildQueryValidatorPeriodInfoCustomQueryPath(validator)
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
@@ -41,8 +42,6 @@ func queryValidatorPeriodCommand(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.MarkFlagRequired(flagOwner)
 	return cmd
 }
 
@@ -54,18 +53,18 @@ func queryDelegatorIncomeInfoCommand(cdc *amino.Codec) *cobra.Command {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var owner btypes.Address
-			var delegator btypes.Address
+			var validator btypes.ValAddress
+			var delegator btypes.AccAddress
 
-			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner); err == nil {
-				owner = o
+			if o, err := qcliacc.GetValidatorAddrFromFlag(cliCtx, flagValidator); err == nil {
+				validator = o
 			}
 
 			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDelegator); err == nil {
 				delegator = d
 			}
 
-			path := types.BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, owner)
+			path := types.BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, validator)
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
 				return err
@@ -77,11 +76,11 @@ func queryDelegatorIncomeInfoCommand(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.Flags().String(flagDelegator, "", "delegator address")
+	cmd.Flags().String(flagValidator, "", "validator's address")
+	cmd.Flags().String(flagDelegator, "", "delegator account address")
 
 	cmd.MarkFlagRequired(flagDelegator)
-	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagValidator)
 	return cmd
 }
 

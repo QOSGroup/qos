@@ -5,6 +5,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// 创世状态
 type GenesisState struct {
 	Guardians []Guardian `json:"guardians"`
 }
@@ -39,16 +40,25 @@ func DefaultGenesisState() GenesisState {
 	return GenesisState{}
 }
 
+// 状态校验
 func ValidateGenesis(gs GenesisState) error {
 	addrs := map[string]bool{}
 	for _, g := range gs.Guardians {
-		if g.GuardianType != Genesis || (g.Creator != nil && len(g.Creator) != 0) {
+		// Ordinary类型系统账户必须有创建账户
+		if g.GuardianType != Genesis && len(g.Creator) == 0 {
 			return errors.New("invalid genesis guardian")
 		}
-		if _, ok := addrs[string(g.Address.String())]; ok {
+
+		// Genesis类型系统账户没有创建账户
+		if g.GuardianType == Genesis && len(g.Creator) != 0 {
+			return errors.New("invalid genesis guardian")
+		}
+
+		// 不能有重复
+		if _, ok := addrs[g.Address.String()]; ok {
 			return errors.New(fmt.Sprintf("duplicate guardian %s", string(g.Address.String())))
 		}
-		addrs[string(g.Address.String())] = true
+		addrs[g.Address.String()] = true
 	}
 
 	return nil

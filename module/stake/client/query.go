@@ -2,7 +2,6 @@ package client
 
 import (
 	"encoding/binary"
-	"encoding/hex"
 	"github.com/QOSGroup/qbase/client/context"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/store"
@@ -19,11 +18,9 @@ import (
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	go_amino "github.com/tendermint/go-amino"
-	"github.com/tendermint/tendermint/crypto"
 )
 
 const (
-	flagActive   = "active"
 	activeDesc   = "active"
 	inactiveDesc = "inactive"
 
@@ -34,29 +31,37 @@ const (
 )
 
 type validatorDisplayInfo struct {
-	Owner           btypes.Address    `json:"owner"`
-	ValidatorAddr   string            `json:"validatorAddress"`
-	ValidatorPubKey crypto.PubKey     `json:"validatorPubkey"`
-	BondTokens      uint64            `json:"bondTokens"` //不能超过int64最大值
-	Description     types.Description `json:"description"`
-	Commission      types.Commission  `json:"commission"`
+	OperatorAddress btypes.ValAddress  `json:"validator"`
+	Owner           btypes.AccAddress  `json:"owner"`
+	ConsAddress     btypes.ConsAddress `json:"consensusAddress"`
+	ConsPubKey      string             `json:"consensusPubKey"`
+	BondTokens      btypes.BigInt      `json:"bondTokens"`
+	Description     types.Description  `json:"description"`
+	Commission      types.Commission   `json:"commission"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
 	InactiveTime   time.Time `json:"inactiveTime"`
-	InactiveHeight uint64    `json:"inactiveHeight"`
+	InactiveHeight int64     `json:"inactiveHeight"`
 
-	BondHeight uint64 `json:"bondHeight"`
+	MinPeriod  int64 `json:"minPeriod"`
+	BondHeight int64 `json:"bondHeight"`
 }
 
 func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
+
+	consPubKey, _ := btypes.ConsensusPubKeyString(validator.ConsPubKey)
+
 	info := validatorDisplayInfo{
+		OperatorAddress: validator.OperatorAddress,
 		Owner:           validator.Owner,
-		ValidatorPubKey: validator.ValidatorPubKey,
+		ConsAddress:     validator.ConsAddress(),
+		ConsPubKey:      consPubKey,
 		BondTokens:      validator.BondTokens,
 		Description:     validator.Description,
 		InactiveTime:    validator.InactiveTime,
 		InactiveHeight:  validator.InactiveHeight,
+		MinPeriod:       validator.MinPeriod,
 		BondHeight:      validator.BondHeight,
 		Commission:      validator.Commission,
 	}
@@ -77,24 +82,22 @@ func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
 		info.InactiveDesc = inactiveDoubleDesc
 	}
 
-	info.ValidatorAddr = strings.ToUpper(hex.EncodeToString(validator.ValidatorPubKey.Address()))
-
 	return info
 }
 
 func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator [validator-owner]",
+		Use:   "validator [validator-address]",
 		Short: "Query validator's info",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-			ownerAddress, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
+			validatorAddr, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
 
-			validator, err := getValidator(cliCtx, ownerAddress)
+			validator, err := getValidator(cliCtx, validatorAddr)
 			if err != nil {
 				return err
 			}
@@ -114,18 +117,18 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var owner btypes.Address
-			var delegator btypes.Address
+			var validator btypes.ValAddress
+			var delegator btypes.AccAddress
 
-			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner); err == nil {
-				owner = o
+			if o, err := qcliacc.GetValidatorAddrFromFlag(cliCtx, flagValidator); err == nil {
+				validator = o
 			}
 
 			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDelegator); err == nil {
 				delegator = d
 			}
 
-			var path = types.BuildGetDelegationCustomQueryPath(delegator, owner)
+			var path = types.BuildGetDelegationCustomQueryPath(delegator, validator)
 
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
@@ -138,9 +141,9 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.Flags().String(flagDelegator, "", "delegator address")
-	cmd.MarkFlagRequired(flagOwner)
+	cmd.Flags().String(flagValidator, "", "account of validator address")
+	cmd.Flags().String(flagDelegator, "", "keystore name or delegator account address")
+	cmd.MarkFlagRequired(flagValidator)
 	cmd.MarkFlagRequired(flagDelegator)
 
 	return cmd
@@ -149,20 +152,20 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "delegations-to [validator-owner]",
+		Use:   "delegations-to [validator-address]",
 		Short: "Query all delegations made to one validator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var owner btypes.Address
+			var validator btypes.ValAddress
 
-			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
-				owner = o
+			if o, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0]); err == nil {
+				validator = o
 			}
 
-			var path = types.BuildQueryDelegationsByOwnerCustomQueryPath(owner)
+			var path = types.BuildQueryDelegationsByOwnerCustomQueryPath(validator)
 
 			res, err := cliCtx.Query(path, []byte(""))
 			if err != nil {
@@ -181,14 +184,14 @@ func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 func queryDelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "delegations [delegator]",
+		Use:   "delegations [delegator-account-address]",
 		Short: "Query all delegations made by one delegator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var delegator btypes.Address
+			var delegator btypes.AccAddress
 
 			if d, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
 				delegator = d
@@ -225,7 +228,7 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 			opts := buildQueryOptions()
 
 			subspace := "/store/validator/subspace"
-			result, err := node.ABCIQueryWithOptions(subspace, types.BulidValidatorPrefixKey(), opts)
+			result, err := node.ABCIQueryWithOptions(subspace, types.BuildValidatorPrefixKey(), opts)
 
 			if err != nil {
 				return err
@@ -257,18 +260,18 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator-miss-vote",
+		Use:   "validator-miss-vote [validator-address]",
 		Short: "Query validator miss vote info in the nearest voting window",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			ownerAddress, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
+			validatorAddr, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
 
-			voteSummaryDisplay, err := queryVotesInfoByOwner(cliCtx, ownerAddress)
+			voteSummaryDisplay, err := queryVotesInfoByOwner(cliCtx, validatorAddr)
 			if err != nil {
 				return err
 			}
@@ -293,7 +296,7 @@ type voteInfoDetail struct {
 	Vote   bool
 }
 
-func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) (voteSummary, error) {
+func queryVotesInfoByOwner(ctx context.CLIContext, validatorAddr btypes.ValAddress) (voteSummary, error) {
 
 	voteSummaryDisplay := voteSummary{}
 
@@ -304,19 +307,17 @@ func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) 
 
 	votesInfo := make([]voteInfoDetail, 0, windownLength)
 
-	val, err := getValidator(ctx, ownerAddress)
+	_, err = getValidator(ctx, validatorAddr)
 	if err != nil {
 		return voteSummaryDisplay, err
 	}
 
-	validatorAddress := btypes.Address(val.ValidatorPubKey.Address())
-
-	voteInfo, err := getValidatorVoteInfo(ctx, validatorAddress)
+	voteInfo, err := getValidatorVoteInfo(ctx, validatorAddr)
 	if err != nil {
 		return voteSummaryDisplay, err
 	}
 
-	voteInfoMap, _, err := queryValidatorVotesInWindow(ctx, validatorAddress)
+	voteInfoMap, _, err := queryValidatorVotesInWindow(ctx, validatorAddr)
 	if err != nil {
 		return voteSummaryDisplay, err
 	}
@@ -324,15 +325,15 @@ func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) 
 	votedBlockLength := voteInfo.IndexOffset - 1
 
 	endWindowHeight := voteInfo.StartHeight + votedBlockLength
-	startWindowHeight := uint64(1)
+	startWindowHeight := int64(1)
 	if votedBlockLength <= windownLength {
 		startWindowHeight = voteInfo.StartHeight
 	} else {
 		startWindowHeight = endWindowHeight - windownLength + 1
 	}
 
-	voteSummaryDisplay.StartHeight = int64(startWindowHeight)
-	voteSummaryDisplay.EndHeight = int64(endWindowHeight)
+	voteSummaryDisplay.StartHeight = startWindowHeight
+	voteSummaryDisplay.EndHeight = endWindowHeight
 
 	i := int8(0)
 	for h := endWindowHeight; h >= startWindowHeight; h-- {
@@ -354,7 +355,7 @@ func queryVotesInfoByOwner(ctx context.CLIContext, ownerAddress btypes.Address) 
 	return voteSummaryDisplay, nil
 }
 
-func getStakeConfig(ctx context.CLIContext) (uint64, error) {
+func getStakeConfig(ctx context.CLIContext) (int64, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
 		return 0, err
@@ -373,7 +374,7 @@ func getStakeConfig(ctx context.CLIContext) (uint64, error) {
 		return 0, errors.New("response empty value. getStakeConfig is empty")
 	}
 
-	var length uint64
+	var length int64
 	ctx.Codec.UnmarshalBinaryBare(valueBz, &length)
 
 	return length, nil
@@ -381,7 +382,7 @@ func getStakeConfig(ctx context.CLIContext) (uint64, error) {
 	return 0, nil
 }
 
-func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) (types.ValidatorVoteInfo, error) {
+func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.ValAddress) (types.ValidatorVoteInfo, error) {
 	node, err := ctx.GetNode()
 	if err != nil {
 		return types.ValidatorVoteInfo{}, err
@@ -406,9 +407,9 @@ func getValidatorVoteInfo(ctx context.CLIContext, validatorAddr btypes.Address) 
 	return voteInfo, nil
 }
 
-func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Address) (map[uint64]bool, int64, error) {
+func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.ValAddress) (map[int64]bool, int64, error) {
 
-	voteInWindowInfo := make(map[uint64]bool)
+	voteInWindowInfo := make(map[int64]bool)
 
 	node, err := ctx.GetNode()
 	if err != nil {
@@ -434,7 +435,7 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 	for _, kv := range vKVPair {
 		k := kv.Key
 		var vote bool
-		index := binary.LittleEndian.Uint64(k[(len(k) - 8):])
+		index := int64(binary.LittleEndian.Uint64(k[(len(k) - 8):]))
 		ctx.Codec.UnmarshalBinaryBare(kv.Value, &vote)
 		voteInWindowInfo[index] = vote
 	}
@@ -442,35 +443,21 @@ func queryValidatorVotesInWindow(ctx context.CLIContext, validatorAddr btypes.Ad
 	return voteInWindowInfo, result.Response.Height, nil
 }
 
-func getValidator(ctx context.CLIContext, ownerAddress btypes.Address) (types.Validator, error) {
+func getValidator(ctx context.CLIContext, validatorAddr btypes.ValAddress) (types.Validator, error) {
 
 	node, err := ctx.GetNode()
 	if err != nil {
 		return types.Validator{}, err
 	}
 
-	result, err := node.ABCIQueryWithOptions(string(types.BuildStakeStoreQueryPath()), types.BuildOwnerWithValidatorKey(ownerAddress), buildQueryOptions())
+	result, err := node.ABCIQueryWithOptions(string(types.BuildStakeStoreQueryPath()), types.BuildValidatorKey(validatorAddr), buildQueryOptions())
 	if err != nil {
 		return types.Validator{}, err
 	}
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.Validator{}, errors.New("owner does't have validator")
-	}
-
-	var address btypes.Address
-	ctx.Codec.UnmarshalBinaryBare(valueBz, &address)
-
-	key := types.BuildValidatorKey(address)
-	result, err = node.ABCIQueryWithOptions(string(types.BuildStakeStoreQueryPath()), key, buildQueryOptions())
-	if err != nil {
-		return types.Validator{}, err
-	}
-
-	valueBz = result.Response.GetValue()
-	if len(valueBz) == 0 {
-		return types.Validator{}, errors.New("response empty value")
+		return types.Validator{}, errors.New("Validator not exists")
 	}
 
 	var validator types.Validator
@@ -495,14 +482,14 @@ func buildQueryOptions() client.ABCIQueryOptions {
 func queryUnbondingsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "unbondings [delegator]",
+		Use:   "unbondings [delegator-account-address]",
 		Short: "Query all unbonding delegations by delegator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var delegator btypes.Address
+			var delegator btypes.AccAddress
 
 			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
 				delegator = o
@@ -527,14 +514,14 @@ func queryUnbondingsCommand(cdc *go_amino.Codec) *cobra.Command {
 func queryRedelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
-		Use:   "redelegations [delegator]",
+		Use:   "redelegations [delegator-account-address]",
 		Short: "Query all redelegations by delegator",
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var delegator btypes.Address
+			var delegator btypes.AccAddress
 
 			if o, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
 				delegator = o

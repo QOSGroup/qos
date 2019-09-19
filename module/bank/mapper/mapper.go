@@ -6,18 +6,22 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/bank/types"
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
 var (
-	InvariantCheckKey = []byte("0x10")
+	InvariantCheckKey = []byte("0x10") // 数据检查
+	LockInfoKey       = []byte("0x11") // 锁定-释放信息
 )
 
+// 基于qbase中定义的AccountMapper，扩展qos所需操作
 func GetMapper(ctx context.Context) *account.AccountMapper {
 	return baseabci.GetAccountMapper(ctx)
 }
 
-func GetAccount(ctx context.Context, addr btypes.Address) *qtypes.QOSAccount {
+// 获取QOS账户信息
+func GetAccount(ctx context.Context, addr btypes.AccAddress) *qtypes.QOSAccount {
 	account := baseabci.GetAccountMapper(ctx).GetAccount(addr)
 	if account != nil {
 		return account.(*qtypes.QOSAccount)
@@ -26,6 +30,7 @@ func GetAccount(ctx context.Context, addr btypes.Address) *qtypes.QOSAccount {
 	}
 }
 
+// 获取QOS账户列表
 func GetAccounts(ctx context.Context) []*qtypes.QOSAccount {
 	accounts := []*qtypes.QOSAccount{}
 	baseabci.GetAccountMapper(ctx).IterateAccounts(func(acc account.Account) (stop bool) {
@@ -63,4 +68,24 @@ func ClearInvariantCheck(ctx context.Context) {
 		GetMapper(ctx).Del(key)
 		return false
 	})
+}
+
+// ----------------
+// lock account info
+
+// 保存锁定账户信息
+func SetLockInfo(ctx context.Context, info types.LockInfo) {
+	GetMapper(ctx).Set(LockInfoKey, info)
+}
+
+// 获取锁定账户信息
+func GetLockInfo(ctx context.Context) (info types.LockInfo, exists bool) {
+	exists = GetMapper(ctx).Get(LockInfoKey, &info)
+
+	return
+}
+
+// 删除锁定账户信息
+func DelLockInfo(ctx context.Context) {
+	GetMapper(ctx).Del(LockInfoKey)
 }

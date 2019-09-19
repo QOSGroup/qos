@@ -3,6 +3,10 @@ package app
 import (
 	"encoding/json"
 	"fmt"
+	"github.com/tendermint/tendermint/config"
+	"io"
+	"time"
+
 	"github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
@@ -22,10 +26,8 @@ import (
 	"github.com/spf13/viper"
 	abci "github.com/tendermint/tendermint/abci/types"
 	cmn "github.com/tendermint/tendermint/libs/common"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
-	"io"
-	"time"
+	dbm "github.com/tendermint/tm-db"
 )
 
 const (
@@ -61,9 +63,9 @@ type QOSApp struct {
 	queryRoutes map[string]types.Querier
 }
 
-func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod uint) *QOSApp {
+func NewApp(cfg *config.Config, logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod uint) *QOSApp {
 
-	baseApp := baseabci.NewBaseApp(appName, logger, db, RegisterCodec,
+	baseApp := baseabci.NewBaseApp(appName, cfg, logger, db, RegisterCodec,
 		baseabci.SetPruning(store.NewPruningOptionsFromString(viper.GetString("pruning"))))
 	baseApp.SetCommitMultiStoreTracer(traceStore)
 
@@ -88,8 +90,8 @@ func NewApp(logger log.Logger, db dbm.DB, traceStore io.Writer, invCheckPeriod u
 	// 注册invariants
 	app.mm.RegisterInvariants(app)
 
-	// 注册mappers and hooks
-	app.mm.RegisterMapperAndHooks(app)
+	// 注册mappers and hooks, 初始化参数配置, 设置metrics
+	app.mm.RegisterMapperAndHooks(app, params.ModuleName, &stake.Params{}, &distribution.Params{}, &gov.Params{})
 
 	// 设置gas处理逻辑
 	app.SetGasHandler(app.GasHandler)
@@ -200,11 +202,11 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
-		valAddr := btypes.Address(key[9:])
+		valAddr := btypes.ValAddress(key[9:])
 		if validator, exists := sm.GetValidator(valAddr); exists {
 			validators[valAddr.String()] = validator
 			delegations = append(delegations, sm.GetDelegationsByValidator(valAddr)...)
-			sm.MakeValidatorInactive(valAddr, uint64(ctx.BlockHeight()), ctx.BlockHeader().Time.UTC(), stake.Revoke)
+			sm.MakeValidatorInactive(valAddr, ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), stake.Revoke)
 		}
 	}
 
@@ -212,8 +214,8 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	stake.CloseInactiveValidator(ctx, -1)
 
 	// return unbond tokens
-	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + ctx.BlockHeight()); h++ {
-		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(uint64(h))
+	for h := ctx.BlockHeight(); h <= sm.GetParams(ctx).DelegatorUnbondFrozenHeight+ctx.BlockHeight(); h++ {
+		prePrefix := stake.BuildUnbondingDelegationByHeightPrefix(h)
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 		for ; iter.Valid(); iter.Next() {
@@ -223,15 +225,15 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			sm.BaseMapper.DecodeObject(iter.Value(), &unbond)
 			_, delAddr, _ := stake.GetUnbondingDelegationHeightAddress(k)
 			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-			delegator.PlusQOS(btypes.NewInt(int64(unbond.Amount)))
+			delegator.PlusQOS(unbond.Amount)
 			am.SetAccount(delegator)
 		}
 		iter.Close()
 	}
 
 	// return redelegation tokens
-	for h := ctx.BlockHeight(); h <= (int64(sm.GetParams(ctx).DelegatorRedelegationHeight) + ctx.BlockHeight()); h++ {
-		prePrefix := stake.BuildRedelegationByHeightPrefix(uint64(h))
+	for h := ctx.BlockHeight(); h <= sm.GetParams(ctx).DelegatorUnbondFrozenHeight+ctx.BlockHeight(); h++ {
+		prePrefix := stake.BuildRedelegationByHeightPrefix(h)
 
 		iter := btypes.KVStorePrefixIterator(sm.GetStore(), prePrefix)
 		for ; iter.Valid(); iter.Next() {
@@ -241,7 +243,7 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 			sm.BaseMapper.DecodeObject(iter.Value(), &reDelegation)
 			_, delAddr, _ := stake.GetRedelegationHeightAddress(k)
 			delegator := am.GetAccount(delAddr).(*types.QOSAccount)
-			delegator.PlusQOS(btypes.NewInt(int64(reDelegation.Amount)))
+			delegator.PlusQOS(reDelegation.Amount)
 			am.SetAccount(delegator)
 		}
 		iter.Close()
@@ -273,20 +275,20 @@ func (app *QOSApp) prepForZeroHeightGenesis(ctx context.Context) {
 	proposals := mapper.GetProposalsFiltered(ctx, nil, nil, gov.StatusDepositPeriod, 0)
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
-		mapper.RefundDeposits(ctx, proposalID, false)
+		mapper.RefundDeposits(ctx, proposalID, proposal.GetProposalLevel(), false)
 		mapper.DeleteProposal(proposalID)
 	}
 	proposals = mapper.GetProposalsFiltered(ctx, nil, nil, gov.StatusVotingPeriod, 0)
 	for _, proposal := range proposals {
 		proposalID := proposal.ProposalID
-		mapper.RefundDeposits(ctx, proposalID, false)
+		mapper.RefundDeposits(ctx, proposalID, proposal.GetProposalLevel(), false)
 		mapper.DeleteVotes(proposalID)
 		mapper.DeleteProposal(proposalID)
 	}
 }
 
 // gas
-func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.Address) (gasUsed uint64, err btypes.Error) {
+func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.AccAddress) (gasUsed uint64, err btypes.Error) {
 	gasUsed = ctx.GasMeter().GasConsumed()
 	// gas free for txs in the first block
 	if ctx.BlockHeight() == 0 {
@@ -301,8 +303,8 @@ func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.Address) (gasUse
 
 	dm := distribution.GetMapper(ctx)
 	uint := dm.GetParams(ctx).GasPerUnitCost
-	gasFeeUsed := btypes.NewInt(int64(gasUsed / uint))
-	gasUsed = gasUsed / uint * uint
+	gasFeeUsed := btypes.NewInt(int64(gasUsed) / uint)
+	gasUsed = gasUsed / uint64(uint) * uint64(uint)
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)
@@ -315,7 +317,7 @@ func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.Address) (gasUse
 		}
 
 		account.MustMinusQOS(gasFeeUsed)
-		app.Logger.Info(fmt.Sprintf("cost %d QOS from %s for gas", gasFeeUsed.Int64(), payer))
+		app.Logger.Info(fmt.Sprintf("cost %d QOS from %s for gas", gasFeeUsed.String(), payer))
 		accountMapper.SetAccount(account)
 
 		dm.AddPreDistributionQOS(gasFeeUsed)
@@ -364,6 +366,10 @@ func (app *QOSApp) RegisterHooksMapper(mhs map[string]types.MapperWithHooks) {
 		// register mapper hooks
 		if mh.Hooks != nil {
 			mhs[mh.Hooks.HookMapper()].Mapper.(types.HooksMapper).SetHooks(mh.Hooks)
+		}
+		// setup metrics
+		if mapper, ok := mh.Mapper.(types.MetricsMapper); ok {
+			mapper.SetUpMetrics(app.Config.Instrumentation)
 		}
 		// register mapper
 		app.BaseApp.RegisterMapper(mh.Mapper)

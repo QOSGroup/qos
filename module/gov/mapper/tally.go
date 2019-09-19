@@ -9,11 +9,11 @@ import (
 )
 
 func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passes gtypes.ProposalResult, tallyResults gtypes.TallyResult, validators map[string]bool, deductOption gtypes.DeductOption) {
-	results := make(map[gtypes.VoteOption]int64)
-	results[gtypes.OptionYes] = 0
-	results[gtypes.OptionAbstain] = 0
-	results[gtypes.OptionNo] = 0
-	results[gtypes.OptionNoWithVeto] = 0
+	results := make(map[gtypes.VoteOption]btypes.BigInt)
+	results[gtypes.OptionYes] = btypes.ZeroInt()
+	results[gtypes.OptionAbstain] = btypes.ZeroInt()
+	results[gtypes.OptionNo] = btypes.ZeroInt()
+	results[gtypes.OptionNoWithVeto] = btypes.ZeroInt()
 
 	totalVotingPower := btypes.ZeroInt()
 	totalSystemPower := btypes.ZeroInt()
@@ -27,10 +27,10 @@ func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passe
 	var key []byte
 	for ; iterator.Valid(); iterator.Next() {
 		key = iterator.Key()
-		valAddr := btypes.Address(key[9:])
+		valAddr := btypes.ValAddress(key[9:])
 		if validator, exists := sm.GetValidator(valAddr); exists {
 			currValidators[validator.GetValidatorAddress().String()] = validator
-			totalSystemPower = totalSystemPower.Add(btypes.NewInt(int64(validator.BondTokens)))
+			totalSystemPower = totalSystemPower.Add(validator.BondTokens)
 		}
 	}
 
@@ -43,14 +43,14 @@ func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passe
 
 		sm.IterateDelegationsInfo(vote.Voter, func(delegation stake.Delegation) {
 			if _, ok := currValidators[delegation.ValidatorAddr.String()]; ok {
-				totalVotingPower = totalVotingPower.Add(btypes.NewInt(int64(delegation.Amount)))
-				results[vote.Option] += int64(delegation.Amount)
+				totalVotingPower = totalVotingPower.Add(delegation.Amount)
+				results[vote.Option] = results[vote.Option].Add(delegation.Amount)
 				validators[delegation.ValidatorAddr.String()] = true
 			}
 		})
 	}
 
-	params := mapper.GetParams(ctx)
+	params := mapper.GetLevelParams(ctx, proposal.GetProposalLevel())
 	tallyResults = gtypes.TallyResult{
 		Yes:        results[gtypes.OptionYes],
 		Abstain:    results[gtypes.OptionAbstain],
@@ -59,7 +59,7 @@ func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passe
 	}
 
 	// If no one votes, proposal fails
-	if totalVotingPower.Int64() == results[gtypes.OptionAbstain] {
+	if totalVotingPower.Equal(results[gtypes.OptionAbstain]) {
 		return gtypes.REJECT, tallyResults, validators, gtypes.DepositDeductNone
 	}
 
@@ -69,12 +69,12 @@ func Tally(ctx context.Context, mapper *Mapper, proposal gtypes.Proposal) (passe
 	}
 
 	// If more than 1/3 of voters veto, proposal fails
-	if types.NewDec(results[gtypes.OptionNoWithVeto]).Quo(types.NewDecFromInt(totalVotingPower)).GT(params.Veto) {
+	if types.NewDecFromInt(results[gtypes.OptionNoWithVeto]).Quo(types.NewDecFromInt(totalVotingPower)).GT(params.Veto) {
 		return gtypes.REJECTVETO, tallyResults, validators, gtypes.DepositDeductAll
 	}
 
 	// If more than 1/2 of non-abstaining voters vote Yes, proposal passes
-	if types.NewDec(results[gtypes.OptionYes]).Quo(types.NewDecFromInt(totalVotingPower.Sub(btypes.NewInt(results[gtypes.OptionAbstain])))).GT(params.Threshold) {
+	if types.NewDecFromInt(results[gtypes.OptionYes]).Quo(types.NewDecFromInt(totalVotingPower.Sub(results[gtypes.OptionAbstain]))).GT(params.Threshold) {
 		return gtypes.PASS, tallyResults, validators, gtypes.DepositDeductNone
 	}
 

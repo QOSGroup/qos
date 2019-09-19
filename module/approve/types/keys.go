@@ -5,7 +5,7 @@ const (
 )
 
 var (
-	ApproveKey = []byte{0x01}
+	ApproveKey = []byte{0x01} // 预授权存储前缀
 )
 
 func BuildApproveKey(from []byte, to []byte) []byte {

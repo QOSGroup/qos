@@ -50,7 +50,7 @@ func EndBlocker(ctx context.Context) {
 	inactiveIterator := gm.InactiveProposalQueueIterator(ctx.BlockHeader().Time)
 	defer inactiveIterator.Close()
 	for ; inactiveIterator.Valid(); inactiveIterator.Next() {
-		var proposalID uint64
+		var proposalID int64
 
 		gm.GetCodec().UnmarshalBinaryBare(inactiveIterator.Value(), &proposalID)
 		inactiveProposal, ok := gm.GetProposal(proposalID)
@@ -60,6 +60,7 @@ func EndBlocker(ctx context.Context) {
 
 		gm.DeleteProposal(proposalID)
 		gm.DeleteDeposits(ctx, proposalID) // delete any associated deposits (burned)
+		gm.Metrics.ProposalStatus.With(mapper.ProposalIdLabel, fmt.Sprintf("%d", proposalID)).Set(float64(types.StatusNil))
 
 		ctx.EventManager().EmitEvent(
 			btypes.NewEvent(
@@ -73,7 +74,7 @@ func EndBlocker(ctx context.Context) {
 			fmt.Sprintf("proposal %d (%s) didn't meet minimum deposit of %d (had only %d); deleted",
 				inactiveProposal.ProposalID,
 				inactiveProposal.GetTitle(),
-				gm.GetParams(ctx).MinDeposit,
+				gm.GetLevelParams(ctx, inactiveProposal.GetProposalLevel()).MinDeposit,
 				inactiveProposal.TotalDeposit,
 			),
 		)
@@ -83,7 +84,7 @@ func EndBlocker(ctx context.Context) {
 	activeIterator := gm.ActiveProposalQueueIterator(ctx.BlockHeader().Time)
 	defer activeIterator.Close()
 	for ; activeIterator.Valid(); activeIterator.Next() {
-		var proposalID uint64
+		var proposalID int64
 
 		gm.GetCodec().UnmarshalBinaryBare(activeIterator.Value(), &proposalID)
 		activeProposal, ok := gm.GetProposal(proposalID)
@@ -95,10 +96,10 @@ func EndBlocker(ctx context.Context) {
 
 		switch deductOprion {
 		case types.DepositDeductNone:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, false)
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, activeProposal.GetProposalLevel(), false)
 			break
 		case types.DepositDeductPart:
-			gm.RefundDeposits(ctx, activeProposal.ProposalID, true)
+			gm.RefundDeposits(ctx, activeProposal.ProposalID, activeProposal.GetProposalLevel(), true)
 			break
 		case types.DepositDeductAll:
 			gm.DeleteDeposits(ctx, activeProposal.ProposalID)
@@ -125,6 +126,7 @@ func EndBlocker(ctx context.Context) {
 		activeProposal.FinalTallyResult = tallyResults
 		gm.SetProposal(activeProposal)
 		gm.RemoveFromActiveProposalQueue(activeProposal.VotingEndTime, activeProposal.ProposalID)
+		gm.Metrics.ProposalStatus.With(mapper.ProposalIdLabel, fmt.Sprintf("%d", proposalID)).Set(float64(activeProposal.Status))
 
 		logger.Info(
 			fmt.Sprintf(
@@ -141,7 +143,7 @@ func EndBlocker(ctx context.Context) {
 			),
 		)
 
-		penalty := gm.GetParams(ctx).Penalty
+		penalty := gm.GetLevelParams(ctx, activeProposal.GetProposalLevel()).Penalty
 		if penalty.GT(qtypes.ZeroDec()) {
 			sm := stake.GetMapper(ctx)
 			var validators []stake.Validator
@@ -163,7 +165,7 @@ func EndBlocker(ctx context.Context) {
 
 }
 
-func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, proposalID uint64) error {
+func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, proposalID int64) error {
 
 	log := ctx.Logger().With("module", "module/gov")
 
@@ -171,27 +173,27 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 
 	sm := stake.GetMapper(ctx)
 	var delegations []stake.Delegation
-	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.Address, delAddr btypes.Address) {
+	sm.IterateDelegationsValDeleAddr(validator.GetValidatorAddress(), func(valAddr btypes.ValAddress, delAddr btypes.AccAddress) {
 		if delegation, exists := sm.GetDelegationInfo(delAddr, valAddr); exists {
 			delegations = append(delegations, delegation)
 		}
 	})
 
-	totalSlashTokens := int64(0)
+	totalSlashTokens := btypes.ZeroInt()
 	log.Debug("slash delegations", "delegations", delegations)
 
 	for _, delegation := range delegations {
-		bondTokens := int64(delegation.Amount)
+		bondTokens := delegation.Amount
 
 		// 计算惩罚
-		tokenSlashed := qtypes.NewDec(bondTokens).Mul(penalty).TruncateInt64()
-		if tokenSlashed >= bondTokens {
+		tokenSlashed := qtypes.NewDecFromInt(bondTokens).Mul(penalty).TruncateInt()
+		if !tokenSlashed.LT(bondTokens) {
 			tokenSlashed = bondTokens
 		}
-		totalSlashTokens += tokenSlashed
+		totalSlashTokens = totalSlashTokens.Add(tokenSlashed)
 
 		// 修改delegator绑定收益
-		remainTokens := uint64(bondTokens - tokenSlashed)
+		remainTokens := bondTokens.Sub(tokenSlashed)
 		delegation.Amount = remainTokens
 		sm.BeforeDelegationModified(ctx, validator.GetValidatorAddress(), delegation.DelegatorAddr, delegation.Amount)
 
@@ -201,16 +203,16 @@ func slash(ctx context.Context, validator stake.Validator, penalty qtypes.Dec, p
 		log.Debug("slash validator's delegators", "delegator", delegation.DelegatorAddr.String(), "preToken", bondTokens, "slashToken", tokenSlashed, "remainTokens", remainTokens)
 	}
 
-	if uint64(totalSlashTokens) > validator.BondTokens {
+	if totalSlashTokens.GT(validator.BondTokens) {
 		panic("slash token is greater then validator bondTokens")
 	}
 
 	// 更新validator
-	sm.ChangeValidatorBondTokens(validator, validator.BondTokens-uint64(totalSlashTokens))
-	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", validator.BondTokens-uint64(totalSlashTokens))
+	sm.ChangeValidatorBondTokens(validator, validator.BondTokens.Sub(totalSlashTokens))
+	log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", totalSlashTokens, "afterTokens", validator.BondTokens.Sub(totalSlashTokens))
 
 	// slash放入社区费池
-	sm.AfterValidatorSlashed(ctx, uint64(totalSlashTokens))
+	sm.AfterValidatorSlashed(ctx, totalSlashTokens)
 
 	return nil
 }
@@ -239,7 +241,7 @@ func executeParameterChange(ctx context.Context, proposal types.Proposal, logger
 		if !exists {
 			panic(fmt.Sprintf("%s should exists", param.Module))
 		}
-		v, _ := paramSet.Validate(param.Key, param.Value)
+		v, _ := paramSet.ValidateKeyValue(param.Key, param.Value)
 		paramMapper.SetParam(param.Module, param.Key, v)
 	}
 
@@ -260,7 +262,12 @@ func executeTaxUsage(ctx context.Context, proposal types.Proposal, logger log.Lo
 		account = acc.(*qtypes.QOSAccount)
 	}
 	feePool := dm.GetCommunityFeePool()
-	qos := qtypes.NewDec(feePool.Int64()).Mul(proposalContent.Percent).TruncateInt()
+	qos := proposalContent.Percent.MulInt(feePool).TruncateInt()
+
+	if feePool.LT(qos) {
+		return fmt.Errorf("Percent %s may be too bigger. feePoo %s, usage %s", proposalContent.Percent, feePool, qos)
+	}
+
 	account.MustPlusQOS(qos)
 	accountMapper.SetAccount(account)
 

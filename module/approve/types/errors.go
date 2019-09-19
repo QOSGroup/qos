@@ -17,64 +17,30 @@ const (
 	CodeFromAccountCoinsNotEnough btypes.CodeType = 107 // 授权账户余额不足
 )
 
-func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
-	if msg != "" {
-		return msg
-	}
-	return codeToDefaultMsg(code)
+func ErrInvalidInput(msg string) btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInput, msg)
 }
 
-func newError(codeSpace btypes.CodespaceType, code btypes.CodeType, msg string) btypes.Error {
-	msg = msgOrDefaultMsg(msg, code)
-	return btypes.NewError(codeSpace, code, msg)
+func ErrQSCNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeQSCNotExists, "approve contains qsc that not exists")
 }
 
-// NOTE: Don't stringer this, we'll put better messages in later.
-func codeToDefaultMsg(code btypes.CodeType) string {
-	switch code {
-	case CodeInvalidInput:
-		return "invalid approve msg"
-	case CodeQSCNotExists:
-		return "approve contains qsc that not exists"
-	case CodeApproveExists:
-		return "approve exists"
-	case CodeApproveNotExists:
-		return "approve not exists"
-	case CodeFromAccountNotExists:
-		return "from account not exists"
-	case CodeApproveNotEnough:
-		return "approve not enough"
-	case CodeFromAccountCoinsNotEnough:
-		return "from account has no enough coins"
-	default:
-		return btypes.CodeToDefaultMsg(code)
-	}
+func ErrApproveExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeApproveExists, "approve exists")
 }
 
-func ErrInvalidInput(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidInput, msg)
+func ErrApproveNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeApproveNotExists, "approve not exists")
 }
 
-func ErrQSCNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeQSCNotExists, msg)
+func ErrFromAccountNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeFromAccountNotExists, "from account not exists")
 }
 
-func ErrApproveExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeApproveExists, msg)
+func ErrApproveNotEnough() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeApproveNotEnough, "approve not enough")
 }
 
-func ErrApproveNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeApproveNotExists, msg)
-}
-
-func ErrFromAccountNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeFromAccountNotExists, msg)
-}
-
-func ErrApproveNotEnough(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeApproveNotEnough, msg)
-}
-
-func ErrFromAccountCoinsNotEnough(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeFromAccountCoinsNotEnough, msg)
+func ErrFromAccountCoinsNotEnough() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeFromAccountCoinsNotEnough, "from account has no enough coins")
 }

@@ -15,6 +15,7 @@ const (
 	flagSender = "sender"
 )
 
+// 提交数据检查
 func InvariantCheckCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "invariant-check",

@@ -61,7 +61,7 @@ $ curl https://raw.githubusercontent.com/QOSGroup/qos-testnets/master/latest/gen
 修改`config.toml`，找到`seeds`配置项，添加seed节点：
 ```toml
 # Comma separated list of seed nodes to connect to
-seeds = "f1dbd6d0b931fe7f918a81e8248c21e2109caa97@47.105.156.172:26656"
+seeds = "1233b1c5bad7561d7c5a28b4a2149760a8b673d2@47.103.79.28:26656"
 ```
 
 ### 启动
@@ -227,6 +227,9 @@ qoscli tx create-validator --owner Peter --moniker "Peter's node" --tokens 20000
 - `--details`  详细描述信息
 - `--nodeHome` 节点配置文件和数据所在目录，默认：`$HOME/.qosd`
 - `--tokens` 将绑定到验证节点上的Token量，应小于等于操作者持有的QOS量
+- `--commission-rate` 佣金比例，默认值`0.1`
+- `--commission-max-rate` 最高佣金比例，默认值`0.2`
+- `--commission-max-change-rate` 24小时内佣金最大变化范围，默认`0.01`
 
 会输出出类似如下信息：
 ```bash

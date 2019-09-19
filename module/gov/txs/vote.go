@@ -7,16 +7,15 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/gov/mapper"
 	"github.com/QOSGroup/qos/module/gov/types"
-	qtypes "github.com/QOSGroup/qos/types"
 )
 
 type TxVote struct {
-	ProposalID uint64           `json:"proposal_id"` // ID of the proposal
-	Voter      btypes.Address   `json:"voter"`       //  address of the voter
-	Option     types.VoteOption `json:"option"`      //  option from OptionSet chosen by the voter
+	ProposalID int64             `json:"proposal_id"` // ID of the proposal
+	Voter      btypes.AccAddress `json:"voter"`       //  address of the voter
+	Option     types.VoteOption  `json:"option"`      //  option from OptionSet chosen by the voter
 }
 
-func NewTxVote(proposalID uint64, voter btypes.Address, option types.VoteOption) *TxVote {
+func NewTxVote(proposalID int64, voter btypes.AccAddress, option types.VoteOption) *TxVote {
 	return &TxVote{
 		ProposalID: proposalID,
 		Voter:      voter,
@@ -74,22 +73,20 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 	return
 }
 
-func (tx TxVote) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Voter}
+func (tx TxVote) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Voter}
 }
 
 func (tx TxVote) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
-func (tx TxVote) GetGasPayer() btypes.Address {
+func (tx TxVote) GetGasPayer() btypes.AccAddress {
 	return tx.Voter
 }
 
 func (tx TxVote) GetSignData() (ret []byte) {
-	ret = append(ret, qtypes.Uint64ToBigEndian(tx.ProposalID)...)
-	ret = append(ret, tx.Voter...)
-	ret = append(ret, byte(tx.Option))
+	ret = Cdc.MustMarshalBinaryBare(tx)
 
 	return
 }

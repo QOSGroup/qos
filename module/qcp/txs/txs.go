@@ -13,11 +13,11 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 )
 
-const GasForCreateQCP = uint64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.8 QOS
+const GasForCreateQCP = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.8 QOS
 
 // init QCP
 type TxInitQCP struct {
-	Creator btypes.Address    `json:"creator"` //创建账户
+	Creator btypes.AccAddress `json:"creator"` //创建账户
 	QCPCA   *cert.Certificate `json:"ca_qcp"`  //CA信息
 }
 
@@ -48,6 +48,9 @@ func (tx TxInitQCP) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidQCPCA(types.DefaultCodeSpace, "")
 	}
 	rootCA := mapper.GetQCPRootCA(ctx)
+	if rootCA == nil || len(rootCA.Bytes()) == 0 {
+		return types.ErrRootCANotConfigure(types.DefaultCodeSpace, "")
+	}
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QCPCA) {
 		return types.ErrWrongQCPCA(types.DefaultCodeSpace, "")
 	}
@@ -90,15 +93,15 @@ func (tx TxInitQCP) Exec(ctx context.Context) (result btypes.Result, crossTxQcp 
 	return
 }
 
-func (tx TxInitQCP) GetSigner() []btypes.Address {
-	return []btypes.Address{tx.Creator}
+func (tx TxInitQCP) GetSigner() []btypes.AccAddress {
+	return []btypes.AccAddress{tx.Creator}
 }
 
 func (tx TxInitQCP) CalcGas() btypes.BigInt {
-	return btypes.NewInt(int64(GasForCreateQCP))
+	return btypes.NewInt(GasForCreateQCP)
 }
 
-func (tx TxInitQCP) GetGasPayer() btypes.Address {
+func (tx TxInitQCP) GetGasPayer() btypes.AccAddress {
 	return tx.Creator
 }
 

@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
 )
 
@@ -35,7 +35,7 @@ func defaultContext() context.Context {
 	return ctx
 }
 
-func genTestAccount(addr btypes.Address, qos, qsc int64) qtypes.QOSAccount {
+func genTestAccount(addr btypes.AccAddress, qos, qsc int64) qtypes.QOSAccount {
 	return qtypes.QOSAccount{
 		BaseAccount: bacc.BaseAccount{
 			AccountAddress: addr,
@@ -56,8 +56,8 @@ func TestAccountInvariant(t *testing.T) {
 	ctx := defaultContext()
 	approveMapper := GetMapper(ctx)
 
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	addr2 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	addr2 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	account := genTestAccount(addr1, 100, 100)
 	approveMapper.SetAccount(&account)

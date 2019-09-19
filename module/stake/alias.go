@@ -39,11 +39,10 @@ var (
 	MissVoteBlock = types.MissVoteBlock
 	MaxValidator  = types.MaxValidator
 
-	QueryCommands            = client.QueryCommands
-	TxCommands               = client.TxCommands
-	TxCreateValidatorBuilder = client.TxCreateValidatorBuilder
-	BuildCommissionRates     = client.BuildCommissionRates
-	NewCommissionRates       = types.NewCommissionRates
+	QueryCommands        = client.QueryCommands
+	TxCommands           = client.TxCommands
+	BuildCommissionRates = client.BuildCommissionRates
+	NewCommissionRates   = types.NewCommissionRates
 
 	DefaultCommissionRate          = client.DefaultCommissionRate
 	DefaultCommissionMaxRate       = client.DefaultCommissionMaxRate
@@ -67,4 +66,5 @@ type (
 
 	UnbondingDelegationInfo = types.UnbondingDelegationInfo
 	ReDelegationInfo        = types.RedelegationInfo
+	DelegationInfo          = types.DelegationInfo
 )
