@@ -47,7 +47,7 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	account := accountMapper.GetAccount(tx.Depositor).(*qtypes.QOSAccount)
-	if !account.EnoughOfQOS(tx.Amount.Add(tx.CalcGas())) {
+	if !account.EnoughOfQOS(tx.Amount) {
 		return types.ErrInvalidInput("depositor has no enough qos")
 	}
 
