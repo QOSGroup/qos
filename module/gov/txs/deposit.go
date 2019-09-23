@@ -32,8 +32,8 @@ func (tx TxDeposit) ValidateData(ctx context.Context) error {
 		return types.ErrInvalidInput("depositor is empty")
 	}
 
-	if tx.Amount.Equal(btypes.ZeroInt()) {
-		return types.ErrInvalidInput("amount of deposit is zero")
+	if !tx.Amount.GT(btypes.ZeroInt()) {
+		return types.ErrInvalidInput("amount of deposit must be more than zero")
 	}
 
 	proposal, ok := mapper.GetMapper(ctx).GetProposal(tx.ProposalID)

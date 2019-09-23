@@ -37,6 +37,10 @@ func ErrFromAccountNotExists() btypes.Error {
 	return btypes.NewError(DefaultCodeSpace, CodeFromAccountNotExists, "from account not exists")
 }
 
+func ErrFromToAccountSame() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInput, "from and to account should not be the same")
+}
+
 func ErrApproveNotEnough() btypes.Error {
 	return btypes.NewError(DefaultCodeSpace, CodeApproveNotEnough, "approve not enough")
 }
