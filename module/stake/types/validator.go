@@ -42,7 +42,7 @@ type Validator struct {
 	OperatorAddress btypes.ValAddress `json:"validator_address"`
 	Owner           btypes.AccAddress `json:"owner"`
 	ConsPubKey      crypto.PubKey     `json:"consensus_pubkey"`
-	BondTokens      btypes.BigInt     `json:"bond_tokens"` //不能超过int64最大值
+	BondTokens      btypes.BigInt     `json:"bond_tokens"`
 	Description     Description       `json:"description"`
 	Commission      Commission        `json:"commission"`
 

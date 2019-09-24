@@ -14,7 +14,7 @@ var (
 	defaultMaxValidatorCnt             = int64(21)
 	defaultValidatorVotingStatusLen    = int64(10000)
 	defaultValidatorVotingStatusLeast  = int64(7000)
-	defaultValidatorSurvivalSecs       = int64(8 * 60 * 60)
+	defaultValidatorSurvivalSecs       = int64(8 * 60 * 60)                                     // 8 hours
 	defaultDelegatorUnbondReturnHeight = int64(15 * 24 * 60 * 60 / qtypes.DefaultBlockInterval) // 15 days
 	defaultMaxEvidenceAge              = time.Duration(1814400000000000)                        // ~= 21 days
 	defaultSlashFractionDoubleSign     = types.NewDecWithPrec(2, 1)                             // 0.2
@@ -24,7 +24,7 @@ var (
 var (
 	ParamSpace = "stake"
 
-	// keys for stake p
+	// keys for stake parameters
 	KeyMaxValidatorCnt             = []byte("max_validator_cnt")
 	KeyValidatorVotingStatusLen    = []byte("voting_status_len")
 	KeyValidatorVotingStatusLeast  = []byte("voting_status_least")
@@ -36,16 +36,17 @@ var (
 )
 
 type Params struct {
-	MaxValidatorCnt             int64         `json:"max_validator_cnt"`
-	ValidatorVotingStatusLen    int64         `json:"voting_status_len"`
-	ValidatorVotingStatusLeast  int64         `json:"voting_status_least"`
-	ValidatorSurvivalSecs       int64         `json:"survival_secs"`
-	DelegatorUnbondFrozenHeight int64         `json:"unbond_frozen_height"`
-	MaxEvidenceAge              time.Duration `json:"max_evidence_age"`
-	SlashFractionDoubleSign     types.Dec     `json:"slash_fraction_double_sign"`
-	SlashFractionDowntime       types.Dec     `json:"slash_fraction_downtime"`
+	MaxValidatorCnt             int64         `json:"max_validator_cnt"`          // 最多验证节点数量
+	ValidatorVotingStatusLen    int64         `json:"voting_status_len"`          // 投票窗口高度
+	ValidatorVotingStatusLeast  int64         `json:"voting_status_least"`        // 最低投票高度
+	ValidatorSurvivalSecs       int64         `json:"survival_secs"`              // inactive状态验证节点状态保持时间
+	DelegatorUnbondFrozenHeight int64         `json:"unbond_frozen_height"`       // 解委托token锁定高度
+	MaxEvidenceAge              time.Duration `json:"max_evidence_age"`           // 证据数据有效时长
+	SlashFractionDoubleSign     types.Dec     `json:"slash_fraction_double_sign"` // 双签惩罚比例
+	SlashFractionDowntime       types.Dec     `json:"slash_fraction_downtime"`    // 漏块惩罚比例
 }
 
+// 设置单个参数值，针对不同数据类型做不同处理
 func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
 	switch key {
 	case string(KeyMaxValidatorCnt):
@@ -81,6 +82,7 @@ func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
 
 var _ qtypes.ParamSet = (*Params)(nil)
 
+// 返回键值对信息
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	return qtypes.KeyValuePairs{
 		{KeyMaxValidatorCnt, &p.MaxValidatorCnt},
@@ -94,6 +96,7 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
+// 校验单个参数，并返回参数数值
 func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyMaxValidatorCnt),
@@ -124,6 +127,7 @@ func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes
 	}
 }
 
+// 参数模块名称
 func (p *Params) GetParamSpace() string {
 	return ParamSpace
 }
@@ -148,6 +152,7 @@ func DefaultParams() Params {
 	return NewParams(defaultMaxValidatorCnt, defaultValidatorVotingStatusLen, defaultValidatorVotingStatusLeast, defaultValidatorSurvivalSecs, defaultDelegatorUnbondReturnHeight, defaultMaxEvidenceAge, defaultSlashFractionDoubleSign, defaultSlashFractionDowntime)
 }
 
+// 参数校验
 func (p *Params) Validate() btypes.Error {
 	if p.MaxValidatorCnt <= 0 {
 		return params.ErrInvalidParam(fmt.Sprintf("%s must gt 0", KeyMaxValidatorCnt))

@@ -71,27 +71,27 @@ func (c CommissionRates) Validate() btypes.Error {
 	switch {
 	case c.MaxRate.LT(qtypes.ZeroDec()):
 		// max rate cannot be negative
-		return ErrCommissionNegative(DefaultCodeSpace)
+		return ErrCommissionNegative()
 
 	case c.MaxRate.GT(qtypes.OneDec()):
 		// max rate cannot be greater than 1
-		return ErrCommissionHuge(DefaultCodeSpace)
+		return ErrCommissionHuge()
 
 	case c.Rate.LT(qtypes.ZeroDec()):
 		// rate cannot be negative
-		return ErrCommissionNegative(DefaultCodeSpace)
+		return ErrCommissionNegative()
 
 	case c.Rate.GT(c.MaxRate):
 		// rate cannot be greater than the max rate
-		return ErrCommissionGTMaxRate(DefaultCodeSpace)
+		return ErrCommissionGTMaxRate()
 
 	case c.MaxChangeRate.LT(qtypes.ZeroDec()):
 		// change rate cannot be negative
-		return ErrCommissionChangeRateNegative(DefaultCodeSpace)
+		return ErrCommissionChangeRateNegative()
 
 	case c.MaxChangeRate.GT(c.MaxRate):
 		// change rate cannot be greater than the max rate
-		return ErrCommissionChangeRateGTMaxRate(DefaultCodeSpace)
+		return ErrCommissionChangeRateGTMaxRate()
 	}
 
 	return nil
@@ -103,19 +103,19 @@ func (c Commission) ValidateNewRate(newRate qtypes.Dec, blockTime time.Time) bty
 	switch {
 	case blockTime.Sub(c.UpdateTime).Hours() < 24:
 		// new rate cannot be changed more than once within 24 hours
-		return ErrCommissionUpdateTime(DefaultCodeSpace)
+		return ErrCommissionUpdateTime()
 
 	case newRate.LT(qtypes.ZeroDec()):
 		// new rate cannot be negative
-		return ErrCommissionNegative(DefaultCodeSpace)
+		return ErrCommissionNegative()
 
 	case newRate.GT(c.MaxRate):
 		// new rate cannot be greater than the max rate
-		return ErrCommissionGTMaxRate(DefaultCodeSpace)
+		return ErrCommissionGTMaxRate()
 
 	case newRate.Sub(c.Rate).GT(c.MaxChangeRate):
 		// new rate % points change cannot be greater than the max change rate
-		return ErrCommissionGTMaxChangeRate(DefaultCodeSpace)
+		return ErrCommissionGTMaxChangeRate()
 	}
 
 	return nil

@@ -47,7 +47,7 @@ func TestValidatorMapper(t *testing.T) {
 
 	v, exists := validatorMapper.GetValidator(valAddr)
 	require.Equal(t, true, exists)
-	require.Equal(t, uint64(500), v.GetBondTokens())
+	require.Equal(t, btypes.NewInt(500), v.GetBondTokens())
 	require.Equal(t, true, v.IsActive())
 
 	now := time.Now().UTC().Unix()
@@ -112,7 +112,7 @@ func TestVoteInfoMapper(t *testing.T) {
 	sm.SetValidatorVoteInfo(addr, voteInfo)
 
 	v, exists := sm.GetValidatorVoteInfo(addr)
-	require.Equal(t, uint64(1), v.StartHeight)
+	require.Equal(t, int64(1), v.StartHeight)
 
 	sm.DelValidatorVoteInfo(addr)
 

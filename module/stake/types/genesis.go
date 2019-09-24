@@ -8,14 +8,14 @@ import (
 )
 
 type GenesisState struct {
-	GenTxs                 []txs.TxStd                      `json:"gen_txs"`
-	Params                 Params                           `json:"params"`
-	Validators             []Validator                      `json:"validators"`            //validatorKey, validatorByOwnerKey,validatorByInactiveKey,validatorByVotePowerKey
-	ValidatorsVoteInfo     []ValidatorVoteInfoState         `json:"val_votes_info"`        //validatorVoteInfoKey
-	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"`   //validatorVoteInfoInWindowKey
-	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`       //DelegationByDelValKey, DelegationByValDelKey
-	DelegatorsUnbondInfo   []UnbondingDelegationInfo        `json:"delegator_unbond_info"` //UnbondingHeightDelegatorKey
-	ReDelegationsInfo      []RedelegationInfo               `json:"redelegations_info"`    //ReDelegationHeightDelegatorKey
+	GenTxs                 []txs.TxStd                      `json:"gen_txs"`               // signed TxCreateValidator in genesis.json
+	Params                 Params                           `json:"params"`                // stake module parameters
+	Validators             []Validator                      `json:"validators"`            // validatorKey, validatorByOwnerKey,validatorByInactiveKey,validatorByVotePowerKey
+	ValidatorsVoteInfo     []ValidatorVoteInfoState         `json:"val_votes_info"`        // validatorVoteInfoKey
+	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"`   // validatorVoteInfoInWindowKey
+	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`       // DelegationByDelValKey, DelegationByValDelKey
+	DelegatorsUnbondInfo   []UnbondingDelegationInfo        `json:"delegator_unbond_info"` // UnbondingHeightDelegatorKey
+	ReDelegationsInfo      []RedelegationInfo               `json:"redelegations_info"`    // ReDelegationHeightDelegatorKey
 	CurrentValidators      []Validator                      `json:"current_validators"`    // currentValidatorsAddressKey
 }
 
@@ -46,11 +46,13 @@ func DefaultGenesisState() GenesisState {
 }
 
 func ValidateGenesis(data GenesisState) error {
+	// 校验验证节点信息
 	err := validateValidators(data.Validators)
 	if err != nil {
 		return err
 	}
 
+	// 验证参数
 	err = data.Params.Validate()
 	if err != nil {
 		return err
