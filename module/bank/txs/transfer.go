@@ -22,8 +22,8 @@ type TxTransfer struct {
 	Receivers types.TransItems `json:"receivers"` // 接收集合
 }
 
-// 数据校验
-func (tx TxTransfer) ValidateData(ctx context.Context) error {
+// 基础数据校验
+func (tx TxTransfer) ValidateInputs() error {
 	// 发送/接收集合基础数据校验
 	if err := tx.Senders.Valid(); err != nil {
 		return err
@@ -36,6 +36,16 @@ func (tx TxTransfer) ValidateData(ctx context.Context) error {
 	}
 	if len(tx.Senders)+len(tx.Receivers) > MaxTransLen {
 		return types.ErrInvalidInput(fmt.Sprintf("len(senders) + len(receivers) must lte %d", MaxTransLen))
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxTransfer) ValidateData(ctx context.Context) error {
+	// 发送/接收集合基础数据校验
+	if err := tx.ValidateInputs(); err != nil {
+		return err
 	}
 
 	// 发送账户余额校验

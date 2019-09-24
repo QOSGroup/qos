@@ -112,7 +112,12 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					newRate = &rate
 				}
 
-				return txs.NewModifyValidatorTx(owner, validator, desc, newRate), nil
+				mvtx := txs.NewModifyValidatorTx(owner, validator, desc, newRate)
+				err = mvtx.ValidateInputs()
+				if err != nil {
+					return nil, err
+				}
+				return mvtx, nil
 			})
 		},
 	}
@@ -230,7 +235,12 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission, nil), nil
+	tx := txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission, nil)
+	err = tx.ValidateInputs()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
 }
 
 func BuildCommissionRates() (*types.CommissionRates, error) {
