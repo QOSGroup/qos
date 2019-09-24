@@ -8,14 +8,16 @@ import (
 	"time"
 )
 
-// Key for getting a the next available proposalID from the store
 var (
 	KeyDelimiter = []byte(":")
-
-	KeyNextProposalID           = []byte("newProposalID")
-	PrefixActiveProposalQueue   = []byte("activeProposalQueue")
+	// Key for getting a the next available proposalID from the store
+	KeyNextProposalID = []byte("newProposalID")
+	// Prefix key for voting period proposal
+	PrefixActiveProposalQueue = []byte("activeProposalQueue")
+	// Prefix key for deposit period proposal
 	PrefixInactiveProposalQueue = []byte("inactiveProposalQueue")
-	KeySoftUpgradeProposal      = []byte("upgradeProposal")
+	// Key for upgrade flag
+	KeySoftUpgradeProposal = []byte("upgradeProposal")
 )
 
 func KeyProposalSubspace() []byte {

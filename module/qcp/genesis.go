@@ -8,7 +8,7 @@ import (
 
 func InitGenesis(ctx context.Context, data types.GenesisState) {
 	if data.RootPubKey != nil {
-		mapper.SetQCPRootCA(ctx, data.RootPubKey)
+		mapper.SetRootCaPubkey(ctx, data.RootPubKey)
 	}
 
 	qcpMapper := mapper.GetMapper(ctx)
@@ -23,5 +23,5 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 }
 
 func ExportGenesis(ctx context.Context) types.GenesisState {
-	return types.NewGenesisState(mapper.GetQCPRootCA(ctx), mapper.ExportQCPs(ctx))
+	return types.NewGenesisState(mapper.GetRootCaPubkey(ctx), mapper.GetQCPs(ctx))
 }

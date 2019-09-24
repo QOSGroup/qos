@@ -271,7 +271,7 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 
 		txCreateValidator := itxs[0].(*txs.TxCreateValidator)
 		// validate delegator and validator addresses and funds against the accounts in the state
-		ownerAddr := txCreateValidator.Operator
+		ownerAddr := txCreateValidator.Owner
 
 		delegations := txCreateValidator.Delegations
 		if len(delegations) == 0 {

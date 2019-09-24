@@ -1,8 +1,10 @@
 package types
 
 var (
-	EventTypeMint = "mint"
+	// 事件类型
+	EventTypeMint = "mint" // 通胀
 
-	AttributeKeyHeight = "height"
-	AttributeKeyTokens = "tokens"
+	// 事件参数
+	AttributeKeyHeight = "height" // 区块高度
+	AttributeKeyTokens = "tokens" // tokens量
 )

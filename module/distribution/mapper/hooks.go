@@ -10,6 +10,7 @@ import (
 
 var _ stake.Hooks = (*StakingHooks)(nil)
 
+// stake.Hooks接口实现，stake模块mapper初始化时设置StakingHooks
 type StakingHooks struct{}
 
 func NewStakingHooks() *StakingHooks {

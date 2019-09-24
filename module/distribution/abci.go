@@ -240,6 +240,10 @@ func allocateQOS(ctx context.Context, proposerAddr btypes.ConsAddress, tokenToke
 
 	//获取待分配的QOS总量
 	totalAmount := dm.GetPreDistributionQOS()
+	if !totalAmount.GT(btypes.ZeroInt()) {
+		return
+	}
+
 	remainQOS := totalAmount
 	dm.ClearPreDistributionQOS()
 

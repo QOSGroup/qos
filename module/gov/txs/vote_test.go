@@ -17,9 +17,9 @@ func TestTxVote_ValidateData(t *testing.T) {
 	initGenesis(ctx, types.DefaultGenesisState())
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
+	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20000000000), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
-	proposal := NewTxProposal("p1", "p1", addr, btypes.NewInt(1))
+	proposal := NewTxProposal("p1", "p1", addr, btypes.NewInt(9000000000))
 	proposal.Exec(ctx)
 
 	cases := []struct {
@@ -35,7 +35,7 @@ func TestTxVote_ValidateData(t *testing.T) {
 		err := tc.input.ValidateData(ctx)
 		require.Equal(t, tc.valid, err == nil, "tc #%d", tcIndex)
 		if tcIndex == 0 {
-			tx := NewTxDeposit(1, addr, btypes.NewInt(10))
+			tx := NewTxDeposit(1, addr, btypes.NewInt(1000000000))
 			tx.Exec(ctx)
 		}
 	}

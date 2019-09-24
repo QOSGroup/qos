@@ -449,9 +449,6 @@ func ValidateData(ctx context.Context, msg types.Approve) error {
 		return err
 	}
 
-	if msg.From.Equals(msg.To) {
-		return types.ErrFromToAccountSame()
-	}
 	// from账户必须存在
 	from := bank.GetAccount(ctx, msg.From)
 	if from == nil {

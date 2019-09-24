@@ -10,7 +10,7 @@ import (
 
 const (
 	MapperName = "qsc"
-	Key        = "qsc/[%s]"
+	Key        = "qsc/%s"
 	RootCAKey  = "rootca"
 )
 
@@ -42,40 +42,40 @@ func (mapper *Mapper) Copy() mapper.IMapper {
 	return qscMapper
 }
 
-func (mapper *Mapper) SaveQsc(qscInfo *types.Info) {
+// 保存代币信息
+func (mapper *Mapper) SaveQsc(qscInfo *types.QSCInfo) {
 	mapper.Set(BuildQSCKey(qscInfo.Name), qscInfo)
 }
 
+// 是否存在代币信息
 func (mapper *Mapper) Exists(qscName string) bool {
-	return nil != mapper.GetQsc(qscName)
+	_, exists := mapper.GetQsc(qscName)
+	return exists
 }
 
-func (mapper *Mapper) GetQsc(qscName string) (qscinfo *types.Info) {
-	var info types.Info
-	exist := mapper.Get(BuildQSCKey(qscName), &info)
-	if !exist {
-		return nil
-	}
-
-	return &info
+// 根据代币名称获取代币信息
+func (mapper *Mapper) GetQsc(qscName string) (info types.QSCInfo, exists bool) {
+	exists = mapper.Get(BuildQSCKey(qscName), &info)
+	return
 }
 
-// 保存CA
-func (mapper *Mapper) SetQSCRootCA(pubKey crypto.PubKey) {
+// 保存 kepler qsc 根证书公钥
+func (mapper *Mapper) SetRootCAPubkey(pubKey crypto.PubKey) {
 	mapper.BaseMapper.Set([]byte(RootCAKey), pubKey)
 }
 
-// 获取CA
-func (mapper *Mapper) GetQSCRootCA() crypto.PubKey {
+// 获取 kepler qsc 根证书公钥
+func (mapper *Mapper) GetRootCAPubkey() crypto.PubKey {
 	var pubKey crypto.PubKey
 	mapper.BaseMapper.Get([]byte(RootCAKey), &pubKey)
 	return pubKey
 }
 
-func (mapper *Mapper) GetQSCs() []types.Info {
-	qscs := make([]types.Info, 0)
+// 获取所有代币
+func (mapper *Mapper) GetQSCs() []types.QSCInfo {
+	qscs := make([]types.QSCInfo, 0)
 	mapper.Iterator(BuildQSCKeyPrefix(), func(bz []byte) (stop bool) {
-		qsc := types.Info{}
+		qsc := types.QSCInfo{}
 		mapper.DecodeObject(bz, &qsc)
 		qscs = append(qscs, qsc)
 		return false

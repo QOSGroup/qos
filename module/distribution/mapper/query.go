@@ -45,12 +45,12 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	var e error
 
 	if route[0] == types.ValidatorPeriodInfo {
-		operatorAddr, _ := btypes.ValAddressFromBech32(route[1])
-		data, e = queryValidatorPeriodInfo(ctx, operatorAddr)
+		valAddr, _ := btypes.ValAddressFromBech32(route[1])
+		data, e = queryValidatorPeriodInfo(ctx, valAddr)
 	} else if route[0] == types.DelegatorIncomeInfo {
 		deleAddr, _ := btypes.AccAddressFromBech32(route[1])
-		ownerAddr, _ := btypes.ValAddressFromBech32(route[2])
-		data, e = queryDelegatorIncomeInfo(ctx, deleAddr, ownerAddr)
+		valAddr, _ := btypes.ValAddressFromBech32(route[2])
+		data, e = queryDelegatorIncomeInfo(ctx, deleAddr, valAddr)
 	} else {
 		data = nil
 		e = errors.New("not found match path")
@@ -63,18 +63,19 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	return data, nil
 }
 
-func queryValidatorPeriodInfo(ctx context.Context, operatorAddr btypes.ValAddress) ([]byte, error) {
+// 查询验证节点收益信息
+func queryValidatorPeriodInfo(ctx context.Context, valAddr btypes.ValAddress) ([]byte, error) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 
-	validator, exists := sm.GetValidator(operatorAddr)
+	validator, exists := sm.GetValidator(valAddr)
 	if !exists {
-		return nil, fmt.Errorf("Validator not exists. validator-address: %s", operatorAddr.String())
+		return nil, fmt.Errorf("validator not exists. validator-address: %s", valAddr.String())
 	}
 
 	vcps, exists := dm.GetValidatorCurrentPeriodSummary(validator.GetValidatorAddress())
 	if !exists {
-		return nil, fmt.Errorf("Validator current period not exists. validator-address: %s", operatorAddr.String())
+		return nil, fmt.Errorf("validator current period not exists. validator-address: %s", valAddr.String())
 	}
 
 	result := ValidatorPeriodInfoQueryResult{
@@ -94,18 +95,19 @@ func queryValidatorPeriodInfo(ctx context.Context, operatorAddr btypes.ValAddres
 	return dm.GetCodec().MarshalJSON(result)
 }
 
-func queryDelegatorIncomeInfo(ctx context.Context, delegator btypes.AccAddress, operatorAddr btypes.ValAddress) ([]byte, error) {
+// 查询委托收益信息
+func queryDelegatorIncomeInfo(ctx context.Context, delegator btypes.AccAddress, valAddr btypes.ValAddress) ([]byte, error) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 
-	validator, exists := sm.GetValidator(operatorAddr)
+	validator, exists := sm.GetValidator(valAddr)
 	if !exists {
-		return nil, fmt.Errorf("Validator not exists. validator-address: %s", operatorAddr.String())
+		return nil, fmt.Errorf("validator not exists. validator-address: %s", valAddr.String())
 	}
 
 	info, exists := dm.GetDelegatorEarningStartInfo(validator.GetValidatorAddress(), delegator)
 	if !exists {
-		return nil, fmt.Errorf("Delegator income info not exists. delegator: %s , validator-address: %s", delegator.String(), operatorAddr.String())
+		return nil, fmt.Errorf("delegator income info not exists. delegator: %s , validator-address: %s", delegator.String(), valAddr.String())
 	}
 
 	result := DelegatorIncomeInfoQueryResult{

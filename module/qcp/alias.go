@@ -16,7 +16,7 @@ var (
 	DefaultGenesis  = types.DefaultGenesisState
 	ValidateGenesis = types.ValidateGenesis
 
-	MapperName = qcp.QcpMapperName
+	MapperName = qcp.MapperName
 	GetMapper  = mapper.GetMapper
 	NewMapper  = qcp.NewQcpMapper
 

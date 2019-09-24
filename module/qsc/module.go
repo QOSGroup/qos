@@ -61,7 +61,9 @@ func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
 	ir.RegisterInvarRoute(ModuleName, "amount", mapper.QSCsInvariant(ModuleName))
 }
 
-func (am AppModule) RegisterQuerier(types.QueryRegistry) {}
+func (am AppModule) RegisterQuerier(qr types.QueryRegistry) {
+	qr.RegisterQueryRoute(ModuleName, mapper.Query)
+}
 
 func (am AppModule) BeginBlock(context.Context, abci.RequestBeginBlock) {}
 

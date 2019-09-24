@@ -25,5 +25,5 @@ var (
 
 type (
 	GenesisState = types.GenesisState
-	Info         = types.Info
+	Info         = types.QSCInfo
 )

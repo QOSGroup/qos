@@ -12,6 +12,7 @@ import (
 	"github.com/QOSGroup/qos/module/stake/types"
 )
 
+// 保存验证节点最新信息
 func (mapper *Mapper) CreateValidator(validator types.Validator) {
 	valAddr := validator.GetValidatorAddress()
 	consAddr := validator.ConsAddress()
@@ -21,6 +22,7 @@ func (mapper *Mapper) CreateValidator(validator types.Validator) {
 
 }
 
+// 更新验证节点绑定tokens，按原tokens从按voting power排序的队列中删除，保存最新验证节点信息
 func (mapper *Mapper) ChangeValidatorBondTokens(validator types.Validator, updatedTokens btypes.BigInt) {
 	valAddr := validator.GetValidatorAddress()
 	mapper.Del(types.BuildValidatorByVotePower(validator.ConsensusPower(), valAddr))
@@ -28,20 +30,24 @@ func (mapper *Mapper) ChangeValidatorBondTokens(validator types.Validator, updat
 	mapper.CreateValidator(validator)
 }
 
+// 验证节点是否存在，根据验证节点地址查询
 func (mapper *Mapper) Exists(valAddress btypes.ValAddress) bool {
 	return mapper.Get(types.BuildValidatorKey(valAddress), &(types.Validator{}))
 }
 
+// 验证节点是否存在，根据共识地址查询
 func (mapper *Mapper) ExistsWithConsensusAddr(consensusAddr btypes.ConsAddress) bool {
 	return mapper.Get(types.BuildValidatorByConsensusKey(consensusAddr), &(btypes.ValAddress{}))
 }
 
+// 根据验证节点地址获取验证节点
 func (mapper *Mapper) GetValidator(valAddress btypes.ValAddress) (validator types.Validator, exists bool) {
 	validatorKey := types.BuildValidatorKey(valAddress)
 	exists = mapper.Get(validatorKey, &validator)
 	return
 }
 
+// 更新验证节点状态， active -> inactive
 func (mapper *Mapper) MakeValidatorInactive(valAddress btypes.ValAddress, inactiveHeight int64, inactiveTime time.Time, code types.InactiveCode) {
 	validator, exists := mapper.GetValidator(valAddress)
 	if !exists {
@@ -60,6 +66,7 @@ func (mapper *Mapper) MakeValidatorInactive(valAddress btypes.ValAddress, inacti
 	mapper.Del(validatorVotePowerKey)
 }
 
+// 删除验证节点信息
 func (mapper *Mapper) KickValidator(valAddress btypes.ValAddress) (validator types.Validator, ok bool) {
 	validator, exists := mapper.GetValidator(valAddress)
 	if !exists {
@@ -73,6 +80,7 @@ func (mapper *Mapper) KickValidator(valAddress btypes.ValAddress) (validator typ
 	return validator, true
 }
 
+// 遍历inactive状态验证节点
 func (mapper *Mapper) IteratorInactiveValidator(fromSecond, endSecond int64) store.Iterator {
 
 	secBytes := make([]byte, 8)
@@ -85,10 +93,12 @@ func (mapper *Mapper) IteratorInactiveValidator(fromSecond, endSecond int64) sto
 	return mapper.GetStore().Iterator(startKey, endKey)
 }
 
+// 遍历inactive状态验证节点
 func (mapper *Mapper) IteratorInactiveValidatorByTime(fromTime, endTime time.Time) store.Iterator {
 	return mapper.IteratorInactiveValidator(fromTime.UTC().Unix(), endTime.UTC().Unix())
 }
 
+// 遍历active状态验证节点， 按voting power排序
 func (mapper *Mapper) IteratorValidatorByVoterPower(ascending bool) store.Iterator {
 	if ascending {
 		return btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorByVotePowerKey())
@@ -96,6 +106,7 @@ func (mapper *Mapper) IteratorValidatorByVoterPower(ascending bool) store.Iterat
 	return btypes.KVStoreReversePrefixIterator(mapper.GetStore(), types.GetValidatorByVotePowerKey())
 }
 
+// 获取当前验证节点列表
 func (mapper *Mapper) GetActiveValidatorSet(ascending bool) (validators []btypes.ValAddress) {
 	iterator := mapper.IteratorValidatorByVoterPower(ascending)
 	defer iterator.Close()
@@ -111,6 +122,7 @@ func (mapper *Mapper) GetActiveValidatorSet(ascending bool) (validators []btypes
 	return validators
 }
 
+// 更新验证节点状态， inactive -> active
 func (mapper *Mapper) MakeValidatorActive(valAddress btypes.ValAddress, addTokens btypes.BigInt) {
 	validator, exists := mapper.GetValidator(valAddress)
 	if !exists {
@@ -127,6 +139,7 @@ func (mapper *Mapper) MakeValidatorActive(valAddress btypes.ValAddress, addToken
 	mapper.Set(types.BuildValidatorByVotePower(validator.ConsensusPower(), validator.GetValidatorAddress()), 1)
 }
 
+// 根据共识地址获取验证节点信息
 func (mapper *Mapper) GetValidatorByConsensusAddr(consensusAddr btypes.ConsAddress) (validator types.Validator, exists bool) {
 	var valAddress btypes.ValAddress
 	exists = mapper.Get(types.BuildValidatorByConsensusKey(consensusAddr), &valAddress)
@@ -137,18 +150,19 @@ func (mapper *Mapper) GetValidatorByConsensusAddr(consensusAddr btypes.ConsAddre
 	return mapper.GetValidator(valAddress)
 }
 
+// 设置参数
 func (mapper *Mapper) SetParams(ctx context.Context, p types.Params) {
 	params.GetMapper(ctx).SetParamSet(&p)
 }
 
+// 获取参数
 func (mapper *Mapper) GetParams(ctx context.Context) types.Params {
 	p := types.Params{}
 	params.GetMapper(ctx).GetParamSet(&p)
 	return p
 }
 
-//-------------------------genesis export
-
+// 遍历验证节点
 func (mapper *Mapper) IterateValidators(fn func(types.Validator)) {
 
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildValidatorPrefixKey())

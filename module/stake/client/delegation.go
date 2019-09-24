@@ -55,7 +55,7 @@ func CreateDelegationCommand(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagValidator, "", "keybase name or account of validator address")
 	cmd.Flags().String(flagBondTokens, "0", "amount of QOS to delegate")
 	cmd.Flags().Bool(flagCompound, false, " whether the income is calculated as compound interest")
 
@@ -93,7 +93,7 @@ func CreateModifyCompoundCommand(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagValidator, "", "keybase name or account of validator address")
 	cmd.Flags().Bool(flagCompound, false, " whether the income is calculated as compound interest")
 
 	cmd.MarkFlagRequired(flagDelegator)
@@ -137,14 +137,14 @@ func CreateUnbondDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					Delegator:     delegator,
 					ValidatorAddr: validatorAddr,
 					UnbondAmount:  tokens,
-					IsUnbondAll:   isUnbondAll,
+					UnbondAll:     isUnbondAll,
 				}, nil
 			})
 		},
 	}
 
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
-	cmd.Flags().String(flagValidator, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagValidator, "", "keybase name or account of validator address")
 	cmd.Flags().String(flagBondTokens, "0", "amount of QOS to unbond")
 	cmd.Flags().Bool(flagAll, false, "whether unbond all QOS amount. override --tokens if true")
 
@@ -195,16 +195,16 @@ func CreateReDelegationCommand(cdc *amino.Codec) *cobra.Command {
 					FromValidatorAddr: fromValidatorAddr,
 					ToValidatorAddr:   toValidatorAddr,
 					Amount:            tokens,
-					IsCompound:        viper.GetBool(flagCompound),
-					IsRedelegateAll:   all,
+					Compound:          viper.GetBool(flagCompound),
+					RedelegateAll:     all,
 				}, nil
 			})
 		},
 	}
 
 	cmd.Flags().String(flagDelegator, "", "delegator account address")
-	cmd.Flags().String(flagFromValidator, "", "keystore name or account of validator address")
-	cmd.Flags().String(flagToValidator, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagFromValidator, "", "keybase name or account of validator address")
+	cmd.Flags().String(flagToValidator, "", "keybase name or account of validator address")
 	cmd.Flags().String(flagBondTokens, "0", "amount of QOS to redelegate")
 	cmd.Flags().Bool(flagAll, false, "whether redelegate all QOS amount. override --tokens if true")
 	cmd.Flags().Bool(flagCompound, false, "whether the income is calculated as compound interest")

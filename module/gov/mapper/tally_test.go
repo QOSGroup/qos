@@ -40,7 +40,7 @@ func TestTally(t *testing.T) {
 			BondTokens:      btypes.NewInt(1000),
 			Status:          stake.Active,
 			MinPeriod:       int64(0),
-			BondHeight:      int64(ctx.BlockHeight()),
+			BondHeight:      ctx.BlockHeight(),
 		}
 
 		delegationInfo := stake.NewDelegationInfo(validator.Owner, validator.GetValidatorAddress(), validator.BondTokens, false)

@@ -15,8 +15,8 @@ import (
 )
 
 const (
-	flagCreator = "creator"
-	flagPathqcp = "qcp.crt"
+	flagCreator    = "creator"
+	flagQcpCrtFile = "qcp.crt"
 )
 
 func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
@@ -25,7 +25,7 @@ func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
 		Short: "init qcp",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (txs.ITx, error) {
-				pathqcp := viper.GetString(flagPathqcp)
+				crtFile := viper.GetString(flagQcpCrtFile)
 
 				creatorAddr, err := qcliacc.GetAddrFromFlag(ctx, flagCreator)
 				if err != nil {
@@ -33,7 +33,7 @@ func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				var crt = cert.Certificate{}
-				err = cdc.UnmarshalJSON(common.MustReadFile(pathqcp), &crt)
+				err = cdc.UnmarshalJSON(common.MustReadFile(crtFile), &crt)
 				if err != nil {
 					return nil, err
 				}
@@ -49,9 +49,9 @@ func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(flagCreator, "", "address or name of creator")
-	cmd.Flags().String(flagPathqcp, "", "path of CA(QCP)")
+	cmd.Flags().String(flagQcpCrtFile, "", "path of CA(QCP)")
 	cmd.MarkFlagRequired(flagCreator)
-	cmd.MarkFlagRequired(flagPathqcp)
+	cmd.MarkFlagRequired(flagQcpCrtFile)
 
 	return cmd
 }

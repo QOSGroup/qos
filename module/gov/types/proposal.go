@@ -153,10 +153,10 @@ func EmptyTallyResult() TallyResult {
 }
 
 func (tr TallyResult) Equals(comp TallyResult) bool {
-	return tr.Yes == comp.Yes &&
-		tr.Abstain == comp.Abstain &&
-		tr.No == comp.No &&
-		tr.NoWithVeto == comp.NoWithVeto
+	return tr.Yes.Equal(comp.Yes) &&
+		tr.Abstain.Equal(comp.Abstain) &&
+		tr.No.Equal(comp.No) &&
+		tr.NoWithVeto.Equal(comp.NoWithVeto)
 }
 
 func (tr TallyResult) String() string {
@@ -258,9 +258,9 @@ var ProposalLevels = []ProposalLevel{LevelNormal, LevelImportant, LevelCritical}
 
 // Text Proposal
 type TextProposal struct {
-	Title       string        `json:"title"`       //  Title of the proposal
-	Description string        `json:"description"` //  Description of the proposal
-	Deposit     btypes.BigInt `json:"deposit"`     //	Deposit of the proposal
+	Title       string        `json:"title"`       // Title of the proposal
+	Description string        `json:"description"` // Description of the proposal
+	Deposit     btypes.BigInt `json:"deposit"`     // Deposit of the proposal
 }
 
 func NewTextProposal(title, description string, deposit btypes.BigInt) TextProposal {
@@ -335,7 +335,7 @@ func (tp ParameterProposal) GetDescription() string        { return tp.Descripti
 func (tp ParameterProposal) GetDeposit() btypes.BigInt     { return tp.Deposit }
 func (tp ParameterProposal) GetProposalType() ProposalType { return ProposalTypeParameterChange }
 
-// Add Inflation Phrase Proposal
+// Modify Inflation Phrases Proposal
 type ModifyInflationProposal struct {
 	TextProposal
 	TotalAmount      btypes.BigInt         `json:"total_amount"`
@@ -384,6 +384,7 @@ func (param Param) String() string {
   Value:      %s`, param.Module, param.Key, param.Value)
 }
 
+// Software upgrade proposal
 type SoftwareUpgradeProposal struct {
 	TextProposal
 	Version       string `json:"version"`
