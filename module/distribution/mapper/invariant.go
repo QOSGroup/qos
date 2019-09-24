@@ -8,10 +8,12 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
-func FeepoolInvariant(module string) qtypes.Invariant {
+// 社区费池数据检查
+func FeePoolInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		coins := btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, GetMapper(ctx).GetCommunityFeePool())}
 		var broken bool
+		// 非负值
 		if !coins.IsNotNegative() {
 			broken = true
 		}
@@ -21,10 +23,12 @@ func FeepoolInvariant(module string) qtypes.Invariant {
 	}
 }
 
+// 待分发奖励检查
 func PreDistributionInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		coins := btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, GetMapper(ctx).GetPreDistributionQOS())}
 		var broken bool
+		// 非负值
 		if !coins.IsNotNegative() {
 			broken = true
 		}
@@ -34,12 +38,14 @@ func PreDistributionInvariant(module string) qtypes.Invariant {
 	}
 }
 
+// 验证节点共享费池检查
 func ValidatorFeePoolInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		var msg string
 		coins := btypes.BaseCoins{}
 		var count int
 
+		// 非负值
 		GetMapper(ctx).IteratorValidatorEcoFeePools(func(validatorAddr btypes.ValAddress, pool types.ValidatorEcoFeePool) {
 			if pool.ProposerTotalRewardFee.LT(btypes.ZeroInt()) {
 				count++

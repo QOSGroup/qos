@@ -168,6 +168,7 @@ func (mapper *Mapper) ModifyDelegatorTokens(validator stake.Validator, deleAddr 
 	return nil
 }
 
+// 获取validator委托人的最小计费点周期
 func (mapper *Mapper) GetValidatorMinPeriodFromDelegators(valAddr btypes.ValAddress) int64 {
 	prefixKey := append(types.GetDelegatorEarningsStartInfoPrefixKey(), valAddr...)
 

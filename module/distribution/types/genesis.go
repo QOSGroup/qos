@@ -6,15 +6,15 @@ import (
 )
 
 type GenesisState struct {
-	CommunityFeePool         btypes.BigInt                 `json:"community_fee_pool"`
-	LastBlockProposer        btypes.ConsAddress            `json:"last_block_proposer"`
-	PreDistributionQOSAmount btypes.BigInt                 `json:"pre_distribute_amount"`
-	ValidatorHistoryPeriods  []ValidatorHistoryPeriodState `json:"validators_history_period"`
-	ValidatorCurrentPeriods  []ValidatorCurrentPeriodState `json:"validators_current_period"`
-	DelegatorEarningInfos    []DelegatorEarningStartState  `json:"delegator_earning_info"`
-	DelegatorIncomeHeights   []DelegatorIncomeHeightState  `json:"delegator_income_height"`
-	ValidatorEcoFeePools     []ValidatorEcoFeePoolState    `json:"validator_eco_fee_pools"`
-	Params                   Params                        `json:"params"`
+	CommunityFeePool         btypes.BigInt                 `json:"community_fee_pool"`        // 社区费池
+	LastBlockProposer        btypes.ConsAddress            `json:"last_block_proposer"`       // 最新区块提议验证节点共识地址
+	PreDistributionQOSAmount btypes.BigInt                 `json:"pre_distribute_amount"`     // 代分发奖励
+	ValidatorHistoryPeriods  []ValidatorHistoryPeriodState `json:"validators_history_period"` // 验证节点收益历史节点信息
+	ValidatorCurrentPeriods  []ValidatorCurrentPeriodState `json:"validators_current_period"` // 验证节点当前收益信息
+	DelegatorEarningInfos    []DelegatorEarningStartState  `json:"delegator_earning_info"`    // 委托收益信息
+	DelegatorIncomeHeights   []DelegatorIncomeHeightState  `json:"delegator_income_height"`   // 委托收益发放高度
+	ValidatorEcoFeePools     []ValidatorEcoFeePoolState    `json:"validator_eco_fee_pools"`   // 验证节点委托共享费池
+	Params                   Params                        `json:"params"`                    // 参数
 }
 
 func NewGenesisState(communityFeePool btypes.BigInt,

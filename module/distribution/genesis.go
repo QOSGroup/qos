@@ -13,42 +13,51 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 
 	distributionMapper := mapper.GetMapper(ctx)
 
+	// 初始化社区费池
 	feePool := data.CommunityFeePool
 	distributionMapper.SetCommunityFeePool(feePool.NilToZero())
 
+	// 最新块提议验证节点共识地址
 	proposer := data.LastBlockProposer
 	if !proposer.Empty() {
 		distributionMapper.SetLastBlockProposer(proposer)
 	}
 
+	// 待分配奖励
 	distributionMapper.SetPreDistributionQOS(data.PreDistributionQOSAmount.NilToZero())
 
+	// 初始化参数
 	if err := data.Params.Validate(); err == nil {
 		distributionMapper.SetParams(ctx, data.Params)
 	} else {
 		panic(err)
 	}
 
+	// 验证节点历史节点数据
 	for _, validatorHistoryPeriodState := range data.ValidatorHistoryPeriods {
 		key := types.BuildValidatorHistoryPeriodSummaryKey(validatorHistoryPeriodState.OperatorAddress, validatorHistoryPeriodState.Period)
 		distributionMapper.Set(key, validatorHistoryPeriodState.Summary)
 	}
 
+	// 验证节点当前收益信息
 	for _, validatorCurrentPeriodState := range data.ValidatorCurrentPeriods {
 		key := types.BuildValidatorCurrentPeriodSummaryKey(validatorCurrentPeriodState.OperatorAddress)
 		distributionMapper.Set(key, validatorCurrentPeriodState.CurrentPeriodSummary)
 	}
 
+	// 委托收益信息
 	for _, delegatorEarningInfoState := range data.DelegatorEarningInfos {
 		key := types.BuildDelegatorEarningStartInfoKey(delegatorEarningInfoState.OperatorAddress, delegatorEarningInfoState.DeleAddress)
 		distributionMapper.Set(key, delegatorEarningInfoState.DelegatorEarningsStartInfo)
 	}
 
+	// 委托收益发放高度信息
 	for _, delegatorIncomeHeightState := range data.DelegatorIncomeHeights {
 		key := types.BuildDelegatorPeriodIncomeKey(delegatorIncomeHeightState.OperatorAddress, delegatorIncomeHeightState.DeleAddress, delegatorIncomeHeightState.Height)
 		distributionMapper.Set(key, true)
 	}
 
+	// 验证节点委托共享费池
 	for _, validatorFeePoolState := range data.ValidatorEcoFeePools {
 		key := types.BuildValidatorEcoFeePoolKey(validatorFeePoolState.OperatorAddress)
 		distributionMapper.Set(key, validatorFeePoolState.EcoFeePool)
