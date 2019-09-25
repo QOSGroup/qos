@@ -27,7 +27,7 @@ var _ txs.ITx = (*TxVote)(nil)
 
 func (tx TxVote) ValidateData(ctx context.Context) error {
 	if len(tx.Voter) == 0 {
-		return types.ErrInvalidInput("depositor is empty")
+		return types.ErrInvalidInput("voter is empty")
 	}
 
 	if !types.ValidVoteOption(tx.Option) {
