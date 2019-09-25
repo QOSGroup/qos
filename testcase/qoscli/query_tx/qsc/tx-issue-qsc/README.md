@@ -1,34 +1,35 @@
 # Test Cases
 
-- [缺失必选参数`--receivers`和`--senders`](./TestCase01.md)
-- [指定的`--receivers`或`--senders`在密钥库中不存在](./TestCase02.md)
-- [指定密钥库中已存在的`--receivers`或`--senders`进行转账](./TestCase03.md)
+- [缺失必须参数`--amount`，`--banker`，`--qsc-name`](TestCase01.md)
+- [参数`--amount`，`--banker`，`--qsc-name`不合法](TestCase02.md)
+- [正常发放QSC联盟币](TestCase03.md)
 
 # Description
->     Transfer QOS and QSCs.
+>     issue qsc.
 
->     转账QOS和QSC。
+>     发放QSC联盟币。
 
-支持一次转账中包含多币种，多账户.
+针对使用包含`Banker`公钥创建的联盟币，可向`Banker`地址发放（增发）对应联盟币。
 
 # Example
 
-> 下面实例中假设:
-> - `Arya` 地址为: `address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy`
-> - `Sansa` 地址为: `address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh`
+向联盟币AOE `Banker`中发放（增发）10000AOE：
 
-`Arya`向地址`address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh`转账1个QOS，1个AOE
 ```bash
-$ qoscli tx transfer --senders Arya,1QOS,1AOE --receivers address1t7eadnyl8g6ct9xyrasvz4rdztvkeqpc0hzujh,1QOS,1AOE
-Password to sign with 'Arya':<输入密码>
-{"check_tx":{},"deliver_tx":{},"hash":"21ECB72C8F51B3BD8E3CB9D59765003B9D78BE75","height":"300"}
+$ qoscli tx issue-qsc --qsc-name AOE --banker ATM --amount 10000
+Password to sign with 'ATM':<输入ATM本地密钥库密码>
 ```
 
-转账成功可通过[账户查询](#账户（account）)查看最新账户状态，交易执行可能会有一定时间的延迟。
+执行结果：
+```bash
+{"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"223"}
+```
+
+可通过[账户查询](#账户（account）)查看`ATM`账户所持有AOE数量。
 
 # Usage
 ```
-  qoscli tx transfer [flags]
+  qoscli tx issue-qsc [flags]
 ```
 
 # Available Commands
@@ -55,9 +56,9 @@ Password to sign with 'Arya':<输入密码>
 | -        | `--qcp-signer`      | ✖        | string     | -                         | -           | QCP模式Flag标志: QCP Tx签名者key名称                            |
 | -        | `--qcp-txindex`     | ✖        | int        | -                         | -           | QCP模式Flag标志: 原始Tx索引                                    |
 | -        | `--trust-node`      | ✖        | -          | -                         | -           | 是否信任连接的完整节点（不验证其响应证据）                                  |
-| -        | `--receivers`       | ✔        | string     | -                         | -           | (主要参数)接收集合，账户传keystore name 或 address，多个账户半角分号分隔       |
-| -        | `--senders`         | ✔        | string     | -                         | -           | (主要参数)发送集合，账户传keystore name 或 address，多个账户半角分号分隔       |
-
+| -        | `--amount`          | ✔        | int        | -                         | -           | (主要参数)发送给银行`banker`的Coin数量                             |
+| -        | `--banker`          | ✔        | string     | -                         | -           | (主要参数)银行`banker`账户本地密钥库名字或账户地址                         |
+| -        | `--qsc-name`        | ✔        | string     | -                         | -           | (主要参数)QSC名称                                            |
 
 # Global Flags
 

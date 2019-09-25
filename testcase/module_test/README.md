@@ -14,13 +14,13 @@
 
 ## 待测模块
 
-- [x] [Keys](./keys.md) 本地密钥库
-- [x] [Approve](./approve.md) 预授权
-- [ ] [Delegation](./delegation.md) 委托
-- [ ] [Governance](./governance.md) 提案治理
+- [x] [Keys](keys.md) 本地密钥库
+- [x] [Approve](approve.md) 预授权
+- [ ] [Delegation](delegation.md) 委托
+- [ ] [Governance](governance.md) 提案治理
 - [ ] [Guardian](./guardian.md) 特权账户
 - [ ] [QCP-QSC-Transfer](./qcp_qsc_transfer.md) QCP联盟链，QSC联盟币，以及QOS/QSCs转账
-- [ ] [Validator](./validator.md) 验证人节点
+- [ ] [Validator](validator.md) 验证人节点
 
 ## 测试过程中涉及的密钥(keys)
 

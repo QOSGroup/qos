@@ -25,7 +25,7 @@
 
 #### 测试路径图
 
-![key模块测试路径](./imgs/keys_test_path.png)
+![key模块测试路径](imgs/keys_test_path.png)
 
 #### 测试路径
 

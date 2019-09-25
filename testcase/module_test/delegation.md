@@ -65,7 +65,7 @@ Password to sign with 'bob':<输入密码>
 
 #### 测试路径图
 
-![approve模块测试路径](./imgs/delegation_test_path.png)
+![approve模块测试路径](imgs/delegation_test_path.png)
 
 #### 测试路径
 

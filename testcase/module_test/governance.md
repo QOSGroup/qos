@@ -220,7 +220,7 @@
 
 #### 测试路径图
 
-![governance模块测试路径](./imgs/governance_test_path.png)
+![governance模块测试路径](imgs/governance_test_path.png)
 
 #### 测试路径
 

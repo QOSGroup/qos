@@ -28,7 +28,7 @@
 
 #### 测试路径图
 
-![validator模块测试路径](./imgs/validator_test_path.png)
+![validator模块测试路径](imgs/validator_test_path.png)
 
 #### 测试路径
 

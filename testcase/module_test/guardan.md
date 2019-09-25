@@ -72,7 +72,7 @@ $ ./qoscli query guardians --indent
 
 #### 测试路径图
 
-![guardian模块测试路径](./imgs/guardian_test_path.png)
+![guardian模块测试路径](imgs/guardian_test_path.png)
 
 #### 测试路径
 

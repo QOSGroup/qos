@@ -1,9 +1,9 @@
 # Test Cases
 
-- [缺失必须参数`--coins`，`--from`，`--to`](./TestCase01.md)
-- [参数`--coins`不合法](./TestCase02.md)
-- [参数`--from`，`--to`不合法](./TestCase03.md)
-- [正常使用预授权](./TestCase04.md)
+- [缺失必须参数`--coins`，`--from`，`--to`](TestCase01.md)
+- [参数`--coins`不合法](TestCase02.md)
+- [参数`--from`，`--to`不合法](TestCase03.md)
+- [正常使用预授权](TestCase04.md)
 
 # Description
 >     Use approve.
