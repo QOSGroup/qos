@@ -11,7 +11,7 @@ import (
 type InflationPhrase struct {
 	EndTime       time.Time    `json:"end_time"`       // 结束时间
 	TotalAmount   types.BigInt `json:"total_amount"`   // 通胀总量
-	AppliedAmount types.BigInt `json:"applied_amount"` // 发行总量
+	AppliedAmount types.BigInt `json:"applied_amount"` // 已发行总量
 }
 
 // 两通胀阶段是否相等：通胀时间，通胀总量和已发行均相等

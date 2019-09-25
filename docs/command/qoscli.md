@@ -146,7 +146,8 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [预授权](#查询预授权)
 * `qoscli query qcp`                    [跨链相关信息查询](#查询联盟链)
-* `qoscli query qsc`                    [联盟币信息查询](#查询联盟币)
+* `qoscli query qsc`                    [代币查询](#查询代币)
+* `qoscli query qscs`                   [所有代币查询](#查询所有代币)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
 * `qoscli query validator`              [验证节点查询](#查询验证节点)
 * `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
@@ -167,7 +168,9 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query deposits`               [抵押列表](#抵押列表)
 * `qoscli query tally`                  [投票统计](#投票统计)
 * `qoscli query params`                 [参数查询](#参数查询)
-* `qoscli query inflation-phrases`      [通胀查询](#通胀查询)
+* `qoscli query inflation-phrases`      [通胀规则查询](#通胀规则查询)
+* `qoscli query total-inflation  `      [发行总量查询](#发行总量查询)
+* `qoscli query total-applied`          [流通总量查询](#流通总量查询)
 * `qoscli query guardian`               [系统账户查询](#系统账户查询)
 * `qoscli query guardians`              [系统账户列表](#系统账户列表)
 * `qoscli query status`                 [查询节点状态](#状态（status）)
@@ -545,7 +548,7 @@ $ qoscli query tx f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa123
 根据`approve-from`=`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`查询预授权交易信息：
 
 ```bash
-$ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y'" --indent
+$ qoscli query txs --tags "create-approve.approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y'" --indent
 ```
 输出示例：
 
@@ -638,7 +641,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
 * `qoscli tx halt-network`     [停止网络](#停止网络)
 
-主要分为[Bank](#bank)，[预授权](#预授权)，[代币](#代币)，[联盟链](#联盟链)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
+主要分为[Bank](#bank)，[预授权](#预授权)，[代币](#代币)，[联盟链](#联盟链)，[验证节点](#验证节点（validator）)，[治理](#治理)，[系统账户](#系统账户)这几大类。
 
 ### Bank
 
@@ -1437,7 +1440,7 @@ $ qoscli tx redelegate --from-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685v
 $ qoscli query redelegations Sansa
 ```
 
-### 治理（governance）
+### 治理
 
 * `qoscli tx submit-proposal`  [提交提议](#提交提议)
 * `qoscli query proposal`      [提议查询](#提议查询)
@@ -1479,10 +1482,10 @@ $ qoscli query redelegations Sansa
 
 - `--params`            参数列表，格式：`module:key_name:value,module:key_name:value`，如：gov:min_deposit:10000
 
-`AddInflationPhrase`类型提议特有参数：
+`ModifyInflation`类型提议特有参数：
 
-- `end-time`            通胀结束时间，格式：'yyyy-MM-dd'
-- `total-amount`        发行量
+- `inflation-phrases`   完整通胀规则，例如'[{"end_time":"2023-10-20T00:00:00Z","total_amount":"25500000000000","applied_amount":"0"},{"end_time":"2027-10-20T00:00:00Z","total_amount":"12750000000000","applied_amount":"0"},{"end_time":"2031-10-20T00:00:00Z","total_amount":"6375000000000","applied_amount":"0"},{"end_time":"2035-10-20T00:00:00Z","total_amount":"3187500000000","applied_amount":"0"},{"end_time":"2039-10-20T00:00:00Z","total_amount":"1593750000000","applied_amount":"0"},{"end_time":"2043-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"},{"end_time":"2047-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"}]'
+- `total-amount`        QOS总发行量
 
 `SoftwareUpgrade`类型提议特有参数：
 
@@ -1494,29 +1497,28 @@ $ qoscli query redelegations Sansa
 
 `Arya`提交一个文本提议：
 ```bash
-$ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer Arya --deposit 10000000 --description 'this is the description'
+$ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer Arya --deposit 100000000 --description 'this is the description'
 ```
 
 `Arya`提交一个参数修改提议：
 ```bash
-$ qoscli tx submit-proposal --title 'update parameters' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
+$ qoscli tx submit-proposal --title 'update parameters' --proposal-type ParameterChange --proposer Arya --deposit 100000000 --description 'this is the description' --params gov:min_deposit:1000
 ```
 
 假设`Arya`在QOS初始化时已经通过[添加系统账户](qosd.md#添加系统账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
 ```bash
-$ qoscli tx submit-proposal --title 'use tax' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
+$ qoscli tx submit-proposal --title 'use tax' --proposal-type TaxUsage --proposer Arya --deposit 100000000 --description 'this is the description' --dest-address Sansa --percent 0.5
 ```
 
-Arya`提交一个增加通胀阶段提议：
+Arya`提交一个修改通胀规则提议：
 ```bash
-$ qoscli tx submit-proposal --title 'add inflation phrase' --proposal-type AddInflationPhrase --proposer Arya --deposit 10000000 --description 'this is the description' --end-time 2100-10-01 --total-amount 1000000000
+$ qoscli tx submit-proposal --title 'add inflation phrase' --proposal-type ModifyInflation --proposer Arya --deposit 100000000 --description 'this is the description' --total-amount 10000000000000 --inflation-phrases '[{"end_time":"2023-10-20T00:00:00Z","total_amount":"25500000000000","applied_amount":"0"},{"end_time":"2027-10-20T00:00:00Z","total_amount":"12750000000000","applied_amount":"0"},{"end_time":"2031-10-20T00:00:00Z","total_amount":"6375000000000","applied_amount":"0"},{"end_time":"2035-10-20T00:00:00Z","total_amount":"3187500000000","applied_amount":"0"},{"end_time":"2039-10-20T00:00:00Z","total_amount":"1593750000000","applied_amount":"0"},{"end_time":"2043-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"},{"end_time":"2047-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"}]'
 ```
 
 `Arya`提交一个软件升级提议：
 ```bash
-$ qoscli tx submit-proposal --title 'update qos' --proposal-type SoftwareUpgrade --proposer Arya --deposit 10000000 --description 'upgrade qos to v0.0.6 with genesis file exporting in height 100' --genesis-file "https://.../genesis.json" --data-height 110 --version "0.0.6" --genesis-md5 88c4827158d194116b66b561691e83ef
+$ qoscli tx submit-proposal --title 'update qos' --proposal-type SoftwareUpgrade --proposer Arya --deposit 100000000 --description 'upgrade qos to v0.0.6 with genesis file exporting in height 100' --genesis-file "https://.../genesis.json" --data-height 110 --version "0.0.6" --genesis-md5 88c4827158d194116b66b561691e83ef
 ```
-提议通过后，会在下一块`BeginBlock`执行下载`genesis.json`，重置本地数据（如需历史数据，请做好备份），等待安装提议版本qos重启网络。
 
 #### 提议查询
 
@@ -1820,6 +1822,75 @@ $ qoscli query params --module gov --indent
 ```bash
 $ qoscli query params --module gov --key min_deposit
 "10000000"
+```
+
+### 通胀
+
+* `qoscli query inflation-phrases`      [通胀规则查询](#通胀规则查询)
+* `qoscli query total-inflation`        [发行总量查询](#发行总量查询)
+* `qoscli query total-applied`          [流通总量查询](#流通总量查询)
+
+#### 通胀规则查询
+
+`qoscli query inflation-phrases`
+
+查询结果：
+```bash
+[
+  {
+    "end_time": "2023-10-20T00:00:00Z",
+    "total_amount": "25500000000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2027-10-20T00:00:00Z",
+    "total_amount": "12750000000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2031-10-20T00:00:00Z",
+    "total_amount": "6375000000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2035-10-20T00:00:00Z",
+    "total_amount": "3187500000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2039-10-20T00:00:00Z",
+    "total_amount": "1593750000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2043-10-20T00:00:00Z",
+    "total_amount": "796875000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2047-10-20T00:00:00Z",
+    "total_amount": "796875000000",
+    "applied_amount": "0"
+  }
+]
+```
+
+#### 发行总量查询
+
+`qoscli query total-inflation`
+
+查询结果：
+```bash
+"100000000000000"
+```
+
+#### 流通总量查询
+
+`qoscli query total-applied`
+
+查询结果：
+```bash
+"49000130122714"
 ```
 
 ### 系统账户

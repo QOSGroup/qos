@@ -15,7 +15,7 @@ type Proposal struct {
 
 	ProposalID int64 `json:"proposal_id"` //  ID of the proposal
 
-	Status           ProposalStatus `json:"proposal_status"`    //  Status of the Proposal {Pending, Active, Passed, Rejected}
+	Status           ProposalStatus `json:"proposal_status"`    //  Status of the Proposal
 	FinalTallyResult TallyResult    `json:"final_tally_result"` //  Result of Tallys
 
 	SubmitTime     time.Time     `json:"submit_time"`      //  Time of the block where TxGovSubmitProposal was included
