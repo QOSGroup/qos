@@ -6,7 +6,6 @@ import (
 	bacc "github.com/QOSGroup/qbase/account"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
-	"github.com/QOSGroup/qbase/client/keys"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
@@ -59,36 +58,9 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, errors.New("invalid crt file")
 				}
 
-				var acs []*qtypes.QOSAccount
-				if len(accountStr) > 0 {
-					accArrs := strings.Split(accountStr, ";")
-					for _, accArrStr := range accArrs {
-						accArr := strings.Split(accArrStr, ",")
-						info, err := keys.GetKeyInfo(ctx, accArr[0])
-						if err != nil {
-							return nil, err
-						}
-						amount, ok := btypes.NewIntFromString(strings.TrimSpace(accArr[1]))
-						if !ok {
-							return nil, fmt.Errorf("%s parse error", accArr[1])
-						}
-						acc := qtypes.QOSAccount{
-							BaseAccount: bacc.BaseAccount{
-								info.GetAddress(),
-								nil,
-								0,
-							},
-							QOS: btypes.ZeroInt(),
-							QSCs: qtypes.QSCs{
-								{
-									subj.Name,
-									amount,
-								},
-							},
-						}
-						acs = append(acs, &acc)
-					}
-				}
+				acs, err := parseAccountStr(accountStr, subj.Name, func(addrStr string) (addr btypes.AccAddress, e error) {
+					return qcliacc.GetAddrFromValue(ctx, addrStr)
+				})
 
 				tx := txs.TxCreateQSC{
 					creatorAddr,
@@ -114,6 +86,41 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagQscCrtFile)
 
 	return cmd
+}
+
+func parseAccountStr(accountsStr, qscName string, fn func(string) (btypes.AccAddress, error)) ([]*qtypes.QOSAccount, error) {
+	var acs []*qtypes.QOSAccount
+	if len(accountsStr) > 0 {
+		accArrs := strings.Split(accountsStr, ";")
+		for _, accArrStr := range accArrs {
+			accArr := strings.Split(accArrStr, ",")
+			accountAddr, err := fn(strings.TrimSpace(accArr[0]))
+			if err != nil {
+				return nil, err
+			}
+			amount, ok := btypes.NewIntFromString(strings.TrimSpace(accArr[1]))
+			if !ok {
+				return nil, fmt.Errorf("%s parse error", accArr[1])
+			}
+			acc := qtypes.QOSAccount{
+				BaseAccount: bacc.BaseAccount{
+					accountAddr,
+					nil,
+					0,
+				},
+				QOS: btypes.ZeroInt(),
+				QSCs: qtypes.QSCs{
+					{
+						qscName,
+						amount,
+					},
+				},
+			}
+			acs = append(acs, &acc)
+		}
+	}
+
+	return acs, nil
 }
 
 func IssueQSCCmd(cdc *amino.Codec) *cobra.Command {

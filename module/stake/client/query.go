@@ -128,15 +128,10 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 				delegator = d
 			}
 
-			var path = types.BuildGetDelegationCustomQueryPath(delegator, validator)
-
-			res, err := cliCtx.Query(path, []byte(""))
+			result, err := getDelegationInfo(cliCtx, delegator, validator)
 			if err != nil {
 				return err
 			}
-
-			var result mapper.DelegationQueryResult
-			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
 	}
@@ -149,6 +144,18 @@ func queryDelegationInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 	return cmd
 }
 
+func getDelegationInfo(cliCtx context.CLIContext, delegator btypes.AccAddress, validator btypes.ValAddress) (mapper.DelegationQueryResult, error) {
+	path := types.BuildGetDelegationCustomQueryPath(delegator, validator)
+	res, err := cliCtx.Query(path, []byte(""))
+	if err != nil {
+		return mapper.DelegationQueryResult{}, err
+	}
+
+	var result mapper.DelegationQueryResult
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	return result, err
+}
+
 func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 
 	cmd := &cobra.Command{
@@ -158,27 +165,34 @@ func queryDelegationsToCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
 			var validator btypes.ValAddress
 
 			if o, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0]); err == nil {
 				validator = o
 			}
 
-			var path = types.BuildQueryDelegationsByOwnerCustomQueryPath(validator)
-
-			res, err := cliCtx.Query(path, []byte(""))
+			result, err := queryDelegationsTo(cliCtx, validator)
 			if err != nil {
 				return err
 			}
 
-			var result []mapper.DelegationQueryResult
-			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
 	}
 
 	return cmd
+}
+
+func queryDelegationsTo(cliCtx context.CLIContext, validator btypes.ValAddress) ([]mapper.DelegationQueryResult, error) {
+	path := types.BuildQueryDelegationsByOwnerCustomQueryPath(validator)
+	res, err := cliCtx.Query(path, []byte(""))
+	if err != nil {
+		return nil, err
+	}
+
+	var result []mapper.DelegationQueryResult
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	return result, err
 }
 
 func queryDelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -190,27 +204,34 @@ func queryDelegationsCommand(cdc *go_amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
 			var delegator btypes.AccAddress
 
 			if d, err := qcliacc.GetAddrFromValue(cliCtx, args[0]); err == nil {
 				delegator = d
 			}
 
-			var path = types.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
-
-			res, err := cliCtx.Query(path, []byte(""))
+			result, err := queryDelegations(cliCtx, delegator)
 			if err != nil {
 				return err
 			}
-
-			var result []mapper.DelegationQueryResult
-			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
 	}
 
 	return cmd
+}
+
+func queryDelegations(cliCtx context.CLIContext, delegator btypes.AccAddress) ([]mapper.DelegationQueryResult, error) {
+	path := types.BuildQueryDelegationsByDelegatorCustomQueryPath(delegator)
+	res, err := cliCtx.Query(path, []byte(""))
+	if err != nil {
+		return nil, err
+	}
+
+	var result []mapper.DelegationQueryResult
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+
+	return result, err
 }
 
 func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -219,43 +240,50 @@ func queryAllValidatorsCommand(cdc *go_amino.Codec) *cobra.Command {
 		Short: "Query all validators info",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			node, err := cliCtx.GetNode()
+			result, err := queryAllValidators(cliCtx)
 			if err != nil {
 				return err
 			}
-
-			opts := buildQueryOptions()
-
-			subspace := "/store/validator/subspace"
-			result, err := node.ABCIQueryWithOptions(subspace, types.BuildValidatorPrefixKey(), opts)
-
-			if err != nil {
-				return err
-			}
-
-			valueBz := result.Response.GetValue()
-			if len(valueBz) == 0 {
-				return errors.New("response empty value")
-			}
-
-			var validators []validatorDisplayInfo
-
-			var vKVPair []store.KVPair
-			cdc.UnmarshalBinaryLengthPrefixed(valueBz, &vKVPair)
-			for _, kv := range vKVPair {
-				var validator types.Validator
-				cdc.UnmarshalBinaryBare(kv.Value, &validator)
-				validators = append(validators, toValidatorDisplayInfo(validator))
-			}
-
-			cliCtx.PrintResult(validators)
+			cliCtx.PrintResult(result)
 
 			return nil
 		},
 	}
 
 	return cmd
+}
+
+func queryAllValidators(cliCtx context.CLIContext) ([]validatorDisplayInfo, error) {
+	node, err := cliCtx.GetNode()
+	if err != nil {
+		return nil, err
+	}
+
+	opts := buildQueryOptions()
+
+	subspace := "/store/validator/subspace"
+	result, err := node.ABCIQueryWithOptions(subspace, types.BuildValidatorPrefixKey(), opts)
+
+	if err != nil {
+		return nil, err
+	}
+
+	valueBz := result.Response.GetValue()
+	if len(valueBz) == 0 {
+		return nil, errors.New("response empty value")
+	}
+
+	var validators []validatorDisplayInfo
+
+	var vKVPair []store.KVPair
+	err = cliCtx.Codec.UnmarshalBinaryLengthPrefixed(valueBz, &vKVPair)
+	for _, kv := range vKVPair {
+		var validator types.Validator
+		err = cliCtx.Codec.UnmarshalBinaryBare(kv.Value, &validator)
+		validators = append(validators, toValidatorDisplayInfo(validator))
+	}
+
+	return validators, err
 }
 
 func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -287,7 +315,7 @@ func queryValidatorMissedVoteInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 type voteSummary struct {
 	StartHeight int64            `json:"startHeight"`
 	EndHeight   int64            `json:"endHeight"`
-	MissCount   int8             `json:"missCount"`
+	MissCount   int64            `json:"missCount"`
 	Votes       []voteInfoDetail `json:"voteDetail"`
 }
 
@@ -335,7 +363,7 @@ func queryVotesInfoByOwner(ctx context.CLIContext, validatorAddr btypes.ValAddre
 	voteSummaryDisplay.StartHeight = startWindowHeight
 	voteSummaryDisplay.EndHeight = endWindowHeight
 
-	i := int8(0)
+	i := int64(0)
 	for h := endWindowHeight; h >= startWindowHeight; h-- {
 		index := h % windownLength
 		voted := true
@@ -461,8 +489,8 @@ func getValidator(ctx context.CLIContext, validatorAddr btypes.ValAddress) (type
 	}
 
 	var validator types.Validator
-	ctx.Codec.UnmarshalBinaryBare(valueBz, &validator)
-	return validator, nil
+	err = ctx.Codec.UnmarshalBinaryBare(valueBz, &validator)
+	return validator, err
 }
 
 func buildQueryOptions() client.ABCIQueryOptions {

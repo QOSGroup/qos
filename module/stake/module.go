@@ -3,9 +3,12 @@ package stake
 import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
+	cliContext "github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/stake/client"
 	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/types"
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -44,6 +47,10 @@ func (amb AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	return ValidateGenesis(data)
 }
 
+func (amb AppModuleBasic) RegisterRestRoutes(ctx cliContext.CLIContext, routes *mux.Router) {
+	client.RegisterRoutes(ctx, routes)
+}
+
 // 返回交易命令集合
 func (amb AppModuleBasic) GetTxCmds(cdc *amino.Codec) []*cobra.Command {
 	return TxCommands(cdc)
@@ -69,7 +76,6 @@ func NewAppModule() types.AppModule {
 		AppModuleBasic{},
 	}
 }
-
 
 // 初始化本模块
 func (am AppModule) InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data json.RawMessage) []abci.ValidatorUpdate {

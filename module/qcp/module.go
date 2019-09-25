@@ -3,8 +3,11 @@ package qcp
 import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
+	cliContext "github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/qcp/client"
 	"github.com/QOSGroup/qos/types"
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -37,6 +40,10 @@ func (amb AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 		return err
 	}
 	return ValidateGenesis(data)
+}
+
+func (amb AppModuleBasic) RegisterRestRoutes(ctx cliContext.CLIContext, routes *mux.Router) {
+	client.RegisterRoutes(ctx, routes)
 }
 
 func (amb AppModuleBasic) GetTxCmds(cdc *amino.Codec) []*cobra.Command {

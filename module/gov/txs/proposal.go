@@ -144,7 +144,7 @@ func (tx TxProposal) GetSignData() (ret []byte) {
 
 // 提取社区费池，从社区非池中提取QOS到指定账户，仅guardian账户可提交此提议
 type TxTaxUsage struct {
-	TxProposal                                          // 基础提议信息
+	TxProposal                    // 基础提议信息
 	DestAddress btypes.AccAddress `json:"dest_address"` // 接收账户
 	Percent     qtypes.Dec        `json:"percent"`      // 提取比例
 }
@@ -266,8 +266,8 @@ func (tx TxTaxUsage) GetSignData() (ret []byte) {
 
 // 参数修改提议
 type TxParameterChange struct {
-	TxProposal                           // 基础数据
-	Params []types.Param `json:"params"` // 参数变更
+	TxProposal               // 基础数据
+	Params     []types.Param `json:"params"` // 参数变更
 }
 
 func NewTxParameterChange(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt, params []types.Param) *TxParameterChange {

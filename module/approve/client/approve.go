@@ -2,6 +2,7 @@ package client
 
 import (
 	"errors"
+	qtypes "github.com/QOSGroup/qbase/types"
 
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
@@ -37,7 +38,6 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			// 查询路径，TODO 统一通过app CustomQueryHandler处理
-			queryPath := "store/approve/key"
 			// 解析授权账户地址
 			fromAddr, err := qcliacc.GetAddrFromFlag(cliCtx, flagFrom)
 			if err != nil {
@@ -48,18 +48,11 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			// 获取查询结果
-			output, err := cliCtx.Query(queryPath, approvetypes.BuildApproveKey(fromAddr, toAddr))
+
+			approve, err := queryApproveInfo(cliCtx, fromAddr, toAddr)
 			if err != nil {
 				return err
 			}
-			if output == nil {
-				return errors.New("approve does not exist")
-			}
-
-			// 反序列化查询结果
-			approve := approvetypes.Approve{}
-			cdc.MustUnmarshalBinaryBare(output, &approve)
 
 			return cliCtx.PrintResult(approve)
 		},
@@ -71,6 +64,24 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd.MarkFlagRequired(flagTo)
 
 	return cmd
+}
+
+func queryApproveInfo(cliCtx context.CLIContext, approve, beneficiary qtypes.AccAddress) (approvetypes.Approve, error) {
+	queryPath := "store/approve/key"
+	// 获取查询结果
+	output, err := cliCtx.Query(queryPath, approvetypes.BuildApproveKey(approve, beneficiary))
+	if err != nil {
+		return approvetypes.Approve{}, err
+	}
+	if output == nil {
+		return approvetypes.Approve{}, errors.New("approve does not exist")
+	}
+
+	// 反序列化查询结果
+	appr := approvetypes.Approve{}
+	cliCtx.Codec.MustUnmarshalBinaryBare(output, &appr)
+
+	return appr, nil
 }
 
 // 创建预授权命令

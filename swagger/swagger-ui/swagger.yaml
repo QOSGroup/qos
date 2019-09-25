@@ -1,0 +1,26 @@
+---
+swagger: "2.0"
+info:
+  version: "3.0"
+  title: Lite QOS
+  description: A REST interface for transaction generation and broadcasting.
+tags:
+  - name: Transactions
+    description: Search, encode, or broadcast transactions.
+  - name: Tendermint RPC
+    description: Tendermint APIs, such as query blocks, transactions and validatorset
+  - name: Auth
+    description: Authenticate accounts
+  - name: Bank
+    description: Create and broadcast transactions
+schemes:
+  - https
+host: 127.0.0.1:9876
+securityDefinitions:
+  kms:
+    type: basic
+paths:
+  /bank/accounts/{address}/transfers:
+
+
+
