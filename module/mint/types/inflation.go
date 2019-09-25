@@ -84,12 +84,13 @@ func (phrases InflationPhrases) Equals(ips InflationPhrases) bool {
 }
 
 // 获取通胀总量
-func (phrases InflationPhrases) TotalAmount() (total types.BigInt) {
+func (phrases InflationPhrases) TotalAmount() types.BigInt {
+	total := types.ZeroInt()
 	for _, p := range phrases {
 		total = total.Add(p.TotalAmount)
 	}
 
-	return
+	return total
 }
 
 // 获取时间点对应通胀阶段

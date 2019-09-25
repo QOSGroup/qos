@@ -197,6 +197,7 @@ Example:
 			appState[guardian.ModuleName] = cdc.MustMarshalJSON(guardianState)
 			mintState := mint.DefaultGenesis()
 			mintState.AppliedQOSAmount = appliedQOSAmount
+			mintState.TotalQOSAmount = mintState.InflationPhrases.TotalAmount().Add(appliedQOSAmount)
 			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
 
 			rawState, _ := cdc.MarshalJSON(appState)
