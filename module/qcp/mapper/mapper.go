@@ -17,28 +17,28 @@ const (
 )
 
 func GetMapper(ctx context.Context) *qcp.QcpMapper {
-	return ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+	return ctx.Mapper(qcp.MapperName).(*qcp.QcpMapper)
 }
 
-// 保存CA
-func SetQCPRootCA(ctx context.Context, pubKey crypto.PubKey) {
-	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+// 保存 kepler qcp 根证书公钥
+func SetRootCaPubkey(ctx context.Context, pubKey crypto.PubKey) {
+	qcpMapper := GetMapper(ctx)
 	qcpMapper.Set([]byte(RootCAKey), pubKey)
 }
 
-// 获取CA
-func GetQCPRootCA(ctx context.Context) crypto.PubKey {
-	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+// 获取 kepler qcp 根证书公钥
+func GetRootCaPubkey(ctx context.Context) crypto.PubKey {
+	qcpMapper := GetMapper(ctx)
 	var pubKey crypto.PubKey
 	qcpMapper.Get([]byte(RootCAKey), &pubKey)
 	return pubKey
 }
 
-// TODO prefix定义到qbase中
+// 获取跨链结果交易集
 func GetQCPTxs(ctx context.Context, chainId string) []txs.TxQcp {
-	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+	qcpMapper := GetMapper(ctx)
 	qcpTxs := make([]txs.TxQcp, 0)
-	qcpMapper.Iterator([]byte("tx/out/"+chainId), func(bz []byte) (stop bool) {
+	qcpMapper.Iterator(append(qcp.BuildOutSequenceTxPrefixKey(), chainId...), func(bz []byte) (stop bool) {
 		tx := txs.TxQcp{}
 		qcpMapper.DecodeObject(bz, &tx)
 		qcpTxs = append(qcpTxs, tx)
@@ -48,15 +48,15 @@ func GetQCPTxs(ctx context.Context, chainId string) []txs.TxQcp {
 	return qcpTxs
 }
 
-// TODO prefix定义到qbase中
+// 获取跨链结果交易集，带条数限制
 func GetQCPTxsWithLimit(ctx context.Context, chainId string, limit uint64, asc bool) []txs.TxQcp {
-	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+	qcpMapper := GetMapper(ctx)
 	qcpTxs := make([]txs.TxQcp, 0)
 	var iterator store.Iterator
 	if asc {
-		iterator = btypes.KVStorePrefixIterator(qcpMapper.GetStore(), []byte("tx/out/"+chainId))
+		iterator = btypes.KVStorePrefixIterator(qcpMapper.GetStore(), append(qcp.BuildOutSequenceTxPrefixKey(), chainId...))
 	} else {
-		iterator = btypes.KVStoreReversePrefixIterator(qcpMapper.GetStore(), []byte("tx/out/"+chainId))
+		iterator = btypes.KVStoreReversePrefixIterator(qcpMapper.GetStore(), append(qcp.BuildOutSequenceTxPrefixKey(), chainId...))
 	}
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
@@ -71,12 +71,12 @@ func GetQCPTxsWithLimit(ctx context.Context, chainId string, limit uint64, asc b
 	return qcpTxs
 }
 
-// TODO prefix定义到qbase中
-func ExportQCPs(ctx context.Context) []qcptypes.QCPInfo {
-	qcpMapper := ctx.Mapper(qcp.QcpMapperName).(*qcp.QcpMapper)
+// 获取联盟链集合，结果交易集中最多保留 TxExportLimit 条数据
+func GetQCPs(ctx context.Context) []qcptypes.QCPInfo {
+	qcpMapper := GetMapper(ctx)
 	qcpChains := make([]string, 0)
 
-	prefix := []byte("sequence/in/")
+	prefix := qcp.BuildInSequencePrefixKey()
 	iter := qcpMapper.GetStore().Iterator(prefix, btypes.PrefixEndBytes(prefix))
 	defer iter.Close()
 	for {

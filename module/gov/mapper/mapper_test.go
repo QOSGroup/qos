@@ -15,6 +15,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -35,6 +36,7 @@ func defaultContext() context.Context {
 	govMapper.SetCodec(cdc)
 	approveKey := govMapper.GetStoreKey()
 	mapperMap[MapperName] = govMapper
+	govMapper.SetUpMetrics(config.DefaultConfig().Instrumentation)
 
 	accountMapper := bacc.NewAccountMapper(nil, qtypes.ProtoQOSAccount)
 	accountMapper.SetCodec(cdc)
@@ -45,6 +47,7 @@ func defaultContext() context.Context {
 	paramMapper.SetCodec(cdc)
 	paramsKey := paramMapper.GetStoreKey()
 	mapperMap[params.MapperName] = paramMapper
+	paramMapper.SetUpMetrics(config.DefaultConfig().Instrumentation)
 
 	validatorMapper := stake.NewMapper()
 	validatorMapper.SetCodec(cdc)
@@ -55,6 +58,7 @@ func defaultContext() context.Context {
 	guardianMapper.SetCodec(cdc)
 	guardianKey := guardianMapper.GetStoreKey()
 	mapperMap[guardian.MapperName] = guardianMapper
+	guardianMapper.SetUpMetrics(config.DefaultConfig().Instrumentation)
 
 	distributionMapper := distribution.NewMapper()
 	distributionMapper.SetCodec(cdc)

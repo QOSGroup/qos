@@ -5,77 +5,33 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 )
 
-// QCP errors reserve 600 ~ 699.
+// Governance errors reserve 700 ~ 799.
 const (
 	DefaultCodeSpace btypes.CodespaceType = "gov"
 
-	CodeInvalidInput        btypes.CodeType = 601 // invalid input
-	CodeInvalidGenesis      btypes.CodeType = 602 // invalid genesis
-	CodeUnknownProposal     btypes.CodeType = 603 // unknown proposal
-	CodeInactiveProposal    btypes.CodeType = 604 // inactive proposal
-	CodeInvalidVote         btypes.CodeType = 605 // invalid vote
-	CodeFinishedProposal    btypes.CodeType = 606 // finished proposal
-	CodeWrongProposalStatus btypes.CodeType = 607 // wrong status of proposal
+	CodeInvalidInput        btypes.CodeType = 701 // invalid input
+	CodeInvalidGenesis      btypes.CodeType = 702 // invalid genesis
+	CodeUnknownProposal     btypes.CodeType = 703 // unknown proposal
+	CodeInvalidVote         btypes.CodeType = 704 // invalid vote
+	CodeWrongProposalStatus btypes.CodeType = 705 // wrong status of proposal
 )
 
-func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
-	if msg != "" {
-		return msg
-	}
-	return codeToDefaultMsg(code)
-}
-
-func newError(codeSpace btypes.CodespaceType, code btypes.CodeType, msg string) btypes.Error {
-	msg = msgOrDefaultMsg(msg, code)
-	return btypes.NewError(codeSpace, code, msg)
-}
-
-// NOTE: Don't stringer this, we'll put better messages in later.
-func codeToDefaultMsg(code btypes.CodeType) string {
-	switch code {
-	case CodeInvalidInput:
-		return "invalid tx msg"
-	case CodeInvalidGenesis:
-		return "invalid genesis"
-	case CodeUnknownProposal:
-		return "unknown proposal"
-	case CodeInactiveProposal:
-		return "inactive proposal"
-	case CodeInvalidVote:
-		return "invalida vote"
-	case CodeFinishedProposal:
-		return "finished proposal"
-	case CodeWrongProposalStatus:
-		return "wrong status of proposal"
-	default:
-		return btypes.CodeToDefaultMsg(code)
-	}
-}
-
 func ErrInvalidInput(msg string) btypes.Error {
-	return newError(DefaultCodeSpace, CodeInvalidInput, msg)
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInput, msg)
 }
 
 func ErrInvalidGenesis(msg string) btypes.Error {
-	return newError(DefaultCodeSpace, CodeInvalidGenesis, msg)
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidGenesis, msg)
 }
 
 func ErrUnknownProposal(proposalID int64) btypes.Error {
-	return newError(DefaultCodeSpace, CodeUnknownProposal, fmt.Sprintf("unknown proposal %v", proposalID))
-}
-
-func ErrInactiveProposal(proposalID int64) btypes.Error {
-	return newError(DefaultCodeSpace, CodeInactiveProposal, fmt.Sprintf("inactive proposal %v", proposalID))
-}
-
-func ErrInvalidVote(voteOption VoteOption) btypes.Error {
-	return newError(DefaultCodeSpace, CodeInvalidVote, fmt.Sprintf("'%v' is not a valid voting option", voteOption))
+	return btypes.NewError(DefaultCodeSpace, CodeUnknownProposal, fmt.Sprintf("unknown proposal %v", proposalID))
 }
 
 func ErrFinishedProposal(proposalID int64) btypes.Error {
-	return newError(DefaultCodeSpace, CodeInvalidVote, fmt.Sprintf("'%v' already finished", proposalID))
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidVote, fmt.Sprintf("'%v' already finished", proposalID))
 }
 
 func ErrWrongProposalStatus(proposalID int64) btypes.Error {
-	return newError(DefaultCodeSpace, CodeWrongProposalStatus, fmt.Sprintf("wrong status of proposal %v", proposalID))
+	return btypes.NewError(DefaultCodeSpace, CodeWrongProposalStatus, fmt.Sprintf("wrong status of proposal %v", proposalID))
 }

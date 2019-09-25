@@ -7,11 +7,12 @@ import (
 	"time"
 )
 
+// 创世状态
 type GenesisState struct {
-	InflationPhrases InflationPhrases `json:"inflation_phrases"`
-	FirstBlockTime   int64            `json:"first_block_time"` //UTC().UNIX()
-	AppliedQOSAmount types.BigInt     `json:"applied_qos_amount"`
-	TotalQOSAmount   types.BigInt     `json:"total_qos_amount"`
+	InflationPhrases InflationPhrases `json:"inflation_phrases"`  // 通胀阶段
+	FirstBlockTime   int64            `json:"first_block_time"`   // UTC().UNIX()
+	AppliedQOSAmount types.BigInt     `json:"applied_qos_amount"` // 总流通QOS
+	TotalQOSAmount   types.BigInt     `json:"total_qos_amount"`   // QOS总量
 }
 
 func NewGenesisState(inflationPhrases InflationPhrases, firstBlockTime int64, appliedQOSAmount, totalQOSAmount types.BigInt) GenesisState {

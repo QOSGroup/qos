@@ -9,6 +9,7 @@ import (
 	"github.com/QOSGroup/qos/module/gov/types"
 )
 
+// 提议投票
 type TxVote struct {
 	ProposalID int64             `json:"proposal_id"` // ID of the proposal
 	Voter      btypes.AccAddress `json:"voter"`       //  address of the voter
@@ -25,20 +26,21 @@ func NewTxVote(proposalID int64, voter btypes.AccAddress, option types.VoteOptio
 
 var _ txs.ITx = (*TxVote)(nil)
 
+// 数据校验
 func (tx TxVote) ValidateData(ctx context.Context) error {
+	// 投票账户存在
 	if len(tx.Voter) == 0 {
 		return types.ErrInvalidInput("voter is empty")
 	}
-
+	// 投票有效
 	if !types.ValidVoteOption(tx.Option) {
 		return types.ErrInvalidInput("invalid voting option")
 	}
-
+	// 提议存在，且处于投票期
 	proposal, ok := mapper.GetMapper(ctx).GetProposal(tx.ProposalID)
 	if !ok {
 		return types.ErrUnknownProposal(tx.ProposalID)
 	}
-
 	if proposal.Status != types.StatusVotingPeriod {
 		return types.ErrWrongProposalStatus(tx.ProposalID)
 	}
@@ -46,17 +48,19 @@ func (tx TxVote) ValidateData(ctx context.Context) error {
 	return nil
 }
 
+// 交易执行
 func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	result = btypes.Result{
 		Code: btypes.CodeOK,
 	}
 
+	// 保存投票
 	err := mapper.GetMapper(ctx).AddVote(tx.ProposalID, tx.Voter, tx.Option)
-
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
 	}
 
+	// 发送事件
 	result.Events = btypes.Events{
 		btypes.NewEvent(
 			types.EventTypeVoteProposal,
@@ -66,6 +70,7 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 		btypes.NewEvent(
 			btypes.EventTypeMessage,
 			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyAction, types.EventTypeVoteProposal),
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
 		),
 	}
@@ -73,18 +78,22 @@ func (tx TxVote) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *tx
 	return
 }
 
+// 签名账户, Voter
 func (tx TxVote) GetSigner() []btypes.AccAddress {
 	return []btypes.AccAddress{tx.Voter}
 }
 
+// Tx gas, 0
 func (tx TxVote) CalcGas() btypes.BigInt {
 	return btypes.ZeroInt()
 }
 
+// Gas payer, Voter
 func (tx TxVote) GetGasPayer() btypes.AccAddress {
 	return tx.Voter
 }
 
+// 签名字节
 func (tx TxVote) GetSignData() (ret []byte) {
 	ret = Cdc.MustMarshalBinaryBare(tx)
 

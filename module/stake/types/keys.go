@@ -25,14 +25,12 @@ const (
 )
 
 var (
-	//keys see docs/spec/staking.md
 	validatorKey            = []byte{0x01} // 保存Validator信息. key: OperatorAddress
 	validatorByConsensusKey = []byte{0x02} // 保存consensus address与Validator的映射关系. key: consensusAddress, value : OperatorAddress
 
 	validatorByInactiveKey  = []byte{0x04} // 保存处于`inactive`状态的Validator. key: ValidatorInactiveTime + OperatorAddress
 	validatorByVotePowerKey = []byte{0x05} // 按VotePower排序的Validator地址,不包含`pending`状态的Validator. key: VotePower + OperatorAddress
 
-	//keys see docs/spec/staking.md
 	validatorVoteInfoKey         = []byte{0x11} // 保存Validator在窗口的统计信息
 	validatorVoteInfoInWindowKey = []byte{0x12} // 保存Validator在指定窗口签名信息
 

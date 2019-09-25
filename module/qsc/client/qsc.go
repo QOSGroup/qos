@@ -10,9 +10,7 @@ import (
 	qclitx "github.com/QOSGroup/qbase/client/tx"
 	btxs "github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/QOSGroup/qos/module/qsc/mapper"
 	"github.com/QOSGroup/qos/module/qsc/txs"
-	"github.com/QOSGroup/qos/module/qsc/types"
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
@@ -23,14 +21,14 @@ import (
 )
 
 const (
-	flagQscname     = "qsc-name"
-	flagCreator     = "creator"
-	flagBanker      = "banker"
-	flagExtrate     = "extrate"
-	flagPathqsc     = "qsc.crt"
-	flagAccounts    = "accounts"
-	flagAmount      = "amount"
-	flagDescription = "desc"
+	flagQscname      = "qsc-name"
+	flagCreator      = "creator"
+	flagBanker       = "banker"
+	flagExchangeRate = "exchange-rate"
+	flagQscCrtFile   = "qsc.crt"
+	flagAccounts     = "accounts"
+	flagAmount       = "amount"
+	flagDescription  = "desc"
 )
 
 func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
@@ -40,8 +38,8 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (btxs.ITx, error) {
 				//flag args
-				extrate := viper.GetString(flagExtrate)
-				pathqsc := viper.GetString(flagPathqsc)
+				exchangeRate := viper.GetString(flagExchangeRate)
+				qscCrtFile := viper.GetString(flagQscCrtFile)
 				accountStr := viper.GetString(flagAccounts)
 				description := viper.GetString(flagDescription)
 
@@ -51,7 +49,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				var crt cert.Certificate
-				err = cdc.UnmarshalJSON(common.MustReadFile(pathqsc), &crt)
+				err = cdc.UnmarshalJSON(common.MustReadFile(qscCrtFile), &crt)
 				if err != nil {
 					return nil, err
 				}
@@ -94,7 +92,7 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 
 				return txs.TxCreateQSC{
 					creatorAddr,
-					extrate,
+					exchangeRate,
 					&crt,
 					description,
 					acs,
@@ -105,42 +103,12 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 	}
 
 	cmd.Flags().String(flagCreator, "", "name or address of creator")
-	cmd.Flags().String(flagExtrate, "1", "extrate: qos:qscxxx")
-	cmd.Flags().String(flagPathqsc, "", "path of CA(qsc)")
+	cmd.Flags().String(flagExchangeRate, "1", "extrate: qos:qscxxx")
+	cmd.Flags().String(flagQscCrtFile, "", "path of CA(qsc)")
 	cmd.Flags().String(flagDescription, "", "description")
 	cmd.Flags().String(flagAccounts, "", "init accounts, eg: address1,100;address2,100")
 	cmd.MarkFlagRequired(flagCreator)
-	cmd.MarkFlagRequired(flagPathqsc)
-
-	return cmd
-}
-
-func QueryQscCmd(cdc *amino.Codec) *cobra.Command {
-	cmd := &cobra.Command{
-		Use:   "qsc [qsc]",
-		Short: "query qsc info by name",
-		Args:  cobra.ExactArgs(1),
-		RunE: func(cmd *cobra.Command, args []string) error {
-			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			result, err := cliCtx.Client.ABCIQuery("store/qsc/key", mapper.BuildQSCKey(args[0]))
-			if err != nil {
-				return err
-			}
-
-			if len(result.Response.GetValue()) == 0 {
-				return fmt.Errorf("%s not exists.", args[0])
-			}
-
-			var info types.Info
-			err = cdc.UnmarshalBinaryBare(result.Response.GetValue(), &info)
-			if err != nil {
-				return err
-			}
-
-			return cliCtx.PrintResult(info)
-		},
-	}
+	cmd.MarkFlagRequired(flagQscCrtFile)
 
 	return cmd
 }

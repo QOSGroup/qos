@@ -10,6 +10,7 @@ import (
 	"github.com/QOSGroup/qos/module/stake/types"
 	qtypes "github.com/QOSGroup/qos/types"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/libs/log"
 	tmtypes "github.com/tendermint/tendermint/types"
 	"time"
 )
@@ -17,7 +18,7 @@ import (
 //1. 双签惩罚
 //2. 统计validator投票信息, 将不活跃的validator转成Inactive状态
 func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
-
+	logger := ctx.Logger().With("module", "module/stake")
 	sm := mapper.GetMapper(ctx)
 
 	// 双签惩罚
@@ -25,9 +26,9 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 		switch evidence.Type {
 		case tmtypes.ABCIEvidenceTypeDuplicateVote:
 			v, _ := sm.GetValidatorByConsensusAddr(btypes.ConsAddress(evidence.Validator.Address))
-			handleDoubleSign(ctx, v.GetValidatorAddress(), evidence.Height-1, evidence.Time, evidence.Validator.Power)
+			handleDoubleSign(ctx, logger, v.GetValidatorAddress(), evidence.Height-1, evidence.Time, evidence.Validator.Power)
 		default:
-			ctx.Logger().Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
+			logger.Error(fmt.Sprintf("ignored unknown evidence type: %s", evidence.Type))
 		}
 	}
 
@@ -35,7 +36,7 @@ func BeginBlocker(ctx context.Context, req abci.RequestBeginBlock) {
 	params := sm.GetParams(ctx)
 	for _, signingValidator := range req.LastCommitInfo.Votes {
 		v, _ := sm.GetValidatorByConsensusAddr(btypes.ConsAddress(signingValidator.Validator.Address))
-		handleValidatorValidatorVoteInfo(ctx, v.GetValidatorAddress(), signingValidator.SignedLastBlock, params)
+		handleValidatorValidatorVoteInfo(ctx, logger, v.GetValidatorAddress(), signingValidator.SignedLastBlock, params)
 	}
 }
 
@@ -237,21 +238,20 @@ func GetUpdatedValidators(ctx context.Context, maxValidatorCount int64) []abci.V
 	return updateValidators
 }
 
-func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAddress, isVote bool, params types.Params) {
+func handleValidatorValidatorVoteInfo(ctx context.Context, logger log.Logger, valAddr btypes.ValAddress, isVote bool, params types.Params) {
 
-	log := ctx.Logger()
 	height := ctx.BlockHeight()
 	sm := mapper.GetMapper(ctx)
 
 	validator, exists := sm.GetValidator(valAddr)
 	if !exists {
-		log.Info("validatorVoteInfo", valAddr.String(), "not exists,may be closed")
+		logger.Info("validatorVoteInfo", valAddr.String(), "not exists,may be closed")
 		return
 	}
 
 	//非Active状态不处理
 	if !validator.IsActive() {
-		log.Info("validatorVoteInfo", valAddr.String(), "is Inactive")
+		logger.Info("validatorVoteInfo", valAddr.String(), "is Inactive")
 		return
 	}
 
@@ -277,7 +277,15 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAdd
 	}
 
 	if !isVote {
-		log.Info("validatorVoteInfo", "height", height, valAddr.String(), "not vote")
+		ctx.EventManager().EmitEvent(
+			btypes.NewEvent(
+				types.EventTypeMissingVote,
+				btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+				btypes.NewAttribute(types.AttributeKeyMissedBlocks, fmt.Sprintf("%d", voteInfo.MissedBlocksCounter)),
+				btypes.NewAttribute(types.AttributeKeyHeight, fmt.Sprintf("%d", height)),
+			),
+		)
+		logger.Info("validatorVoteInfo", "height", height, valAddr.String(), "not vote")
 	}
 
 	// minHeight := voteInfo.StartHeight + votingWindowLen
@@ -287,29 +295,30 @@ func handleValidatorValidatorVoteInfo(ctx context.Context, valAddr btypes.ValAdd
 	if voteInfo.MissedBlocksCounter > maxMissedCounter {
 
 		// slash delegations
-		delegationSlashTokens := slashDelegations(ctx, validator, params.SlashFractionDowntime, types.AttributeValueDoubleSign)
-		updatedValidatorTokens := validator.BondTokens.Sub(delegationSlashTokens)
-		log.Debug("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", delegationSlashTokens, "afterTokens", updatedValidatorTokens)
+		if params.SlashFractionDowntime.GT(qtypes.ZeroDec()) {
+			delegationSlashTokens := slashDelegations(ctx, logger, validator, params.SlashFractionDowntime, types.AttributeValueDownTime)
+			updatedValidatorTokens := validator.BondTokens.Sub(delegationSlashTokens)
+			logger.Info("slash validator bond tokens", "validator", validator.GetValidatorAddress().String(), "preTokens", validator.BondTokens, "slashTokens", delegationSlashTokens, "afterTokens", updatedValidatorTokens)
 
-		log.Info("validator gets inactive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
-		sm.MakeValidatorInactive(valAddr, ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), types.MissVoteBlock)
-		ctx.EventManager().EmitEvent(
-			btypes.NewEvent(
-				types.EventTypeInactiveValidator,
-				btypes.NewAttribute(types.AttributeKeyHeight, string(height)),
-				btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
-			),
-		)
+			logger.Info("validator gets inactive", "height", height, "validator", valAddr.String(), "missed counter", voteInfo.MissedBlocksCounter)
+			sm.MakeValidatorInactive(valAddr, ctx.BlockHeight(), ctx.BlockHeader().Time.UTC(), types.MissVoteBlock)
+			ctx.EventManager().EmitEvent(
+				btypes.NewEvent(
+					types.EventTypeInactiveValidator,
+					btypes.NewAttribute(types.AttributeKeyHeight, string(height)),
+					btypes.NewAttribute(types.AttributeKeyValidator, valAddr.String()),
+				),
+			)
 
-		// slash放入社区费池
-		sm.AfterValidatorSlashed(ctx, delegationSlashTokens)
+			// slash放入社区费池
+			sm.AfterValidatorSlashed(ctx, delegationSlashTokens)
+		}
 	}
 
 	sm.SetValidatorVoteInfo(valAddr, voteInfo)
 }
 
-func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHeight int64, timestamp time.Time, power int64) {
-	logger := ctx.Logger()
+func handleDoubleSign(ctx context.Context, logger log.Logger, addr btypes.ValAddress, infractionHeight int64, timestamp time.Time, power int64) {
 	sm := GetMapper(ctx)
 
 	// validator should exists
@@ -393,7 +402,7 @@ func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHei
 	fraction = qtypes.NewDecFromInt(remainingSlashAmount).QuoInt(validator.BondTokens)
 
 	// slash delegations
-	delegationSlashTokens := slashDelegations(ctx, validator, fraction, types.AttributeValueDoubleSign)
+	delegationSlashTokens := slashDelegations(ctx, logger, validator, fraction, types.AttributeValueDoubleSign)
 
 	// update validator
 	updatedValidatorTokens := validator.BondTokens.Sub(delegationSlashTokens)
@@ -414,9 +423,8 @@ func handleDoubleSign(ctx context.Context, addr btypes.ValAddress, infractionHei
 
 }
 
-func slashDelegations(ctx context.Context, validator types.Validator, fraction qtypes.Dec, reason string) btypes.BigInt {
+func slashDelegations(ctx context.Context, logger log.Logger, validator types.Validator, fraction qtypes.Dec, reason string) btypes.BigInt {
 	sm := mapper.GetMapper(ctx)
-	logger := ctx.Logger()
 
 	// get delegations
 	var delegations []types.DelegationInfo

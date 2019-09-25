@@ -3,9 +3,11 @@ package types
 import "github.com/QOSGroup/qbase/qcp"
 
 var (
-	EventTypeInitQcp = "init-qcp"
+	// 事件类型
+	EventTypeInitQcp = "init-qcp" // 初始化联盟链
 
-	AttributeKeyModule  = qcp.EventModule
-	AttributeKeyQcp     = "chain-id"
-	AttributeKeyCreator = "creator"
+	// 事件参数
+	AttributeKeyModule  = qcp.EventModule // 模块名称
+	AttributeKeyQcp     = "chain-id"      // 联盟链chain-id
+	AttributeKeyCreator = "creator"       // 创建账户地址
 )

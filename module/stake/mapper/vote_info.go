@@ -6,28 +6,33 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 )
 
+// 获取验证节点投票信息
 func (mapper *Mapper) GetValidatorVoteInfo(valAddr btypes.ValAddress) (info types.ValidatorVoteInfo, exists bool) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	exists = mapper.Get(key, &info)
 	return
 }
 
+// 保存验证节点投票信息
 func (mapper *Mapper) SetValidatorVoteInfo(valAddr btypes.ValAddress, info types.ValidatorVoteInfo) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	mapper.Set(key, info)
 }
 
+// 重置验证节点投票信息
 func (mapper *Mapper) ResetValidatorVoteInfo(valAddr btypes.ValAddress, info types.ValidatorVoteInfo) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	mapper.ClearValidatorVoteInfoInWindow(valAddr)
 	mapper.Del(key)
 }
 
+// 删除验证节点投票信息
 func (mapper *Mapper) DelValidatorVoteInfo(valAddr btypes.ValAddress) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	mapper.Del(key)
 }
 
+// 某一窗口高度是否投过票
 func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.ValAddress, index int64) (vote bool) {
 	key := types.BuildValidatorVoteInfoInWindowKey(index, valAddr)
 	vote, exists := mapper.GetBool(key)
@@ -39,11 +44,13 @@ func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.ValAddress, index int64
 	return vote
 }
 
+// 设置某窗口高度投票信息
 func (mapper *Mapper) SetVoteInfoInWindow(valAddr btypes.ValAddress, index int64, vote bool) {
 	key := types.BuildValidatorVoteInfoInWindowKey(index, valAddr)
 	mapper.Set(key, vote)
 }
 
+// 删除验证节点所有窗口高度投票数据
 func (mapper *Mapper) ClearValidatorVoteInfoInWindow(valAddr btypes.ValAddress) {
 	prefixKey := append(types.GetValidatorVoteInfoInWindowKey(), valAddr...)
 	endKey := btypes.PrefixEndBytes(prefixKey)
@@ -55,8 +62,7 @@ func (mapper *Mapper) ClearValidatorVoteInfoInWindow(valAddr btypes.ValAddress) 
 	}
 }
 
-//-------------------------genesis export
-
+// 遍历验证节点投票信息
 func (mapper *Mapper) IterateVoteInfos(fn func(btypes.ValAddress, types.ValidatorVoteInfo)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoKey())
 	defer iter.Close()
@@ -69,6 +75,7 @@ func (mapper *Mapper) IterateVoteInfos(fn func(btypes.ValAddress, types.Validato
 	}
 }
 
+// 遍历验证节点投票窗口期内投票数据
 func (mapper *Mapper) IterateVoteInWindowsInfos(fn func(int64, btypes.ValAddress, bool)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoInWindowKey())
 	defer iter.Close()

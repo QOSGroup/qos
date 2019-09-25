@@ -2,12 +2,11 @@ package txs
 
 import (
 	"bytes"
-	"fmt"
 	"github.com/QOSGroup/kepler/cert"
-	bacc "github.com/QOSGroup/qbase/account"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/qsc/mapper"
 	"github.com/QOSGroup/qos/module/qsc/types"
 	qtypes "github.com/QOSGroup/qos/types"
@@ -17,76 +16,73 @@ import (
 
 const (
 	MaxDescriptionLen = 1000
-	MaxQSCNameLen     = 8
 
 	GasForCreateQSC = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
 	GasForIssueQSC  = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
 )
 
-// create QSC
+// 初始化代币Tx
 type TxCreateQSC struct {
-	Creator     btypes.AccAddress    `json:"creator"`     //QSC创建账户
-	Extrate     string               `json:"extrate"`     //qcs:qos汇率(amino不支持binary形式的浮点数序列化，精度同qos erc20 [.0000])
-	QSCCA       *cert.Certificate    `json:"qsc_crt"`     //CA信息
-	Description string               `json:"description"` //描述信息
-	Accounts    []*qtypes.QOSAccount `json:"accounts"`
+	Creator      btypes.AccAddress    `json:"creator"`       // QSC创建账户
+	ExchangeRate string               `json:"exchange_rate"` // qcs:qos汇率
+	QSCCA        *cert.Certificate    `json:"qsc_crt"`       // CA信息
+	Description  string               `json:"description"`   // 描述信息
+	Accounts     []*qtypes.QOSAccount `json:"accounts"`      // 初始账户
 }
 
 func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
-	if len(tx.Creator) == 0 || len(tx.Description) > MaxDescriptionLen {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
+	// 创建账户校验
+	if len(tx.Creator) == 0 {
+		return types.ErrEmptyCreator()
+	}
+	// 描述信息最大1000字节
+	if len(tx.Description) > MaxDescriptionLen {
+		return types.ErrDescriptionTooLong()
+	}
+	// 汇率值校验
+	if _, err := strconv.ParseFloat(tx.ExchangeRate, 64); err != nil {
+		return types.ErrInvalidExchangeRate()
 	}
 
-	f, err := strconv.ParseFloat(tx.Extrate, 64)
-	if err != nil {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
-	}
-
-	if f <= float64(0) {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "")
-	}
-
-	// CA校验
+	// 证书校验
 	if tx.QSCCA == nil {
-		return types.ErrInvalidQSCCA(types.DefaultCodeSpace, "")
+		return types.ErrInvalidQSCCA()
 	}
 	subj, ok := tx.QSCCA.CSR.Subj.(cert.QSCSubject)
 	if !ok {
-		return types.ErrInvalidQSCCA(types.DefaultCodeSpace, "")
+		return types.ErrInvalidQSCCA()
 	}
 	if subj.ChainId != ctx.ChainID() {
-		return types.ErrInvalidQSCCA(types.DefaultCodeSpace, "")
+		return types.ErrInvalidQSCCA()
 	}
-
-	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
-	rootCA := qscMapper.GetQSCRootCA()
+	qscMapper := mapper.GetMapper(ctx)
+	rootCA := qscMapper.GetRootCAPubkey()
 	if rootCA == nil || len(rootCA.Bytes()) == 0 {
-		return types.ErrRootCANotConfigure(types.DefaultCodeSpace, "root CA not configure")
+		return types.ErrRootCANotConfigure()
 	}
 
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
-		return types.ErrWrongQSCCA(types.DefaultCodeSpace, "")
+		return types.ErrWrongQSCCA()
 	}
 
-	// accounts校验
+	// 初始账户校验，只能包含即将初始化的代币
 	for _, account := range tx.Accounts {
 		if account.QOS.NilToZero().GT(btypes.ZeroInt()) ||
 			len(account.QSCs) != 1 || account.QSCs[0].Name != subj.Name ||
 			!account.QSCs[0].Amount.NilToZero().GT(btypes.ZeroInt()) {
-			return types.ErrInvalidInitAccounts(types.DefaultCodeSpace, "")
+			return types.ErrInvalidInitAccounts()
 		}
 	}
 
-	// QSC不存在
+	// 校验已存在代币
 	if qscMapper.Exists(subj.Name) {
-		return types.ErrQSCExists(types.DefaultCodeSpace, "")
+		return types.ErrQSCExists()
 	}
 
-	// creator账户存在
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	creator := accountMapper.GetAccount(tx.Creator)
+	// 创建账户必须存在
+	creator := bank.GetMapper(ctx).GetAccount(tx.Creator)
 	if nil == creator {
-		return types.ErrCreatorNotExists(types.DefaultCodeSpace, "")
+		return types.ErrCreatorNotExists()
 	}
 
 	return nil
@@ -98,30 +94,32 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 	}
 
 	qscInfo := types.NewInfoWithQSCCA(tx.QSCCA)
-	qscInfo.Extrate = tx.Extrate
+	qscInfo.ExchangeRate = tx.ExchangeRate
 	qscInfo.Description = tx.Description
 
-	// 保存QSC
-	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
-	qscMapper.SaveQsc(&qscInfo)
-
-	// 保存账户信息
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
+	// 保存初始账户信息
+	bankMapper := bank.GetMapper(ctx)
 	if qscInfo.Banker != nil {
 		banker := qscInfo.Banker
-		if nil == accountMapper.GetAccount(banker) {
-			accountMapper.SetAccount(accountMapper.NewAccountWithAddress(banker))
+		if nil == bankMapper.GetAccount(banker) {
+			bankMapper.SetAccount(bankMapper.NewAccountWithAddress(banker))
 		}
 	}
+	qscInfo.TotalAmount = btypes.ZeroInt()
 	for _, acc := range tx.Accounts {
-		if a := accountMapper.GetAccount(acc.AccountAddress); a != nil {
+		if a := bankMapper.GetAccount(acc.AccountAddress); a != nil {
 			qosAccount := a.(*qtypes.QOSAccount)
 			qosAccount.MustPlusQSCs(acc.QSCs)
-			accountMapper.SetAccount(qosAccount)
+			bankMapper.SetAccount(qosAccount)
 		} else {
-			accountMapper.SetAccount(acc)
+			bankMapper.SetAccount(acc)
 		}
+		qscInfo.TotalAmount = qscInfo.TotalAmount.Add(acc.QSCs[0].Amount)
 	}
+
+	// 保存代币信息
+	qscMapper := mapper.GetMapper(ctx)
+	qscMapper.SaveQsc(&qscInfo)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -132,6 +130,7 @@ func (tx TxCreateQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQc
 		btypes.NewEvent(
 			btypes.EventTypeMessage,
 			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyAction, types.EventTypeCreateQsc),
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
 		),
 	}
@@ -152,56 +151,37 @@ func (tx TxCreateQSC) GetGasPayer() btypes.AccAddress {
 }
 
 func (tx TxCreateQSC) GetSignData() (ret []byte) {
-	ret = append(ret, tx.Creator...)
-	ret = append(ret, tx.Extrate...)
-	ret = append(ret, Cdc.MustMarshalBinaryBare(tx.QSCCA)...)
-	ret = append(ret, tx.Description...)
-
-	for _, account := range tx.Accounts {
-		ret = append(ret, fmt.Sprint(account)...)
-	}
+	ret = Cdc.MustMarshalBinaryBare(tx)
 
 	return
 }
 
-// issue QSC
+// 发行代币Tx，多次执行表现为代币累加
 type TxIssueQSC struct {
 	QSCName string            `json:"qsc_name"` //币名
-	Amount  btypes.BigInt     `json:"amount"`   //金额
+	Amount  btypes.BigInt     `json:"amount"`   //币量
 	Banker  btypes.AccAddress `json:"banker"`   //banker地址
 }
 
 func (tx TxIssueQSC) ValidateData(ctx context.Context) error {
-	// QscName不能为空，且不能超过8个字符
-	if len(tx.QSCName) == 0 || len(tx.QSCName) > MaxQSCNameLen {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad qsc name. qsc name not empty and less then 8 characters")
-	}
-
-	// Amount大于0
+	// 币量校验
 	if !tx.Amount.GT(btypes.ZeroInt()) {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad amount. amount must gt than zero.")
+		return types.ErrAmountLTZero()
 	}
 
-	// QSC存在
+	// 代币校验
 	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
-	qscInfo := qscMapper.GetQsc(tx.QSCName)
-	if nil == qscInfo {
-		return types.ErrQSCNotExists(types.DefaultCodeSpace, "")
+	qscInfo, exists := qscMapper.GetQsc(tx.QSCName)
+	if !exists {
+		return types.ErrQSCNotExists()
 	}
 
-	// qscInfo banker存在
-	if qscInfo.Banker == nil {
-		return types.ErrBankerNotExists(types.DefaultCodeSpace, "")
+	// banker地址校验
+	if len(qscInfo.Banker) == 0 {
+		return types.ErrBankerNotExists()
 	}
-
-	// QSC名称一致
-	if tx.QSCName != qscInfo.Name {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad Bad qsc name. qsc name not match")
-	}
-
-	// banker 地址一致
 	if !bytes.Equal(tx.Banker, qscInfo.Banker) {
-		return types.ErrInvalidInput(types.DefaultCodeSpace, "Bad banker. banker not match")
+		return types.ErrInvalidBanker()
 	}
 
 	return nil
@@ -212,14 +192,15 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		Code: btypes.CodeOK,
 	}
 	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
-	qscInfo := qscMapper.GetQsc(tx.QSCName)
+	qscInfo, _ := qscMapper.GetQsc(tx.QSCName)
 	qscInfo.TotalAmount = qscInfo.TotalAmount.Add(tx.Amount)
-	qscMapper.SaveQsc(qscInfo)
+	qscMapper.SaveQsc(&qscInfo)
 
-	accountMapper := ctx.Mapper(bacc.AccountMapperName).(*bacc.AccountMapper)
-	banker := accountMapper.GetAccount(tx.Banker).(*qtypes.QOSAccount)
+	bankMapper := bank.GetMapper(ctx)
+	// 发行代币
+	banker := bankMapper.GetAccount(tx.Banker).(*qtypes.QOSAccount)
 	banker.MustPlusQSCs(qtypes.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
-	accountMapper.SetAccount(banker)
+	bankMapper.SetAccount(banker)
 
 	result.Events = btypes.Events{
 		btypes.NewEvent(
@@ -231,6 +212,7 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		btypes.NewEvent(
 			btypes.EventTypeMessage,
 			btypes.NewAttribute(btypes.AttributeKeyModule, types.AttributeKeyModule),
+			btypes.NewAttribute(btypes.AttributeKeyAction, types.EventTypeIssueQsc),
 			btypes.NewAttribute(btypes.AttributeKeyGasPayer, tx.GetSigner()[0].String()),
 		),
 	}
@@ -251,9 +233,7 @@ func (tx TxIssueQSC) GetGasPayer() btypes.AccAddress {
 }
 
 func (tx TxIssueQSC) GetSignData() (ret []byte) {
-	ret = append(ret, tx.QSCName...)
-	ret = append(ret, btypes.Int2Byte(tx.Amount.Int64())...)
-	ret = append(ret, tx.Banker...)
+	ret = Cdc.MustMarshalBinaryBare(tx)
 
 	return
 }

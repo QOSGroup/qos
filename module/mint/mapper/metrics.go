@@ -9,7 +9,7 @@ import (
 )
 
 const (
-	MetricsSubsystem = "mint"
+	MetricsSubsystem = "mint" // module name
 )
 
 type Metrics struct {
@@ -26,6 +26,7 @@ func NopMetrics() *Metrics {
 	}
 }
 
+// 注册本模块监控项
 func PrometheusMetrics(cfg *config.InstrumentationConfig) *Metrics {
 	if !cfg.Prometheus {
 		return NopMetrics()

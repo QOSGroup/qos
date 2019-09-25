@@ -47,8 +47,8 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 		data, e = getDelegationByOwnerAndDelegator(ctx, validatorAddr, deleAddr)
 
 	} else if route[0] == types.Delegations && route[1] == types.ValidatorFlag {
-		ownerAddr, _ := btypes.ValAddressFromBech32(route[2])
-		data, e = getDelegationsByValidator(ctx, ownerAddr)
+		valAddr, _ := btypes.ValAddressFromBech32(route[2])
+		data, e = getDelegationsByValidator(ctx, valAddr)
 
 	} else if route[0] == types.Delegations && route[1] == types.Delegator {
 		deleAddr, _ := btypes.AccAddressFromBech32(route[2])
@@ -74,29 +74,31 @@ func Query(ctx context.Context, route []string, req abci.RequestQuery) (res []by
 	return data, nil
 }
 
+// 根据委托地址和验证节点地址获取委托信息
 func getDelegationByOwnerAndDelegator(ctx context.Context, validatorAddr btypes.ValAddress, delegator btypes.AccAddress) ([]byte, error) {
 	sm := GetMapper(ctx)
 
 	validator, exists := sm.GetValidator(validatorAddr)
 	if !exists {
-		return nil, fmt.Errorf("Validator not exists. validator-address: %s", validatorAddr.String())
+		return nil, fmt.Errorf("validator not exists. validator-address: %s", validatorAddr.String())
 	}
 
 	info, exists := sm.GetDelegationInfo(delegator, validator.GetValidatorAddress())
 	if !exists {
-		return nil, fmt.Errorf("DelegationInfo not exists. validator-address: %s , deleAddr: %s", validatorAddr.String(), delegator.String())
+		return nil, fmt.Errorf("delegationInfo not exists. validator-address: %s , deleAddr: %s", validatorAddr.String(), delegator.String())
 	}
 
 	result := infoToDelegationQueryResult(validator, info)
 	return sm.GetCodec().MarshalJSON(result)
 }
 
+// 根据验证节点地址获取委托信息列表
 func getDelegationsByValidator(ctx context.Context, validatorAddr btypes.ValAddress) ([]byte, error) {
 	sm := GetMapper(ctx)
 
 	validator, exists := sm.GetValidator(validatorAddr)
 	if !exists {
-		return nil, fmt.Errorf("Validator not exists. validator-address: %s", validatorAddr.String())
+		return nil, fmt.Errorf("validator not exists. validator-address: %s", validatorAddr.String())
 	}
 
 	var result []DelegationQueryResult
@@ -108,6 +110,7 @@ func getDelegationsByValidator(ctx context.Context, validatorAddr btypes.ValAddr
 	return sm.GetCodec().MarshalJSON(result)
 }
 
+// 根据委托地址获取委托信息列表
 func getDelegationsByDelegator(ctx context.Context, delegator btypes.AccAddress) ([]byte, error) {
 	sm := GetMapper(ctx)
 
@@ -144,6 +147,7 @@ func NewDelegationQueryResult(deleAddr btypes.AccAddress, ownerAddr btypes.ValAd
 	}
 }
 
+// 根据委托地址获取解委托信息
 func getUnbondingsByDelegator(ctx context.Context, delegator btypes.AccAddress) ([]byte, error) {
 	sm := GetMapper(ctx)
 	result := sm.GetUnbondingDelegationsByDelegator(delegator)
@@ -151,6 +155,7 @@ func getUnbondingsByDelegator(ctx context.Context, delegator btypes.AccAddress) 
 	return sm.GetCodec().MarshalJSON(result)
 }
 
+// 根据委托地址获取转委托信息
 func getRedelegationsByDelegator(ctx context.Context, delegator btypes.AccAddress) ([]byte, error) {
 	sm := GetMapper(ctx)
 	result := sm.GetRedelegationsByDelegator(delegator)

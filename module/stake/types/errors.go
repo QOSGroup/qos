@@ -9,142 +9,68 @@ const (
 	DefaultCodeSpace btypes.CodespaceType = "stake"
 
 	CodeInvalidInput                     btypes.CodeType = 501 // 输入有误
-	CodeOwnerNotExists                   btypes.CodeType = 502 // Owner账户不存在
 	CodeOwnerNoEnoughToken               btypes.CodeType = 503 // Owner账户Tokens不足
 	CodeValidatorExists                  btypes.CodeType = 504 // Validator已存在
 	CodeConsensusHasValidator            btypes.CodeType = 505 // Owner已绑定有Validator
 	CodeValidatorNotExists               btypes.CodeType = 506 // Validator不存在
-	CodeValidatorIsActive                btypes.CodeType = 507 // Validator处于激活状态
-	CodeValidatorIsInactive              btypes.CodeType = 508 // Validator处于非激活状态
-	CodeValidatorInactiveIncome          btypes.CodeType = 509 // Validator处于非激活状态时收益非法
 	CodeErrCommissionNegative            btypes.CodeType = 510 // Negative commission
-	CodeErrCommissionHuge                btypes.CodeType = 511 // Validator处于非激活状态时收益非法
-	CodeErrCommissionGTMaxRate           btypes.CodeType = 512 // Validator处于非激活状态时收益非法
-	CodeErrCommissionChangeRateNegative  btypes.CodeType = 513 // Validator处于非激活状态时收益非法
-	CodeErrCommissionChangeRateGTMaxRate btypes.CodeType = 514 // Validator处于非激活状态时收益非法
-	CodeErrCommissionUpdateTime          btypes.CodeType = 515 // Validator处于非激活状态时收益非法
-	CodeErrCommissionGTMaxChangeRate     btypes.CodeType = 516 // Validator处于非激活状态时收益非法
+	CodeErrCommissionHuge                btypes.CodeType = 511 // Commission too large
+	CodeErrCommissionGTMaxRate           btypes.CodeType = 512 // Commission cannot be more than the max rate
+	CodeErrCommissionChangeRateNegative  btypes.CodeType = 513 // Commission change rate must be positive
+	CodeErrCommissionChangeRateGTMaxRate btypes.CodeType = 514 // Commission change rate cannot be more than the max rate
+	CodeErrCommissionUpdateTime          btypes.CodeType = 515 // Commission cannot be changed more than once in 24h
+	CodeErrCommissionGTMaxChangeRate     btypes.CodeType = 516 // Commission cannot be changed more than max change rate
 	CoderErrOwnerNotMatch                btypes.CodeType = 517 // validator owner不匹配
 )
 
-func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
-	if msg != "" {
-		return msg
-	}
-	return codeToDefaultMsg(code)
+func ErrInvalidInput(msg string) btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInput, msg)
 }
 
-func newError(codeSpace btypes.CodespaceType, code btypes.CodeType, msg string) btypes.Error {
-	msg = msgOrDefaultMsg(msg, code)
-	return btypes.NewError(codeSpace, code, msg)
+func ErrOwnerNoEnoughToken() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeOwnerNoEnoughToken, "owner has no enough token")
 }
 
-// NOTE: Don't stringer this, we'll put better messages in later.
-func codeToDefaultMsg(code btypes.CodeType) string {
-	switch code {
-	case CodeInvalidInput:
-		return "invalid input"
-	case CodeOwnerNotExists:
-		return "owner not exists"
-	case CodeOwnerNoEnoughToken:
-		return "owner has no enough token"
-	case CodeValidatorExists:
-		return "validator exists"
-	case CodeConsensusHasValidator:
-		return "consensus pubkey already bind a validator"
-	case CodeValidatorNotExists:
-		return "validator not exists"
-	case CodeValidatorIsActive:
-		return "validator is active"
-	case CodeValidatorIsInactive:
-		return "validator is inactive"
-	case CodeValidatorInactiveIncome:
-		return "vaidator in inactive and got fees"
-	case CodeErrCommissionNegative:
-		return "commission must be positive"
-	case CodeErrCommissionHuge:
-		return "commission cannot be more than 100%"
-	case CodeErrCommissionGTMaxRate:
-		return "commission cannot be more than the max rate"
-	case CodeErrCommissionChangeRateNegative:
-		return "commission change rate must be positive"
-	case CodeErrCommissionChangeRateGTMaxRate:
-		return "commission change rate cannot be more than the max rate"
-	case CodeErrCommissionUpdateTime:
-		return "commission cannot be changed more than once in 24h"
-	case CodeErrCommissionGTMaxChangeRate:
-		return "commission cannot be changed more than max change rate"
-	case CoderErrOwnerNotMatch:
-		return "validator owner not match"
-	default:
-		return btypes.CodeToDefaultMsg(code)
-	}
+func ErrValidatorExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeValidatorExists, "validator exists")
 }
 
-func ErrInvalidInput(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidInput, msg)
+func ErrConsensusHasValidator() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeConsensusHasValidator, "consensus pubkey already bind a validator")
 }
 
-func ErrOwnerNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeOwnerNotExists, msg)
+func ErrValidatorNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeValidatorNotExists, "validator not exists")
 }
 
-func ErrOwnerNoEnoughToken(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeOwnerNoEnoughToken, msg)
+func ErrCommissionNegative() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionNegative, "commission must be positive")
 }
 
-func ErrValidatorExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeValidatorExists, msg)
+func ErrCommissionHuge() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionHuge, "commission cannot be more than 100%")
 }
 
-func ErrConsensusHasValidator(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeConsensusHasValidator, msg)
+func ErrCommissionGTMaxRate() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionGTMaxRate, "commission cannot be more than the max rate")
 }
 
-func ErrValidatorNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeValidatorNotExists, msg)
+func ErrCommissionChangeRateNegative() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionChangeRateNegative, "commission change rate must be positive")
 }
 
-func ErrValidatorIsActive(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeValidatorIsActive, msg)
+func ErrCommissionChangeRateGTMaxRate() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionChangeRateGTMaxRate, "commission change rate cannot be more than the max rate")
 }
 
-func ErrValidatorIsInactive(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeValidatorIsInactive, msg)
+func ErrCommissionUpdateTime() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionUpdateTime, "commission cannot be changed more than once in 24h")
 }
 
-func ErrCodeValidatorInactiveIncome(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeValidatorInactiveIncome, msg)
+func ErrCommissionGTMaxChangeRate() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeErrCommissionGTMaxChangeRate, "commission cannot be changed more than max change rate")
 }
 
-func ErrCommissionNegative(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionNegative, "")
-}
-
-func ErrCommissionHuge(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionHuge, "")
-}
-
-func ErrCommissionGTMaxRate(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionGTMaxRate, "")
-}
-
-func ErrCommissionChangeRateNegative(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionChangeRateNegative, "")
-}
-
-func ErrCommissionChangeRateGTMaxRate(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionChangeRateGTMaxRate, "")
-}
-
-func ErrCommissionUpdateTime(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionUpdateTime, "")
-}
-
-func ErrCommissionGTMaxChangeRate(codeSpace btypes.CodespaceType) btypes.Error {
-	return newError(codeSpace, CodeErrCommissionGTMaxChangeRate, "")
-}
-
-func ErrOwnerNotMatch(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CoderErrOwnerNotMatch, msg)
+func ErrOwnerNotMatch() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CoderErrOwnerNotMatch, "validator owner not match")
 }

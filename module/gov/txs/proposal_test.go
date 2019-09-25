@@ -16,6 +16,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
+	"github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/crypto/ed25519"
 	"github.com/tendermint/tendermint/libs/log"
 	dbm "github.com/tendermint/tm-db"
@@ -29,6 +30,7 @@ func defaultContext() context.Context {
 	govMapper.SetCodec(Cdc)
 	approveKey := govMapper.GetStoreKey()
 	mapperMap[mapper.MapperName] = govMapper
+	govMapper.SetUpMetrics(config.DefaultConfig().Instrumentation)
 
 	accountMapper := bacc.NewAccountMapper(nil, qtypes.ProtoQOSAccount)
 	accountMapper.SetCodec(Cdc)
@@ -39,6 +41,7 @@ func defaultContext() context.Context {
 	paramMapper.SetCodec(Cdc)
 	paramsKey := paramMapper.GetStoreKey()
 	mapperMap[params.MapperName] = paramMapper
+	paramMapper.SetUpMetrics(config.DefaultConfig().Instrumentation)
 
 	stakingMapper := stake.NewMapper()
 	stakingMapper.SetCodec(Cdc)
@@ -49,6 +52,7 @@ func defaultContext() context.Context {
 	guardianMapper.SetCodec(Cdc)
 	guardianKey := guardianMapper.GetStoreKey()
 	mapperMap[guardian.MapperName] = guardianMapper
+	guardianMapper.SetUpMetrics(config.DefaultConfig().Instrumentation)
 
 	distributionMapper := distribution.NewMapper()
 	distributionMapper.SetCodec(Cdc)
@@ -107,7 +111,6 @@ func TestTxProposal_ValidateData(t *testing.T) {
 		valid bool
 	}{
 		{NewTxProposal("p1", "p1", addr, btypes.NewInt(10)), false},
-		{NewTxProposal("p1", "p1", addr, btypes.NewInt(10)), true},
 		{NewTxProposal("", "p1", addr, btypes.NewInt(10)), false},
 		{NewTxProposal("p1", "", addr, btypes.NewInt(10)), false},
 		{NewTxProposal("p1", "p1", nil, btypes.NewInt(10)), false},
@@ -145,20 +148,20 @@ func TestTxParameterChange_ValidateData(t *testing.T) {
 	ctx := defaultContext()
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
+	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(200000000000), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
 
-	proposal := NewTxParameterChange("p1", "p1", addr, btypes.NewInt(10), nil)
+	proposal := NewTxParameterChange("p1", "p1", addr, btypes.NewInt(100000000000), nil)
 
 	cases := []struct {
 		input []types.Param
 		valid bool
 	}{
-		{[]types.Param{{"gov", "min_deposit", "10"}}, true},
+		{[]types.Param{{"gov", "normal_min_deposit", "-10"}}, false},
+		{[]types.Param{{"gov", "normal_min_deposit", "10"}}, true},
 		{[]types.Param{}, false},
-		{[]types.Param{{"gov", "min_deposit1", "10"}}, false},
-		{[]types.Param{{"m", "min_deposit1", "10"}}, false},
+		{[]types.Param{{"m", "normal_min_deposit1", "10"}}, false},
 	}
 
 	for tcIndex, tc := range cases {
@@ -192,7 +195,7 @@ func TestTxTaxUsage_ValidateData(t *testing.T) {
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	dest := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
+	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20000000000), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
 	guardian.InitGenesis(ctx, guardian.GenesisState{[]guardian.Guardian{{"g1", guardian.Genesis, dest, nil}}})
@@ -201,9 +204,9 @@ func TestTxTaxUsage_ValidateData(t *testing.T) {
 		input *TxTaxUsage
 		valid bool
 	}{
-		{NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10), dest, qtypes.MustNewDecFromStr("0.5")), true},
-		{NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10), addr, qtypes.MustNewDecFromStr("0.5")), false},
-		{NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10), dest, qtypes.MustNewDecFromStr("0")), false},
+		{NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10000000000), dest, qtypes.MustNewDecFromStr("0.5")), true},
+		{NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10000000000), addr, qtypes.MustNewDecFromStr("0.5")), false},
+		{NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10000000000), dest, qtypes.MustNewDecFromStr("0")), false},
 	}
 
 	for tcIndex, tc := range cases {
@@ -217,11 +220,11 @@ func TestTxTaxUsage_Exec(t *testing.T) {
 	accountMapper := baseabci.GetAccountMapper(ctx)
 	addr := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 	dest := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
-	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20), nil))
+	accountMapper.SetAccount(qtypes.NewQOSAccount(addr, btypes.NewInt(20000000000), nil))
 	params.GetMapper(ctx).RegisterParamSet(&types.Params{})
 	initGenesis(ctx, types.DefaultGenesisState())
 
-	proposal := NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10), dest, qtypes.MustNewDecFromStr("0.5"))
+	proposal := NewTxTaxUsage("p1", "p1", addr, btypes.NewInt(10000000000), dest, qtypes.MustNewDecFromStr("0.5"))
 	result, _ := proposal.Exec(ctx)
 	require.Equal(t, result.Code, btypes.CodeOK)
 

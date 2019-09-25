@@ -10,6 +10,7 @@ import (
 	go_amino "github.com/tendermint/go-amino"
 )
 
+// 查询通胀规则
 func queryInflationPhrases(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "inflation-phrases",
@@ -38,6 +39,7 @@ func queryInflationPhrases(cdc *go_amino.Codec) *cobra.Command {
 	return cmd
 }
 
+// 查询QOS发行总量
 func queryTotal(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "total-inflation",
@@ -66,6 +68,7 @@ func queryTotal(cdc *go_amino.Codec) *cobra.Command {
 	return cmd
 }
 
+// 查询QOS流通总量
 func queryApplied(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "total-applied",

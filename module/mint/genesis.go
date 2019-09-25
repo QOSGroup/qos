@@ -7,6 +7,7 @@ import (
 	"github.com/QOSGroup/qos/module/mint/types"
 )
 
+// 初始化创世数据
 func InitGenesis(ctx context.Context, data types.GenesisState) {
 	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SetInflationPhrases(data.InflationPhrases)
@@ -25,6 +26,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 
 }
 
+// 导出状态数据
 func ExportGenesis(ctx context.Context) types.GenesisState {
 	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	firstBlockTime := mapper.GetFirstBlockTime()

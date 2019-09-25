@@ -145,7 +145,7 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [Approve](#query-approve)
-* `qoscli query qcp`                    [跨链相关信息查询](#查询联盟链)
+* `qoscli query qcp`                    [QCP](#query-qcp)
 * `qoscli query qsc`                    [联盟币信息查询](#查询联盟币)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
 * `qoscli query validator`              [验证节点查询](#查询验证节点)
@@ -620,9 +620,9 @@ QOS支持以下几种交易类型：
 * `qoscli tx decrease-approve` [Decrease approve](#decrease-approve)
 * `qoscli tx use-approve`      [Use approve](#use-approve)
 * `qoscli tx cancel-approve`   [Cancel approve](#cancel-approve)
-* `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
-* `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
-* `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
+* `qoscli tx create-qsc`       [Create QSC](#create-qsc)
+* `qoscli tx issue-qsc`        [Issue QSC](#issue-qsc)
+* `qoscli tx init-qcp`         [Init QCP](#init-qcp)
 * `qoscli tx create-validator` [成为验证节点](#成为验证节点)
 * `qoscli tx create-validator` [编辑验证节点](#编辑验证节点)
 * `qoscli tx revoke-validator` [撤销验证节点](#撤销验证节点)
@@ -638,7 +638,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx delete-guardian`  [Delete guardian](#delete-guardian)
 * `qoscli tx halt-network`     [Halt network](#halt-network)
 
-分为[Bank](#bank),[Approve](#approve),[联盟币](#联盟币（qsc）),[联盟链](#联盟链（qcp）),[验证节点](#验证节点（validator）),[治理](#治理（governance）),[Guardian](#guardian)这几大类。
+分为[Bank](#bank),[Approve](#approve),[QSC](#qsc),[联盟链](#联盟链（qcp）),[验证节点](#验证节点（validator）),[治理](#治理（governance）),[Guardian](#guardian)这几大类。
 
 ### Bank
 
@@ -783,7 +783,7 @@ result：
 {"check_tx":{},"deliver_tx":{},"hash":"3C06676C53A5439D39CB4D0FBA3213C44DC1BA8E","height":"430"}
 ```
 
-We can use [账户查询](#账户（account）) to see the latest state of `Arya` and `Sansa`.
+We can use [query account](#account) to see the latest state of `Arya` and `Sansa`.
 
 #### Cancel approve
 
@@ -799,48 +799,49 @@ result:
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"484"}
 ```
 
-### 联盟币（qsc）
+### QSC
 
-> 创建联盟币前需要申请[CA](../spec/ca.md)，点击[联盟币设计文档](../spec/qsc.md)了解更多。
+> Before creating QSC you need to apply for a [QSC certification](../spec/ca.md), see [QSC spec](../spec/qsc) for more information.
 
-联盟币相关指令：
-* `qoscli tx create-qsc`    [创建联盟币](#创建联盟币)
-* `qoscli query qsc`        [查询联盟币](#查询联盟币)
-* `qoscli tx issue-qsc`     [发放联盟币](#发放联盟币)
+commands:
+* `qoscli tx create-qsc`    [Create QSC](#create-qsc)
+* `qoscli query qsc`        [Query QSC](#query-qsc)
+* `qoscli query qsc`        [Query QSCs](#query-qscs)
+* `qoscli tx issue-qsc`     [Issue QSC](#issue-qsc)
 
-#### 创建联盟币
+#### Create QSC
 
 `qoscli tx create-qsc --creator <key_name_or_account_address> --qsc.crt <qsc.crt_file_path> --accounts <account_qsc_s>`
 
-主要参数：
+main parameters:
 
-- `--creator`       创建账号
-- `--qsc.crt`       证书位置
-- `--accounts`      初始发放地址币值集合，[addr1],[amount];[addr2],[amount2],...，该参数可为空，即只创建联盟币
+- `--creator`       creator account
+- `--qsc.crt`       crt file path
+- `--accounts`      initial accounts, [addr1],[amount];[addr2],[amount2],..., optional
 
-`Arya`在QOS网络中创建`QOE`，不含初始发放地址币值信息：
+`Arya` create QSC token with name of `QOE`:
 ```bash
 $ qoscli tx create-qsc --creator Arya --qsc.crt aoe.crt
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase password>
 ```
-> 假设`Arya`已在CA中心申请`aoe.crt`证书，`aoe.crt`中包含`banker`公钥，对应地址`qosacc1djtcyex03vluga35r8lattddkqt76s7f306xuq`，已经导入到本地私钥库中，名字为`ATM`，。
+> Assume `Arya` has `aoe.crt`, the `aoe.crt` contains `banker`'s public key and `banker`'s address is `qosacc1djtcyex03vluga35r8lattddkqt76s7f306xuq` which has been import into keybase as name `ATM`.
 
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"200"}
 ```
 
-#### 查询联盟币
+#### Query QSC
 
 `qoscli query qsc <qsc_name>`
 
-`qsc_name`为联盟币名称
+`qsc_name` is the token name
 
-查询`AOE`信息：
+query `AOE` information:
 ```bash
 $ qoscli query qsc QOE --indent
 ```
-执行结果：
+result:
 ```bash
 {
   "name": "AOE",
@@ -851,72 +852,93 @@ $ qoscli query qsc QOE --indent
 }
 ```
 
-#### 发放联盟币
+#### Query QSCs
 
-针对使用包含`Banker`公钥创建的联盟币，可向`Banker`地址发放（增发）对应联盟币：
+`qoscli query qscs`
+
+query all the QSCs:
+```bash
+$ qoscli query qscs --indent
+```
+result:
+```bash
+[
+    {
+      "name": "AOE",
+      "chain_id": "capricorn-1000",
+      "extrate": "1:280.0000",
+      "description": "",
+      "banker": "qosacc1djtcyex03vluga35r8lattddkqt76s7f306xuq"
+    }
+]
+```
+
+#### Issue QSC
+
+After creating the token, you can issue tokens to the address of Banker:
 
 `qoscli tx issue-qsc --qsc-name <qsc_name> --banker <key_name_or_account_address> --amount <qsc_amount>`
 
-主要参数：
-- `--qsc-name`  联盟币名字
-- `--banker`    Banker地址或私钥库中私钥名
-- `--amount`    联盟币发放（增发）量
+main parameters:
 
-向联盟币AOE `Banker`中发放（增发）10000AOE：
+- `--qsc-name`  QSC token name
+- `--banker`    Banker address or keybase name
+- `--amount`    token amount
+
+issue 10000 AOE:
 
 ```bash
 $ qoscli tx issue-qsc --qsc-name AOE --banker ATM --amount 10000
-Password to sign with 'ATM':<输入ATM本地密钥库密码>
+Password to sign with 'ATM':<input ATM's keybase password>
 ```
 
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"223"}
 ```
 
-可通过[账户查询](#账户（account）)查看`ATM`账户所持有AOE数量。
+[query account](#account) to view the amount of AOE held in the `ATM` account.
 
-### 联盟链（qcp）
+### qcp
 
-QOS跨链协议QCP，支持跨链交易
+QCP is a QOS cross-chain protocol, supporting cross-chain transactions.
 
-> 创建联盟链前需要申请[CA](../spec/ca.md)，点击[联盟链设计文档](../spec/qcp.md)了解更多。
+You need to apply before creating a federation chain
+> Before initialing a QCP chain, you need to apply the [CA](../spec/ca.md). View [QCP spec](../spec/qcp) for more information。
 
-联盟链相关指令：
-* `qoscli tx init-qcp`: [初始化联盟链](#初始化联盟链)
-* `qoscli query qcp`:   [查询qcp信息](#查询联盟链)
+* `qoscli tx init-qcp`: [Init QCP](#init-qcp)
+* `qoscli query qcp`:   [Query QCP](#query-qcp)
 
-#### 初始化联盟链
+#### Init QCP
 
 `qoscli tx init-qcp --creator <key_name_or_account_address> --qcp.crt <qcp.crt_file_path>`
 
-主要参数：
+main parameters:
 
-- `--creator`       创建账号
-- `--qcp.crt`       证书位置
+- `--creator`       creator assdress
+- `--qcp.crt`       crt file path
 
-> 假设`Arya`已在CA中心申请`qcp.crt`证书，`qcp.crt`中联盟链ID为`aoe-1000`
+> Suppose `Arya` has applied for the `qcp.crt` certificate at CA Center, and the chain ID is `aoe-1000` in `qcp.crt`.
 
-`Arya`在QOS网络中初始化联盟链信息：
+`Arya` initializes the chain information in the QOS network:
 ```bash
 $ qoscli tx init-qcp --creator Arya --qcp.crt qcp.crt
-Password to sign with 'Arya':<输入Arya本地密钥库密码>
+Password to sign with 'Arya':<input Arya's keybase password>
 ```
 
-执行结果：
+result:
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"243"}
 ```
 
-#### 查询联盟链
+#### Query QCP
 
-跨链协议是[qbase](https://www.github.com/QOSGroup/qbase)提供支持，主要有以下四个查询指令：
 - `qoscli query qcp list`
 - `qoscli query qcp out`
 - `qoscli query qcp in`
 - `qoscli query qcp tx`
 
-指令说明请参照[qbase-Qcp](https://github.com/QOSGroup/qbase/blob/master/docs/client/command.md#Qcp)。
+See [qbase-Qcp](https://github.com/QOSGroup/qbase/blob/master/docs/client/command.md#Qcp).
 
 ### 验证节点（validator）
 

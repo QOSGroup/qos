@@ -46,11 +46,11 @@ func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "create-validator",
 		Short: "create new validator initialized with a self-delegation to it",
 		Long: `
-owner is a keystore name or account address.
+owner is a keybase name or account address.
 
 example:
 
-	 qoscli tx create-validator --moniker validatorName --creator ownerName --tokens 100
+	 qoscli tx create-validator --moniker validatorName --owner ownerName --tokens 100
 
 		`,
 		RunE: func(cmd *cobra.Command, args []string) error {
@@ -58,7 +58,7 @@ example:
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "keystore name or account creator address")
+	cmd.Flags().String(flagOwner, "", "keybase name or account creator address")
 	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagNodeHome, qtypes.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
@@ -80,7 +80,7 @@ example:
 func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "modify-validator",
-		Short: "modify an existing validator account",
+		Short: "modify an existing validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (tx btxs.ITx, e error) {
 				name := viper.GetString(flagMoniker)
@@ -117,7 +117,7 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "keystore name or account of validator's owner address")
+	cmd.Flags().String(flagOwner, "", "keybase name or account of validator's owner address")
 	cmd.Flags().String(flagValidator, "", "validator address")
 	cmd.Flags().String(flagMoniker, "", "The validator's name")
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
@@ -153,7 +153,7 @@ func RevokeValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "keystore name or account of validator's owner address")
+	cmd.Flags().String(flagOwner, "", "keybase name or account of validator's owner address")
 	cmd.Flags().String(flagValidator, "", "validator address")
 
 	cmd.MarkFlagRequired(flagOwner)
@@ -189,7 +189,7 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "keystore name or account of validator address")
+	cmd.Flags().String(flagOwner, "", "keybase name or account of validator address")
 	cmd.Flags().String(flagValidator, "", "validator address")
 	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount to increase")
 

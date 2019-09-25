@@ -620,8 +620,8 @@ QOS支持以下几种交易类型：
 * `qoscli tx decrease-approve` [减少预授权](#减少预授权)
 * `qoscli tx use-approve`      [使用预授权](#使用预授权)
 * `qoscli tx cancel-approve`   [取消预授权](#取消预授权)
-* `qoscli tx create-qsc`       [创建联盟币](#创建联盟币)
-* `qoscli tx issue-qsc`        [发放联盟币](#发放联盟币)
+* `qoscli tx create-qsc`       [创建代币](#创建代币)
+* `qoscli tx issue-qsc`        [发放代币](#发放代币)
 * `qoscli tx init-qcp`         [初始化联盟链](#初始化联盟链)
 * `qoscli tx create-validator` [成为验证节点](#成为验证节点)
 * `qoscli tx create-validator` [编辑验证节点](#编辑验证节点)
@@ -638,7 +638,7 @@ QOS支持以下几种交易类型：
 * `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
 * `qoscli tx halt-network`     [停止网络](#停止网络)
 
-主要分为[Bank](#bank)，[预授权](#预授权)，[联盟币](#联盟币（qsc）)，[联盟链](#联盟链（qcp）)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
+主要分为[Bank](#bank)，[预授权](#预授权)，[代币](#代币)，[联盟链](#联盟链)，[验证节点](#验证节点（validator）)，[治理](#治理（governance）)，[系统账户](#系统账户)这几大类。
 
 ### Bank
 
@@ -803,16 +803,17 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"484"}
 ```
 
-### 联盟币（qsc）
+### 代币
 
-> 创建联盟币前需要申请[CA](../spec/ca.md)，点击[联盟币设计文档](../spec/qsc.md)了解更多。
+> 创建联盟币前需要申请[CA](../spec/ca.md)，点击[QSC设计文档](../spec/qsc)了解更多。
 
 联盟币相关指令：
-* `qoscli tx create-qsc`    [创建联盟币](#创建联盟币)
-* `qoscli query qsc`        [查询联盟币](#查询联盟币)
-* `qoscli tx issue-qsc`     [发放联盟币](#发放联盟币)
+* `qoscli tx create-qsc`    [创建代币](#创建代币)
+* `qoscli query qsc`        [查询代币](#查询代币)
+* `qoscli query qsc`        [查询所有代币](#查询所有代币)
+* `qoscli tx issue-qsc`     [发放代币](#发放代币)
 
-#### 创建联盟币
+#### 创建代币
 
 `qoscli tx create-qsc --creator <key_name_or_account_address> --qsc.crt <qsc.crt_file_path> --accounts <account_qsc_s>`
 
@@ -834,7 +835,7 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"200"}
 ```
 
-#### 查询联盟币
+#### 查询代币
 
 `qoscli query qsc <qsc_name>`
 
@@ -855,7 +856,28 @@ $ qoscli query qsc QOE --indent
 }
 ```
 
-#### 发放联盟币
+#### 查询所有代币
+
+`qoscli query qscs`
+
+查询所有代币信息：
+```bash
+$ qoscli query qscs --indent
+```
+执行结果：
+```bash
+[
+    {
+      "name": "AOE",
+      "chain_id": "capricorn-1000",
+      "extrate": "1:280.0000",
+      "description": "",
+      "banker": "qosacc1djtcyex03vluga35r8lattddkqt76s7f306xuq"
+    }
+]
+```
+
+#### 发放代币
 
 针对使用包含`Banker`公钥创建的联盟币，可向`Banker`地址发放（增发）对应联盟币：
 
@@ -878,9 +900,9 @@ Password to sign with 'ATM':<输入ATM本地密钥库密码>
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"223"}
 ```
 
-可通过[账户查询](#账户（account）)查看`ATM`账户所持有AOE数量。
+可通过[账户查询](#账户)查看`ATM`账户所持有AOE数量。
 
-### 联盟链（qcp）
+### 联盟链
 
 QOS跨链协议QCP，支持跨链交易
 
