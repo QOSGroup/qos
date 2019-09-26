@@ -39,10 +39,15 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return txs.TxTransfer{
+				tx := txs.TxTransfer{
 					Senders:   senders,
 					Receivers: receivers,
-				}, nil
+				}
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
+				}
+
+				return tx, nil
 			})
 		},
 	}

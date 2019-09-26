@@ -30,7 +30,7 @@ type TxCreateQSC struct {
 	Accounts     []*qtypes.QOSAccount `json:"accounts"`      // 初始账户
 }
 
-func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
+func (tx TxCreateQSC) ValidateInputs() error {
 	// 创建账户校验
 	if len(tx.Creator) == 0 {
 		return types.ErrEmptyCreator()
@@ -52,6 +52,27 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 	if !ok {
 		return types.ErrInvalidQSCCA()
 	}
+
+	// 初始账户校验，只能包含即将初始化的代币
+	for _, account := range tx.Accounts {
+		if account.QOS.NilToZero().GT(btypes.ZeroInt()) ||
+			len(account.QSCs) != 1 || account.QSCs[0].Name != subj.Name ||
+			!account.QSCs[0].Amount.NilToZero().GT(btypes.ZeroInt()) {
+			return types.ErrInvalidInitAccounts()
+		}
+	}
+
+	return nil
+}
+
+func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
+	// 校验基础数据
+	err := tx.ValidateInputs()
+	if err != nil {
+		return err
+	}
+
+	subj, _ := tx.QSCCA.CSR.Subj.(cert.QSCSubject)
 	if subj.ChainId != ctx.ChainID() {
 		return types.ErrInvalidQSCCA()
 	}
@@ -63,15 +84,6 @@ func (tx TxCreateQSC) ValidateData(ctx context.Context) error {
 
 	if !cert.VerityCrt([]crypto.PubKey{rootCA}, *tx.QSCCA) {
 		return types.ErrWrongQSCCA()
-	}
-
-	// 初始账户校验，只能包含即将初始化的代币
-	for _, account := range tx.Accounts {
-		if account.QOS.NilToZero().GT(btypes.ZeroInt()) ||
-			len(account.QSCs) != 1 || account.QSCs[0].Name != subj.Name ||
-			!account.QSCs[0].Amount.NilToZero().GT(btypes.ZeroInt()) {
-			return types.ErrInvalidInitAccounts()
-		}
 	}
 
 	// 校验已存在代币

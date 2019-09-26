@@ -50,8 +50,8 @@ func NewCreateValidatorTx(operator btypes.AccAddress, bech32ConPubKey crypto.Pub
 	}
 }
 
-// 数据校验
-func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
+// 基础数据校验
+func (tx *TxCreateValidator) ValidateInputs() (err error) {
 	if len(tx.Description.Moniker) == 0 {
 		return types.ErrInvalidInput("moniker is empty")
 	}
@@ -78,22 +78,13 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 	}
 
 	// 验证创世文件中包含委托信息的验证节点创建交易
-	if ctx.BlockHeader().Height == 0 && len(tx.Delegations) != 0 {
+	if len(tx.Delegations) != 0 {
 		totalDelegation := btypes.ZeroInt()
 		for _, delegation := range tx.Delegations {
 			totalDelegation = totalDelegation.Add(delegation.Amount)
-			err = validateQOSAccount(ctx, delegation.DelegatorAddr, delegation.Amount)
-			if nil != err {
-				return err
-			}
 		}
 		if !totalDelegation.Equal(tx.BondTokens) {
 			return types.ErrInvalidInput("validator bondTokens must equal sum(amount) of delegations")
-		}
-	} else {
-		err = validateQOSAccount(ctx, tx.Owner, tx.BondTokens)
-		if nil != err {
-			return err
 		}
 	}
 
@@ -101,6 +92,32 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 	err = tx.Commission.Validate()
 	if err != nil {
 		return
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
+	// 基础数据校验
+	err = tx.ValidateInputs()
+	if err != nil {
+		return err
+	}
+
+	// 验证创世文件中包含委托信息的验证节点创建交易
+	if ctx.BlockHeader().Height == 0 && len(tx.Delegations) != 0 {
+		for _, delegation := range tx.Delegations {
+			err = validateQOSAccount(ctx, delegation.DelegatorAddr, delegation.Amount)
+			if nil != err {
+				return err
+			}
+		}
+	} else {
+		err = validateQOSAccount(ctx, tx.Owner, tx.BondTokens)
+		if nil != err {
+			return err
+		}
 	}
 
 	mapper := mapper.GetMapper(ctx)
@@ -213,8 +230,8 @@ func NewModifyValidatorTx(owner btypes.AccAddress, validatorAddr btypes.ValAddre
 	}
 }
 
-// 数据校验
-func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
+// 基础数据校验
+func (tx *TxModifyValidator) ValidateInputs() (err error) {
 	if len(tx.Owner) == 0 {
 		return types.ErrInvalidInput("owner is empty")
 	}
@@ -232,6 +249,17 @@ func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
 	}
 	if len(tx.Description.Details) > MaxDescriptionLen {
 		return types.ErrInvalidInput("details is too long")
+	}
+
+	return
+}
+
+// 数据校验
+func (tx *TxModifyValidator) ValidateData(ctx context.Context) (err error) {
+	// 校验基础数据
+	err = tx.ValidateInputs()
+	if err != nil {
+		return err
 	}
 
 	// 校验验证节点信息

@@ -21,15 +21,11 @@ type TxInitQCP struct {
 	QCPCA   *cert.Certificate `json:"ca_qcp"`  //CA信息
 }
 
-func (tx TxInitQCP) ValidateData(ctx context.Context) error {
+// 校验基础数据
+func (tx TxInitQCP) ValidateInputs() error {
 	// 校验创建账户
 	if len(tx.Creator) == 0 {
 		return types.ErrEmptyCreator()
-	}
-	bankMapper := bank.GetMapper(ctx)
-	creator := bankMapper.GetAccount(tx.Creator)
-	if nil == creator {
-		return types.ErrCreatorNotExists()
 	}
 
 	// 校验证书
@@ -40,10 +36,28 @@ func (tx TxInitQCP) ValidateData(ctx context.Context) error {
 	if !ok {
 		return types.ErrInvalidQCPCA()
 	}
-	if subj.ChainId != ctx.ChainID() {
+	if len(subj.QCPChain) == 0 {
 		return types.ErrInvalidQCPCA()
 	}
-	if len(subj.QCPChain) == 0 {
+
+	return nil
+}
+
+func (tx TxInitQCP) ValidateData(ctx context.Context) error {
+	// 校验基础数据
+	err := tx.ValidateInputs()
+	if err != nil {
+		return err
+	}
+
+	bankMapper := bank.GetMapper(ctx)
+	creator := bankMapper.GetAccount(tx.Creator)
+	if nil == creator {
+		return types.ErrCreatorNotExists()
+	}
+
+	subj, _ := tx.QCPCA.CSR.Subj.(cert.QCPSubject)
+	if subj.ChainId != ctx.ChainID() {
 		return types.ErrInvalidQCPCA()
 	}
 	rootCA := mapper.GetRootCaPubkey(ctx)
