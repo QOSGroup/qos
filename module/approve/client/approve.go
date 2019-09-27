@@ -184,17 +184,17 @@ func handleApproveOperation(cdc *amino.Codec, operType operateType) error {
 		if err != nil {
 			return nil, err
 		}
-		// 授权和被授权账户不能相同
-		if fromAddr.Equals(toAddr) {
-			return nil, errors.New("from and to cannot be the same")
-		}
 
 		// 取消预授权不包含币种币值信息，特殊处理
 		if operType == cancleType {
-			return atxs.TxCancelApprove{
+			tx := atxs.TxCancelApprove{
 				From: fromAddr,
 				To:   toAddr,
-			}, nil
+			}
+			if err = tx.ValidateInputs(); err != nil {
+				return nil, err
+			}
+			return tx, nil
 		}
 
 		// 解析币种币值信息
@@ -204,16 +204,19 @@ func handleApproveOperation(cdc *amino.Codec, operType operateType) error {
 		}
 
 		// 构造交易体
-		appr := approvetypes.NewApprove(fromAddr, toAddr, qos, qscs)
+		tx := approvetypes.NewApprove(fromAddr, toAddr, qos, qscs)
+		if err = tx.Valid(); err != nil {
+			return nil, err
+		}
 		switch operType {
 		case createType:
-			return atxs.TxCreateApprove{Approve: appr}, nil
+			return atxs.TxCreateApprove{Approve: tx}, nil
 		case increaseType:
-			return atxs.TxIncreaseApprove{Approve: appr}, nil
+			return atxs.TxIncreaseApprove{Approve: tx}, nil
 		case decreaseType:
-			return atxs.TxDecreaseApprove{Approve: appr}, nil
+			return atxs.TxDecreaseApprove{Approve: tx}, nil
 		case useType:
-			return atxs.TxUseApprove{Approve: appr}, nil
+			return atxs.TxUseApprove{Approve: tx}, nil
 		default:
 			return nil, errors.New("operation type invalid")
 		}

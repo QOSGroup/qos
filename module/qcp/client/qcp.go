@@ -1,7 +1,6 @@
 package client
 
 import (
-	"errors"
 	"github.com/QOSGroup/kepler/cert"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
@@ -38,12 +37,11 @@ func InitQCPCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				_, ok := crt.CSR.Subj.(cert.QCPSubject)
-				if !ok {
-					return nil, errors.New("invalid crt file")
+				tx := qtxs.TxInitQCP{creatorAddr, &crt}
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
 				}
-
-				return qtxs.TxInitQCP{creatorAddr, &crt}, nil
+				return tx, nil
 			})
 		},
 	}

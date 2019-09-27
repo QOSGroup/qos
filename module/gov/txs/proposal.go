@@ -40,8 +40,8 @@ func NewTxProposal(title, description string, proposer btypes.AccAddress, deposi
 
 var _ txs.ITx = (*TxProposal)(nil)
 
-// 数据校验
-func (tx TxProposal) ValidateData(ctx context.Context) error {
+// 基础数据校验
+func (tx TxProposal) ValidateInputs() error {
 	// 标题不能为空且不能超过最大长度
 	if len(tx.Title) == 0 || len(tx.Title) > MaxTitleLen {
 		return types.ErrInvalidInput("invalid title")
@@ -54,6 +54,17 @@ func (tx TxProposal) ValidateData(ctx context.Context) error {
 	if !types.ValidProposalType(tx.ProposalType) {
 		return types.ErrInvalidInput("unknown proposal type")
 	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxProposal) ValidateData(ctx context.Context) error {
+	// 输入校验
+	if err := tx.ValidateInputs(); err != nil {
+		return err
+	}
+
 	// 初始质押不能小于`MinProposerDepositRate`参数这顶值
 	govMapper := mapper.GetMapper(ctx)
 	params := govMapper.GetLevelParams(ctx, tx.ProposalType.Level())
@@ -155,12 +166,7 @@ func NewTxTaxUsage(title, description string, proposer btypes.AccAddress, deposi
 var _ txs.ITx = (*TxProposal)(nil)
 
 // 数据校验
-func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
-	// 基础信息校验
-	err := tx.TxProposal.ValidateData(ctx)
-	if err != nil {
-		return err
-	}
+func (tx TxTaxUsage) ValidateInputs() error {
 	// 接收地址不能为空
 	if len(tx.DestAddress) == 0 {
 		return types.ErrInvalidInput("dest_address is empty")
@@ -171,6 +177,21 @@ func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
 	}
 	if tx.Percent.GT(qtypes.OneDec()) {
 		return types.ErrInvalidInput("percent gte 100%")
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxTaxUsage) ValidateData(ctx context.Context) error {
+	// 基础信息校验
+	err := tx.TxProposal.ValidateData(ctx)
+	if err != nil {
+		return err
+	}
+	err = tx.ValidateInputs()
+	if err != nil {
+		return err
 	}
 
 	// 接受账户必须是guardian
@@ -398,6 +419,22 @@ func NewTxModifyInflation(title, description string, proposer btypes.AccAddress,
 	}
 }
 
+// 基础数据检验
+func (tx TxModifyInflation) ValidateInputs() error {
+	// 校验QOS发行总量
+	if !tx.TotalAmount.GT(btypes.ZeroInt()) {
+		return types.ErrInvalidInput("total_amount must be positive")
+	}
+
+	// 校验通胀规则
+	err := tx.InflationPhrases.Valid()
+	if err != nil {
+		return types.ErrInvalidInput(err.Error())
+	}
+
+	return nil
+}
+
 // 数据检验
 func (tx TxModifyInflation) ValidateData(ctx context.Context) error {
 	// 基础数据校验
@@ -405,17 +442,11 @@ func (tx TxModifyInflation) ValidateData(ctx context.Context) error {
 	if err != nil {
 		return err
 	}
-
-	// 校验QOS发行总量
-	if !tx.TotalAmount.GT(btypes.ZeroInt()) {
-		return types.ErrInvalidInput("total_amount must be positive")
-	}
-
-	// 校验通胀规则
-	err = tx.InflationPhrases.Valid()
+	err = tx.TxProposal.ValidateInputs()
 	if err != nil {
-		return types.ErrInvalidInput(err.Error())
+		return err
 	}
+
 	applied := mint.GetMapper(ctx).GetAllTotalMintQOSAmount()
 	phrases := mint.GetMapper(ctx).MustGetInflationPhrases()
 	// 校验当前通胀时间， 当前通胀结束时间 > 当前时间+质押期+投票期 或 当前无通胀
@@ -522,14 +553,8 @@ func NewTxSoftwareUpgrade(title, description string, proposer btypes.AccAddress,
 
 var _ txs.ITx = (*TxSoftwareUpgrade)(nil)
 
-// 数据校验
-func (tx TxSoftwareUpgrade) ValidateData(ctx context.Context) error {
-	// 基础数据校验
-	err := tx.TxProposal.ValidateData(ctx)
-	if err != nil {
-		return err
-	}
-
+// 基础数据校验
+func (tx TxSoftwareUpgrade) ValidateInputs() error {
 	// 版本信息不能为空
 	if len(tx.Version) == 0 {
 		return types.ErrInvalidInput("Version is empty")
@@ -548,6 +573,21 @@ func (tx TxSoftwareUpgrade) ValidateData(ctx context.Context) error {
 		if len(tx.GenesisMD5) == 0 {
 			return types.ErrInvalidInput("GenesisFileMD5 is empty")
 		}
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxSoftwareUpgrade) ValidateData(ctx context.Context) error {
+	// 基础数据校验
+	err := tx.TxProposal.ValidateData(ctx)
+	if err != nil {
+		return err
+	}
+	err = tx.ValidateInputs()
+	if err != nil {
+		return err
 	}
 
 	return nil

@@ -375,8 +375,8 @@ type TxCancelApprove struct {
 
 var _ txs.ITx = (*TxCancelApprove)(nil)
 
-// 参数校验
-func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
+// 基础参数校验
+func (tx TxCancelApprove) ValidateInputs() error {
 	// 授权账户不能为空
 	if len(tx.From) == 0 {
 		return types.ErrInvalidInput("from address is empty")
@@ -384,6 +384,21 @@ func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
 	// 被授权账户不能为空
 	if len(tx.To) == 0 {
 		return types.ErrInvalidInput("to address is empty")
+	}
+
+	// 地址不能相同
+	if tx.From.Equals(tx.To) {
+		return types.ErrInvalidInput("addresses of from and to are the same")
+	}
+
+	return nil
+}
+
+// 参数校验
+func (tx TxCancelApprove) ValidateData(ctx context.Context) error {
+	// 基础输入校验
+	if err := tx.ValidateInputs(); err != nil {
+		return err
 	}
 
 	// 授权必须存在

@@ -27,7 +27,7 @@ func NewTxVote(proposalID int64, voter btypes.AccAddress, option types.VoteOptio
 var _ txs.ITx = (*TxVote)(nil)
 
 // 数据校验
-func (tx TxVote) ValidateData(ctx context.Context) error {
+func (tx TxVote) ValidateInputs() error {
 	// 投票账户存在
 	if len(tx.Voter) == 0 {
 		return types.ErrInvalidInput("voter is empty")
@@ -36,6 +36,18 @@ func (tx TxVote) ValidateData(ctx context.Context) error {
 	if !types.ValidVoteOption(tx.Option) {
 		return types.ErrInvalidInput("invalid voting option")
 	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxVote) ValidateData(ctx context.Context) error {
+	// 基础数据校验
+	err := tx.ValidateInputs()
+	if err != nil {
+		return err
+	}
+
 	// 提议存在，且处于投票期
 	proposal, ok := mapper.GetMapper(ctx).GetProposal(tx.ProposalID)
 	if !ok {

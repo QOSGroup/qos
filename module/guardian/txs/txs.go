@@ -30,8 +30,8 @@ func NewTxAddGuardian(description string, address, creator btypes.AccAddress) *T
 
 var _ txs.ITx = (*TxAddGuardian)(nil)
 
-// 数据校验
-func (tx TxAddGuardian) ValidateData(ctx context.Context) error {
+// 基础数据校验
+func (tx TxAddGuardian) ValidateInputs() error {
 	// 描述信息不能太长
 	if len(tx.Description) > MaxDescriptionLen {
 		return types.ErrInvalidInput("description is too long")
@@ -45,6 +45,17 @@ func (tx TxAddGuardian) ValidateData(ctx context.Context) error {
 	// 创建者账户地址不能为空
 	if len(tx.Creator) == 0 {
 		return types.ErrInvalidInput("creator is empty")
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxAddGuardian) ValidateData(ctx context.Context) error {
+	// 基础数据校验
+	err := tx.ValidateInputs()
+	if err != nil {
+		return err
 	}
 
 	// 系统账户不存在
@@ -131,8 +142,8 @@ func NewTxDeleteGuardian(address, deletedBy btypes.AccAddress) *TxDeleteGuardian
 
 var _ txs.ITx = (*TxDeleteGuardian)(nil)
 
-// 数据校验
-func (tx TxDeleteGuardian) ValidateData(ctx context.Context) error {
+// 基础数据校验
+func (tx TxDeleteGuardian) ValidateInputs() error {
 	// 账户地址不能为空
 	if len(tx.Address) == 0 {
 		return types.ErrInvalidInput("address is empty")
@@ -141,6 +152,17 @@ func (tx TxDeleteGuardian) ValidateData(ctx context.Context) error {
 	// 操作账户不能为空
 	if len(tx.DeletedBy) == 0 {
 		return types.ErrInvalidInput("deleted_by is empty")
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxDeleteGuardian) ValidateData(ctx context.Context) error {
+	// 基础数据校验
+	err := tx.ValidateInputs()
+	if err != nil {
+		return err
 	}
 
 	mapper := mapper.GetMapper(ctx)
@@ -235,7 +257,7 @@ func NewTxHaltNetwork(address btypes.AccAddress, reason string) *TxHaltNetwork {
 var _ txs.ITx = (*TxHaltNetwork)(nil)
 
 // 数据校验
-func (tx TxHaltNetwork) ValidateData(ctx context.Context) error {
+func (tx TxHaltNetwork) ValidateInputs() error {
 	// 操作账户不能为空
 	if len(tx.Guardian) == 0 {
 		return types.ErrInvalidInput("guardian is empty")
@@ -247,6 +269,17 @@ func (tx TxHaltNetwork) ValidateData(ctx context.Context) error {
 	}
 	if len(tx.Reason) > MaxDescriptionLen {
 		return types.ErrInvalidInput("reason is too long")
+	}
+
+	return nil
+}
+
+// 数据校验
+func (tx TxHaltNetwork) ValidateData(ctx context.Context) error {
+	// 基础数据校验
+	err := tx.ValidateInputs()
+	if err != nil {
+		return err
 	}
 
 	mapper := mapper.GetMapper(ctx)

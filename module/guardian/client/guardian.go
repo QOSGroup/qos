@@ -2,7 +2,6 @@ package client
 
 import (
 	"errors"
-	"fmt"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
@@ -35,11 +34,12 @@ func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				description := viper.GetString(flagDescription)
-				if len(description) > gtxs.MaxDescriptionLen {
-					return nil, fmt.Errorf("description is too long, max length is %d", gtxs.MaxDescriptionLen)
-				}
 
-				return gtxs.NewTxAddGuardian(description, address, creator), nil
+				tx := gtxs.NewTxAddGuardian(description, address, creator)
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
+				}
+				return tx, nil
 			})
 		},
 	}
@@ -72,7 +72,11 @@ func DeleteGuardianCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return gtxs.NewTxDeleteGuardian(address, deleteBy), nil
+				tx := gtxs.NewTxDeleteGuardian(address, deleteBy)
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
+				}
+				return tx, nil
 			})
 		},
 	}
@@ -172,14 +176,12 @@ func HaltCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				description := viper.GetString(flagDescription)
-				if len(description) == 0 {
-					return nil, errors.New("description is empty")
-				}
-				if len(description) > gtxs.MaxDescriptionLen {
-					return nil, fmt.Errorf("description is too long, max length is %d", gtxs.MaxDescriptionLen)
-				}
 
-				return gtxs.NewTxHaltNetwork(address, description), nil
+				tx := gtxs.NewTxHaltNetwork(address, description)
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
+				}
+				return tx, nil
 			})
 		},
 	}

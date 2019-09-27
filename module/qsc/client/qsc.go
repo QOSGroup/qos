@@ -90,14 +90,17 @@ func CreateQSCCmd(cdc *amino.Codec) *cobra.Command {
 					}
 				}
 
-				return txs.TxCreateQSC{
+				tx := txs.TxCreateQSC{
 					creatorAddr,
 					exchangeRate,
 					&crt,
 					description,
 					acs,
-				}, nil
-
+				}
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
+				}
+				return tx, nil
 			})
 		},
 	}

@@ -17,10 +17,6 @@ import (
 	"github.com/tendermint/go-amino"
 )
 
-const (
-	layoutISO = "2006-01-02"
-)
-
 func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "submit-proposal",
@@ -47,7 +43,11 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 
 				switch proposalType {
 				case gtypes.ProposalTypeText:
-					return gtxs.NewTxProposal(title, description, proposer, deposit), nil
+					tx := gtxs.NewTxProposal(title, description, proposer, deposit)
+					if err = tx.ValidateInputs(); err != nil {
+						return nil, err
+					}
+					return tx, nil
 				case gtypes.ProposalTypeTaxUsage:
 					destAddress, err := qcliacc.GetAddrFromFlag(ctx, flagDestAddress)
 					if err != nil {
@@ -61,10 +61,14 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					if err != nil {
 						return nil, err
 					}
-					if ps.GT(types.OneDec()) || ps.LTE(types.ZeroDec()) {
-						return nil, errors.New("percent ranges (0, 1]")
+					tx := gtxs.NewTxTaxUsage(title, description, proposer, deposit, destAddress, ps)
+					if err = tx.TxProposal.ValidateInputs(); err != nil {
+						return nil, err
 					}
-					return gtxs.NewTxTaxUsage(title, description, proposer, deposit, destAddress, ps), nil
+					if err = tx.ValidateInputs(); err != nil {
+						return nil, err
+					}
+					return tx, nil
 				case gtypes.ProposalTypeParameterChange:
 					params, err := parseParams(viper.GetString(flagParams))
 					if err != nil {
@@ -86,7 +90,14 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					if err != nil {
 						return nil, err
 					}
-					return gtxs.NewTxModifyInflation(title, description, proposer, deposit, totalAmount, inflationPhrases), nil
+					tx := gtxs.NewTxModifyInflation(title, description, proposer, deposit, totalAmount, inflationPhrases)
+					if err = tx.TxProposal.ValidateInputs(); err != nil {
+						return nil, err
+					}
+					if err = tx.ValidateInputs(); err != nil {
+						return nil, err
+					}
+					return tx, nil
 				case gtypes.ProposalTypeSoftwareUpgrade:
 					version := viper.GetString(flagVersion)
 					if len(version) == 0 {
@@ -96,19 +107,15 @@ func ProposalCmd(cdc *amino.Codec) *cobra.Command {
 					dataHeight := viper.GetInt64(flagDataHeight)
 					genesisFile := viper.GetString(flagGenesisFile)
 					genesisMD5 := viper.GetString(flagGenesisMD5)
-					if forZeroHeight {
-						if dataHeight <= 0 {
-							return nil, errors.New("data-height must be positive")
-						}
-						if len(genesisFile) == 0 {
-							return nil, errors.New("genesis-file is empty")
-						}
-						if len(genesisMD5) == 0 {
-							return nil, errors.New("genesis-md5 is empty")
-						}
+					tx := gtxs.NewTxSoftwareUpgrade(title, description, proposer, deposit,
+						version, dataHeight, genesisFile, genesisMD5, forZeroHeight)
+					if err = tx.TxProposal.ValidateInputs(); err != nil {
+						return nil, err
 					}
-					return gtxs.NewTxSoftwareUpgrade(title, description, proposer, deposit,
-						version, dataHeight, genesisFile, genesisMD5, forZeroHeight), nil
+					if err = tx.ValidateInputs(); err != nil {
+						return nil, err
+					}
+					return tx, nil
 				}
 
 				return nil, errors.New("unknown proposal-type")
