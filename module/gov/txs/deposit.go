@@ -15,7 +15,7 @@ import (
 type TxDeposit struct {
 	ProposalID int64             `json:"proposal_id"` // ID of the proposal
 	Depositor  btypes.AccAddress `json:"depositor"`   // Address of the depositor
-	Amount     btypes.BigInt     `json:"amount"`      // Percent of QOS to add to the proposal's deposit
+	Amount     btypes.BigInt     `json:"amount"`      // Amount of QOS to add to the proposal's deposit
 }
 
 func NewTxDeposit(proposalID int64, depositor btypes.AccAddress, amount btypes.BigInt) *TxDeposit {

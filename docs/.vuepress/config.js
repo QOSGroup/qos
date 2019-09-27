@@ -59,15 +59,16 @@ module.exports = {
                             ["/spec/eco_module.v1", "经济模型"],
                             ["/spec/validators/all_about_validators", "验证节点详解"],
                             ["/spec/staking", "验证节点"],
+                            ["/spec/mint/", "通胀"],
                             ["/spec/bank/", "Bank"],
-                            ["/spec/genesis", "创世"],
+                            ["/spec/genesis", "创世状态"],
                             ["/spec/approve/", "预授权"],
-                            ["/spec/governance", "治理"],
+                            ["/spec/gov/", "治理"],
                             ["/spec/guardian/", "系统用户"],
                             ["/spec/params/", "参数"],
                             ["/spec/indexing", "索引"],
-                            ["/spec/qsc", "代币"],
-                            ["/spec/qcp", "联盟链"],
+                            ["/spec/qsc/", "代币"],
+                            ["/spec/qcp/", "联盟链"],
                             ["/spec/ca", "证书"]
                         ]
                     }
@@ -109,16 +110,17 @@ module.exports = {
                             ["/spec/eco_module.v1", "ECO"],
                             ["/spec/validators/all_about_validators", "Validators"],
                             ["/spec/staking", "Stake"],
+                            ["/en/spec/mint/", "Mint"],
                             ["/en/spec/bank/", "Bank"],
                             ["/spec/genesis", "Genesis"],
                             ["/en/spec/approve/", "Approve"],
-                            ["/spec/governance", "Governance"],
+                            ["/en/spec/gov/", "Governance"],
                             ["/en/spec/guardian/", "Guardian"],
                             ["/en/spec/params/", "Parameters"],
-                            ["/spec/indexing", "Index"],
-                            ["/spec/qsc", "QSC"],
-                            ["/spec/qcp", "QCP"],
-                            ["/spec/ca", "CA"]
+                            ["/en/spec/indexing", "Index"],
+                            ["/en/spec/qsc/", "QSC"],
+                            ["/en/spec/qcp/", "QCP"],
+                            ["/en/spec/ca", "CA"]
                         ]
                     }
                 ]

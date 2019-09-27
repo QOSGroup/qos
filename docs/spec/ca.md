@@ -2,7 +2,7 @@
 
 QOS 证书源码参照[kepler](https://github.com/QOSGroup/kepler.git)，可编译可执行命令工具`kepler`。
 
-## Concepts
+## 概念
 
 QOS创建QSC、初始化QCP需要申请CA，获得`qsc.crt`、`qcp.crt`等证书文件
 

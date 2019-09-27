@@ -65,10 +65,6 @@ qosInitAcc      local   qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq  qosaccpub
 ```bash
 $ qosd add-genesis-accounts qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq,49000000000000qos
 ```
-::: warning Note
-QOS默认总发行100亿，通胀待发行总量51亿，`add-genesis-accounts`添加的所有账户QOS总量需要是49亿，而源码中QOS以万分之一为单位，
-所以通过`add-genesis-accounts`添加的账户QOS总量数值应为`49000000000000`，否则无法网络启动。
-:::
 
 * config-root-ca
 

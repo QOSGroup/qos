@@ -410,7 +410,7 @@ func NewTxModifyInflation(title, description string, proposer btypes.AccAddress,
 		TxProposal: TxProposal{
 			Title:          title,
 			Description:    description,
-			ProposalType:   types.ProposalTypeParameterChange,
+			ProposalType:   types.ProposalTypeModifyInflation,
 			Proposer:       proposer,
 			InitialDeposit: deposit,
 		},

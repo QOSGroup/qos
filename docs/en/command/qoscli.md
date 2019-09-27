@@ -2,8 +2,8 @@
 
 提供与QOS网络交互的命令行工具`qoscli`，主要提供以下命令行功能：
 * `keys`        [本地密钥库](#密钥（keys）)
-* `query`       [信息查询](#查询（query）)
-* `tx`          [交易](#交易（tx）)
+* `query`       [信息查询](#query)
+* `tx`          [Transactions](#transactions)
 * `version`     [版本信息](#版本（version）)
 
 所有命令均可通过添加`--help`获取命令说明
@@ -139,14 +139,15 @@ qoscli keys import Arya --file Arya.pri
 
 ```
 
-## 查询（query）
+## Query
 
 * `qoscli query account`                [Account](#account)
 * `qoscli query store`                  [存储查询](#存储（store）)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [Approve](#query-approve)
 * `qoscli query qcp`                    [QCP](#query-qcp)
-* `qoscli query qsc`                    [联盟币信息查询](#查询联盟币)
+* `qoscli query qsc`                    [QSC](#query-qsc)
+* `qoscli query qscs`                   [QSCs](#query-qscs)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
 * `qoscli query validator`              [验证节点查询](#查询验证节点)
 * `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
@@ -158,16 +159,17 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
 * `qoscli query unbondings`             [待返还委托](#待返还委托)
 * `qoscli query redelegations`          [待执行委托变更](#待执行委托变更)
-* `qoscli query community-fee-pool`     [社区费池](#社区费池)
-* `qoscli query proposal`               [提议查询](#提议查询)
-* `qoscli query proposals`              [提议列表](#提议列表)
-* `qoscli query vote`                   [投票查询](#投票查询)
-* `qoscli query votes`                  [投票列表](#投票列表)
-* `qoscli query deposit`                [抵押查询](#抵押查询)
-* `qoscli query deposits`               [抵押列表](#抵押列表)
-* `qoscli query tally`                  [投票统计](#投票统计)
-* `qoscli query params`                 [参数查询](#参数查询)
-* `qoscli query inflation-phrases`      [通胀查询](#通胀查询)
+* `qoscli query proposal`               [Proposal](#query-proposal)
+* `qoscli query proposals`              [Proposals](#query-proposals)
+* `qoscli query vote`                   [Vote](#query-vote)
+* `qoscli query votes`                  [Votes](#query-votes)
+* `qoscli query deposit`                [Deposit](#query-deposit)
+* `qoscli query deposits`               [Deposits](#query-deposits)
+* `qoscli query tally`                  [Tally](#tally)
+* `qoscli query params`                 [Params](#params)
+* `qoscli query inflation-phrases`      [Inflation rules](#query-inflation-rules)
+* `qoscli query total-inflation  `      [Total inflation](#query-total-inflation)
+* `qoscli query total-applied`          [Total applied](#query-total-applied)
 * `qoscli query guardian`               [Query guardian](#query-guardian)
 * `qoscli query guardians`              [Query guardians](#query-guardians)
 * `qoscli query status`                 [查询节点状态](#状态（status）)
@@ -545,7 +547,7 @@ $ qoscli query tx f5fc2c228cba754d5b95e49b02e81ff818f7b9140f1859d3797b09fb4aa123
 根据`approve-from`=`qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y`查询预授权交易信息：
 
 ```bash
-$ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y'" --indent
+$ qoscli query txs --tags "create-approve.approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y'" --indent
 ```
 输出示例：
 
@@ -609,7 +611,7 @@ $ qoscli query txs --tags "approve-from='qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78ls
 
 更多交易Tag请查阅[index](../spec/indexing.md)
 
-## 交易（tx）
+## Transactions
 
 QOS支持以下几种交易类型：
 
@@ -631,14 +633,14 @@ QOS支持以下几种交易类型：
 * `qoscli tx modify-compound`  [修改收益复投方式](#修改收益复投方式)
 * `qoscli tx unbond`           [解除委托](#解除委托)
 * `qoscli tx redelegate`       [变更委托验证节点](#变更委托验证节点)
-* `qoscli tx submit-proposal`  [提交提议](#提交提议)
-* `qoscli tx deposit`          [提议抵押](#提议抵押)
-* `qoscli tx vote`             [提议投票](#提议投票)
+* `qoscli tx submit-proposal`  [Submit proposal](#submit-proposal)
+* `qoscli tx deposit`          [Deposit proposal](#deposit)
+* `qoscli tx vote`             [Vote proposal](#vote)
 * `qoscli tx add-guardian`     [Add guardian](#add-guardian)
 * `qoscli tx delete-guardian`  [Delete guardian](#delete-guardian)
 * `qoscli tx halt-network`     [Halt network](#halt-network)
 
-分为[Bank](#bank),[Approve](#approve),[QSC](#qsc),[联盟链](#联盟链（qcp）),[验证节点](#验证节点（validator）),[治理](#治理（governance）),[Guardian](#guardian)这几大类。
+分为[Bank](#bank),[Approve](#approve),[QSC](#qsc),[联盟链](#联盟链（qcp）),[验证节点](#验证节点（validator）),[治理](#governance),[Guardian](#guardian)这几大类。
 
 ### Bank
 
@@ -1433,21 +1435,21 @@ $ qoscli tx redelegate --from-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685v
 $ qoscli query redelegations Sansa
 ```
 
-### 治理（governance）
+### Governance
 
-* `qoscli tx submit-proposal`  [提交提议](#提交提议)
-* `qoscli query proposal`      [提议查询](#提议查询)
-* `qoscli query proposals`     [提议列表](#提议列表)
-* `qoscli tx deposit`          [提议抵押](#提议抵押)
-* `qoscli query deposit`       [抵押查询](#抵押查询)
-* `qoscli query deposits`      [抵押列表](#抵押列表)
-* `qoscli tx vote`             [提议投票](#提议投票)
-* `qoscli query vote`          [投票查询](#投票查询)
-* `qoscli query votes`         [投票列表](#投票列表)
-* `qoscli query tally`         [投票统计](#投票统计)
-* `qoscli query params`        [参数查询](#参数查询)
+* `qoscli tx submit-proposal`  [Submit proposal](#submit-proposal)
+* `qoscli query proposal`      [Query proposal](#query-proposal)
+* `qoscli query proposals`     [Query proposals](#query-proposals)
+* `qoscli tx deposit`          [Deposit](#deposit)
+* `qoscli query deposit`       [Query deposit](#query-deposit)
+* `qoscli query deposits`      [Query deposits](#query-deposits)
+* `qoscli tx vote`             [Vote](#vote)
+* `qoscli query vote`          [Query vote](#query-vote)
+* `qoscli query votes`         [Query votes](#query-votes)
+* `qoscli query tally`         [Tally](#tally)
+* `qoscli query params`        [Query params](#query-params)
 
-#### 提交提议
+#### Submit proposal
 
 `qoscli tx submit-proposal
     --title <proposal_title>
@@ -1456,74 +1458,73 @@ $ qoscli query redelegations Sansa
     --deposit <deposit_amount_of_qos>
     --description <description>`
 
-主要参数：
+main parameters:
 
-必填参数：
+required parameters:
 
-- `--title`             标题
-- `--proposal-type`     提议类型：`Text`、`ParameterChange`、`TaxUsage`
-- `--proposer`          提议账户，账户地址或密钥库中密钥名字
-- `--deposit`           提议押金，不能小于`min_deposit`与`min_proposer_deposit_rate`乘积
-- `--description`       描述信息
+- `--title`             title
+- `--proposal-type`     proposal type: `Text`/`ParameterChange`/`TaxUsage`/`ModifyInflation`/`SoftwareUpgrade`
+- `--proposer`          proposal address or keybase name
+- `--deposit`           initial deposit, must gt `min_deposit * min_proposer_deposit_rate`
+- `--description`       description
 
-`TaxUsage`类型提议特有参数：
+`TaxUsage` unique parameters:
 
-- `--dest-address`      目标地址，用于接收QOS
-- `--percent`           社区费池提取比例，小数0~1
+- `--dest-address`      address for accepting QOS
+- `--percent`           percent, ranges (0, 1]
 
-`ParameterChange`类型提议特有参数：
+`ParameterChange` unique parameters:
 
-- `--params`            参数列表，格式：`module:key_name:value,module:key_name:value`，如：gov:min_deposit:10000
+- `--params`            parameters list, `module:key_name:value,module:key_name:value`
 
-`AddInflationPhrase`类型提议特有参数：
+`ModifyInflation` unique parameters:
 
-- `end-time`            通胀结束时间，格式：'yyyy-MM-dd'
-- `total-amount`        发行量
+- `inflation`           inflation rules, '[{"end_time":"2023-10-20T00:00:00Z","total_amount":"25500000000000","applied_amount":"0"},{"end_time":"2027-10-20T00:00:00Z","total_amount":"12750000000000","applied_amount":"0"},{"end_time":"2031-10-20T00:00:00Z","total_amount":"6375000000000","applied_amount":"0"},{"end_time":"2035-10-20T00:00:00Z","total_amount":"3187500000000","applied_amount":"0"},{"end_time":"2039-10-20T00:00:00Z","total_amount":"1593750000000","applied_amount":"0"},{"end_time":"2043-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"},{"end_time":"2047-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"}]'
+- `total-amount`        total amount of QOS
 
-`SoftwareUpgrade`类型提议特有参数：
+`SoftwareUpgrade` unique parameters:
 
-- `--version`           QOS软件版本
-- `--data-height`       数据版本
-- `--genesis-file`      genesis.json文件url
-- `--genesis-md5`       genesis.json文件md5
-- `--for-zero-height`   清除本地数据，从第0高度重新开始
+- `--version`           version
+- `--data-height`       data height
+- `--genesis-file`      genesis.json url
+- `--genesis-md5`       genesis.json md5
+- `--for-zero-height`   hard fork ?
 
-`Arya`提交一个文本提议：
+`Arya` submit a simple text proposal:
 ```bash
 $ qoscli tx submit-proposal --title 'update qos' --proposal-type Text --proposer Arya --deposit 10000000 --description 'this is the description'
 ```
 
-`Arya`提交一个参数修改提议：
+`Arya` submit a `ParameterChange` proposal:
 ```bash
 $ qoscli tx submit-proposal --title 'update parameters' --proposal-type ParameterChange --proposer Arya --deposit 10000000 --description 'this is the description' --params gov:min_deposit:1000
 ```
 
-假设`Arya`在QOS初始化时已经通过[添加特权账户](qosd.md#添加特权账户) 添加到了`genesis.json`，`Arya`提交一个提取费池提议：
+Assume `Arya is a guardian.`Arya` submit a `TaxUsage` proposal:
 ```bash
 $ qoscli tx submit-proposal --title 'use tax' --proposal-type TaxUsage --proposer Arya --deposit 10000000 --description 'this is the description' --dest-address Sansa --percent 0.5
 ```
 
-Arya`提交一个增加通胀阶段提议：
+Arya` submit a `AddInflationPhrase` proposal:
 ```bash
-$ qoscli tx submit-proposal --title 'add inflation phrase' --proposal-type AddInflationPhrase --proposer Arya --deposit 10000000 --description 'this is the description' --end-time 2100-10-01 --total-amount 1000000000
+$ qoscli tx submit-proposal --title 'add inflation phrase' --proposal-type ModifyInflation --proposer Arya --deposit 100000000 --description 'this is the description' --total-amount 10000000000000 --inflation-phrases '[{"end_time":"2023-10-20T00:00:00Z","total_amount":"25500000000000","applied_amount":"0"},{"end_time":"2027-10-20T00:00:00Z","total_amount":"12750000000000","applied_amount":"0"},{"end_time":"2031-10-20T00:00:00Z","total_amount":"6375000000000","applied_amount":"0"},{"end_time":"2035-10-20T00:00:00Z","total_amount":"3187500000000","applied_amount":"0"},{"end_time":"2039-10-20T00:00:00Z","total_amount":"1593750000000","applied_amount":"0"},{"end_time":"2043-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"},{"end_time":"2047-10-20T00:00:00Z","total_amount":"796875000000","applied_amount":"0"}]'
 ```
 
-`Arya`提交一个软件升级提议：
+`Arya` submit a `SoftwareUpgrade` proposal:
 ```bash
 $ qoscli tx submit-proposal --title 'update qos' --proposal-type SoftwareUpgrade --proposer Arya --deposit 10000000 --description 'upgrade qos to v0.0.6 with genesis file exporting in height 100' --genesis-file "https://.../genesis.json" --data-height 110 --version "0.0.6" --genesis-md5 88c4827158d194116b66b561691e83ef
 ```
-提议通过后，会在下一块`BeginBlock`执行下载`genesis.json`，重置本地数据（如需历史数据，请做好备份），等待安装提议版本qos重启网络。
 
-#### 提议查询
+#### Query proposal
 
 `qoscli query proposal <proposal-id>`
 
-查询`ProposalID`为1的提议：
+query the first proposal:
 ```bash
 $ qoscli query proposal 1 --indent
 ```
 
-查询结果：
+result:
 ```bash
 {
   "proposal_content": {
@@ -1551,16 +1552,16 @@ $ qoscli query proposal 1 --indent
 }
 ```
 
-#### 提议列表
+#### Query proposals
 
 `qoscli query proposals`
 
-查询所有提议：
+query all proposals:
 ```bash
 $ qoscli query proposals
 ```
 
-查询结果：
+result:
 ```bash
 [
   {
@@ -1590,38 +1591,36 @@ $ qoscli query proposals
 ]
 ```
 
-#### 提议抵押
-
-提议在抵押、投票阶段都可以执行下面的抵押交易：
+#### Deposit
 
 `qoscli tx deposit --proposal-id <proposal_id> --depositor <depositor_key_name_or_account_address> --amount <amount_of_qos>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
-- `--depositor`         抵押账户，地址或密钥库名字
-- `--amount`            抵押QOS数量
+- `--proposal-id`       proposal ID
+- `--depositor`         depositor address or keybase name
+- `--amount`            amount of qos to deposit
 
-`Arya`抵押100000个QOS到3号提议：
+`Arya` deposit 100000 QOS to the first proposal:
 ```bash
 $ qoscli tx deposit --proposal-id 1 --depositor Arya --amount 100000
 ```
 
-#### 抵押查询
+#### Query deposit
 
 `qoscli query deposit <proposal-id> <depositer>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
-- `--depositor`         抵押账户，地址或密钥库名字
+- `--proposal-id`       proposal ID
+- `--depositor`         depositor address or keybase name
 
-查询`Arya`在编号为1的提议上的抵押：
+query `Arya`'s deposit information to the first proposal:
 ```bash
 $ qoscli query deposit 1 Arya --indent
 ```
 
-查询结果：
+result:
 ```bash
 {
   "depositor": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
@@ -1630,20 +1629,20 @@ $ qoscli query deposit 1 Arya --indent
 }
 ```
 
-#### 抵押列表
+#### Query deposits
 
 `qoscli query deposits <proposal-id>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
+- `--proposal-id`       proposal ID
 
-查询编号为1的提议上的所有抵押：
+query all deposits to the first proposal: 
 ```bash
 $ qoscli query deposits 1 --indent
 ```
 
-查询结果：
+result:
 ```bash
 [
   {
@@ -1654,38 +1653,36 @@ $ qoscli query deposits 1 --indent
 ]
 ```
 
-#### 提议投票
-
-进入投票阶段的提议可通过下面指令进行投票操作：
+#### Vote
 
 `qoscli tx vote --proposal-id <proposal_id> --voter <voter_key_name_or_account_address> --option <vote_option>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
-- `--voter`             投票账户，地址或密钥库名字
-- `--option`            投票选项，可选值：`Yes`,`Abstain`,`No`,`NoWithVeto`
+- `--proposal-id`       proposal ID
+- `--voter`             voter address or keybase name
+- `--option`            vote option, `Yes`,`Abstain`,`No`,`NoWithVeto`
 
-`Arya`给1号提议投票`Yes`：
+`Arya` vote `Yes` to the first proposal:
 ```bash
 $ qoscli tx vote --proposal-id 1 --voter Arya --option Yes
 ```
 
-#### 投票查询
+#### Query vote
 
 `qoscli query vote <proposal-id> <voter>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
-- `--voter`             投票账户，地址或密钥库名字
+- `--proposal-id`       proposal ID
+- `--voter`             voter address or keybase name
 
-查询`Arya`在编号为1的提议上的投票信息：
+query `Arya`'s vote to the first proposal:
 ```bash
 $ qoscli query vote 1 Arya --indent
 ```
 
-查询结果：
+result:
 ```bash
 {
   "voter": "address1ctmavdk57x0q7c9t98v7u79607222ars4qczcy",
@@ -1694,20 +1691,20 @@ $ qoscli query vote 1 Arya --indent
 }
 ```
 
-#### 投票列表
+#### Query votes
 
 `qoscli query votes <proposal-id>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
+- `--proposal-id`       proposal ID
 
-查询编号为1的提议上的所有投票：
+query votes:
 ```bash
 $ qoscli query votes 1 --indent
 ```
 
-查询结果：
+result:
 ```bash
 [
   {
@@ -1718,20 +1715,20 @@ $ qoscli query votes 1 --indent
 ]
 ```
 
-#### 投票统计
+#### Tally
 
 `qoscli query tally <proposal-id>`
 
-主要参数：
+main parameters:
 
-- `--proposal-id`       提议ID
+- `--proposal-id`       proposal ID
 
-查询编号为1的提议上实时统计结果：
+query the real-time statistics on the first proposal:
 ```bash
 $ qoscli query tally 1 --indent
 ```
 
-查询结果：
+result:
 ```bash
 {
   "yes": "100",
@@ -1741,16 +1738,16 @@ $ qoscli query tally 1 --indent
 }
 ```
 
-#### 参数查询
+#### Params
 
 `qoscli query params --module <module> --key <key_name>`
 
-主要参数：
+main parameters:
 
-- `--module`       模块名称：`stake`、`gov`、`distribution`
-- `--key`          参数名
+- `--module`       module name: `stake`,`gov`,`distribution`
+- `--key`          parameter key
 
-查询所有参数：
+query all parameters:
 ```bash
 $ qoscli query params --indent
 [
@@ -1795,7 +1792,7 @@ $ qoscli query params --indent
 ]
 ```
 
-查询`gov`模块下参数：
+query parameters in `gov` mosule:
 ```bash
 $ qoscli query params --module gov --indent
 {
@@ -1812,10 +1809,80 @@ $ qoscli query params --module gov --indent
 }
 ```
 
-查询`gov`模块下`min_deposit`参数值：
+query `min_deposit` in `gov` module:
 ```bash
 $ qoscli query params --module gov --key min_deposit
 "10000000"
+```
+
+
+### Inflation
+
+* `qoscli query inflation-phrases`      [Inflation rules](#query-inflation-rules)
+* `qoscli query total-inflation  `      [Total inflation](#query-total-inflation)
+* `qoscli query total-applied`          [Total applied](#query-total-applied)
+
+#### Query inflation rules
+
+`qoscli query inflation-phrases`
+
+result:
+```bash
+[
+  {
+    "end_time": "2023-10-20T00:00:00Z",
+    "total_amount": "25500000000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2027-10-20T00:00:00Z",
+    "total_amount": "12750000000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2031-10-20T00:00:00Z",
+    "total_amount": "6375000000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2035-10-20T00:00:00Z",
+    "total_amount": "3187500000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2039-10-20T00:00:00Z",
+    "total_amount": "1593750000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2043-10-20T00:00:00Z",
+    "total_amount": "796875000000",
+    "applied_amount": "0"
+  },
+  {
+    "end_time": "2047-10-20T00:00:00Z",
+    "total_amount": "796875000000",
+    "applied_amount": "0"
+  }
+]
+```
+
+#### Query total inflation
+
+`qoscli query total-inflation`
+
+result:
+```bash
+"100000000000000"
+```
+
+#### Query total applied
+
+`qoscli query total-applied`
+
+result:
+```bash
+"49000130122714"
 ```
 
 ### Guardian

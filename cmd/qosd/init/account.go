@@ -65,6 +65,7 @@ Example:
 			for _, acc := range accounts {
 				mintState.AppliedQOSAmount = mintState.AppliedQOSAmount.Add(acc.QOS)
 			}
+			mintState.TotalQOSAmount = mintState.InflationPhrases.TotalAmount().Add(mintState.AppliedQOSAmount)
 
 			appState[bank.ModuleName] = cdc.MustMarshalJSON(bankState)
 			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
