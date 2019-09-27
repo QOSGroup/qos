@@ -135,13 +135,7 @@ func (phrases InflationPhrases) Valid() error {
 	if len(phrases) == 0 {
 		return errors.New("phrases is empty")
 	}
-	times := map[time.Time]bool{}
-	lastTime := time.Unix(0, 0)
 	for _, p := range phrases {
-		// 通胀阶段列表中的endtime需要有序，从小到大
-		if !p.EndTime.After(lastTime) {
-			return errors.New("endtimes should be in-order, from small to big")
-		}
 		// 通胀时间不能重复
 		if _, ok := times[p.EndTime]; !ok {
 			times[p.EndTime] = true
@@ -152,7 +146,6 @@ func (phrases InflationPhrases) Valid() error {
 		if !p.TotalAmount.GT(types.ZeroInt()) {
 			return fmt.Errorf("total amount not positive in phrase:%v", p.EndTime)
 		}
-		lastTime = p.EndTime
 	}
 
 	return nil
