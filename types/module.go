@@ -3,9 +3,11 @@ package types
 import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
+	cliContext "github.com/QOSGroup/qbase/client/context"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qbase/context"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -25,6 +27,8 @@ type AppModuleBasic interface {
 	// client functionality
 	GetTxCmds(*amino.Codec) []*cobra.Command
 	GetQueryCmds(*amino.Codec) []*cobra.Command
+
+	RegisterRestRoutes(ctx cliContext.CLIContext, routes *mux.Router)
 }
 
 // collections of AppModuleBasic
@@ -62,6 +66,12 @@ func (bm BasicManager) ValidateGenesis(genesis map[string]json.RawMessage) error
 		}
 	}
 	return nil
+}
+
+func (bm BasicManager) RegisterRoutes(ctx cliContext.CLIContext, routes *mux.Router) {
+	for _, b := range bm {
+		b.RegisterRestRoutes(ctx, routes)
+	}
 }
 
 // add all tx commands to the rootTxCmd

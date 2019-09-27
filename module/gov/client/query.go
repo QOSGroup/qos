@@ -32,23 +32,30 @@ func queryProposalCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := mapper.BuildQueryProposalPath(pID)
-			res, err := cliCtx.Query(path, []byte{})
-
+			result, err := getProposal(cliCtx, pID)
 			if err != nil {
-				return nil
+				return err
 			}
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var result types.Proposal
-			cliCtx.Codec.UnmarshalJSON(res, &result)
 
 			return cliCtx.PrintResult(result)
 		},
 	}
+}
+
+func getProposal(cliContext context.CLIContext, pid int64) (result types.Proposal, err error) {
+	path := mapper.BuildQueryProposalPath(pid)
+	res, err := cliContext.Query(path, []byte{})
+
+	if err != nil {
+		return types.Proposal{}, nil
+	}
+
+	if len(res) == 0 {
+		return types.Proposal{}, errors.New("no result found")
+	}
+
+	err = cliContext.Codec.UnmarshalJSON(res, &result)
+	return
 }
 
 func queryProposalsCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -92,20 +99,7 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 				Limit:     limit,
 			}
 
-			data, err := cliCtx.Codec.MarshalJSON(queryParam)
-			if err != nil {
-				return err
-			}
-
-			path := mapper.BuildQueryProposalsPath()
-			res, err := cliCtx.Query(path, data)
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var result []types.Proposal
-			err = cdc.UnmarshalJSON(res, &result)
+			result, err := queryProposalsByParams(cliCtx, queryParam)
 			if err != nil {
 				return err
 			}
@@ -124,6 +118,28 @@ $ qos query gov proposals --status (DepositPeriod|VotingPeriod|Passed|Rejected)
 	cmd.Flags().String(flagStatus, "", "(optional) filter proposals by proposal status, status: deposit_period/voting_period/passed/rejected")
 
 	return cmd
+}
+
+func queryProposalsByParams(ctx context.CLIContext, param mapper.QueryProposalsParam) ([]types.Proposal, error) {
+	data, err := ctx.Codec.MarshalJSON(param)
+	if err != nil {
+		return nil, err
+	}
+
+	path := mapper.BuildQueryProposalsPath()
+	res, err := ctx.Query(path, data)
+
+	if len(res) == 0 {
+		return nil, errors.New("no result found")
+	}
+
+	var result []types.Proposal
+	err = ctx.Codec.UnmarshalJSON(res, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
 }
 
 func toProposalStatus(statusStr string) types.ProposalStatus {
@@ -159,24 +175,31 @@ func queryVoteCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("voter %s is not a valid address value", args[1])
 			}
 
-			path := mapper.BuildQueryVotePath(pID, addr.String())
-			res, err := cliCtx.Query(path, []byte{})
+			vote, err := getProposalVote(cliCtx, pID, addr)
 			if err != nil {
 				return err
 			}
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var vote types.Vote
-			if err := cliCtx.Codec.UnmarshalJSON(res, &vote); err != nil {
-				return err
-			}
-
 			return cliCtx.PrintResult(vote)
 		},
 	}
+}
+
+func getProposalVote(cliContext context.CLIContext, pid int64, voter btypes.AccAddress) (vote types.Vote, err error) {
+	path := mapper.BuildQueryVotePath(pid, voter.String())
+	res, err := cliContext.Query(path, []byte{})
+	if err != nil {
+		return vote, err
+	}
+
+	if len(res) == 0 {
+		return vote, errors.New("no result found")
+	}
+
+	if err = cliContext.Codec.UnmarshalJSON(res, &vote); err != nil {
+		return vote, err
+	}
+
+	return
 }
 
 func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -191,18 +214,8 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := mapper.BuildQueryVotesPath(pID)
-			res, err := cliCtx.Query(path, []byte{})
+			votes, err := queryProposalVotes(cliCtx, pID)
 			if err != nil {
-				return err
-			}
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var votes []types.Vote
-			if err := cliCtx.Codec.UnmarshalJSON(res, &votes); err != nil {
 				return err
 			}
 
@@ -213,6 +226,25 @@ func queryVotesCommand(cdc *go_amino.Codec) *cobra.Command {
 			return cliCtx.PrintResult(votes)
 		},
 	}
+}
+
+func queryProposalVotes(cliContext context.CLIContext, pid int64) ([]types.Vote, error) {
+	path := mapper.BuildQueryVotesPath(pid)
+	res, err := cliContext.Query(path, []byte{})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) == 0 {
+		return nil, errors.New("no result found")
+	}
+
+	var votes []types.Vote
+	if err := cliContext.Codec.UnmarshalJSON(res, &votes); err != nil {
+		return nil, err
+	}
+
+	return votes, nil
 }
 
 func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -233,24 +265,31 @@ func queryDepositCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("depositer %s is not a valid address value", args[1])
 			}
 
-			path := mapper.BuildQueryDepositPath(pID, addr.String())
-			res, err := cliCtx.Query(path, []byte{})
+			deposit, err := getProposalDeposit(cliCtx, pID, addr)
 			if err != nil {
 				return err
 			}
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var deposit types.Deposit
-			if err := cliCtx.Codec.UnmarshalJSON(res, &deposit); err != nil {
-				return nil
-			}
-
 			return cliCtx.PrintResult(deposit)
 		},
 	}
+}
+
+func getProposalDeposit(cliContext context.CLIContext, pid int64, addr btypes.AccAddress) (deposit types.Deposit, err error) {
+	path := mapper.BuildQueryDepositPath(pid, addr.String())
+	res, err := cliContext.Query(path, []byte{})
+	if err != nil {
+		return deposit, err
+	}
+
+	if len(res) == 0 {
+		return deposit, errors.New("no result found")
+	}
+
+	if err = cliContext.Codec.UnmarshalJSON(res, &deposit); err != nil {
+		return deposit, err
+	}
+
+	return
 }
 
 func queryDepositsCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -265,24 +304,37 @@ func queryDepositsCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := mapper.BuildQueryDepositsPath(pID)
-			res, err := cliCtx.Query(path, []byte{})
+			deposits, err := queryProposalDeposits(cliCtx, pID)
 			if err != nil {
-				return err
+				return nil
 			}
 
-			if len(res) == 0 {
+			if len(deposits) == 0 {
 				return errors.New("no result found")
-			}
-
-			var deposits []types.Deposit
-			if err := cliCtx.Codec.UnmarshalJSON(res, &deposits); err != nil {
-				return err
 			}
 
 			return cliCtx.PrintResult(deposits)
 		},
 	}
+}
+
+func queryProposalDeposits(cliContext context.CLIContext, pid int64) ([]types.Deposit, error) {
+	path := mapper.BuildQueryDepositsPath(pid)
+	res, err := cliContext.Query(path, []byte{})
+	if err != nil {
+		return nil, err
+	}
+
+	if len(res) == 0 {
+		return nil, errors.New("no result found")
+	}
+
+	var deposits []types.Deposit
+	if err := cliContext.Codec.UnmarshalJSON(res, &deposits); err != nil {
+		return nil, err
+	}
+
+	return deposits, nil
 }
 
 func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -297,24 +349,31 @@ func queryTallyCommand(cdc *go_amino.Codec) *cobra.Command {
 				return fmt.Errorf("proposal id %s is not a valid uint value", args[0])
 			}
 
-			path := mapper.BuildQueryTallyPath(pID)
-			res, err := cliCtx.Query(path, []byte{})
+			result, err := getProposalTally(cliCtx, pID)
 			if err != nil {
 				return err
 			}
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var result types.TallyResult
-			if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
-				return err
-			}
-
 			return cliCtx.PrintResult(result)
 		},
 	}
+}
+
+func getProposalTally(cliContext context.CLIContext, pid int64) (result types.TallyResult, err error) {
+	path := mapper.BuildQueryTallyPath(pid)
+	res, err := cliContext.Query(path, []byte{})
+	if err != nil {
+		return result, err
+	}
+
+	if len(res) == 0 {
+		return result, errors.New("no result found")
+	}
+
+	if err = cliContext.Codec.UnmarshalJSON(res, &result); err != nil {
+		return result, err
+	}
+
+	return
 }
 
 func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
@@ -327,46 +386,12 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 
 			module := viper.GetString(flagModule)
 			key := viper.GetString(flagParamKey)
-			if len(key) != 0 && len(module) == 0 {
-				return errors.New("module is empty")
-			}
 
-			mod := 0
-			var path string
-			if len(module) == 0 {
-				path = mapper.BuildQueryParamsPath()
-			} else if len(key) == 0 {
-				mod = 1
-				path = mapper.BuildQueryModuleParamsPath(module)
-			} else {
-				mod = 2
-				path = mapper.BuildQueryParamPath(module, key)
-			}
-			res, err := cliCtx.Query(path, []byte{})
+			result, err := queryModuleParams(cliCtx, module, key)
 			if err != nil {
 				return err
 			}
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			if mod == 0 {
-				var result []qtypes.ParamSet
-				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
-					return err
-				}
-				return cliCtx.PrintResult(result)
-			} else if mod == 1 {
-				var result qtypes.ParamSet
-				if err := cliCtx.Codec.UnmarshalJSON(res, &result); err != nil {
-					return err
-				}
-				return cliCtx.PrintResult(result)
-			} else {
-				fmt.Println(string(res))
-				return nil
-			}
+			return cliCtx.PrintResult(result)
 		},
 	}
 
@@ -374,4 +399,52 @@ func queryParamsCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd.Flags().String(flagParamKey, "", "(optional) parameter name")
 
 	return cmd
+}
+
+func queryModuleParams(cliContext context.CLIContext, module, key string) (rest interface{}, err error) {
+	if len(key) != 0 && len(module) == 0 {
+		return rest, errors.New("module is empty")
+	}
+
+	mod := 0
+	var path string
+	if len(module) == 0 {
+		path = mapper.BuildQueryParamsPath()
+	} else if len(key) == 0 {
+		mod = 1
+		path = mapper.BuildQueryModuleParamsPath(module)
+	} else {
+		mod = 2
+		path = mapper.BuildQueryParamPath(module, key)
+	}
+	res, err := cliContext.Query(path, []byte{})
+	if err != nil {
+		return rest, err
+	}
+
+	if len(res) == 0 {
+		return rest, errors.New("no result found")
+	}
+
+	if mod == 0 {
+		var result []qtypes.ParamSet
+		if err = cliContext.Codec.UnmarshalJSON(res, &result); err != nil {
+			return result, err
+		}
+
+		if len(result) == 0 {
+			return result, errors.New("no result found")
+		}
+
+		return result, nil
+	} else if mod == 1 {
+		var result qtypes.ParamSet
+		if err = cliContext.Codec.UnmarshalJSON(res, &result); err != nil {
+			return result, err
+		}
+
+		return result, nil
+	} else {
+		return string(res), nil
+	}
 }
