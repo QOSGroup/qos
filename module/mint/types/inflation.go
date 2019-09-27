@@ -135,6 +135,7 @@ func (phrases InflationPhrases) Valid() error {
 	if len(phrases) == 0 {
 		return errors.New("phrases is empty")
 	}
+	times := map[time.Time]bool{}
 	for _, p := range phrases {
 		// 通胀时间不能重复
 		if _, ok := times[p.EndTime]; !ok {
