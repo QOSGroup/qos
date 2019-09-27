@@ -83,8 +83,8 @@ type TxUnbondDelegation struct {
 
 创建预授权需要通过以下校验：
 - 当`UnbondAll`为空时，`Amount`需为正整数
-- 当`UnbondAll`为空时，`ValidatorAdd`所有bonded tokens需要大于`Amount`
-- `Delegator`与`ValidatorAdd`的委托关系需存在
+- 当`UnbondAll`为空时，`ValidatorAddr`所有bonded tokens需要大于`Amount`
+- `Delegator`与`ValidatorAddr`的委托关系需存在
 
 ### 签名
 
@@ -117,7 +117,7 @@ type TxCreateReDelegation struct {
 - 当`RedelegateAll`为空时，`Amount`需为正整数
 - `FromValidatorAddr`需存在
 - `ToValidatorAddr`需存在
-- `Delegator`与`FromValidator`的委托关系需存在
+- `Delegator`与`FromValidatorAddr`的委托关系需存在
 
 ### 签名
 
