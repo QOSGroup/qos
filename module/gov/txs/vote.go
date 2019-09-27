@@ -30,7 +30,7 @@ var _ txs.ITx = (*TxVote)(nil)
 func (tx TxVote) ValidateInputs() error {
 	// 投票账户存在
 	if len(tx.Voter) == 0 {
-		return types.ErrInvalidInput("depositor is empty")
+		return types.ErrInvalidInput("voter is empty")
 	}
 	// 投票有效
 	if !types.ValidVoteOption(tx.Option) {
