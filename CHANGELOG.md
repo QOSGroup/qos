@@ -1,4 +1,22 @@
 # Changelog
+
+## v0.0.8
+2019.08.23
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [module] 规范数值类型使用
+* [module] 以太坊锁定账户释放规则
+* [module] 地址标准化
+* [module] 提议区分等级
+* [module] 规范数值类型使用
+* [module] http rpc
+* [module] 代码review和文档完善
+* [module] 若干bug
+
 ## v0.0.7
 2019.08.28
 
