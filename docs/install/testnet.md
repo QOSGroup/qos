@@ -11,7 +11,7 @@ QOS测试网络以十二星座命名，我们在*2018年12月26日*启动第一�
 
 ## 安装 QOS
 
-参照[安装引导](http://docs.qoschain.info/qos/install/testnet/installation.html)
+参照[安装引导](installation.md)
 和[qos-testnets](https://github.com/QOSGroup/qos-testnets)安装对应版本的QOS。
 
 ## 启动全节点
