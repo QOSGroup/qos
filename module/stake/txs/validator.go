@@ -2,13 +2,11 @@ package txs
 
 import (
 	"fmt"
-	"github.com/QOSGroup/qos/module/bank"
-	"github.com/tendermint/tendermint/crypto/ed25519"
-
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	"github.com/QOSGroup/qbase/txs"
 	btypes "github.com/QOSGroup/qbase/types"
+	"github.com/QOSGroup/qos/module/bank"
 	"github.com/QOSGroup/qos/module/stake/mapper"
 	"github.com/QOSGroup/qos/module/stake/types"
 	qtypes "github.com/QOSGroup/qos/types"
@@ -139,7 +137,7 @@ func (tx *TxCreateValidator) ValidateData(ctx context.Context) (err error) {
 // 交易执行
 func (tx *TxCreateValidator) Exec(ctx context.Context) (result btypes.Result, crossTxQcp *txs.TxQcp) {
 	result = btypes.Result{Code: btypes.CodeOK}
-	valAddr := btypes.ValAddress(ed25519.GenPrivKey().PubKey().Address())
+	valAddr := btypes.ValAddress(tx.Owner)
 
 	validator := types.Validator{
 		OperatorAddress: valAddr,
