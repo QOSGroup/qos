@@ -313,7 +313,8 @@ func (tx *TxModifyValidator) Exec(ctx context.Context) (result btypes.Result, cr
 	result.Events = btypes.Events{
 		btypes.NewEvent(
 			types.EventTypeModifyValidator,
-			btypes.NewAttribute(types.AttributeKeyOwner, tx.ValidatorAddr.String()),
+			btypes.NewAttribute(types.AttributeKeyValidator, tx.ValidatorAddr.String()),
+			btypes.NewAttribute(types.AttributeKeyOwner, tx.Owner.String()),
 		),
 		btypes.NewEvent(
 			btypes.EventTypeMessage,
@@ -437,7 +438,7 @@ func (tx *TxRevokeValidator) GetSignData() (ret []byte) {
 type TxActiveValidator struct {
 	Owner         btypes.AccAddress `json:"owner"`          // 验证人Owner地址
 	ValidatorAddr btypes.ValAddress `json:"validator_addr"` // 验证人地址
-	BondTokens    btypes.BigInt     `json:"bond_tokens"`    // 绑定Token数量
+	BondTokens    btypes.BigInt     `json:"bond_tokens"`    // 增加绑定Token数量
 }
 
 var _ txs.ITx = (*TxActiveValidator)(nil)

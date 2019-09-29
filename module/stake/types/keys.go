@@ -37,7 +37,7 @@ var (
 	DelegationByDelValKey = []byte{0x31} // key: delegator add + validator OperatorAddress add, value: delegationInfo
 	DelegationByValDelKey = []byte{0x32} // key: OperatorAddress owner add + delegator add, value: nil
 
-	UnbondingHeightDelegatorValidatorKey = []byte{0x41} // key: height + delegator + validator OperatorAddress addr, value: the amount of qos going to be unbonded on this height
+	UnbondingHeightDelegatorValidatorKey = []byte{0x41} // key: height + delegator + validator OperatorAddress addr, value: UnbondingDelegationInfo
 	UnbondingDelegatorHeightValidatorKey = []byte{0x42} // key: delegator + height + validator OperatorAddress addr, value: nil
 	UnbondingValidatorHeightDelegatorKey = []byte{0x43} // key: validator + height + delegator add, value: nil
 

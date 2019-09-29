@@ -4,7 +4,7 @@
 
 * `init`                  [初始化](#初始化)
 * `add-genesis-accounts`  [设置创世账户](#设置账户)
-* `add-guardian`          [添加特权账户](#添加特权账户)
+* `add-guardian`          [添加系统账户](#添加系统账户)
 * `gentx`                 [生成创世交易](#生成创世交易)
 * `collect-gentxs`        [收集创世交易](#收集创世交易)
 * `config-root-ca`        [设置CA](#设置ca)
@@ -66,21 +66,21 @@ $ qosd add-genesis-accounts qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk,10000Q
 
 会在`genesis.json`文件`app-state`中`accounts`部分添加地址为`qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk`，持有10000QOS的账户信息。
 
-## 添加特权账户
+## 添加系统账户
 
 `qosd add-guardian --address <address> --description <description>`
 
 参数说明:
 
-- `--address`     特权账户地址，可接收`TaxUsageProposal`提议从社区费池提取的QOS代币
+- `--address`     系统账户地址，可接收`TaxUsageProposal`提议从社区费池提取的QOS代币
 - `--description` 描述
 
-添加特权账户至`genesis.json`文件：
+添加系统账户至`genesis.json`文件：
 ```bash
 $ qosd add-guardian --address qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk --description "this is the description"
 ```
 
-会在`genesis.json`文件`app-state`中`guardian`部分添加地址为`qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk`的特权账户。
+会在`genesis.json`文件`app-state`中`guardian`部分添加地址为`qosacc1c7nh7qquvjm3p28xpsnfn420437ztvzy2hwdtk`的系统账户。
 
 ## 生成创世交易
 
@@ -109,7 +109,7 @@ $ qosd gentx --moniker "Arya's node" --owner qosacc1c7nh7qquvjm3p28xpsnfn420437z
 
 `<qcp_root.pub>`、`<qsc_root.pub>`为根证书公钥文件路径
 
-设置Root CA公钥信息，用于[联盟币](qoscli.md#联盟币（qsc）)和[联盟链](qoscli.md#联盟链（qcp）)涉及到证书操作的校验。
+设置Root CA公钥信息，用于[代币](qoscli.md#代币)和[联盟链](qoscli.md#联盟链)涉及到证书操作的校验。
 
 ## 启动
 
@@ -204,7 +204,7 @@ Global Flags:
 - chain-id            链ID
 - genesis-accounts    初始账户
 - hostname-prefix     hostName前缀
-- miniker             miniker
+- moniker             moniker
 - qcp-root-ca         pubKey of root CA for QCP
 - qsc-root-ca         pubKey of root CA for QSC
 - compound            收益复投方式，默认true，即收益参与复投
@@ -216,7 +216,7 @@ Global Flags:
 
 重置区块链数据库，删除地址簿文件，重置状态至初始状态。
 
-## tendermint
+## Tendermint
 
 tendermint子命令：
 
@@ -225,4 +225,4 @@ tendermint子命令：
 - `qosd tendermint show-validator`  Show this node's tendermint validator info
 
 ## 版本
-与[qoscli version](qoscli.md#版本（version）)相同
+与[qoscli version](qoscli.md#版本)相同

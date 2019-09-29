@@ -18,3 +18,4 @@ Governance on the QOS chain.
 5. **[Events](5_events.md)**
     - [Transactions](5_events.md#transactions)
     - [EndBlocker](5_events.md#endblocker)
+6. **[Params](6_params.md)**

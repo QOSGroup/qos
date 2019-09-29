@@ -59,7 +59,7 @@ NAME:   TYPE:   ADDRESS:                                                PUBKEY:
 qosInitAcc      local   qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq  qosaccpub1zcjduepqfzd5r2hzdnz58pjc9xuw5r2ez8f4khhwtekfxdjyvkvhrly6rxzqll3fgz
 
 ```
-更多本地秘钥库相关指令参照[qoscli keys](../command/qoscli.md#密钥（keys）)
+更多本地秘钥库相关指令参照[qoscli keys](../command/qoscli.md#密钥)
 
 参照[设置账户](../command/qosd.md#设置账户) 初始化账户信息：
 ```bash
@@ -68,7 +68,7 @@ $ qosd add-genesis-accounts qosacc1hqcz9hhxa7qqxghc276vxxgcd3qkr279nz5gfq,490000
 
 * config-root-ca
 
-root CA用于校验[QSC](../spec/qsc.md)和[QCP](../spec/qcp.md)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
+root CA用于校验[QSC](../spec/qsc)和[QCP](../spec/qcp)，不存在相关业务时**可不配置**。CA的获取和使用请查阅[CA 文档](../spec/ca.md)
 
 使用`qosd config-root-ca`初始化root CA公钥到配置文件。
 
@@ -114,7 +114,7 @@ $ qosd start --log_level debug
 
 ## Cluster
 
-### qosd testnet
+* qosd testnet
 [qosd-testnet](../command/qosd.md#初始化测试网络)命令可以批量生成一个测试网络多个验证节点配置信息
 
 假设第一台机器IP: 192.168.1.100
@@ -126,7 +126,7 @@ Successfully initialized 4 node directories
 会在当前目录下生成mytestnet文件夹，分别放置node0-3配置文件。
 其中priv_validator_owner.json为对应validator owner私钥，可通过`qoscli keys import`导入。
 
-### start
+* start
 启动前请确保按照[安装说明](installation.md)在四台机器上正确安装QOS。
 拷贝node0-3至不同机器，分别执行：
 ```bash
