@@ -21,3 +21,5 @@ require (
 	github.com/tendermint/tendermint v0.32.2
 	github.com/tendermint/tm-db v0.1.1
 )
+
+replace github.com/QOSGroup/qbase v0.2.3-0.20190927065041-32eb90018d34 => ../qbase

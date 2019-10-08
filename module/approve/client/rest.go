@@ -17,7 +17,7 @@ import (
 type CreateApproveReq struct {
 	rpc.BaseRequest `json:"base"`
 	QOS             types.BigInt `json:"qos"`
-	QSCs            qtypes.QSCs  `1json:"qscs"`
+	QSCs            qtypes.QSCs  `json:"qscs"`
 }
 
 type IncreaseApproveReq struct {
