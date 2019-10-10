@@ -16,13 +16,17 @@ tags:
   - name: Gov
     description: Gov module APIS
   - name: QCP
-    description: QCP APIS
+    description: QCP module APIS
   - name: QSC
-    description: QSC APIS
+    description: QSC module APIS
   - name: GUARDIAN
-    description: GUARDIAN APIS
+    description: GUARDIAN module APIS
   - name: STAKE
-    description: STAKE APIS
+    description: STAKE module APIS
+  - name: MINT
+    description: MINT module APIS
+  - name: DISTRIBUTION
+    description: DISTRIBUTION module APIS
 
 schemes:
   - http
@@ -1226,7 +1230,119 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-
+  /mint/inflationPhrases:
+    get:
+      tags:
+        - MINT
+      summary: "查询通胀阶段详情"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /mint/inflations:
+    get:
+      tags:
+        - MINT
+      summary: "查询QOS发行总量"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /mint/applies:
+    get:
+      tags:
+        - MINT
+      summary: "查询QOS流通总量"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /distribution/validators/{validatorAddr}/periods:
+    get:
+      tags:
+        - DISTRIBUTION
+      summary: "验证人收益周期查询"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /distribution/delegators/{delegatorAddr}/validators/{validatorAddr}/incomes:
+    get:
+      tags:
+        - DISTRIBUTION
+      summary: "委托人收益查询"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: delegatorAddr
+          type: string
+          required: true
+          description: "委托人地址"
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /distribution/communityFeePools:
+    get:
+      tags:
+        - DISTRIBUTION
+      summary: "社区Fee池查询"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
 
 definitions:
   BaseRequest:

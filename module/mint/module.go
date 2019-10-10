@@ -48,6 +48,7 @@ func (amb AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 }
 
 func (amb AppModuleBasic) RegisterRestRoutes(ctx cliContext.CLIContext, routes *mux.Router) {
+	client.RegisterRoutes(ctx, routes)
 }
 
 // 返回交易命令集合

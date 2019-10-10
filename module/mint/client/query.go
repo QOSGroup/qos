@@ -11,23 +11,14 @@ import (
 )
 
 // 查询通胀规则
-func queryInflationPhrases(cdc *go_amino.Codec) *cobra.Command {
+func queryInflationPhrasesCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "inflation-phrases",
 		Short: "Query inflation phrases",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			path := mapper.BuildQueryPhrasesPath()
-			res, err := cliCtx.Query(path, []byte{})
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var result []types.InflationPhrase
-			err = cdc.UnmarshalJSON(res, &result)
+			result, err := queryInflationPhrases(cliCtx)
 			if err != nil {
 				return err
 			}
@@ -39,8 +30,25 @@ func queryInflationPhrases(cdc *go_amino.Codec) *cobra.Command {
 	return cmd
 }
 
+func queryInflationPhrases(cliCtx context.CLIContext) ([]types.InflationPhrase, error) {
+	path := mapper.BuildQueryPhrasesPath()
+	res, err := cliCtx.Query(path, []byte{})
+
+	if len(res) == 0 {
+		return nil, errors.New("no result found")
+	}
+
+	var result []types.InflationPhrase
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	if err != nil {
+		return nil, err
+	}
+
+	return result, nil
+}
+
 // 查询QOS发行总量
-func queryTotal(cdc *go_amino.Codec) *cobra.Command {
+func queryTotalCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "total-inflation",
 		Short: "Query total inflation QOS amount, both in genesis and inflation phrases",
@@ -48,15 +56,7 @@ func queryTotal(cdc *go_amino.Codec) *cobra.Command {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			path := mapper.BuildQueryTotalPath()
-			res, err := cliCtx.Query(path, []byte{})
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var result btypes.BigInt
-			err = cdc.UnmarshalJSON(res, &result)
+			result, err := queryTotal(cliCtx)
 			if err != nil {
 				return err
 			}
@@ -68,24 +68,32 @@ func queryTotal(cdc *go_amino.Codec) *cobra.Command {
 	return cmd
 }
 
+func queryTotal(cliCtx context.CLIContext) (btypes.BigInt, error) {
+	path := mapper.BuildQueryTotalPath()
+	res, err := cliCtx.Query(path, []byte{})
+
+	if len(res) == 0 {
+		return btypes.BigInt{}, errors.New("no result found")
+	}
+
+	var result btypes.BigInt
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	if err != nil {
+		return btypes.BigInt{}, err
+	}
+
+	return result, nil
+}
+
 // 查询QOS流通总量
-func queryApplied(cdc *go_amino.Codec) *cobra.Command {
+func queryAppliedCommand(cdc *go_amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "total-applied",
 		Short: "Query total applied QOS amount, both in genesis and inflation phrases",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			path := mapper.BuildQueryAppliedPath()
-			res, err := cliCtx.Query(path, []byte{})
-
-			if len(res) == 0 {
-				return errors.New("no result found")
-			}
-
-			var result btypes.BigInt
-			err = cdc.UnmarshalJSON(res, &result)
+			result, err := queryApplied(cliCtx)
 			if err != nil {
 				return err
 			}
@@ -95,4 +103,21 @@ func queryApplied(cdc *go_amino.Codec) *cobra.Command {
 	}
 
 	return cmd
+}
+
+func queryApplied(cliCtx context.CLIContext) (btypes.BigInt, error) {
+	path := mapper.BuildQueryAppliedPath()
+	res, err := cliCtx.Query(path, []byte{})
+
+	if len(res) == 0 {
+		return btypes.BigInt{}, errors.New("no result found")
+	}
+
+	var result btypes.BigInt
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	if err != nil {
+		return btypes.BigInt{}, err
+	}
+
+	return result, nil
 }
