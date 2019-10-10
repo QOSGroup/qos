@@ -5,6 +5,7 @@ import (
 	"github.com/QOSGroup/qbase/baseabci"
 	cliContext "github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/distribution/client"
 	"github.com/QOSGroup/qos/module/distribution/mapper"
 	"github.com/QOSGroup/qos/types"
 	"github.com/gorilla/mux"
@@ -47,6 +48,7 @@ func (amb AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 }
 
 func (amb AppModuleBasic) RegisterRestRoutes(ctx cliContext.CLIContext, routes *mux.Router) {
+	client.RegisterRoutes(ctx, routes)
 }
 
 // 返回交易命令集合

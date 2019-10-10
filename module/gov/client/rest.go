@@ -81,12 +81,12 @@ type VoteProposalReq struct {
 
 func registerQueryRoutes(ctx context.CLIContext, r *mux.Router) {
 	r.HandleFunc("/gov/proposals", QueryAllProposalsHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/proposals/{proposalId}", GetProposalHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/proposals/{proposalId}/deposits", QueryAllDepositsHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/proposals/{proposalId}/deposits/{address}", GetDepositHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/proposals/{proposalId}/votes", QueryAllVotesHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/proposals/{proposalId}/votes/{address}", GetVoteHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/proposals/{proposalId}/tallies", GetProposalTallyHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/proposal/{proposalId}", GetProposalHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/proposal/{proposalId}/deposits", QueryAllDepositsHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/proposal/{proposalId}/deposits/{address}", GetDepositHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/proposal/{proposalId}/votes", QueryAllVotesHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/proposal/{proposalId}/votes/{address}", GetVoteHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/proposal/{proposalId}/tallies", GetProposalTallyHandleFn(ctx)).Methods("GET")
 	r.HandleFunc("/gov/params/{module}/keys/{key}", GetParamsKeyHandleFn(ctx)).Methods("GET")
 }
 

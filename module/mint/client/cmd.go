@@ -8,8 +8,8 @@ import (
 
 func QueryCommands(cdc *amino.Codec) []*cobra.Command {
 	return bctypes.GetCommands(
-		queryInflationPhrases(cdc),
-		queryTotal(cdc),
-		queryApplied(cdc),
+		queryInflationPhrasesCommand(cdc),
+		queryTotalCommand(cdc),
+		queryAppliedCommand(cdc),
 	)
 }
