@@ -4,7 +4,7 @@ module github.com/QOSGroup/qos
 
 require (
 	github.com/QOSGroup/kepler v0.6.0
-	github.com/QOSGroup/qbase v0.2.3-0.20190927065041-32eb90018d34
+	github.com/QOSGroup/qbase v0.2.3-0.20191010080154-95c437fb3bf6
 	github.com/go-kit/kit v0.8.0
 	github.com/gorilla/mux v1.7.3
 	github.com/magiconair/properties v1.8.0
@@ -21,5 +21,3 @@ require (
 	github.com/tendermint/tendermint v0.32.2
 	github.com/tendermint/tm-db v0.1.1
 )
-
-replace github.com/QOSGroup/qbase v0.2.3-0.20190927065041-32eb90018d34 => ../qbase
