@@ -31,13 +31,14 @@ const (
 )
 
 type validatorDisplayInfo struct {
-	OperatorAddress btypes.ValAddress  `json:"validator"`
-	Owner           btypes.AccAddress  `json:"owner"`
-	ConsAddress     btypes.ConsAddress `json:"consensusAddress"`
-	ConsPubKey      string             `json:"consensusPubKey"`
-	BondTokens      btypes.BigInt      `json:"bondTokens"`
-	Description     types.Description  `json:"description"`
-	Commission      types.Commission   `json:"commission"`
+	OperatorAddress btypes.ValAddress    `json:"validator"`
+	Owner           btypes.AccAddress    `json:"owner"`
+	SelfDelegation  types.DelegationInfo `json:"selfDelegation"`
+	ConsAddress     btypes.ConsAddress   `json:"consensusAddress"`
+	ConsPubKey      string               `json:"consensusPubKey"`
+	BondTokens      btypes.BigInt        `json:"bondTokens"`
+	Description     types.Description    `json:"description"`
+	Commission      types.Commission     `json:"commission"`
 
 	Status         string    `json:"status"`
 	InactiveDesc   string    `json:"InactiveDesc"`
@@ -48,13 +49,14 @@ type validatorDisplayInfo struct {
 	BondHeight int64 `json:"bondHeight"`
 }
 
-func toValidatorDisplayInfo(validator types.Validator) validatorDisplayInfo {
+func toValidatorDisplayInfo(validator types.Validator, selfDelegation types.DelegationInfo) validatorDisplayInfo {
 
 	consPubKey, _ := btypes.ConsensusPubKeyString(validator.ConsPubKey)
 
 	info := validatorDisplayInfo{
 		OperatorAddress: validator.OperatorAddress,
 		Owner:           validator.Owner,
+		SelfDelegation:  selfDelegation,
 		ConsAddress:     validator.ConsAddress(),
 		ConsPubKey:      consPubKey,
 		BondTokens:      validator.BondTokens,
@@ -101,7 +103,14 @@ func queryValidatorInfoCommand(cdc *go_amino.Codec) *cobra.Command {
 			if err != nil {
 				return err
 			}
-			return cliCtx.PrintResult(toValidatorDisplayInfo(validator))
+			var delegation types.DelegationInfo
+			delegationInfo, err := getDelegationInfo(cliCtx, validator.Owner, validatorAddr)
+			if err != nil {
+				delegation = types.NewDelegationInfo(validator.Owner, validatorAddr, btypes.ZeroInt(), false)
+			} else {
+				delegation = types.NewDelegationInfo(validator.Owner, validatorAddr, delegationInfo.Amount, delegationInfo.IsCompound)
+			}
+			return cliCtx.PrintResult(toValidatorDisplayInfo(validator, delegation))
 		},
 	}
 
@@ -280,7 +289,17 @@ func queryAllValidators(cliCtx context.CLIContext) ([]validatorDisplayInfo, erro
 	for _, kv := range vKVPair {
 		var validator types.Validator
 		err = cliCtx.Codec.UnmarshalBinaryBare(kv.Value, &validator)
-		validators = append(validators, toValidatorDisplayInfo(validator))
+		if err != nil {
+			return nil, err
+		}
+		var delegation types.DelegationInfo
+		delegationInfo, err := getDelegationInfo(cliCtx, validator.Owner, validator.GetValidatorAddress())
+		if err != nil {
+			delegation = types.NewDelegationInfo(validator.Owner, validator.GetValidatorAddress(), btypes.ZeroInt(), false)
+		} else {
+			delegation = types.NewDelegationInfo(validator.Owner, validator.GetValidatorAddress(), delegationInfo.Amount, delegationInfo.IsCompound)
+		}
+		validators = append(validators, toValidatorDisplayInfo(validator, delegation))
 	}
 
 	return validators, err
