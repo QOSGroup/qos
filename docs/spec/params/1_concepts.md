@@ -31,7 +31,7 @@ type KeyValuePair struct {
 type KeyValuePairs []KeyValuePair
 ```
 
-QOS `stake`, `gov`, `distribution` 模块涉及到参数配置。
+QOS [`stake`](../stake), [`gov`](../gov), [`distribution`](../distribution) 模块涉及到参数配置。
 
 ## 参数管理流程
 
@@ -70,4 +70,4 @@ func InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data types.Genesis
 
 ### 更新
 
-在治理模块，提交参数修改提议更新参数。
+在[治理模块](../gov)，提交参数修改提议更新参数。

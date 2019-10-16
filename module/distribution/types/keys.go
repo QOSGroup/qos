@@ -32,10 +32,10 @@ var (
 	//value: delegatorEarningsStartInfo
 	delegatorEarningsStartInfoPrefixKey = []byte{0x12}
 	//validator历史计费点汇总收益,key = prefix + validatorAddr + period
-	//value: bigint
+	//value: fraction
 	validatorHistoryPeriodSummaryPrefixKey = []byte{0x13}
 	//validator当前计费点收益信息,key = prefix + validatorAddr
-	//value: bigint
+	//value: ValidatorCurrentPeriodSummary
 	validatorCurrentPeriodSummaryPrefixKey = []byte{0x14}
 
 	//validator获得收益信息

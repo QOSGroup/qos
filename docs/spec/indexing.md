@@ -15,3 +15,4 @@ QOS执行交易后会添加`event`信息，可根据`event`[查询交易详情](
 - [通胀](mint/4_events.md)
 - [联盟链](qcp/4_events.md)
 - [代币](qsc/4_events.md)
+- [Stake](stake/4_events.md)

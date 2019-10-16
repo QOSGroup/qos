@@ -1,12 +1,12 @@
-# 事件
+# Events
 
-Stake模块会发出以下事件:
+This module emits the following events:
 
-## 交易
+## Transactions
 
-### 验证节点
+### Validator
 
-#### 创建验证节点
+#### TxCreateValidator
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -17,7 +17,7 @@ Stake模块会发出以下事件:
 | message              | action           | create-validator     |
 | message              | gas.payer        | {owner}              |
 
-#### 修改验证节点
+#### TxModifyValidator
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -27,7 +27,7 @@ Stake模块会发出以下事件:
 | message              | action           | modify-validator     |
 | message              | gas.payer        | {owner}              |
 
-#### 撤销验证节点
+#### TxRevokeValidator
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -37,7 +37,7 @@ Stake模块会发出以下事件:
 | message              | action           | revoke-validator     |
 | message              | gas.payer        | {owner}              |
 
-#### 激活验证节点
+#### TxActiveValidator
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -47,9 +47,9 @@ Stake模块会发出以下事件:
 | message              | action           | active-validator     |
 | message              | gas.payer        | {owner}              |
 
-### 委托
+### Delegation
 
-#### 创建委托
+#### TxCreateDelegate
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -59,7 +59,7 @@ Stake模块会发出以下事件:
 | message              | action           | create-delegation    |
 | message              | gas.payer        | {delegator}          |
 
-#### 修改收益复投方式
+#### TxModifyCompound
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -69,7 +69,7 @@ Stake模块会发出以下事件:
 | message              | action           | modify-compound      |
 | message              | gas.payer        | {delegator}          |
 
-#### 解除委托
+#### TxUnbondDelegation
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|
@@ -79,7 +79,7 @@ Stake模块会发出以下事件:
 | message              | action           | unbond-delegation    |
 | message              | gas.payer        | {delegator}          |
 
-#### 变更委托验证节点
+#### TxCreateReDelegation
 
 | Type                 | Attribute Key    | Attribute Value      |
 |----------------------|------------------|----------------------|

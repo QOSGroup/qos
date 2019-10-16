@@ -5,14 +5,14 @@ module.exports = {
         lineNumbers: true
     },
     locales: {
-        '/' : {
+        '/': {
             lang: '简体中文',
             selectText: '选择语言',
             label: '简体中文',
             title: 'QOS官方文档',
             description: 'QOS官方文档'
         },
-        '/en/' : {
+        '/en/': {
             lang: 'English',
             selectText: 'Languages',
             label: 'English',
@@ -23,9 +23,12 @@ module.exports = {
     themeConfig: {
         sidebarDepth: 3,
         locales: {
-            '/' : {
+            '/': {
                 selectText: '选择语言',
-                nav: [{text: "QOS官网", link: "https://www.qoschain.io/"},{text: "白皮书", link: "https://github.com/QOSGroup/whitepaper"}],
+                nav: [{text: "QOS官网", link: "https://www.qoschain.io/"}, {
+                    text: "白皮书",
+                    link: "https://github.com/QOSGroup/whitepaper"
+                }],
                 sidebar: [
                     {
                         title: "简介",
@@ -58,10 +61,10 @@ module.exports = {
                         children: [
                             ["/spec/eco_module.v1", "经济模型"],
                             ["/spec/validators/all_about_validators", "验证节点详解"],
-                            ["/spec/staking", "验证节点"],
+                            ["/spec/stake/", "验证节点"],
                             ["/spec/mint/", "通胀"],
+                            ["/spec/distribution/", "分配"],
                             ["/spec/bank/", "Bank"],
-                            ["/spec/genesis", "创世状态"],
                             ["/spec/approve/", "预授权"],
                             ["/spec/gov/", "治理"],
                             ["/spec/guardian/", "系统用户"],
@@ -74,9 +77,12 @@ module.exports = {
                     }
                 ]
             },
-            '/en/' : {
+            '/en/': {
                 selectText: 'Languages',
-                nav: [{text: "Back to QOS.", link: "https://www.qoschain.io/"},{text: "White Paper", link: "https://github.com/QOSGroup/whitepaper"}],
+                nav: [{text: "Back to QOS.", link: "https://www.qoschain.io/"}, {
+                    text: "White Paper",
+                    link: "https://github.com/QOSGroup/whitepaper"
+                }],
                 sidebar: [
                     {
                         title: "Introduction",
@@ -107,12 +113,12 @@ module.exports = {
                         title: "Spec",
                         collapsable: false,
                         children: [
-                            ["/spec/eco_module.v1", "ECO"],
-                            ["/spec/validators/all_about_validators", "Validators"],
-                            ["/spec/staking", "Stake"],
+                            ["/en/spec/eco_module.v1", "ECO"],
+                            ["/en/spec/all_about_validators", "Validators"],
+                            ["/en/spec/stake/", "Stake"],
                             ["/en/spec/mint/", "Mint"],
+                            ["/en/spec/distribution/", "Distribution"],
                             ["/en/spec/bank/", "Bank"],
-                            ["/spec/genesis", "Genesis"],
                             ["/en/spec/approve/", "Approve"],
                             ["/en/spec/gov/", "Governance"],
                             ["/en/spec/guardian/", "Guardian"],

@@ -12,7 +12,7 @@
 
 ## 下载可执行文件
 
-[文件列表](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)页下载对应版本可执行文件
+[文件列表](https://github.com/QOSGroup/qos/blob/develop/DOWNLOAD.md)页下载对应版本可执行文件
 
 ## Docker
 

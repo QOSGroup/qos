@@ -1,10 +1,10 @@
 # QOS Client
 
 提供与QOS网络交互的命令行工具`qoscli`，主要提供以下命令行功能：
-* `keys`        [本地密钥库](#密钥（keys）)
-* `query`       [信息查询](#查询（query）)
-* `tx`          [交易](#交易（tx）)
-* `version`     [版本信息](#版本（version）)
+* `keys`        [本地密钥库](#密钥)
+* `query`       [信息查询](#查询)
+* `tx`          [交易](#交易)
+* `version`     [版本信息](#版本)
 
 所有命令均可通过添加`--help`获取命令说明
 
@@ -31,19 +31,19 @@
 
 更多说明参照[qbase-通用参数](https://github.com/QOSGroup/qbase/blob/master/docs/client/command.md#客户端命令)
 
-## 密钥（keys）
+## 密钥
 
 本地密钥库主要包含以下指令：
-* `qoscli keys add`     [新增密钥](#新增（add）)
-* `qoscli keys list`    [显示密钥列表](#列表（list）)
-* `qoscli keys update`  [更新密钥保存密码](#更新（update）)
-* `qoscli keys delete`  [从密钥库删除密钥](#删除（delete）)
-* `qoscli keys import`  [导入密钥](#导入（import）)
-* `qoscli keys export`  [导出密钥](#导出（export）)
+* `qoscli keys add`     [新增密钥](#新增)
+* `qoscli keys list`    [显示密钥列表](#列表)
+* `qoscli keys update`  [更新密钥保存密码](#更新)
+* `qoscli keys delete`  [从密钥库删除密钥](#删除)
+* `qoscli keys import`  [导入密钥](#导入)
+* `qoscli keys export`  [导出密钥](#导出)
 
 > 密钥库为本地存储，默认存储位置为：$HOME/.qoscli/keys/，删除存储文件会清空本地存储所有私钥。通过`keys`相关指令操作密钥不影响QOS网络中账户状态，请妥善保管账户私钥信息。
 
-### 新增（add）
+#### 新增
 
 `qoscli keys add <key_name>`
 
@@ -63,7 +63,7 @@ thought frame must space few omit muffin fix merge mail ivory clump unveil dirt 
 ```
 其中`qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m`为适用于QOS网络的账户地址，`qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh`为账户公钥信息，`thought frame must space few omit muffin fix merge mail ivory clump unveil dirt gadget load glove hub inner final crime churn crop stone`为助记词，可用于账户私钥找回，请妥善保管助记词。
 
-### 列表（list）
+#### 列表
 
 `qoscli keys list`
 ```bash
@@ -72,7 +72,7 @@ NAME:	TYPE:	ADDRESS:						PUBKEY:
 Arya	local	qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m	qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh
 ```
 
-### 更新（update）
+#### 更新
 
 `qoscli keys update <key_name>`
 
@@ -85,7 +85,7 @@ Repeat the new passphrase:<重复新密码>
 Password successfully updated!
 ```
 
-### 导出（export）
+#### 导出
 
 `qoscli keys export <key_name>`
 
@@ -100,7 +100,7 @@ Please keep your private key safely, otherwise your account will be attacked.
 ```
 导出的密钥是通过JSON序列化后的密钥信息，可以将JSON字符串中的`privkey`部分内容保存为文件并妥善保存，可用于密钥导入。
 
-### 删除（delete）
+#### 删除
 
 `qoscli keys delete <key_name>`
 
@@ -111,7 +111,7 @@ DANGER - enter password to permanently delete key:<输入密码>
 key deleted forever (uh oh!)
 ```
 
-### 导入（import）
+#### 导入
 
 `qoscli keys import Arya --file <私钥文件路径>`
 
@@ -126,7 +126,7 @@ qoscli keys import Arya --file Arya.pri
 
 ```
 
-## 版本（version）
+## 版本
 `qoscli version`
 
 输出示例：
@@ -139,10 +139,10 @@ qoscli keys import Arya --file Arya.pri
 
 ```
 
-## 查询（query）
+## 查询
 
 * `qoscli query account`                [账户查询](#账户)
-* `qoscli query store`                  [存储查询](#存储（store）)
+* `qoscli query store`                  [存储查询](#存储)
 * `qoscli query consensus`              共识参数查询
 * `qoscli query approve`                [预授权](#查询预授权)
 * `qoscli query qcp`                    [跨链相关信息查询](#查询联盟链)
@@ -159,7 +159,6 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query delegator-income`       [委托收益查询](#委托收益查询)
 * `qoscli query unbondings`             [待返还委托](#待返还委托)
 * `qoscli query redelegations`          [待执行委托变更](#待执行委托变更)
-* `qoscli query community-fee-pool`     [社区费池](#社区费池)
 * `qoscli query proposal`               [提议查询](#提议查询)
 * `qoscli query proposals`              [提议列表](#提议列表)
 * `qoscli query vote`                   [投票查询](#投票查询)
@@ -173,15 +172,15 @@ qoscli keys import Arya --file Arya.pri
 * `qoscli query total-applied`          [流通总量查询](#流通总量查询)
 * `qoscli query guardian`               [系统账户查询](#系统账户查询)
 * `qoscli query guardians`              [系统账户列表](#系统账户列表)
-* `qoscli query status`                 [查询节点状态](#状态（status）)
+* `qoscli query status`                 [查询节点状态](#状态)
 * `qoscli query tendermint-validators`  [获取指定高度验证节点集合](#获取指定高度验证节点集合)
-* `qoscli query block`                  [获取指定高度区块信息](#区块（block）)
+* `qoscli query block`                  [获取指定高度区块信息](#区块)
 * `qoscli query txs`                    [根据标签查找交易](#根据标签查找交易)
 * `qoscli query tx`                     [根据交易hash查询交易信息](#根据交易hash查询交易信息)
 
 查询的具体指令将在各自模块进行介绍。
 
-### 状态（status）
+### 状态
 `qoscli query status --indent`
 
 输出示例：
@@ -222,7 +221,7 @@ qoscli keys import Arya --file Arya.pri
 
 其中`catching_up`为`false`表示节点已同步到最新高度。
 
-### 区块（block）
+### 区块
 `qoscli query block <height>`
 
 其中`<height>`为区块高度
@@ -387,7 +386,7 @@ qoscli query account qosacc1x5lcfaqxxq7g7dy4lj5vq0u6xamp78lsnza98y --indent
 ```
 可以看到`Arya`持有10000个QOS、10000个AOE，更多账户说明请阅读[QOS账户设计](../spec/account.md)文档。
 
-### 存储（store）
+### 存储
 
 QOS网络的存储内容均可通过下面指令查找：
 
@@ -430,7 +429,7 @@ $ qoscli query store --path /store/acc/subspace --data account --indent
 
 ```
 
-### 交易（tx query）
+### 查询交易
 支持的查询命令：
 
 * `qoscli query tx`            [根据交易hash查询交易信息](#根据交易hash查询交易信息)
@@ -612,7 +611,7 @@ $ qoscli query txs --tags "create-approve.approve-from='qosacc1x5lcfaqxxq7g7dy4l
 
 更多交易Tag请查阅[index](../spec/indexing.md)
 
-## 交易（tx）
+## 交易
 
 QOS支持以下几种交易类型：
 
@@ -641,11 +640,11 @@ QOS支持以下几种交易类型：
 * `qoscli tx delete-guardian`  [删除系统账户](#删除系统账户)
 * `qoscli tx halt-network`     [停止网络](#停止网络)
 
-主要分为[Bank](#bank)，[预授权](#预授权)，[代币](#代币)，[联盟链](#联盟链)，[验证节点](#验证节点（validator）)，[治理](#治理)，[系统账户](#系统账户)这几大类。
+主要分为[Bank](#bank)，[预授权](#预授权)，[代币](#代币)，[联盟链](#联盟链)，[验证节点](#验证节点)，[委托](#委托挖矿)，[治理](#治理)，[系统账户](#系统账户)这几大类。
 
 ### Bank
 
-See [Bank模块](../spec/bank) to learn about bank module design.
+查阅 [Bank模块](../spec/bank) 了解`Bank`模块设计。
 
 * `qoscli tx transfer`          [转账](#转账)
 * `qoscli invariant-check`      [数据检查](#数据检查)
@@ -659,8 +658,8 @@ See [Bank模块](../spec/bank) to learn about bank module design.
 支持一次转账中包含多币种，多账户
 
 主要参数：
-- `--senders`   发送集合，账户传keystore name 或 address，多个账户半角分号分隔
-- `--receivers` 接收集合，账户传keystore name 或 address，多个账户半角分号分隔
+- `--senders`   发送集合，账户传keybase name 或 address，多个账户半角分号分隔
+- `--receivers` 接收集合，账户传keybase name 或 address，多个账户半角分号分隔
 
 `Arya`向地址`qosacc1smrus8jlc9z02gz5rm36u0q3fdctjxm4nrc639`转账1个QOS，1个AOE
 ```bash
@@ -678,7 +677,7 @@ QOS设计了一套[数据检查机制](../spec/bank)，用户可以通过下面�
 `qoscli tx invariant-check --sender <sender's keybase name or address>`
 
 主要参数：
-- `--sender` 发送此交易的账户keystore name 或 address
+- `--sender` 发送此交易的账户keybase name 或 address
 
 ::: warning Note 
 此交易设置了特别大的交易费，仅限持币账户发现QOS网络数据异常时提交，数据验证异常会停止整个QOS网络，以保护持币账户权益。
@@ -794,7 +793,7 @@ Password to sign with 'Sansa':<输入Sansa本地密钥库密码>
 
 #### 取消预授权
 
-`qoscli tx cancel-approve --from <account_address> --to <key_name_or_account_address>'
+`qoscli tx cancel-approve --from <account_address> --to <key_name_or_account_address>`
 
 `Arya`取消对`Sansa`的授权：
 ```bash
@@ -947,15 +946,16 @@ Password to sign with 'Arya':<输入Arya本地密钥库密码>
 
 指令说明请参照[qbase-Qcp](https://github.com/QOSGroup/qbase/blob/master/docs/client/command.md#Qcp)。
 
-### 验证节点（validator）
+### 验证节点
 
-验证节点相关概念和机制请参阅[验证人详解](../spec/validators/all_about_validators.md)和[QOS经济模型](../spec/validators/eco_module.md)。验证节点包含以下子命令：
+阅读[stake module](../spec/stake)了解验证节点设计。验证节点包含以下子命令：
 
 * `qoscli tx create-validator`          [成为验证节点](#成为验证节点)
 * `qoscli query validator`              [查询验证节点](#查询验证节点)
 * `qoscli query validators`             [验证节点列表](#验证节点列表)
 * `qoscli query validator-miss-vote`    [验证节点漏块信息](#查询验证节点漏块信息)
-* `qoscli query community-fee-pool`     [社区收益池](#社区收益池)
+* `qoscli query validator-period`       [验证节点窗口信息](#验证节点窗口信息)
+* `qoscli tx revoke-validator`          [编辑验证节点](#编辑验证节点)
 * `qoscli tx revoke-validator`          [撤消验证节点](#撤销验证节点)
 * `qoscli tx active-validator`          [激活验证节点](#激活验证节点)
 
@@ -997,8 +997,6 @@ $ qoscli tx create-validator --moniker "Arya's node" --owner Arya --tokens 1000
 - `--owner`         操作者账户地址或密钥库中密钥名字
 - `--validator`     待修改的验证人地址
 - `--moniker`       验证节点名字，`len(moniker) <= 300`
-- `--nodeHome`      节点配置文件和数据所在目录，默认：`$HOME/.qosd`
-- `--compound`      是否收益复投
 - `--logo`          logo, 可选参数，`len(logo) <= 255`
 - `--website`       网址, 可选参数，`len(website) <= 255`
 - `--details`       详细描述信息, 可选参数，`len(details) <= 1000`
@@ -1012,8 +1010,6 @@ $ qoscli tx modify-validator --moniker "Arya's node" --owner Arya --validaotor q
 ```bash
 {"check_tx":{},"deliver_tx":{},"hash":"BA45F8416780C76468C925E34372B05F5A7FEAAC","height":"265"}
 ```
-
-执行成为验证节点命令后将从`Arya`账户扣除1000QOS，绑定到验证节点中，验证节点参与投票、打块所获得的挖矿收益将直接增加到`Arya`账户。
 
 #### 查询验证节点
 
@@ -1215,7 +1211,7 @@ $ qoscli tx active-validator --owner Arya --validator qosval1zlv7vhdcyqyvy9ljdxh
 
 
 
-### 委托（delegate）
+### 委托挖矿
 
 * `qoscli tx delegate`              [委托](#委托)
 * `qoscli query delegation`         [委托查询](#委托查询)
@@ -1241,7 +1237,7 @@ $ qoscli tx active-validator --owner Arya --validator qosval1zlv7vhdcyqyvy9ljdxh
 
 `Sansa`将自己的100个QOS代理给`Arya`创建的验证节点：
 ```bash
-$ qoscli tx delegate --owner Arya --delegator Sansa --tokens 100
+$ qoscli tx delegate --validator qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2 --delegator Sansa --tokens 100
 ```
 
 #### 委托查询
@@ -1255,7 +1251,7 @@ $ qoscli tx delegate --owner Arya --delegator Sansa --tokens 100
 
 `Sansa`在`Arya`上的代理信息：
 ```bash
-$ qoscli query delegation --owner Arya --delegator Sansa
+$ qoscli query delegation --validator qosval1zlv7vhdcyqyvy9ljdxhcf2766nulwgvys3f6y2 --delegator Sansa
 ```
 
 查询结果：
@@ -1322,20 +1318,6 @@ $ qoscli query delegations Sansa
   }
 ]
 
-```
-
-#### 社区费池
-
-`qoscli query community-fee-pool`
-
-社区费池查询：
-```bash
-$ qoscli query community-fee-pool
-```
-
-查询结果：
-```bash
-"27211098"
 ```
 
 #### 委托收益查询
@@ -1424,9 +1406,9 @@ $ qoscli query unbondings Sansa
 - `--compound`      新代理收益是否复投，默认`false`
 - `--all`           是否从`from-owner`完全解绑，全部代理给`to-owner`，默认false
 
-`Sansa`将代理给`qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q`的10个QOS转移到`qosval67werwer98sr76asdf0sdfsd98`的验证节点上：
+`Sansa`将代理给`qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q`的10个QOS转移到`qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu10`的验证节点上：
 ```bash
-$ qoscli tx redelegate --from-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q --to-owner qosval67werwer98sr76asdf0sdfsd98 --delegator Sansa --tokens 10
+$ qoscli tx redelegate --from-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu9q --to-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685vddu10 --delegator Sansa --tokens 10
 ```
 
 #### 待执行委托变更
@@ -1435,7 +1417,7 @@ $ qoscli tx redelegate --from-validator qosval12tr0v5uv9xpns79w8q34plakz8gh6685v
 
 根据质押用户地址查询该用户下所有待执行委托变更
 
-查询未返还`Sansa`的待执行委托变更：
+查询`Sansa`的待执行委托变更：
 ```bash
 $ qoscli query redelegations Sansa
 ```
