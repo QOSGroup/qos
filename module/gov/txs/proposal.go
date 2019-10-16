@@ -92,7 +92,7 @@ func (tx TxProposal) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 
 	govMapper := mapper.GetMapper(ctx)
 	// 保存提议
-	textContent := types.NewTextProposal(tx.Title, tx.Description, tx.InitialDeposit)
+	textContent := types.NewTextProposal(tx.Proposer, tx.Title, tx.Description, tx.InitialDeposit)
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
@@ -144,7 +144,7 @@ func (tx TxProposal) GetSignData() (ret []byte) {
 
 // 提取社区费池，从社区非池中提取QOS到指定账户，仅guardian账户可提交此提议
 type TxTaxUsage struct {
-	TxProposal                    // 基础提议信息
+	TxProposal                                          // 基础提议信息
 	DestAddress btypes.AccAddress `json:"dest_address"` // 接收账户
 	Percent     qtypes.Dec        `json:"percent"`      // 提取比例
 }
@@ -211,7 +211,7 @@ func (tx TxTaxUsage) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	govMapper := mapper.GetMapper(ctx)
 	guardianMapper := guardian.GetMapper(ctx)
 	// 保存提议
-	textContent := types.NewTaxUsageProposal(tx.Title, tx.Description, tx.InitialDeposit, tx.DestAddress, tx.Percent)
+	textContent := types.NewTaxUsageProposal(tx.Proposer, tx.Title, tx.Description, tx.InitialDeposit, tx.DestAddress, tx.Percent)
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 
 	if err != nil {
@@ -266,8 +266,8 @@ func (tx TxTaxUsage) GetSignData() (ret []byte) {
 
 // 参数修改提议
 type TxParameterChange struct {
-	TxProposal               // 基础数据
-	Params     []types.Param `json:"params"` // 参数变更
+	TxProposal                           // 基础数据
+	Params []types.Param `json:"params"` // 参数变更
 }
 
 func NewTxParameterChange(title, description string, proposer btypes.AccAddress, deposit btypes.BigInt, params []types.Param) *TxParameterChange {
@@ -347,7 +347,7 @@ func (tx TxParameterChange) Exec(ctx context.Context) (result btypes.Result, cro
 	govMapper := mapper.GetMapper(ctx)
 
 	// 保存提议
-	textContent := types.NewParameterProposal(tx.Title, tx.Description, tx.InitialDeposit, tx.Params)
+	textContent := types.NewParameterProposal(tx.Proposer, tx.Title, tx.Description, tx.InitialDeposit, tx.Params)
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
@@ -472,7 +472,7 @@ func (tx TxModifyInflation) Exec(ctx context.Context) (result btypes.Result, cro
 
 	govMapper := mapper.GetMapper(ctx)
 	// 保存提议
-	textContent := types.NewAddInflationPhrase(tx.Title, tx.Description, tx.InitialDeposit, tx.TotalAmount, tx.InflationPhrases)
+	textContent := types.NewAddInflationPhrase(tx.Proposer, tx.Title, tx.Description, tx.InitialDeposit, tx.TotalAmount, tx.InflationPhrases)
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	if err != nil {
 		result = btypes.Result{Code: btypes.CodeInternal, Codespace: btypes.CodespaceType(err.Error())}
@@ -602,7 +602,7 @@ func (tx TxSoftwareUpgrade) Exec(ctx context.Context) (result btypes.Result, cro
 	govMapper := mapper.GetMapper(ctx)
 
 	// 保存提议
-	textContent := types.NewSoftwareUpgradeProposal(tx.Title, tx.Description, tx.InitialDeposit,
+	textContent := types.NewSoftwareUpgradeProposal(tx.Proposer, tx.Title, tx.Description, tx.InitialDeposit,
 		tx.Version, tx.DataHeight, tx.GenesisFile, tx.GenesisMD5, tx.ForZeroHeight)
 	proposal, err := govMapper.SubmitProposal(ctx, textContent)
 	if err != nil {

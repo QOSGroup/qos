@@ -258,16 +258,18 @@ var ProposalLevels = []ProposalLevel{LevelNormal, LevelImportant, LevelCritical}
 
 // Text Proposal
 type TextProposal struct {
-	Title       string        `json:"title"`       // Title of the proposal
-	Description string        `json:"description"` // Description of the proposal
-	Deposit     btypes.BigInt `json:"deposit"`     // Deposit of the proposal
+	Title       string            `json:"title"`       // Title of the proposal
+	Description string            `json:"description"` // Description of the proposal
+	Deposit     btypes.BigInt     `json:"deposit"`     // Deposit of the proposal
+	Proposer    btypes.AccAddress `json:"proposer"`    // proposer
 }
 
-func NewTextProposal(title, description string, deposit btypes.BigInt) TextProposal {
+func NewTextProposal(proposer btypes.AccAddress, title, description string, deposit btypes.BigInt) TextProposal {
 	return TextProposal{
 		Title:       title,
 		Description: description,
 		Deposit:     deposit,
+		Proposer:    proposer,
 	}
 }
 
@@ -288,12 +290,13 @@ type TaxUsageProposal struct {
 	Percent     types.Dec         `json:"percent"`
 }
 
-func NewTaxUsageProposal(title, description string, deposit btypes.BigInt, destAddress btypes.AccAddress, percent types.Dec) TaxUsageProposal {
+func NewTaxUsageProposal(proposer btypes.AccAddress, title, description string, deposit btypes.BigInt, destAddress btypes.AccAddress, percent types.Dec) TaxUsageProposal {
 	return TaxUsageProposal{
 		TextProposal: TextProposal{
 			Title:       title,
 			Description: description,
 			Deposit:     deposit,
+			Proposer:    proposer,
 		},
 		DestAddress: destAddress,
 		Percent:     percent,
@@ -315,12 +318,13 @@ type ParameterProposal struct {
 	Params []Param `json:"params"`
 }
 
-func NewParameterProposal(title, description string, deposit btypes.BigInt, params []Param) ParameterProposal {
+func NewParameterProposal(proposer btypes.AccAddress, title, description string, deposit btypes.BigInt, params []Param) ParameterProposal {
 	return ParameterProposal{
 		TextProposal: TextProposal{
 			Title:       title,
 			Description: description,
 			Deposit:     deposit,
+			Proposer:    proposer,
 		},
 		Params: params,
 	}
@@ -342,12 +346,13 @@ type ModifyInflationProposal struct {
 	InflationPhrases mint.InflationPhrases `json:"inflation_phrases"`
 }
 
-func NewAddInflationPhrase(title, description string, deposit btypes.BigInt, totalAmount btypes.BigInt, phrases mint.InflationPhrases) ModifyInflationProposal {
+func NewAddInflationPhrase(proposer btypes.AccAddress, title, description string, deposit btypes.BigInt, totalAmount btypes.BigInt, phrases mint.InflationPhrases) ModifyInflationProposal {
 	return ModifyInflationProposal{
 		TextProposal: TextProposal{
 			Title:       title,
 			Description: description,
 			Deposit:     deposit,
+			Proposer:    proposer,
 		},
 		TotalAmount:      totalAmount,
 		InflationPhrases: phrases,
@@ -394,13 +399,14 @@ type SoftwareUpgradeProposal struct {
 	ForZeroHeight bool   `json:"for_zero_height"`
 }
 
-func NewSoftwareUpgradeProposal(title, description string, deposit btypes.BigInt,
+func NewSoftwareUpgradeProposal(proposer btypes.AccAddress, title, description string, deposit btypes.BigInt,
 	version string, dataHeight int64, genesisFile string, genesisMd5 string, forZeroHeight bool) SoftwareUpgradeProposal {
 	return SoftwareUpgradeProposal{
 		TextProposal: TextProposal{
 			Title:       title,
 			Description: description,
 			Deposit:     deposit,
+			Proposer:    proposer,
 		},
 		Version:       version,
 		DataHeight:    dataHeight,
