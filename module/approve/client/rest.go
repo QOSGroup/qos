@@ -49,6 +49,7 @@ func RegisterRoutes(ctx context.CLIContext, r *mux.Router) {
 
 func registerQueryRoutes(ctx context.CLIContext, r *mux.Router) {
 	r.HandleFunc("/approve/approves/{approveAddr}/approve/{beneficiaryAddr}", QueryApproveHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/approve/approves/{approveAddr}/approves", QueryUserApprovesHandleFn(ctx)).Methods("GET")
 }
 
 func registerTxRoutes(ctx context.CLIContext, r *mux.Router) {
@@ -57,6 +58,34 @@ func registerTxRoutes(ctx context.CLIContext, r *mux.Router) {
 	r.HandleFunc("/approve/approves/{address}/decrease_approves", DecreaseApproveHandleFn(ctx)).Methods("POST")
 	r.HandleFunc("/approve/approves/{address}/use_approves", UseApproveHandleFn(ctx)).Methods("POST")
 	r.HandleFunc("/approve/approves/{address}/cancel_approves", CancelApproveHandleFn(ctx)).Methods("POST")
+}
+
+func QueryUserApprovesHandleFn(cliContext context.CLIContext) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		br, _ := rpc.ParseRequestForm(request) //ignore err
+		ctx := br.Setup(cliContext)
+		vars := mux.Vars(request)
+
+		approve, err := types.AccAddressFromBech32(vars["approveAddr"])
+		if err != nil {
+			rpc.WriteErrorResponse(writer, http.StatusBadRequest, fmt.Sprintf("addr: %s is not correct bech32 address", vars["approveAddr"]))
+			return
+		}
+
+		data, err := queryUserApproves(ctx, approve)
+
+		if len(data) == 0 {
+			rpc.WriteErrorResponse(writer, http.StatusNotFound, "records not found")
+			return
+		}
+
+		if err != nil {
+			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rpc.PostProcessResponseBare(writer, ctx, data)
+	}
 }
 
 func QueryApproveHandleFn(cliContext context.CLIContext) func(http.ResponseWriter, *http.Request) {
@@ -76,7 +105,7 @@ func QueryApproveHandleFn(cliContext context.CLIContext) func(http.ResponseWrite
 
 		br, _ := rpc.ParseRequestForm(request) //ignore err
 		ctx := br.Setup(cliContext)
-		appr, err := queryApproveInfo(ctx, approve, beneficiary)
+		appr, err := getApproveInfo(ctx, approve, beneficiary)
 		if err != nil {
 			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
 			return

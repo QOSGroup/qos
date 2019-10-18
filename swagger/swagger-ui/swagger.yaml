@@ -285,6 +285,45 @@ paths:
           description: not found
         500:
           description: Internal Server Error
+  /approve/approves/{approveAddr}/approves:
+    get:
+      tags:
+        - Approve
+      summary: "查询所有预授权信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: approveAddr
+          required: true
+          type: string
+
+      responses:
+        200:
+          description: account info
+          schema:
+            type: object
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              qos:
+                type: integer
+              qscs:
+                $ref: "#/definitions/Qscs"
+            example:
+              - from: qosacc1fyz0ezduz6td89a6xq3uul0akkmy992uhh770a
+                to: qosacc1cpa777le3hjr2qyet0pynhvcgwe5853vnsgrl7
+                qos: '10000'
+                qscs: null
+
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
   /bank/accounts/{address}/transfers:
     post:
       tags:

@@ -34,7 +34,7 @@ const (
 func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "approve",
-		Short: "Query approve by from and to",
+		Short: "Get approve info by from and to",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 			// 查询路径，TODO 统一通过app CustomQueryHandler处理
@@ -49,7 +49,7 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 				return err
 			}
 
-			approve, err := queryApproveInfo(cliCtx, fromAddr, toAddr)
+			approve, err := getApproveInfo(cliCtx, fromAddr, toAddr)
 			if err != nil {
 				return err
 			}
@@ -66,7 +66,7 @@ func QueryApproveCmd(cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
-func queryApproveInfo(cliCtx context.CLIContext, approve, beneficiary qtypes.AccAddress) (approvetypes.Approve, error) {
+func getApproveInfo(cliCtx context.CLIContext, approve, beneficiary qtypes.AccAddress) (approvetypes.Approve, error) {
 	queryPath := "store/approve/key"
 	// 获取查询结果
 	output, err := cliCtx.Query(queryPath, approvetypes.BuildApproveKey(approve, beneficiary))
@@ -82,6 +82,60 @@ func queryApproveInfo(cliCtx context.CLIContext, approve, beneficiary qtypes.Acc
 	cliCtx.Codec.MustUnmarshalBinaryBare(output, &appr)
 
 	return appr, nil
+}
+
+func QueryApprovesCmd(cdc *amino.Codec) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "approves <name or address>",
+		Short: "Query approves by user",
+		Args:  cobra.ExactArgs(1),
+		RunE: func(cmd *cobra.Command, args []string) error {
+			cliCtx := context.NewCLIContext().WithCodec(cdc)
+
+			fromAddr, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
+			if err != nil {
+				return err
+			}
+
+			approves, err := queryUserApproves(cliCtx, fromAddr)
+
+			if len(approves) == 0 {
+				return errors.New("records not found")
+			}
+
+			if err != nil {
+				return err
+			}
+
+			return cliCtx.PrintResult(approves)
+		},
+	}
+
+	return cmd
+}
+
+func queryUserApproves(cliCtx context.CLIContext, approve qtypes.AccAddress) (approves []approvetypes.Approve, err error) {
+	key := approvetypes.BuildApproveByFromKey(approve)
+	path := "store/approve/subspace"
+	output, err := cliCtx.Query(path, key)
+
+	if err != nil {
+		return nil, err
+	}
+
+	var pairs []qtypes.KVPair
+	err = cliCtx.Codec.UnmarshalBinaryLengthPrefixed(output, &pairs)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, v := range pairs {
+		appr := approvetypes.Approve{}
+		cliCtx.Codec.MustUnmarshalBinaryBare(v.Value, &appr)
+		approves = append(approves, appr)
+	}
+
+	return
 }
 
 // 创建预授权命令
