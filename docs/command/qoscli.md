@@ -95,10 +95,9 @@ qoscli keys export Arya
 Password to sign with 'Arya':<输入>
 **Important** Don't leak your private key information to others.
 Please keep your private key safely, otherwise your account will be attacked.
-
-{"Name":"Arya","address":"qosacc10327kf8v45a7uhev92llmuqwzkfgecvwckxt5m","pubkey":"qosaccpub1zcjduepqhn2n540cn0ts0qg7zd8xyrrwjg54lvaka228c3vs8gf5ph3eh27sy7nlzh","privkey":{"type":"tendermint/PrivKeyEd25519","value":"n/eCiOFjYFf22NCsacMfTXhxI6dV3DfI8cuxlZ48M0S81TpV+JvXB4EeE05iDG6SKV+ztuqUfEWQOhNA3jm6vQ=="}}
+/tmp/main_141661640.acc
 ```
-导出的密钥是通过JSON序列化后的密钥信息，可以将JSON字符串中的`privkey`部分内容保存为文件并妥善保存，可用于密钥导入。
+导出的文件是通过JSON序列化后的账户信息，文件需妥善保存，可用于密钥导入。
 
 #### 删除
 
