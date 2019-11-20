@@ -7,6 +7,8 @@ info:
 tags:
   - name: Transactions
     description: Search, encode, or broadcast transactions.
+  - name: Tendermint
+    description: Wapper tendermint rpc api
   - name: Account
     description: Authenticate accounts
   - name: Approve
@@ -68,6 +70,142 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
+  /node_status:
+    get:
+      tags:
+        - Tendermint
+      summary: get tendermint node status
+      produces:
+        - application/json
+      responses:
+        200:
+          description: node info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /blocks/latest:
+    get:
+      tags:
+        - Tendermint
+      summary: get latest block info
+      produces:
+        - application/json
+      responses:
+        200:
+          description: block info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /blocks/{height}:
+    get:
+      tags:
+        - Tendermint
+      summary: get height block info
+      parameters:
+        - in: path
+          name: height
+          required: true
+          type: number
+          description: block height
+      produces:
+        - application/json
+      responses:
+        200:
+          description: block info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /validators/latest:
+    get:
+      tags:
+        - Tendermint
+      summary: get latest block validators info
+      produces:
+        - application/json
+      responses:
+        200:
+          description: validators info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /validators/{height}:
+    get:
+      tags:
+        - Tendermint
+      summary: get height block validators info
+      parameters:
+        - in: path
+          name: height
+          required: true
+          type: number
+          description: block height
+      produces:
+        - application/json
+      responses:
+        200:
+          description: validators info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /validators/consensus/{address}:
+    get:
+      tags:
+        - Tendermint
+      summary: covert tendermint validator address to consensus address
+      parameters:
+        - in: path
+          name: address
+          required: true
+          type: string
+          description: tendermint validator address.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: consensus address
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /txs/{hash}:
+    get:
+      tags:
+        - Tendermint
+      summary: get transcation detail by hash
+      parameters:
+        - in: path
+          name: hash
+          required: true
+          type: string
+          description: tx hash
+      produces:
+        - application/json
+      responses:
+        200:
+          description: tx info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
   /accounts/{bech32Address}:
     get:
       tags:
@@ -80,7 +218,7 @@ paths:
           name: bech32Address
           required: true
           type: string
-          description: account address
+          description: qos account address
       responses:
         200:
           description: account info
@@ -114,7 +252,7 @@ paths:
           description: Invalid search events
         500:
           description: Internal Server Error
-  /approve/approves/{address}/create_approves:
+  /approve/approves/{beneficiaryAddr}/create_approves:
     post:
       tags:
         - Approve
@@ -123,8 +261,9 @@ paths:
       parameters:
         - in: path
           required: true
-          name: address
+          name: beneficiaryAddr
           type: string
+          description: 授权使用者账户地址
         - in: body
           name: body
           required: true
@@ -139,7 +278,7 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /approve/approves/{address}/increase_approves:
+  /approve/approves/{beneficiaryAddr}/increase_approves:
     post:
       tags:
         - Approve
@@ -148,8 +287,9 @@ paths:
       parameters:
         - in: path
           required: true
-          name: address
+          name: toAddress
           type: string
+          description: 授权使用者账户地址
         - in: body
           name: body
           required: true
@@ -164,7 +304,7 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /approve/approves/{address}/decrease_approves:
+  /approve/approves/{beneficiaryAddr}/decrease_approves:
     post:
       tags:
         - Approve
@@ -173,9 +313,9 @@ paths:
       parameters:
         - in: path
           required: true
-          name: address
+          name: toAddress
           type: string
-
+          description: 授权使用者账户地址
         - in: body
           name: body
           required: true
@@ -190,7 +330,7 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /approve/approves/{address}/use_approves:
+  /approve/approves/{approveAddr}/use_approves:
     post:
       tags:
         - Approve
@@ -199,8 +339,9 @@ paths:
       parameters:
         - in: path
           required: true
-          name: address
+          name: approveAddr
           type: string
+          description: 授权人账户地址
         - in: body
           name: body
           required: true
@@ -215,7 +356,7 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /approve/approves/{address}/cancel_approves:
+  /approve/approves/{beneficiaryAddr}/cancel_approves:
     post:
       tags:
         - Approve
@@ -226,7 +367,7 @@ paths:
           name: address
           required: true
           type: string
-
+          description: 授权使用者账户地址
         - in: body
           name: body
           required: true
@@ -253,12 +394,12 @@ paths:
           name: approveAddr
           required: true
           type: string
-
+          description: 授权人账户地址
         - in: path
           name: beneficiaryAddr
           required: true
           type: string
-
+          description: 授权使用者账户地址
       responses:
         200:
           description: account info
@@ -289,7 +430,7 @@ paths:
     get:
       tags:
         - Approve
-      summary: "查询所有预授权信息"
+      summary: "查询授权人所有预授权信息"
       produces:
         - application/json
       parameters:
@@ -297,17 +438,19 @@ paths:
           name: approveAddr
           required: true
           type: string
-
+          description: 授权人账户地址
       responses:
         200:
-          description: account info
+          description: approves info
           schema:
             type: object
             properties:
               from:
                 type: string
+                description: 授权人账户地址
               to:
                 type: string
+                description: 授权使用者账户地址
               qos:
                 type: integer
               qscs:
@@ -324,17 +467,18 @@ paths:
           description: not found
         500:
           description: Internal Server Error
-  /bank/accounts/{address}/transfers:
+  /bank/accounts/{toAddress}/transfers:
     post:
       tags:
         - Bank
-      summary:  "转账"
+      summary:  "向toAddress用户转账"
       description: ""
       parameters:
         - in: path
           required: true
-          name: address
+          name: toAddress
           type: string
+          description: "收款人"
         - in: body
           name: body
           required: true
@@ -349,11 +493,11 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /bank/accounts/checks:
+  /invariant/checks:
     post:
       tags:
         - Bank
-      summary:  "数据检查"
+      summary:  "链上数据检查. 该功能将收取大额GAS费用"
       description: ""
       parameters:
         - in: body
@@ -479,14 +623,14 @@ paths:
     post:
       tags:
         - Gov
-      summary:  "提议抵押"
+      summary:  "对指定提议进行QOS抵押"
       description: ""
       parameters:
         - in: path
           name: proposalId
           required: true
           type: integer
-
+          description: 提议ID
         - in: body
           name: body
           required: true
@@ -505,14 +649,14 @@ paths:
     post:
       tags:
         - Gov
-      summary:  "提议投票"
+      summary:  "对指定提议进行投票"
       description: ""
       parameters:
         - in: path
           name: proposalId
           required: true
           type: integer
-
+          description: 提议ID
         - in: body
           name: body
           required: true
@@ -547,7 +691,7 @@ paths:
     get:
       tags:
         - Gov
-      summary: "查询提议"
+      summary: "查询指定提议"
       produces:
         - application/json
       parameters:
@@ -555,6 +699,7 @@ paths:
           name: proposalId
           type: integer
           required: true
+          description: 提议ID
       responses:
         200:
           description: ""
@@ -568,7 +713,7 @@ paths:
     get:
       tags:
         - Gov
-      summary: "查询提议抵押"
+      summary: "查询指定提议所有抵押"
       produces:
         - application/json
       parameters:
@@ -576,6 +721,7 @@ paths:
           name: proposalId
           type: integer
           required: true
+          description: 提议ID
       responses:
         200:
           description: ""
@@ -589,7 +735,7 @@ paths:
     get:
       tags:
         - Gov
-      summary: "查询提议中某一地址抵押"
+      summary: "查询指定提议中指定地址抵押信息"
       produces:
         - application/json
       parameters:
@@ -597,10 +743,12 @@ paths:
           name: proposalId
           type: integer
           required: true
+          description: 提议ID
         - in: path
           name: address
           type: string
           required: true
+          description: 账户地址
       responses:
         200:
           description: ""
@@ -614,7 +762,7 @@ paths:
     get:
       tags:
         - Gov
-      summary: "查询提议投票"
+      summary: "查询指定提议投票"
       produces:
         - application/json
       parameters:
@@ -622,6 +770,7 @@ paths:
           name: proposalId
           type: integer
           required: true
+          description: 提议ID
       responses:
         200:
           description: ""
@@ -635,7 +784,7 @@ paths:
     get:
       tags:
         - Gov
-      summary: "查询提议中某一地址投票"
+      summary: "查询指定提议中指定地址投票信息"
       produces:
         - application/json
       parameters:
@@ -643,10 +792,12 @@ paths:
           name: proposalId
           type: integer
           required: true
+          description: 提议ID
         - in: path
           name: address
           type: string
           required: true
+          description: 账户地址
       responses:
         200:
           description: ""
@@ -660,7 +811,7 @@ paths:
     get:
       tags:
         - Gov
-      summary: "查询提议实时投票"
+      summary: "查询指定提议实时投票信息"
       produces:
         - application/json
       parameters:
@@ -668,6 +819,7 @@ paths:
           name: proposalId
           type: integer
           required: true
+          description: 提议ID
       responses:
         200:
           description: ""
@@ -677,11 +829,11 @@ paths:
           description: not found
         500:
           description: Internal Server Error
-  /gov/params/{module}/keys/{key}:
+  /gov/params/modules/{module}/keys/{key}:
     get:
       tags:
         - Gov
-      summary: "查询模块参数"
+      summary: "查询指定模块下的指定参数值"
       produces:
         - application/json
       parameters:
@@ -689,10 +841,50 @@ paths:
           name: module
           type: string
           required: true
+          description: 模块名
         - in: path
           name: key
           type: string
           required: true
+          description: 键名
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/params/modules/{module}/keys:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定模块下所有参数"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: module
+          type: string
+          required: true
+          description: 模块名
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/params/modules:
+    get:
+      tags:
+        - Gov
+      summary: "查询链中包含的所有模块名"
+      produces:
+        - application/json
       responses:
         200:
           description: ""
@@ -717,33 +909,47 @@ paths:
           name: from
           type: string
           required: true
+          description: "操作人地址. 该值不可为空"
         - in: formData
           name: nonce
           type: integer
+          description: "操作人nonce值, 该值可忽略"
         - in: formData
           name: max_gas
           type: integer
+          description: "交易最大GAS数, 默认值: 400000"
         - in: formData
           name: chain_id
           type: string
+          description: "链名称, 该值可忽略"
         - in: formData
           name: mode
           type: string
-        - in: formData
-          name: height
-          type: string
-        - in: formData
-          name: indent
-          type: string
+          description: "broadcast mode. value: sync, async, block. default value is block"
         - in: formData
           name: ca_file
           required: true
           type: file
-
+          description: "ca文件. 该值不可为空"
       responses:
         200:
           description: OK
   /qsc/qscs:
+    get:
+      tags:
+        - QSC
+      summary: "查询所有代币"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
     post:
       tags:
         - QSC
@@ -758,38 +964,40 @@ paths:
           name: from
           type: string
           required: true
+          description: "操作人地址. 该值不可为空"
         - in: formData
           name: nonce
           type: integer
+          description: "操作人nonce值, 该值可忽略"
         - in: formData
           name: max_gas
           type: integer
+          description: "交易最大GAS数, 默认值: 400000"
         - in: formData
           name: chain_id
           type: string
+          description: "链名称, 该值可忽略"
         - in: formData
           name: mode
           type: string
-        - in: formData
-          name: height
-          type: string
-        - in: formData
-          name: indent
-          type: string
+          description: "broadcast mode. value: sync, async, block. default value is block"
         - in: formData
           name: ca_file
           required: true
           type: file
+          description: "ca文件. 该值不可为空"
         - in: formData
           name: accounts
           type: string
+          description: "初始账户.格式: address1,100;address2,100"
         - in: formData
           name: exchange_rate
           type: string
+          description: "extrate: qos:qscxxx (default 1)"
         - in: formData
           name: description
           type: string
-
+          description: "描述信息"
       responses:
         200:
           description: OK
@@ -804,6 +1012,7 @@ paths:
           required: true
           name: qsc
           type: string
+          description: 代币名称
         - in: body
           name: body
           required: true
@@ -822,7 +1031,7 @@ paths:
     get:
       tags:
         - QSC
-      summary: "查询代币信息"
+      summary: "查询指定代币信息"
       produces:
         - application/json
       parameters:
@@ -830,6 +1039,7 @@ paths:
           name: qsc
           type: string
           required: true
+          description: 代币名称
       responses:
         200:
           description: ""
@@ -839,33 +1049,19 @@ paths:
           description: not found
         500:
           description: Internal Server Error
-  /qsc/qscs/:
-    get:
-      tags:
-        - QSC
-      summary: "查询所有代币"
-      produces:
-        - application/json
-      responses:
-        200:
-          description: ""
-        400:
-          description: Invalid search events
-        404:
-          description: not found
-        500:
-          description: Internal Server Error
+
   /gov/guardians/{address}/guardians:
     post:
       tags:
         - GUARDIAN
-      summary:  "添加系统账户"
+      summary:  "添加指定地址为系统账户"
       description: ""
       parameters:
         - in: path
           required: true
           name: address
           type: string
+          description: 账户地址
         - in: body
           name: body
           required: true
@@ -884,13 +1080,14 @@ paths:
     post:
       tags:
         - GUARDIAN
-      summary:  "删除系统账户"
+      summary:  "将指定地址从系统账户中删除"
       description: ""
       parameters:
         - in: path
           required: true
           name: address
           type: string
+          description: 账户地址
         - in: body
           name: body
           required: true
@@ -926,7 +1123,7 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /gov/guardians/:
+  /gov/guardians:
     get:
       tags:
         - GUARDIAN
@@ -946,7 +1143,7 @@ paths:
     get:
       tags:
         - GUARDIAN
-      summary: "查询系统用户"
+      summary: "查询系统用户信息"
       produces:
         - application/json
       parameters:
@@ -954,110 +1151,7 @@ paths:
           name: address
           type: string
           required: true
-      responses:
-        200:
-          description: ""
-        400:
-          description: Invalid search events
-        404:
-          description: not found
-        500:
-          description: Internal Server Error
-  /stake/validators/:
-    get:
-      tags:
-        - STAKE
-      summary: "查询所有验证节点"
-      produces:
-        - application/json
-      responses:
-        200:
-          description: ""
-        400:
-          description: Invalid search events
-        404:
-          description: not found
-        500:
-          description: Internal Server Error
-  /stake/validators/{validatorAddr}:
-    get:
-      tags:
-        - STAKE
-      summary: "查询验证节点"
-      produces:
-        - application/json
-      parameters:
-        - in: path
-          name: validatorAddr
-          type: string
-          required: true
-      responses:
-        200:
-          description: ""
-        400:
-          description: Invalid search events
-        404:
-          description: not found
-        500:
-          description: Internal Server Error
-  /stake/delegators/{validatorAddr}:
-    get:
-      tags:
-        - STAKE
-      summary: "查询验证节点所有委托人"
-      produces:
-        - application/json
-      parameters:
-        - in: path
-          name: validatorAddr
-          type: string
-          required: true
-      responses:
-        200:
-          description: ""
-        400:
-          description: Invalid search events
-        404:
-          description: not found
-        500:
-          description: Internal Server Error
-  /stake/delegators/{delegatorAddr}/delegations:
-    get:
-      tags:
-        - STAKE
-      summary: "查询用户所有委托"
-      produces:
-        - application/json
-      parameters:
-        - in: path
-          name: delegatorAddr
-          type: string
-          required: true
-      responses:
-        200:
-          description: ""
-        400:
-          description: Invalid search events
-        404:
-          description: not found
-        500:
-          description: Internal Server Error
-  /stake/delegators/{delegatorAddr}/validators/{validatorAddr}:
-    get:
-      tags:
-        - STAKE
-      summary: "查询用户委托信息"
-      produces:
-        - application/json
-      parameters:
-        - in: path
-          name: delegatorAddr
-          type: string
-          required: true
-        - in: path
-          name: validatorAddr
-          type: string
-          required: true
+          description: 账户地址
       responses:
         200:
           description: ""
@@ -1068,10 +1162,25 @@ paths:
         500:
           description: Internal Server Error
   /stake/validators:
+    get:
+      tags:
+        - STAKE
+      summary: "查询所有验证人信息"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
     post:
       tags:
         - STAKE
-      summary:  "成为验证节点"
+      summary:  "创建验证人"
       description: ""
       parameters:
         - in: body
@@ -1088,17 +1197,112 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
+  /stake/validators/{validatorAddr}:
+    get:
+      tags:
+        - STAKE
+      summary: "查询验证人信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址. ex: qosval1ras2lkaa0una89r2st95z0upxm2t62tlrxhp7k"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+
+  /stake/delegators/{validatorAddr}:
+    get:
+      tags:
+        - STAKE
+      summary: "查询指定验证人下的所有委托人"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /stake/delegators/{delegatorAddr}/delegations:
+    get:
+      tags:
+        - STAKE
+      summary: "查询指定用户的所有委托信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: delegatorAddr
+          type: string
+          required: true
+          description: 账户地址
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /stake/delegators/{delegatorAddr}/validators/{validatorAddr}:
+    get:
+      tags:
+        - STAKE
+      summary: "查询指定委托人的委托信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: delegatorAddr
+          type: string
+          required: true
+          description: 委托人账户地址
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
   /stake/validators/{validatorAddr}/modify_validators:
     post:
       tags:
         - STAKE
-      summary:  "编辑验证节点"
+      summary:  "修改验证人相关信息.该操作只能由验证人所有者有权限执行"
       description: ""
       parameters:
         - in: path
           name: validatorAddr
           type: string
           required: true
+          description: "验证人地址"
         - in: body
           name: body
           required: true
@@ -1117,13 +1321,14 @@ paths:
     post:
       tags:
         - STAKE
-      summary:  "撤销验证节点"
+      summary:  "撤销验证人. 该操作只能由验证人所有者有权限执行"
       description: ""
       parameters:
         - in: path
           name: validatorAddr
           type: string
           required: true
+          description: "验证人地址"
         - in: body
           name: body
           required: true
@@ -1142,13 +1347,14 @@ paths:
     post:
       tags:
         - STAKE
-      summary:  "激活验证节点"
+      summary:  "激活验证人. 该操作只能由验证人所有者有权限执行"
       description: ""
       parameters:
         - in: path
           name: validatorAddr
           type: string
           required: true
+          description: "验证人地址"
         - in: body
           name: body
           required: true
@@ -1163,17 +1369,18 @@ paths:
           description: Invalid request
         500:
           description: Server internal error
-  /stake/delegators/{validatorAddr}/delegations/:
+  /stake/delegators/{validatorAddr}/delegations:
     post:
       tags:
         - STAKE
-      summary:  "委托"
+      summary:  "对验证人进行委托"
       description: ""
       parameters:
         - in: path
           name: validatorAddr
           type: string
           required: true
+          description: "验证人地址"
         - in: body
           name: body
           required: true
@@ -1192,13 +1399,14 @@ paths:
     post:
       tags:
         - STAKE
-      summary:  "修改收益复投方式"
+      summary:  "委托人修改收益复投方式"
       description: ""
       parameters:
         - in: path
           name: validatorAddr
           type: string
           required: true
+          description: "验证人地址"
         - in: body
           name: body
           required: true
@@ -1217,13 +1425,14 @@ paths:
     post:
       tags:
         - STAKE
-      summary:  "解除委托"
+      summary:  "委托人解除委托"
       description: ""
       parameters:
         - in: path
           name: validatorAddr
           type: string
           required: true
+          description: "验证人地址"
         - in: body
           name: body
           required: true
@@ -1242,7 +1451,7 @@ paths:
     post:
       tags:
         - STAKE
-      summary:  "变更委托验证节点"
+      summary:  "委托人变更委托验证人"
       description: ""
       parameters:
         - in: path
@@ -1390,7 +1599,7 @@ definitions:
       from:
         type: string
         example: "qosacc1qgwgmpsrd6anj3qjvjsqztj3xt9v24c4lygasm"
-        description: "operator user's account bech32 address. 不可为空"
+        description: "操作人地址.该字段不可为空."
       chain_id:
         type: string
         example: qos-test
@@ -1404,19 +1613,19 @@ definitions:
       max_gas:
         type: integer
         description: "tx max gas"
-        default: ""
+        default: "400000"
       height:
         type: integer
         description: "query height"
         default: ""
       indent:
         type: boolean
-        description: "result is index format if true"
+        description: "result is indent format if set true"
         default: false
       mode:
         type: string
-        description: "broadcast mode"
-        default: ""
+        description: "broadcast mode. value: sync, async, block. default value is block"
+        default: "block"
   AccAddress:
     type: string
   PubKey:
@@ -1436,7 +1645,7 @@ definitions:
         description: "jsonify Tx"
       mode:
         type: string
-        description: "broadcast mode"
+        description: "broadcast mode. value: sync, async, block. default value is block"
   Qsc:
     type: object
     properties:

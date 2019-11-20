@@ -33,7 +33,7 @@ func registerQueryRoutes(cliCtx context.CLIContext, r *mux.Router) {
 
 func registerTxRoutes(cliCtx context.CLIContext, r *mux.Router) {
 	r.HandleFunc("/bank/accounts/{address}/transfers", TransferRequestHandlerFn(cliCtx)).Methods("POST")
-	r.HandleFunc("/bank/accounts/checks", InvariantCheckRequestHandleFn(cliCtx)).Methods("POST")
+	r.HandleFunc("/invariant/checks", InvariantCheckRequestHandleFn(cliCtx)).Methods("POST")
 }
 
 func InvariantCheckRequestHandleFn(cliContext context.CLIContext) func(http.ResponseWriter, *http.Request) {
