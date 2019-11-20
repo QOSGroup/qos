@@ -102,7 +102,13 @@ func (mapper Mapper) SetParam(paramSpace string, key string, value interface{}) 
 
 // 获取单个参数
 func (mapper Mapper) GetParam(paramSpace string, key string) (value interface{}, exists bool) {
-	for _, pair := range mapper.paramSets[paramSpace].KeyValuePairs() {
+
+	set, exists := mapper.GetModuleParamSet(paramSpace)
+	if !exists {
+		return nil, false
+	}
+
+	for _, pair := range set.KeyValuePairs() {
 		if key == string(pair.Key) {
 			mapper.Get(BuildParamKey(paramSpace, pair.Key), pair.Value)
 			return pair.Value, true

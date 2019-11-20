@@ -19,6 +19,10 @@ import (
 	"strings"
 )
 
+var (
+	moduleData = []string{"stake", "distribution", "gov"}
+)
+
 func RegisterRoutes(ctx context.CLIContext, r *mux.Router) {
 	registerQueryRoutes(ctx, r)
 	registerTxRoutes(ctx, r)
@@ -87,7 +91,9 @@ func registerQueryRoutes(ctx context.CLIContext, r *mux.Router) {
 	r.HandleFunc("/gov/proposal/{proposalId}/votes", QueryAllVotesHandleFn(ctx)).Methods("GET")
 	r.HandleFunc("/gov/proposal/{proposalId}/votes/{address}", GetVoteHandleFn(ctx)).Methods("GET")
 	r.HandleFunc("/gov/proposal/{proposalId}/tallies", GetProposalTallyHandleFn(ctx)).Methods("GET")
-	r.HandleFunc("/gov/params/{module}/keys/{key}", GetParamsKeyHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/params/modules/{module}/keys/{key}", GetParamsKeyHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/params/modules/{module}/keys", GetModuleKeyHandleFn(ctx)).Methods("GET")
+	r.HandleFunc("/gov/params/modules", GetModulesHandleFn(ctx)).Methods("GET")
 }
 
 func registerTxRoutes(ctx context.CLIContext, r *mux.Router) {
@@ -266,6 +272,29 @@ func GetParamsKeyHandleFn(cliContext context.CLIContext) func(http.ResponseWrite
 		}
 
 		rpc.PostProcessResponseBare(writer, ctx, result)
+	}
+}
+
+func GetModuleKeyHandleFn(cliContext context.CLIContext) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+		br, _ := rpc.ParseRequestForm(request)
+		ctx := br.Setup(cliContext)
+		vars := mux.Vars(request)
+
+		result, err := queryModuleParams(ctx, vars["module"], "")
+		if err != nil {
+			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			return
+		}
+
+		rpc.PostProcessResponseBare(writer, ctx, result)
+	}
+}
+
+func GetModulesHandleFn(cliContext context.CLIContext) func(http.ResponseWriter, *http.Request) {
+	return func(writer http.ResponseWriter, request *http.Request) {
+
+		rpc.PostProcessResponseBare(writer, cliContext, moduleData)
 	}
 }
 
