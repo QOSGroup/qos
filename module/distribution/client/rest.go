@@ -9,6 +9,11 @@ import (
 	"net/http"
 )
 
+const (
+	ValidatorAddressErrorPrompt = "validator address not valid. it must start with qosval1. current address: %s. err: %s"
+	AccountAddressErrorPrompt   = "account address not valid. it must start with qosacc1.current address: %s. err: %s"
+)
+
 func RegisterRoutes(ctx context.CLIContext, r *mux.Router) {
 	registerQueryRoutes(ctx, r)
 }
@@ -31,7 +36,7 @@ func queryValidatorPeriodsHandleFn(cliContext context.CLIContext) func(http.Resp
 
 		result, err := queryValidatorPeriods(ctx, valAddr)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -56,7 +61,7 @@ func queryDelegatorIncomeHandleFn(cliContext context.CLIContext) func(http.Respo
 
 		result, err := queryDelegatorIncomes(ctx, deleAddr, valAddr)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -72,7 +77,7 @@ func getCommunityFeePoolsHandleFn(cliContext context.CLIContext) func(http.Respo
 
 		result, err := getCommunityFeePool(ctx)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -83,7 +88,7 @@ func getCommunityFeePoolsHandleFn(cliContext context.CLIContext) func(http.Respo
 func MustParseValidatorAddress(w http.ResponseWriter, addrStr string) (types.ValAddress, bool) {
 	addr, err := types.ValAddressFromBech32(addrStr)
 	if err != nil {
-		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("addr not valid. addr: %s", addrStr))
+		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(ValidatorAddressErrorPrompt, addrStr, err.Error()))
 		return nil, false
 	}
 
@@ -93,7 +98,7 @@ func MustParseValidatorAddress(w http.ResponseWriter, addrStr string) (types.Val
 func MustParseAccountAddress(w http.ResponseWriter, addrStr string) (types.AccAddress, bool) {
 	addr, err := types.AccAddressFromBech32(addrStr)
 	if err != nil {
-		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("addr not valid. addr: %s", addrStr))
+		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(AccountAddressErrorPrompt, addrStr, err.Error()))
 		return nil, false
 	}
 

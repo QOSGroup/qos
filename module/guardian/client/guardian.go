@@ -1,7 +1,6 @@
 package client
 
 import (
-	"errors"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
@@ -122,7 +121,7 @@ func getGuardian(cliCtx context.CLIContext, guardian types2.AccAddress) (types.G
 	}
 
 	if output == nil {
-		return types.Guardian{}, errors.New("guardian does not exist")
+		return types.Guardian{}, context.RecordsNotFoundError
 	}
 
 	result := types.Guardian{}
@@ -162,7 +161,7 @@ func queryAllGuardians(cliCtx context.CLIContext) ([]types.Guardian, error) {
 	}
 
 	if len(result.Response.Value) == 0 {
-		return nil, errors.New("no guardian")
+		return nil, context.RecordsNotFoundError
 	}
 
 	var guardians []types.Guardian

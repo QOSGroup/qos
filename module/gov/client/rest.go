@@ -267,7 +267,7 @@ func GetParamsKeyHandleFn(cliContext context.CLIContext) func(http.ResponseWrite
 
 		result, err := queryModuleParams(ctx, vars["module"], vars["key"])
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -283,7 +283,7 @@ func GetModuleKeyHandleFn(cliContext context.CLIContext) func(http.ResponseWrite
 
 		result, err := queryModuleParams(ctx, vars["module"], "")
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -318,7 +318,7 @@ func GetVoteHandleFn(cliContext context.CLIContext) func(http.ResponseWriter, *h
 
 		result, err := getProposalVote(ctx, pid, addr)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 		rpc.PostProcessResponseBare(writer, cliContext, result)
@@ -341,12 +341,12 @@ func QueryAllVotesHandleFn(cliContext context.CLIContext) func(http.ResponseWrit
 		result, err := queryProposalVotes(ctx, pid)
 
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 
@@ -376,7 +376,7 @@ func GetDepositHandleFn(cliContext context.CLIContext) func(http.ResponseWriter,
 		result, err := getProposalDeposit(ctx, pid, addr)
 
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 		rpc.PostProcessResponseBare(writer, cliContext, result)
@@ -397,12 +397,12 @@ func QueryAllDepositsHandleFn(cliContext context.CLIContext) func(http.ResponseW
 
 		result, err := queryProposalVotes(ctx, pid)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 
@@ -425,7 +425,7 @@ func GetProposalHandleFn(cliContext context.CLIContext) func(http.ResponseWriter
 
 		result, err := getProposal(ctx, pid)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -447,7 +447,7 @@ func GetProposalTallyHandleFn(cliContext context.CLIContext) func(http.ResponseW
 
 		result, err := getProposalTally(ctx, pid)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -485,12 +485,12 @@ func QueryAllProposalsHandleFn(cliContext context.CLIContext) func(http.Response
 
 		result, err := queryProposalsByParams(ctx, queryParam)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 

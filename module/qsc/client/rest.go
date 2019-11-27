@@ -41,12 +41,12 @@ func QueryAllQscsHandleFn(cliContext context.CLIContext) func(http.ResponseWrite
 
 		result, err := queryAllQscs(ctx)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusBadRequest, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if result == nil || len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 
@@ -62,7 +62,7 @@ func QueryQscInfoHandleFn(cliContext context.CLIContext) func(http.ResponseWrite
 
 		info, err := queryQscInfo(vars["qsc"], ctx)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 

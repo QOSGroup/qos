@@ -35,7 +35,7 @@ func queryQscInfo(qsc string, cliCtx context.CLIContext) (types.QSCInfo, error) 
 		return types.QSCInfo{}, err
 	}
 	if len(res) == 0 {
-		return types.QSCInfo{}, errors.New("no result found")
+		return types.QSCInfo{}, context.RecordsNotFoundError
 	}
 
 	var info types.QSCInfo

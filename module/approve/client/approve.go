@@ -74,7 +74,7 @@ func getApproveInfo(cliCtx context.CLIContext, approve, beneficiary qtypes.AccAd
 		return approvetypes.Approve{}, err
 	}
 	if output == nil {
-		return approvetypes.Approve{}, errors.New("approve does not exist")
+		return approvetypes.Approve{}, context.RecordsNotFoundError
 	}
 
 	// 反序列化查询结果
@@ -100,7 +100,7 @@ func QueryApprovesCmd(cdc *amino.Codec) *cobra.Command {
 			approves, err := queryUserApproves(cliCtx, fromAddr)
 
 			if len(approves) == 0 {
-				return errors.New("records not found")
+				return context.RecordsNotFoundError
 			}
 
 			if err != nil {
