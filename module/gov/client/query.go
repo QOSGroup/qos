@@ -51,7 +51,7 @@ func getProposal(cliContext context.CLIContext, pid int64) (result types.Proposa
 	}
 
 	if len(res) == 0 {
-		return types.Proposal{}, errors.New("no result found")
+		return types.Proposal{}, context.RecordsNotFoundError
 	}
 
 	err = cliContext.Codec.UnmarshalJSON(res, &result)
@@ -192,7 +192,7 @@ func getProposalVote(cliContext context.CLIContext, pid int64, voter btypes.AccA
 	}
 
 	if len(res) == 0 {
-		return vote, errors.New("no result found")
+		return vote, context.RecordsNotFoundError
 	}
 
 	if err = cliContext.Codec.UnmarshalJSON(res, &vote); err != nil {
@@ -236,7 +236,7 @@ func queryProposalVotes(cliContext context.CLIContext, pid int64) ([]types.Vote,
 	}
 
 	if len(res) == 0 {
-		return nil, errors.New("no result found")
+		return nil, context.RecordsNotFoundError
 	}
 
 	var votes []types.Vote
@@ -282,7 +282,7 @@ func getProposalDeposit(cliContext context.CLIContext, pid int64, addr btypes.Ac
 	}
 
 	if len(res) == 0 {
-		return deposit, errors.New("no result found")
+		return deposit, context.RecordsNotFoundError
 	}
 
 	if err = cliContext.Codec.UnmarshalJSON(res, &deposit); err != nil {
@@ -366,7 +366,7 @@ func getProposalTally(cliContext context.CLIContext, pid int64) (result types.Ta
 	}
 
 	if len(res) == 0 {
-		return result, errors.New("no result found")
+		return result, context.RecordsNotFoundError
 	}
 
 	if err = cliContext.Codec.UnmarshalJSON(res, &result); err != nil {
@@ -423,7 +423,7 @@ func queryModuleParams(cliContext context.CLIContext, module, key string) (rest 
 	}
 
 	if len(res) == 0 {
-		return rest, errors.New("no result found")
+		return rest, context.RecordsNotFoundError
 	}
 
 	if mod == 0 {
@@ -433,7 +433,7 @@ func queryModuleParams(cliContext context.CLIContext, module, key string) (rest 
 		}
 
 		if len(result) == 0 {
-			return result, errors.New("no result found")
+			return result, context.RecordsNotFoundError
 		}
 
 		return result, nil

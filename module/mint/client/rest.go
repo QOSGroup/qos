@@ -26,12 +26,12 @@ func queryInflationPhrasesHandleFn(cliContext context.CLIContext) func(http.Resp
 		result, err := queryInflationPhrases(ctx)
 
 		if len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -46,7 +46,7 @@ func queryTotalInflationsHandleFn(cliContext context.CLIContext) func(http.Respo
 
 		result, err := queryTotal(ctx)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -63,7 +63,7 @@ func queryTotalAppliesHandleFn(cliContext context.CLIContext) func(http.Response
 		result, err := queryApplied(ctx)
 
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusInternalServerError, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 

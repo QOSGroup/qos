@@ -1641,8 +1641,8 @@ definitions:
     type: object
     properties:
       tx:
-        type: string
-        description: "jsonify Tx"
+        type: object
+        description: "Tx JSON Object"
       mode:
         type: string
         description: "broadcast mode. value: sync, async, block. default value is block"

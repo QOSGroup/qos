@@ -15,6 +15,11 @@ import (
 	"reflect"
 )
 
+const (
+	ValidatorAddressErrorPrompt = "validator address not valid. it must start with qosval1. current address: %s. err: %s"
+	AccountAddressErrorPrompt   = "account address not valid. it must start with qosacc1.current address: %s. err: %s"
+)
+
 func RegisterRoutes(ctx context.CLIContext, r *mux.Router) {
 	registerQueryRoutes(ctx, r)
 	registerTxRoutes(ctx, r)
@@ -168,7 +173,7 @@ func ModifyValidatorHandleFn(cliContext context.CLIContext) func(http.ResponseWr
 func MustParseValidatorAddress(w http.ResponseWriter, addrStr string) (btypes.ValAddress, bool) {
 	addr, err := btypes.ValAddressFromBech32(addrStr)
 	if err != nil {
-		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("addr not valid. addr: %s", addrStr))
+		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(ValidatorAddressErrorPrompt, addrStr, err.Error()))
 		return nil, false
 	}
 
@@ -178,7 +183,7 @@ func MustParseValidatorAddress(w http.ResponseWriter, addrStr string) (btypes.Va
 func MustParseAccountAddress(w http.ResponseWriter, addrStr string) (btypes.AccAddress, bool) {
 	addr, err := btypes.AccAddressFromBech32(addrStr)
 	if err != nil {
-		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf("addr not valid. addr: %s", addrStr))
+		rpc.WriteErrorResponse(w, http.StatusBadRequest, fmt.Sprintf(AccountAddressErrorPrompt, addrStr, err.Error()))
 		return nil, false
 	}
 
@@ -332,12 +337,12 @@ func QueryAllValidatorsHandleFn(cliContext context.CLIContext) func(http.Respons
 
 		result, err := queryAllValidators(ctx)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusBadRequest, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if result == nil || len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 
@@ -353,12 +358,13 @@ func QueryValidatorHandleFn(cliContext context.CLIContext) func(http.ResponseWri
 		vars := mux.Vars(request)
 		val, ok := MustParseValidatorAddress(writer, vars["validatorAddr"])
 		if !ok {
+			rpc.Write40XErrorResponse(writer, fmt.Errorf(ValidatorAddressErrorPrompt, val, "validator parse error"))
 			return
 		}
 
 		result, err := getValidator(ctx, val)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusBadRequest, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
@@ -379,12 +385,12 @@ func QueryDelegationsToHandleFn(cliContext context.CLIContext) func(http.Respons
 
 		result, err := queryDelegationsTo(ctx, val)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusBadRequest, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if result == nil || len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 
@@ -406,12 +412,12 @@ func QueryDelegationsHandleFn(cliContext context.CLIContext) func(http.ResponseW
 
 		result, err := queryDelegations(ctx, deleAddr)
 		if err != nil {
-			rpc.WriteErrorResponse(writer, http.StatusBadRequest, err.Error())
+			rpc.Write40XErrorResponse(writer, err)
 			return
 		}
 
 		if result == nil || len(result) == 0 {
-			rpc.WriteErrorResponse(writer, http.StatusNotFound, "result not found")
+			rpc.Write40XErrorResponse(writer, context.RecordsNotFoundError)
 			return
 		}
 

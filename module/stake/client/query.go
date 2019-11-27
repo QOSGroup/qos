@@ -279,7 +279,7 @@ func queryAllValidators(cliCtx context.CLIContext) ([]validatorDisplayInfo, erro
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return nil, errors.New("response empty value")
+		return nil, context.RecordsNotFoundError
 	}
 
 	var validators []validatorDisplayInfo
@@ -504,7 +504,7 @@ func getValidator(ctx context.CLIContext, validatorAddr btypes.ValAddress) (type
 
 	valueBz := result.Response.GetValue()
 	if len(valueBz) == 0 {
-		return types.Validator{}, errors.New("Validator not exists")
+		return types.Validator{}, context.RecordsNotFoundError
 	}
 
 	var validator types.Validator

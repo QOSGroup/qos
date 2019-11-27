@@ -1,7 +1,6 @@
 package client
 
 import (
-	"errors"
 	"github.com/QOSGroup/qbase/client/context"
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/mint/mapper"
@@ -35,7 +34,7 @@ func queryInflationPhrases(cliCtx context.CLIContext) ([]types.InflationPhrase, 
 	res, err := cliCtx.Query(path, []byte{})
 
 	if len(res) == 0 {
-		return nil, errors.New("no result found")
+		return nil, context.RecordsNotFoundError
 	}
 
 	var result []types.InflationPhrase
@@ -73,7 +72,7 @@ func queryTotal(cliCtx context.CLIContext) (btypes.BigInt, error) {
 	res, err := cliCtx.Query(path, []byte{})
 
 	if len(res) == 0 {
-		return btypes.BigInt{}, errors.New("no result found")
+		return btypes.BigInt{}, context.RecordsNotFoundError
 	}
 
 	var result btypes.BigInt
@@ -110,7 +109,7 @@ func queryApplied(cliCtx context.CLIContext) (btypes.BigInt, error) {
 	res, err := cliCtx.Query(path, []byte{})
 
 	if len(res) == 0 {
-		return btypes.BigInt{}, errors.New("no result found")
+		return btypes.BigInt{}, context.RecordsNotFoundError
 	}
 
 	var result btypes.BigInt
