@@ -100,7 +100,7 @@ func AddLockAccount(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 
 Example:
 
-	qosd add-lock-account --receiver qosacc1lly0audg7yem8jt77x2jc6wtrh7v96hgve8fh8 --total-amount 10000000000000 --released-amount 1000000000000 --release-time '2023-10-20T00:00:00Z' --release-interval 30 --release-times 10"
+	qosd add-lock-account --receiver qosacc1dnfqsflrl0m8csygtfg9nffh3yffg5z6mq2d0r --total-amount 10000000000000 --released-amount 1666666666664 --release-time '2019-11-27T18:00:00Z' --release-interval 1 --release-times 20"
 	`,
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config
@@ -165,6 +165,7 @@ Example:
 			bankState.LockInfo = &lockInfo
 
 			mintState.AppliedQOSAmount = mintState.AppliedQOSAmount.Add(lockAccount.QOS)
+			mintState.TotalQOSAmount = mintState.TotalQOSAmount.Add(lockAccount.QOS)
 
 			appState[bank.ModuleName] = cdc.MustMarshalJSON(bankState)
 			appState[mint.ModuleName] = cdc.MustMarshalJSON(mintState)
