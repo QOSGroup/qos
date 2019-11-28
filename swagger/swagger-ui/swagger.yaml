@@ -124,6 +124,28 @@ paths:
           description: not found
         500:
           description: Internal Server Error
+  /blocks/txs/{height}:
+    get:
+      tags:
+        - Tendermint
+      summary: get all txs hash in height block
+      parameters:
+        - in: path
+          name: height
+          required: true
+          type: number
+          description: block height
+      produces:
+        - application/json
+      responses:
+        200:
+          description: block info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
   /validators/latest:
     get:
       tags:
