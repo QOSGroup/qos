@@ -4,7 +4,7 @@ module github.com/QOSGroup/qos
 
 require (
 	github.com/QOSGroup/kepler v0.6.0
-	github.com/QOSGroup/qbase v0.2.3-0.20191127034434-a0175a9b2e71
+	github.com/QOSGroup/qbase v0.2.3-0.20191128104332-4dfda7cfb9f6
 	github.com/go-kit/kit v0.9.0
 	github.com/gorilla/mux v1.7.3
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
