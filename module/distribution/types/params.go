@@ -54,7 +54,7 @@ func DefaultParams() Params {
 		ProposerRewardRate:           qtypes.NewDecWithPrec(1, 2),           // 1%
 		CommunityRewardRate:          qtypes.NewDecWithPrec(2, 2),           // 2%
 		DelegatorsIncomePeriodHeight: 60 * 60 / qtypes.DefaultBlockInterval, // 1 hour
-		GasPerUnitCost:               qtypes.GasPerUnitCost,                 // 1000
+		GasPerUnitCost:               qtypes.UnitQOSGas,                     // 1000
 	}
 }
 

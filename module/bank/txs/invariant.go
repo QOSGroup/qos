@@ -9,7 +9,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
-const GasForInvariantCheck = int64(200000*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 200000QOS
+var GasForInvariantCheck = int64(200000*qtypes.UnitQOS) * qtypes.UnitQOSGas // 200000QOS
 
 // 发起全网数据检查
 type TxInvariantCheck struct {

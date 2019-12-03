@@ -25,7 +25,7 @@ func NewGenesisState(inflationPhrases InflationPhrases, firstBlockTime int64, ap
 }
 
 func DefaultGenesisState() GenesisState {
-	return NewGenesisState(DefaultInflationPhrases(), time.Now().Unix(), types.ZeroInt(), types.NewInt(qtypes.TotalQOSAmount))
+	return NewGenesisState(DefaultInflationPhrases(), time.Now().Unix(), types.ZeroInt(), types.NewInt(qtypes.DefaultTotalUnitQOSQuantity))
 }
 
 func ValidateGenesis(gs GenesisState) error {

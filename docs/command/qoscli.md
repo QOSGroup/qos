@@ -5,6 +5,7 @@
 * `query`       [信息查询](#查询)
 * `tx`          [交易](#交易)
 * `version`     [版本信息](#版本)
+* `rpc-server`  [RPC服务](#RPC服务)
 
 所有命令均可通过添加`--help`获取命令说明
 
@@ -1970,3 +1971,32 @@ $ qoscli tx delete-guardian --address Sansa --deleted-by Arya
 ```bash
 $ qoscli tx halt-network --guardian Arya --reason 'bug'
 ```
+
+## RPC服务
+
+在本地启动HTTP服务, 通过本地启动的RPC服务,可以通过HTTP接口进行创建交易,查询链上数据等.
+
+启动命令:
+
+```shell
+qoscli rpc-server
+```
+
+启动参数:
+
+- --chain-id: 连接的链ID, 该选项必须提供
+- --node: 连接的node节点地址, 默认为`tcp://localhost:26657`
+- --listen: RPC服务监听的地址, 默认为`tcp://localhost:9876`
+
+
+示例:
+
+```sh
+qoscli rpc-server --chan-id qos-test
+```
+
+启动后,可以通过`http://127.0.0.1:9876/swagger-ui/`查看所有接口说明, 
+通过`http://127.0.0.1:9876/swagger-ui/reademe.md`查看接口调用说明
+
+
+

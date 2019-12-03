@@ -302,9 +302,11 @@ func (app *QOSApp) GasHandler(ctx context.Context, payer btypes.AccAddress) (gas
 	}
 
 	dm := distribution.GetMapper(ctx)
-	uint := dm.GetParams(ctx).GasPerUnitCost
-	gasFeeUsed := btypes.NewInt(int64(gasUsed) / uint)
-	gasUsed = gasUsed / uint64(uint) * uint64(uint)
+	perGas := dm.GetParams(ctx).GasPerUnitCost
+
+	gasFeeUsed := btypes.NewInt(int64(gasUsed) / perGas)
+	gasUsed = gasUsed / uint64(perGas) * uint64(perGas)
+
 
 	if gasFeeUsed.GT(btypes.ZeroInt()) {
 		accountMapper := ctx.Mapper(account.AccountMapperName).(*account.AccountMapper)

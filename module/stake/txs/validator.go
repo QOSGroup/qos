@@ -13,14 +13,14 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 )
 
-const (
+var (
 	MaxNameLen        = 300
 	MaxLinkLen        = 255
 	MaxDescriptionLen = 1000
 
-	GasForCreateValidator = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
-	GasForModifyValidator = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
-	GasForRevokeValidator = int64(18*qtypes.QOSUnit) * qtypes.GasPerUnitCost   // 18 QOS
+	GasForCreateValidator = int64(1.8*qtypes.UnitQOS) * qtypes.UnitQOSGas  // 1.8 QOS
+	GasForModifyValidator = int64(0.18*qtypes.UnitQOS) * qtypes.UnitQOSGas // 0.18 QOS
+	GasForRevokeValidator = int64(18*qtypes.UnitQOS) * qtypes.UnitQOSGas   // 18 QOS
 )
 
 // 创建验证节点Tx
