@@ -34,3 +34,4 @@ type ParamsInitializer interface {
 type MetricsMapper interface {
 	SetUpMetrics(cfg *config.InstrumentationConfig)
 }
+

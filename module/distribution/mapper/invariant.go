@@ -47,6 +47,7 @@ func ValidatorFeePoolInvariant(module string) qtypes.Invariant {
 
 		// 非负值
 		GetMapper(ctx).IteratorValidatorEcoFeePools(func(validatorAddr btypes.ValAddress, pool types.ValidatorEcoFeePool) {
+
 			if pool.ProposerTotalRewardFee.LT(btypes.ZeroInt()) {
 				count++
 				msg += fmt.Sprintf("validator %s has a negative fee pool proposerTotalRewardFee value %s\n",

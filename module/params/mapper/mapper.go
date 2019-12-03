@@ -8,6 +8,7 @@ import (
 	"github.com/QOSGroup/qos/module/params/types"
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/tendermint/tendermint/config"
+
 	"reflect"
 	"strconv"
 	"time"
@@ -23,6 +24,7 @@ type Mapper struct {
 	paramSets map[string]qtypes.ParamSet
 
 	Metrics *Metrics
+
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {

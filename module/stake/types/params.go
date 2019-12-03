@@ -83,6 +83,7 @@ func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
 var _ qtypes.ParamSet = (*Params)(nil)
 
 // 返回键值对信息
+
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	return qtypes.KeyValuePairs{
 		{KeyMaxValidatorCnt, &p.MaxValidatorCnt},

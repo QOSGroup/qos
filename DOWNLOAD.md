@@ -13,6 +13,7 @@
 |Windows-x64|[qosd-v0.0.8-windows-x64.exe](http://aoe-qos.oss-cn-beijing.aliyuncs.com/public/qos-testnet/v0.0.8/qosd-v0.0.8-windows-x64.exe)|[qoscli-v0.0.8-windows-x64.exe](http://aoe-qos.oss-cn-beijing.aliyuncs.com/public/qos-testnet/v0.0.8/qoscli-v0.0.8-windows-x64.exe)|
 |Windows-i386|[qosd-v0.0.8-windows-i386.exe](http://aoe-qos.oss-cn-beijing.aliyuncs.com/public/qos-testnet/v0.0.8/qosd-v0.0.8-windows-i386.exe)|[qoscli-v0.0.8-windows-i386.exe](http://aoe-qos.oss-cn-beijing.aliyuncs.com/public/qos-testnet/v0.0.8/qoscli-v0.0.8-windows-i386.exe)|
 
+
 ### v0.0.7
 
 |Platform| qosd | qoscli     |

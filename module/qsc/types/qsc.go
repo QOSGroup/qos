@@ -22,6 +22,7 @@ func NewInfoWithQSCCA(cer *cert.Certificate) QSCInfo {
 		banker = btypes.AccAddress(subj.Banker.Address())
 	}
 	return QSCInfo{
+
 		Name:        subj.Name,
 		ChainId:     subj.ChainId,
 		Banker:      banker,

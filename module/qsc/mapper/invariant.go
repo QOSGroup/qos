@@ -8,6 +8,7 @@ import (
 )
 
 // QSC数据检查
+
 func QSCsInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		var msg string

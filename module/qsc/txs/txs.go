@@ -204,6 +204,7 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 		Code: btypes.CodeOK,
 	}
 	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
+
 	qscInfo, _ := qscMapper.GetQsc(tx.QSCName)
 	qscInfo.TotalAmount = qscInfo.TotalAmount.Add(tx.Amount)
 	qscMapper.SaveQsc(&qscInfo)
@@ -211,6 +212,7 @@ func (tx TxIssueQSC) Exec(ctx context.Context) (result btypes.Result, crossTxQcp
 	bankMapper := bank.GetMapper(ctx)
 	// 发行代币
 	banker := bankMapper.GetAccount(tx.Banker).(*qtypes.QOSAccount)
+
 	banker.MustPlusQSCs(qtypes.QSCs{btypes.NewBaseCoin(tx.QSCName, tx.Amount)})
 	bankMapper.SetAccount(banker)
 
