@@ -36,7 +36,8 @@ func ReleaseLockedAccount(ctx context.Context, lockInfo LockInfo) {
 			// 更新lockinfo
 			lockInfo.ReleasedAmount = lockInfo.ReleasedAmount.Add(releaseAmount)
 			lockInfo.ReleaseTimes -= 1
-			lockInfo.ReleaseTime = lockInfo.ReleaseTime.Add(time.Hour * 24 * time.Duration(lockInfo.ReleaseInterval))
+			// lockInfo.ReleaseTime = lockInfo.ReleaseTime.Add(time.Hour * 24 * time.Duration(lockInfo.ReleaseInterval))
+			lockInfo.ReleaseTime = lockInfo.ReleaseTime.Add(time.Hour * time.Duration(lockInfo.ReleaseInterval))
 			mapper.SetLockInfo(ctx, lockInfo)
 			// 更新锁定账户
 			lockedAccount := mapper.GetAccount(ctx, lockInfo.LockedAccount)
