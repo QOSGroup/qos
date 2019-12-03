@@ -11,7 +11,7 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
-const GasForUnbond = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+var GasForUnbond = int64(0.18*qtypes.UnitQOS) * qtypes.UnitQOSGas // 0.18 QOS
 
 // 委托Tx
 type TxCreateDelegation struct {

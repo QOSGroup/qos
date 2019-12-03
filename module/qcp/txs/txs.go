@@ -13,7 +13,7 @@ import (
 	"github.com/tendermint/tendermint/crypto"
 )
 
-const GasForCreateQCP = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 1.8 QOS
+var GasForCreateQCP = int64(1.8*qtypes.UnitQOS) * qtypes.UnitQOSGas // 1.8 QOS
 
 // 初始化联盟链Tx
 type TxInitQCP struct {

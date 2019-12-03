@@ -14,11 +14,11 @@ import (
 	"strconv"
 )
 
-const (
+var (
 	MaxDescriptionLen = 1000
 
-	GasForCreateQSC = int64(1.8*qtypes.QOSUnit) * qtypes.GasPerUnitCost  // 1.8 QOS
-	GasForIssueQSC  = int64(0.18*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.18 QOS
+	GasForCreateQSC = int64(1.8*qtypes.UnitQOS) * qtypes.UnitQOSGas  // 1.8 QOS
+	GasForIssueQSC  = int64(0.18*qtypes.UnitQOS) * qtypes.UnitQOSGas // 0.18 QOS
 )
 
 // 初始化代币Tx

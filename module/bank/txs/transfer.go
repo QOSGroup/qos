@@ -11,11 +11,12 @@ import (
 )
 
 const (
-	// 转账交易Gas
-	GasForTransfer = int64(0.018*qtypes.QOSUnit) * qtypes.GasPerUnitCost // 0.018 QOS
 	// 转账发送+接收账户总数限制
 	MaxTransLen = 500
 )
+
+// 转账交易Gas
+var GasForTransfer = int64(0.018*qtypes.UnitQOS) * qtypes.UnitQOSGas // 0.018 QOS
 
 type TxTransfer struct {
 	Senders   types.TransItems `json:"senders"`   // 发送集合
