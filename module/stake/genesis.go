@@ -3,6 +3,12 @@ package stake
 import (
 	"errors"
 	"fmt"
+	"io/ioutil"
+	"os"
+	"path/filepath"
+	"sort"
+	"strings"
+
 	"github.com/QOSGroup/qbase/baseabci"
 	"github.com/QOSGroup/qbase/context"
 	btxs "github.com/QOSGroup/qbase/txs"
@@ -15,11 +21,6 @@ import (
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
 	tmtypes "github.com/tendermint/tendermint/types"
-	"io/ioutil"
-	"os"
-	"path/filepath"
-	"sort"
-	"strings"
 )
 
 func InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data types.GenesisState) []abci.ValidatorUpdate {
@@ -37,7 +38,7 @@ func InitGenesis(ctx context.Context, bapp *baseabci.BaseApp, data types.Genesis
 	if len(data.GenTxs) > 0 || ctx.BlockHeight() == 0 {
 		return initGentxs(ctx, bapp, data.GenTxs)
 	} else {
-		return GetUpdatedValidators(ctx, uint64(validatorMapper.GetParams(ctx).MaxValidatorCnt))
+		return GetUpdatedValidators(ctx, validatorMapper.GetParams(ctx).MaxValidatorCnt)
 	}
 }
 
@@ -57,7 +58,7 @@ func initGentxs(ctx context.Context, bapp *baseabci.BaseApp, gentxs []btxs.TxStd
 	defer iterator.Close()
 	for ; iterator.Valid(); iterator.Next() {
 		key := iterator.Key()
-		valAddr := btypes.Address(key[9:])
+		valAddr := btypes.ValAddress(key[9:])
 		validator, _ := sm.GetValidator(valAddr)
 		validatorSet = append(validatorSet, validator.ToABCIValidatorUpdate(false))
 	}
@@ -69,13 +70,15 @@ func initValidators(ctx context.Context, validators []types.Validator) {
 	validatorMapper := mapper.GetMapper(ctx)
 	for _, v := range validators {
 
-		if validatorMapper.Exists(v.ValidatorPubKey.Address().Bytes()) {
-			panic(fmt.Errorf("validator %s already exists", v.ValidatorPubKey.Address()))
+		if validatorMapper.Exists(v.GetValidatorAddress()) {
+			panic(fmt.Errorf("validator %s already exists", v.GetValidatorAddress()))
 		}
-		if validatorMapper.ExistsWithOwner(v.Owner) {
-			panic(fmt.Errorf("owner %s already bind a validator", v.Owner))
+		if validatorMapper.ExistsWithConsensusAddr(v.ConsAddress()) {
+			panic(fmt.Errorf("owner %s already bind a validator", v.ConsAddress()))
 		}
+
 		validatorMapper.CreateValidator(v)
+
 		if !v.IsActive() {
 			validatorMapper.MakeValidatorInactive(v.GetValidatorAddress(), v.InactiveHeight, v.InactiveTime, v.InactiveCode)
 		}
@@ -85,11 +88,11 @@ func initValidators(ctx context.Context, validators []types.Validator) {
 func initValidatorsVotesInfo(ctx context.Context, voteInfos []types.ValidatorVoteInfoState, voteWindowInfos []types.ValidatorVoteInWindowInfoState) {
 	sm := mapper.GetMapper(ctx)
 	for _, voteInfo := range voteInfos {
-		sm.SetValidatorVoteInfo(btypes.Address(voteInfo.ValidatorPubKey.Address()), voteInfo.VoteInfo)
+		sm.SetValidatorVoteInfo(voteInfo.ValidatorAddr, voteInfo.VoteInfo)
 	}
 
 	for _, voteWindowInfo := range voteWindowInfos {
-		sm.SetVoteInfoInWindow(btypes.Address(voteWindowInfo.ValidatorPubKey.Address()), voteWindowInfo.Index, voteWindowInfo.Vote)
+		sm.SetVoteInfoInWindow(voteWindowInfo.ValidatorAddr, voteWindowInfo.Index, voteWindowInfo.Vote)
 	}
 }
 
@@ -99,7 +102,7 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 	for _, info := range delegatorsInfo {
 		sm.SetDelegationInfo(types.DelegationInfo{
 			DelegatorAddr: info.DelegatorAddr,
-			ValidatorAddr: btypes.Address(info.ValidatorPubKey.Address()),
+			ValidatorAddr: info.ValidatorAddr,
 			Amount:        info.Amount,
 			IsCompound:    info.IsCompound,
 		})
@@ -111,6 +114,9 @@ func initDelegatorsInfo(ctx context.Context, delegatorsInfo []types.DelegationIn
 }
 
 func initParams(ctx context.Context, params types.Params) {
+	if err := params.Validate(); err != nil {
+		panic(err)
+	}
 	mapper := ctx.Mapper(types.MapperName).(*mapper.Mapper)
 	mapper.SetParams(ctx, params)
 }
@@ -131,33 +137,33 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 	})
 
 	var validatorsVoteInfo []types.ValidatorVoteInfoState
-	sm.IterateVoteInfos(func(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+	sm.IterateVoteInfos(func(valAddr btypes.ValAddress, info types.ValidatorVoteInfo) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			vvis := ValidatorVoteInfoState{
-				ValidatorPubKey: validator.GetValidatorPubKey(),
-				VoteInfo:        info,
+				ValidatorAddr: validator.GetValidatorAddress(),
+				VoteInfo:      info,
 			}
 			validatorsVoteInfo = append(validatorsVoteInfo, vvis)
 		}
 	})
 
 	var validatorsVoteInWindow []types.ValidatorVoteInWindowInfoState
-	sm.IterateVoteInWindowsInfos(func(index uint64, valAddr btypes.Address, vote bool) {
+	sm.IterateVoteInWindowsInfos(func(index int64, valAddr btypes.ValAddress, vote bool) {
 
 		validator, exists := validatorMapper.GetValidator(valAddr)
 		if exists {
 			validatorsVoteInWindow = append(validatorsVoteInWindow, ValidatorVoteInWindowInfoState{
-				ValidatorPubKey: validator.GetValidatorPubKey(),
-				Index:           index,
-				Vote:            vote,
+				ValidatorAddr: validator.GetValidatorAddress(),
+				Index:         index,
+				Vote:          vote,
 			})
 		}
 	})
 
 	var delegatorsInfo []types.DelegationInfoState
-	sm.IterateDelegationsInfo(btypes.Address{}, func(info types.DelegationInfo) {
+	sm.IterateDelegationsInfo(btypes.AccAddress{}, func(info types.DelegationInfo) {
 
 		validator, exists := validatorMapper.GetValidator(info.ValidatorAddr)
 		if !exists {
@@ -165,10 +171,10 @@ func ExportGenesis(ctx context.Context) types.GenesisState {
 		}
 
 		delegatorsInfo = append(delegatorsInfo, DelegationInfoState{
-			DelegatorAddr:   info.DelegatorAddr,
-			ValidatorPubKey: validator.GetValidatorPubKey(),
-			Amount:          info.Amount,
-			IsCompound:      info.IsCompound,
+			DelegatorAddr: info.DelegatorAddr,
+			ValidatorAddr: validator.GetValidatorAddress(),
+			Amount:        info.Amount,
+			IsCompound:    info.IsCompound,
 		})
 	})
 
@@ -223,6 +229,7 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 	var invalidTxFiles []string
 	var accsNotInGenesis []string
 	var accsNoEnoughQOS []string
+	var delegatonsNotEqual []string
 
 	for _, fo := range fos {
 		filename := filepath.Join(genTxsDir, fo.Name())
@@ -266,14 +273,29 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 		// validate delegator and validator addresses and funds against the accounts in the state
 		ownerAddr := txCreateValidator.Owner
 
-		delAcc, delOk := addrMap[ownerAddr.String()]
+		delegations := txCreateValidator.Delegations
+		if len(delegations) == 0 {
+			delegations = append(delegations, NewDelegationInfo(ownerAddr, btypes.ValAddress(ownerAddr), txCreateValidator.BondTokens, txCreateValidator.IsCompound))
+		}
+		totalDelegationAmount := btypes.ZeroInt()
+		for _, delegation := range delegations {
+			totalDelegationAmount = totalDelegationAmount.Add(delegation.Amount)
+			delAcc, delOk := addrMap[delegation.DelegatorAddr.String()]
+			if !delOk {
+				accsNotInGenesis = append(accsNotInGenesis, simpleName+"-"+delegation.DelegatorAddr.String())
+				continue
+			} else if !delAcc.EnoughOfQOS(delegation.Amount) {
+				accsNoEnoughQOS = append(accsNoEnoughQOS, simpleName+"-"+delegation.DelegatorAddr.String())
+				continue
+			} else {
+				delAcc.MustMinusQOS(delegation.Amount)
+				addrMap[delAcc.AccountAddress.String()] = delAcc
+			}
+		}
 
-		if !delOk {
-			accsNotInGenesis = append(accsNotInGenesis, simpleName+"-"+ownerAddr.String())
-			continue
-		} else if !delAcc.EnoughOfQOS(btypes.NewInt(int64(txCreateValidator.BondTokens))) {
-			accsNoEnoughQOS = append(accsNoEnoughQOS, simpleName+"-"+ownerAddr.String())
-			continue
+		// bondTokens != sum(amount) of delegations
+		if !totalDelegationAmount.Equal(txCreateValidator.BondTokens) {
+			delegatonsNotEqual = append(delegatonsNotEqual, simpleName)
 		}
 
 		// exclude itself from persistent peers
@@ -294,6 +316,9 @@ func CollectStdTxs(cdc *amino.Codec, nodeID string, genTxsDir string, genDoc *tm
 	}
 	if len(accsNoEnoughQOS) != 0 {
 		errorInfo += fmt.Sprintf("account(s) %v no enough QOS in genesis.json \n", strings.Join(accsNoEnoughQOS, " "))
+	}
+	if len(delegatonsNotEqual) != 0 {
+		errorInfo += fmt.Sprintf("validator's BondTokens not equals sum(Amount) of delegations in file(s) %v \n", strings.Join(delegatonsNotEqual, " "))
 	}
 
 	if len(errorInfo) != 0 {

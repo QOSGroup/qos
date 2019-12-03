@@ -20,6 +20,7 @@ const (
 	flagReceivers = "receivers"
 )
 
+// 转账
 func TransferCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "transfer",
@@ -38,16 +39,21 @@ func TransferCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return txs.TxTransfer{
+				tx := txs.TxTransfer{
 					Senders:   senders,
 					Receivers: receivers,
-				}, nil
+				}
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
+				}
+
+				return tx, nil
 			})
 		},
 	}
 
-	cmd.Flags().String(flagSenders, "", "Senders, eg: Arya,10qos,100qstar. multiple users separated by ';' ")
-	cmd.Flags().String(flagReceivers, "", "Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar. multiple users separated by ';'")
+	cmd.Flags().StringP(flagSenders, "s", "", "Senders, eg: Arya,10qos,100qstar. multiple users separated by ';' ")
+	cmd.Flags().StringP(flagReceivers, "r", "", "Receivers, eg: address1vkl6nc6eedkxwjr5rsy2s5jr7qfqm487wu95w7,10qos,100qstar. multiple users separated by ';'")
 	cmd.MarkFlagRequired(flagSenders)
 	cmd.MarkFlagRequired(flagReceivers)
 

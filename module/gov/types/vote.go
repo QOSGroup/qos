@@ -9,9 +9,9 @@ import (
 
 // Vote
 type Vote struct {
-	Voter      types.Address `json:"voter"`       //  address of the voter
-	ProposalID uint64        `json:"proposal_id"` //  proposalID of the proposal
-	Option     VoteOption    `json:"option"`      //  option from OptionSet chosen by the voter
+	Voter      types.AccAddress `json:"voter"`       //  address of the voter
+	ProposalID int64            `json:"proposal_id"` //  proposalID of the proposal
+	Option     VoteOption       `json:"option"`      //  option from OptionSet chosen by the voter
 }
 
 func (v Vote) String() string {
@@ -30,7 +30,7 @@ func (v Votes) String() string {
 }
 
 func (v Vote) Equals(comp Vote) bool {
-	return v.Voter.EqualsTo(comp.Voter) && v.ProposalID == comp.ProposalID && v.Option == comp.Option
+	return v.Voter.Equals(comp.Voter) && v.ProposalID == comp.ProposalID && v.Option == comp.Option
 }
 
 // Type that represents VoteOption as a byte
@@ -50,9 +50,9 @@ type DeductOption byte
 
 //nolint
 const (
-	DepositDeductNone DeductOption = 0x00
-	DepositDeductPart DeductOption = 0x01
-	DepositDeductAll  DeductOption = 0x02
+	DepositDeductNone DeductOption = 0x00 // 全部返还
+	DepositDeductPart DeductOption = 0x01 // 按参数BurnRate扣除部分
+	DepositDeductAll  DeductOption = 0x02 // 扣除全部
 )
 
 // String to proposalType byte.  Returns ff if invalid.

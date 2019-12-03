@@ -2,6 +2,7 @@ package types
 
 import (
 	"github.com/QOSGroup/qbase/mapper"
+	"github.com/tendermint/tendermint/config"
 )
 
 // mapper for db
@@ -29,3 +30,8 @@ type HooksMapper interface {
 type ParamsInitializer interface {
 	RegisterParamSet(ps ...ParamSet)
 }
+
+type MetricsMapper interface {
+	SetUpMetrics(cfg *config.InstrumentationConfig)
+}
+

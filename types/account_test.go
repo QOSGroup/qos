@@ -1,9 +1,12 @@
 package types
 
 import (
+	"fmt"
+	"github.com/QOSGroup/qbase/account"
+	"testing"
+
 	btypes "github.com/QOSGroup/qbase/types"
 	"github.com/stretchr/testify/require"
-	"testing"
 )
 
 func TestQOSAccount_GetQOS(t *testing.T) {
@@ -82,7 +85,7 @@ func TestQOSAccount_PlusQOS(t *testing.T) {
 
 	for tcIndex, tc := range cases {
 		res := tc.input1.PlusQOS(tc.input2)
-		require.Equal(t, tc.expect.Int64(), tc.input1.QOS.Int64(), "tc #%d", tcIndex)
+		require.Equal(t, tc.expect, tc.input1.QOS, "tc #%d", tcIndex)
 		require.Equal(t, tc.correct, res == nil, "tc #%d", tcIndex)
 	}
 }
@@ -106,7 +109,7 @@ func TestQOSAccount_MinusQOS(t *testing.T) {
 
 	for tcIndex, tc := range cases {
 		res := tc.input1.MinusQOS(tc.input2)
-		require.Equal(t, tc.expect.Int64(), tc.input1.QOS.Int64(), "tc #%d", tcIndex)
+		require.Equal(t, tc.expect, tc.input1.QOS, "tc #%d", tcIndex)
 		require.Equal(t, tc.correct, res == nil, "tc #%d", tcIndex)
 	}
 }
@@ -188,7 +191,7 @@ func TestQOSAccount_MinusQSC(t *testing.T) {
 			require.Equal(t, len(tc.expected), len(tc.input1.QSCs))
 			for i := range tc.input1.QSCs {
 				require.Equal(t, tc.expected[i].Name, tc.input1.QSCs[i].Name, "tc #%d", tcIndex)
-				require.Equal(t, tc.expected[i].Amount.Int64(), tc.input1.QSCs[i].Amount.Int64(), "tc #%d", tcIndex)
+				require.Equal(t, tc.expected[i].Amount, tc.input1.QSCs[i].Amount, "tc #%d", tcIndex)
 			}
 		}
 	}
@@ -484,13 +487,14 @@ func TestQOSAccount_RemoveQSC(t *testing.T) {
 }
 
 func TestParseAccounts(t *testing.T) {
-	bech1 := "address16lwp3kykkjdc2gdknpjy6u9uhfpa9q4vj78ytd"
-	bech2 := "address1czkqg0ekmdaj3xpazkzr5kmsatg3fx27qg609m"
+
+	bech1 := "qosacc1qyqszqgpqyqszqgpqyqszqgpqyqszqgpnd7klz"
+	bech2 := "qosacc1qqqszqgpqyqszqgpqyqszqgpqyqszqgp2ue58p"
 	str1 := bech1 + ",1QOS,2QSTARS"
 	str2 := bech1 + ",1QOS,2QSTARS;" + bech2 + ",1QOS"
 
-	addr1, _ := btypes.GetAddrFromBech32(bech1)
-	addr2, _ := btypes.GetAddrFromBech32(bech2)
+	addr1, _ := btypes.GetFromBech32(bech1, "qosacc")
+	addr2, _ := btypes.GetFromBech32(bech2, "qosacc")
 	accs1 := []*QOSAccount{NewQOSAccount(addr1, btypes.NewInt(1), QSCs{&QSC{"QSTARS", btypes.NewInt(2)}})}
 	accs2 := []*QOSAccount{
 		NewQOSAccount(addr1, btypes.NewInt(1), QSCs{&QSC{"QSTARS", btypes.NewInt(2)}}),
@@ -511,4 +515,14 @@ func TestParseAccounts(t *testing.T) {
 		require.Equal(t, tc.correct, err == nil, "tc #%d", tcIndex)
 		require.Equal(t, tc.expected, res, "tc #%d", tcIndex)
 	}
+
+	v := "o02QgAo/ChTlRGtPqdlmCvuf5wHpqTUBCxZL7xIlFiTeZCAkyVH28bOOMahIjzKOnUPLgv7A5fX3wQjV6qPdGOWeVBgFEgk4OTc5OTk0NDM="
+	bz := []byte(v)
+
+	var acc2 account.Account
+	err := cdc.UnmarshalBinaryBare(bz, &acc2)
+
+	fmt.Println(err)
+	fmt.Println(acc2)
+
 }

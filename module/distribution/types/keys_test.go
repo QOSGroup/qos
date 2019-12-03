@@ -11,10 +11,10 @@ import (
 func TestKey(t *testing.T) {
 
 	key := ed25519.GenPrivKey()
-	valAddr := btypes.Address(key.PubKey().Address())
+	valAddr := btypes.ValAddress(key.PubKey().Address())
 
 	key = ed25519.GenPrivKey()
-	deleAddr := btypes.Address(key.PubKey().Address())
+	deleAddr := btypes.AccAddress(key.PubKey().Address())
 
 	infoKey := BuildDelegatorEarningStartInfoKey(valAddr, deleAddr)
 	vAddr, dAddr := GetDelegatorEarningStartInfoAddr(infoKey)
@@ -22,7 +22,7 @@ func TestKey(t *testing.T) {
 	require.Equal(t, valAddr, vAddr)
 	require.Equal(t, deleAddr, dAddr)
 
-	period := uint64(278)
+	period := int64(278)
 	skey := BuildValidatorHistoryPeriodSummaryKey(valAddr, period)
 	vAddr, p := GetValidatorHistoryPeriodSummaryAddrPeriod(skey)
 	require.Equal(t, valAddr, vAddr)
@@ -32,7 +32,7 @@ func TestKey(t *testing.T) {
 	vAddr = GetValidatorCurrentPeriodSummaryAddr(skey)
 	require.Equal(t, valAddr, vAddr)
 
-	height := uint64(10086)
+	height := int64(10086)
 	skey = BuildDelegatorPeriodIncomeKey(valAddr, deleAddr, height)
 
 	vAddr, dAddr, h := GetDelegatorPeriodIncomeHeightAddr(skey)

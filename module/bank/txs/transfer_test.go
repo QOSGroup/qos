@@ -11,8 +11,8 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
 )
 
@@ -81,7 +81,7 @@ func TestTransferTx_GetSigner(t *testing.T) {
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(20), nil},
 		},
 	}
-	require.Equal(t, tx.GetSigner(), []btypes.Address{tx.Senders[0].Address, tx.Senders[1].Address})
+	require.Equal(t, tx.GetSigner(), []btypes.AccAddress{tx.Senders[0].Address, tx.Senders[1].Address})
 }
 
 func TestTransferTx_CalcGas(t *testing.T) {
@@ -93,7 +93,7 @@ func TestTransferTx_CalcGas(t *testing.T) {
 			{ed25519.GenPrivKey().PubKey().Address().Bytes(), btypes.NewInt(10), nil},
 		},
 	}
-	require.Equal(t, tx.CalcGas(), btypes.NewInt(0))
+	require.Equal(t, tx.CalcGas(), btypes.NewInt(GasForTransfer))
 }
 
 func TestTransferTx_GetGasPayer(t *testing.T) {
@@ -120,17 +120,7 @@ func TestTransferTx_GetSignData(t *testing.T) {
 		},
 	}
 
-	ret := make([]byte, 0)
-	for _, sender := range tx.Senders {
-		ret = append(ret, sender.Address...)
-		ret = append(ret, sender.QOS.String()...)
-		ret = append(ret, sender.QSCs.String()...)
-	}
-	for _, receiver := range tx.Receivers {
-		ret = append(ret, receiver.Address...)
-		ret = append(ret, receiver.QOS.String()...)
-		ret = append(ret, receiver.QSCs.String()...)
-	}
+	ret := Cdc.MustMarshalBinaryBare(tx)
 
 	require.Equal(t, tx.GetSignData(), ret)
 }

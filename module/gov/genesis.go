@@ -6,18 +6,20 @@ import (
 	"github.com/QOSGroup/qos/module/gov/types"
 )
 
-// InitGenesis - store genesis parameters
 func InitGenesis(ctx context.Context, data types.GenesisState) {
+	// 数据校验，主要是治理参数校验
 	err := types.ValidateGenesis(data)
 	if err != nil {
 		panic(err)
 	}
 	mapper := mapper.GetMapper(ctx)
+	// 初始化提议参数
+	mapper.SetParams(ctx, data.Params)
+	// 初始化提议数据
 	err = mapper.SetInitialProposalID(data.StartingProposalID)
 	if err != nil {
 		panic(err)
 	}
-	mapper.SetParams(ctx, data.Params)
 	for _, proposal := range data.Proposals {
 		switch proposal.Proposal.Status {
 		case types.StatusDepositPeriod:
@@ -35,7 +37,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	}
 }
 
-// ExportGenesis - output genesis parameters
+// 状态数据导出
 func ExportGenesis(ctx context.Context) types.GenesisState {
 	mapper := mapper.GetMapper(ctx)
 	startingProposalID, _ := mapper.PeekCurrentProposalID()

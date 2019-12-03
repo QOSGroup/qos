@@ -8,59 +8,39 @@ import (
 const (
 	DefaultCodeSpace btypes.CodespaceType = "qcp"
 
-	CodeInvalidInput     btypes.CodeType = 401 // 信息有误
-	CodeInvalidQCPCA     btypes.CodeType = 402 // 无效证书
-	CodeWrongQCPCA       btypes.CodeType = 403 // 证书有误
-	CodeCreatorNotExists btypes.CodeType = 404 // 创建账户不存在
-	CodeQCPExists        btypes.CodeType = 405 // QCP已存在
+	CodeInvalidInput       btypes.CodeType = 401 // 信息有误
+	CodeInvalidQCPCA       btypes.CodeType = 402 // 无效证书
+	CodeWrongQCPCA         btypes.CodeType = 403 // 证书有误
+	CodeCreatorNotExists   btypes.CodeType = 404 // 创建账户不存在
+	CodeQCPExists          btypes.CodeType = 405 // QCP已存在
+	CodeEmptyCreator       btypes.CodeType = 406 // 创建账户为空
+	CodeRootCANotConfigure btypes.CodeType = 407 // 没有配置root ca
 )
 
-func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
-	if msg != "" {
-		return msg
-	}
-	return codeToDefaultMsg(code)
+func ErrInvalidInput(msg string) btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInput, msg)
 }
 
-func newError(codeSpace btypes.CodespaceType, code btypes.CodeType, msg string) btypes.Error {
-	msg = msgOrDefaultMsg(msg, code)
-	return btypes.NewError(codeSpace, code, msg)
+func ErrInvalidQCPCA() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidQCPCA, "invalid qcp ca")
 }
 
-// NOTE: Don't stringer this, we'll put better messages in later.
-func codeToDefaultMsg(code btypes.CodeType) string {
-	switch code {
-	case CodeInvalidInput:
-		return "invalid tx msg"
-	case CodeInvalidQCPCA:
-		return "invalid qcp ca"
-	case CodeWrongQCPCA:
-		return "wrong qcp ca"
-	case CodeCreatorNotExists:
-		return "creator not exists"
-	case CodeQCPExists:
-		return "qcp exists"
-	default:
-		return btypes.CodeToDefaultMsg(code)
-	}
+func ErrWrongQCPCA() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeWrongQCPCA, "wrong qcp ca")
 }
 
-func ErrInvalidInput(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidInput, msg)
+func ErrCreatorNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeCreatorNotExists, "creator not exists")
 }
 
-func ErrInvalidQCPCA(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidQCPCA, msg)
+func ErrQCPExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeQCPExists, "qcp exists")
 }
 
-func ErrWrongQCPCA(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeWrongQCPCA, msg)
+func ErrEmptyCreator() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeEmptyCreator, "empty creator")
 }
 
-func ErrCreatorNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeCreatorNotExists, msg)
-}
-
-func ErrQCPExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeQCPExists, msg)
+func ErrRootCANotConfigure() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeRootCANotConfigure, "no root ca public key initialized")
 }

@@ -9,7 +9,7 @@ import (
 func InitGenesis(ctx context.Context, data types.GenesisState) {
 	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
 	if data.RootPubKey != nil {
-		qscMapper.SetQSCRootCA(data.RootPubKey)
+		qscMapper.SetRootCAPubkey(data.RootPubKey)
 	}
 
 	for _, qsc := range data.QSCs {
@@ -20,5 +20,5 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 func ExportGenesis(ctx context.Context) types.GenesisState {
 	qscMapper := ctx.Mapper(mapper.MapperName).(*mapper.Mapper)
 
-	return types.NewGenesisState(qscMapper.GetQSCRootCA(), qscMapper.GetQSCs())
+	return types.NewGenesisState(qscMapper.GetRootCAPubkey(), qscMapper.GetQSCs())
 }

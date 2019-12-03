@@ -4,12 +4,19 @@ import (
 	bcli "github.com/QOSGroup/qbase/client"
 	"github.com/QOSGroup/qbase/client/block"
 	"github.com/QOSGroup/qbase/client/config"
+	"github.com/QOSGroup/qbase/client/rpc"
+	"github.com/QOSGroup/qbase/client/sign"
+	"github.com/QOSGroup/qbase/client/tx"
 	bctypes "github.com/QOSGroup/qbase/client/types"
 	"github.com/QOSGroup/qos/app"
 	"github.com/QOSGroup/qos/types"
 	"github.com/QOSGroup/qos/version"
+	"github.com/rakyll/statik/fs"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/tendermint/libs/cli"
+	"net/http"
+
+	_ "github.com/QOSGroup/qos/swagger/statik"
 )
 
 var (
@@ -45,9 +52,25 @@ func main() {
 		version.VersionCmd(),
 	)
 
+	rootCmd.AddCommand(rpc.ServerCommand(cdc, func(server *rpc.RestServer) {
+		app.ModuleBasics.RegisterRoutes(server.CliCtx, server.Mux)
+		registerSwaggerUI(server)
+	}))
+	rootCmd.AddCommand(sign.SignCommand(cdc))
+	rootCmd.AddCommand(tx.BroadcastCmd(cdc))
+
 	executor := cli.PrepareMainCmd(rootCmd, "qos", types.DefaultCLIHome)
 	err := executor.Execute()
 	if err != nil {
 		panic(err)
 	}
+}
+
+func registerSwaggerUI(server *rpc.RestServer) {
+	statikFS, err := fs.New()
+	if err != nil {
+		panic(err)
+	}
+	staticServer := http.FileServer(statikFS)
+	server.Mux.PathPrefix("/swagger-ui/").Handler(http.StripPrefix("/swagger-ui/", staticServer))
 }

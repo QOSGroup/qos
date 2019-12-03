@@ -5,6 +5,7 @@ import (
 	"github.com/QOSGroup/qos/module/guardian/types"
 )
 
+// 初始化创世数据
 func InitGenesis(ctx context.Context, data types.GenesisState) {
 	err := types.ValidateGenesis(data)
 	if err != nil {
@@ -17,6 +18,7 @@ func InitGenesis(ctx context.Context, data types.GenesisState) {
 	}
 }
 
+// 导出状态数据
 func ExportGenesis(ctx context.Context) types.GenesisState {
 	mapper := GetMapper(ctx)
 	iterator := mapper.GuardiansIterator()

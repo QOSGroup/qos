@@ -8,8 +8,8 @@ import (
 	"testing"
 )
 
-var testFromAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-var testToAddr = btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+var testFromAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+var testToAddr = btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 func genTestApprove() Approve {
 	return Approve{
@@ -27,44 +27,31 @@ func genTestApprove() Approve {
 
 func TestApprove_IsValid(t *testing.T) {
 	approve := genTestApprove()
-	_, err := approve.IsValid()
+	err := approve.Valid()
 	require.Nil(t, err)
 
 	from := approve.From
 	to := approve.To
 
 	approve.From = nil
-	_, err = approve.IsValid()
+	err = approve.Valid()
 	require.NotNil(t, err)
 	approve.To = nil
-	_, err = approve.IsValid()
+	err = approve.Valid()
 	require.NotNil(t, err)
 	approve.From = from
-	_, err = approve.IsValid()
+	err = approve.Valid()
 	require.NotNil(t, err)
 
 	approve.To = to
 	approve.QOS = btypes.NewInt(0)
-	_, err = approve.IsValid()
+	err = approve.Valid()
 	require.Nil(t, err)
 
 	approve.QSCs = append(approve.QSCs, &types.QSC{
 		Name:   "qstar",
 		Amount: btypes.NewInt(100),
 	})
-}
-
-func TestApprove_GetSignData(t *testing.T) {
-	approve := genTestApprove()
-	ret := []byte{}
-	ret = append(ret, approve.From...)
-	ret = append(ret, approve.To...)
-	ret = append(ret, approve.QOS.String()...)
-	for _, coin := range approve.QSCs {
-		ret = append(ret, []byte(coin.Name)...)
-		ret = append(ret, []byte(coin.Amount.String())...)
-	}
-	require.Equal(t, approve.GetSignData(), ret)
 }
 
 func TestApprove_IsPositive(t *testing.T) {

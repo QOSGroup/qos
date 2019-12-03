@@ -11,7 +11,6 @@ import (
 	"io"
 	"os"
 	"regexp"
-	"strconv"
 	"strings"
 )
 
@@ -53,16 +52,16 @@ func ParseCoins(str string) (btypes.BigInt, QSCs, error) {
 			return btypes.ZeroInt(), nil, fmt.Errorf("coins str: %s parse faild", q)
 		}
 		coin[2] = strings.TrimSpace(coin[2])
-		amount, err := strconv.ParseInt(strings.TrimSpace(coin[1]), 10, 64)
-		if err != nil {
-			return btypes.ZeroInt(), nil, err
+		amount, ok := btypes.NewIntFromString(strings.TrimSpace(coin[1]))
+		if !ok {
+			return btypes.ZeroInt(), nil, fmt.Errorf("coins str: %s parse faild", q)
 		}
 		if strings.ToUpper(coin[2]) == QOSCoinName {
-			qos = btypes.NewInt(amount)
+			qos = amount
 		} else {
 			qscs = append(qscs, &QSC{
 				coin[2],
-				btypes.NewInt(amount),
+				amount,
 			})
 		}
 
@@ -91,4 +90,30 @@ func FileMD5(filepath string) (string, error) {
 	}
 
 	return hex.EncodeToString(h.Sum(nil)), nil
+}
+
+// 从flag中解析Int值
+func GetIntFromFlag(flag string, allowZero bool) (amount btypes.BigInt, err error) {
+	intstr := viper.GetString(flag)
+	if len(intstr) == 0 {
+		if !allowZero {
+			return btypes.ZeroInt(), fmt.Errorf("%s is empty", flag)
+		} else {
+			return btypes.ZeroInt(), nil
+		}
+	}
+	amount, ok := btypes.NewIntFromString(strings.TrimSpace(intstr))
+	if !ok {
+		return btypes.ZeroInt(), fmt.Errorf("invalid value of %s", flag)
+	}
+
+	if amount.IsZero() && !allowZero {
+		return btypes.ZeroInt(), fmt.Errorf("%s must be positive", flag)
+	}
+
+	if btypes.ZeroInt().GT(amount) {
+		return btypes.ZeroInt(), fmt.Errorf("%s must be positive", flag)
+	}
+
+	return amount, nil
 }

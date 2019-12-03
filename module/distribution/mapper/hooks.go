@@ -10,6 +10,7 @@ import (
 
 var _ stake.Hooks = (*StakingHooks)(nil)
 
+// stake.Hooks接口实现，stake模块mapper初始化时设置StakingHooks
 type StakingHooks struct{}
 
 func NewStakingHooks() *StakingHooks {
@@ -21,12 +22,12 @@ func (hooks *StakingHooks) HookMapper() string {
 }
 
 // 创建validator时初始化分配信息
-func (hooks *StakingHooks) AfterValidatorCreated(ctx context.Context, val btypes.Address) {
+func (hooks *StakingHooks) AfterValidatorCreated(ctx context.Context, val btypes.ValAddress) {
 	GetMapper(ctx).InitValidatorPeriodSummaryInfo(val)
 }
 
 // 删除validator时分配处理逻辑
-func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btypes.Address) {
+func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btypes.ValAddress) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 
@@ -51,8 +52,8 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 		_, delAddr := types.GetDelegatorEarningStartInfoAddr(iter.Key())
 		rewards := dm.CalculateRewardsBetweenPeriod(val, info.PreviousPeriod, endPeriod, unbondToken)
 
-		info.BondToken = uint64(0)
-		info.CurrentStartingHeight = uint64(ctx.BlockHeight())
+		info.BondToken = btypes.ZeroInt()
+		info.CurrentStartingHeight = ctx.BlockHeight()
 		info.PreviousPeriod = endPeriod
 		info.HistoricalRewardFees = info.HistoricalRewardFees.Add(rewards)
 
@@ -62,8 +63,8 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 		sm.DelDelegationInfo(delAddr, val)
 
 		//unbond height
-		unbondHeight := uint64(sm.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-		sm.AddUnbondingDelegation(stake.NewUnbondingInfo(delAddr, val, uint64(ctx.BlockHeight()), unbondHeight, unbondToken))
+		unbondHeight := sm.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight()
+		sm.AddUnbondingDelegation(stake.NewUnbondingInfo(delAddr, val, ctx.BlockHeight(), unbondHeight, unbondToken))
 	}
 
 	//删除validator汇总收益数据
@@ -71,16 +72,16 @@ func (hooks *StakingHooks) BeforeValidatorRemoved(ctx context.Context, val btype
 }
 
 // 创建delegation时初始化分配信息
-func (hooks *StakingHooks) AfterDelegationCreated(ctx context.Context, val btypes.Address, del btypes.Address) {
+func (hooks *StakingHooks) AfterDelegationCreated(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress) {
 	delegation, exists := stake.GetMapper(ctx).GetDelegationInfo(del, val)
 	if !exists {
 		panic(fmt.Sprintf("delegation from %s to %s not exists", del, val))
 	}
-	GetMapper(ctx).InitDelegatorIncomeInfo(ctx, val, del, delegation.Amount, uint64(ctx.BlockHeight()))
+	GetMapper(ctx).InitDelegatorIncomeInfo(ctx, val, del, delegation.Amount, ctx.BlockHeight())
 }
 
 // 更新绑定tokens时分配处理逻辑
-func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val btypes.Address, del btypes.Address, updateAmount uint64) {
+func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val btypes.ValAddress, del btypes.AccAddress, updateAmount btypes.BigInt) {
 	dm := GetMapper(ctx)
 	sm := stake.GetMapper(ctx)
 	validator, exists := sm.GetValidator(val)
@@ -91,13 +92,13 @@ func (hooks *StakingHooks) BeforeDelegationModified(ctx context.Context, val bty
 	if !exists {
 		panic(fmt.Sprintf("delegation from %s to %s not exists", del, val))
 	}
-	err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, updateAmount, uint64(ctx.BlockHeight()))
+	err := dm.ModifyDelegatorTokens(validator, delegation.DelegatorAddr, updateAmount, ctx.BlockHeight())
 	if err != nil {
 		panic(fmt.Sprintf("modify delegation from %s to %s error: %v", del, val, err))
 	}
 }
 
 // validator惩罚后操作
-func (hooks *StakingHooks) AfterValidatorSlashed(ctx context.Context, slashedTokens uint64) {
-	GetMapper(ctx).AddToCommunityFeePool(btypes.NewInt(int64(slashedTokens)))
+func (hooks *StakingHooks) AfterValidatorSlashed(ctx context.Context, slashedTokens btypes.BigInt) {
+	GetMapper(ctx).AddToCommunityFeePool(slashedTokens)
 }

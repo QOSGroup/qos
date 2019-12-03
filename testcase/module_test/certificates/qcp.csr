@@ -1,0 +1,1 @@
+{"subj":{"type":"certificate/QCPSubject","value":{"chain_id":"test-chain","qcp_chain":"test-qcp-chain"}},"is_ca":false,"not_before":"0001-01-01T00:00:00Z","not_after":"0001-01-01T00:00:00Z","public_key":{"type":"tendermint/PubKeyEd25519","value":"IbSMya3iR2zH1wW5wtHbmWpuxRLIB7wnFNADC4H/Psw="}}

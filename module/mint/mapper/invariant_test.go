@@ -11,7 +11,8 @@ func TestTotalAppliedInvariant(t *testing.T) {
 	ctx := defaultMintContext()
 
 	mm := GetMapper(ctx)
-	mm.SetAllTotalMintQOSAmount(100)
+	mm.SetAllTotalMintQOSAmount(btypes.NewInt(100))
+	mm.SetTotalQOSAmount(btypes.NewInt(100))
 
 	_, coins, broken := TotalAppliedInvariant("mint")(ctx)
 	assert.False(t, broken)

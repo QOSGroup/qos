@@ -6,29 +6,34 @@ import (
 	btypes "github.com/QOSGroup/qbase/types"
 )
 
-func (mapper *Mapper) GetValidatorVoteInfo(valAddr btypes.Address) (info types.ValidatorVoteInfo, exists bool) {
+// 获取验证节点投票信息
+func (mapper *Mapper) GetValidatorVoteInfo(valAddr btypes.ValAddress) (info types.ValidatorVoteInfo, exists bool) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	exists = mapper.Get(key, &info)
 	return
 }
 
-func (mapper *Mapper) SetValidatorVoteInfo(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+// 保存验证节点投票信息
+func (mapper *Mapper) SetValidatorVoteInfo(valAddr btypes.ValAddress, info types.ValidatorVoteInfo) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	mapper.Set(key, info)
 }
 
-func (mapper *Mapper) ResetValidatorVoteInfo(valAddr btypes.Address, info types.ValidatorVoteInfo) {
+// 重置验证节点投票信息
+func (mapper *Mapper) ResetValidatorVoteInfo(valAddr btypes.ValAddress, info types.ValidatorVoteInfo) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	mapper.ClearValidatorVoteInfoInWindow(valAddr)
 	mapper.Del(key)
 }
 
-func (mapper *Mapper) DelValidatorVoteInfo(valAddr btypes.Address) {
+// 删除验证节点投票信息
+func (mapper *Mapper) DelValidatorVoteInfo(valAddr btypes.ValAddress) {
 	key := types.BuildValidatorVoteInfoKey(valAddr)
 	mapper.Del(key)
 }
 
-func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.Address, index uint64) (vote bool) {
+// 某一窗口高度是否投过票
+func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.ValAddress, index int64) (vote bool) {
 	key := types.BuildValidatorVoteInfoInWindowKey(index, valAddr)
 	vote, exists := mapper.GetBool(key)
 
@@ -39,12 +44,14 @@ func (mapper *Mapper) GetVoteInfoInWindow(valAddr btypes.Address, index uint64) 
 	return vote
 }
 
-func (mapper *Mapper) SetVoteInfoInWindow(valAddr btypes.Address, index uint64, vote bool) {
+// 设置某窗口高度投票信息
+func (mapper *Mapper) SetVoteInfoInWindow(valAddr btypes.ValAddress, index int64, vote bool) {
 	key := types.BuildValidatorVoteInfoInWindowKey(index, valAddr)
 	mapper.Set(key, vote)
 }
 
-func (mapper *Mapper) ClearValidatorVoteInfoInWindow(valAddr btypes.Address) {
+// 删除验证节点所有窗口高度投票数据
+func (mapper *Mapper) ClearValidatorVoteInfoInWindow(valAddr btypes.ValAddress) {
 	prefixKey := append(types.GetValidatorVoteInfoInWindowKey(), valAddr...)
 	endKey := btypes.PrefixEndBytes(prefixKey)
 	iter := mapper.GetStore().Iterator(prefixKey, endKey)
@@ -55,9 +62,8 @@ func (mapper *Mapper) ClearValidatorVoteInfoInWindow(valAddr btypes.Address) {
 	}
 }
 
-//-------------------------genesis export
-
-func (mapper *Mapper) IterateVoteInfos(fn func(btypes.Address, types.ValidatorVoteInfo)) {
+// 遍历验证节点投票信息
+func (mapper *Mapper) IterateVoteInfos(fn func(btypes.ValAddress, types.ValidatorVoteInfo)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -69,7 +75,8 @@ func (mapper *Mapper) IterateVoteInfos(fn func(btypes.Address, types.ValidatorVo
 	}
 }
 
-func (mapper *Mapper) IterateVoteInWindowsInfos(fn func(uint64, btypes.Address, bool)) {
+// 遍历验证节点投票窗口期内投票数据
+func (mapper *Mapper) IterateVoteInWindowsInfos(fn func(int64, btypes.ValAddress, bool)) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.GetValidatorVoteInfoInWindowKey())
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {

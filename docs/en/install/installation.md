@@ -14,7 +14,7 @@ We provide three ways to install QOS:
 
 ## Download runnable files
 
-Visit [DOWNLOAD](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md) page to download the specific version.
+Visit [DOWNLOAD](https://github.com/QOSGroup/qos/blob/develop/DOWNLOAD.md) page to download the specific version.
 
 ## Docker
 

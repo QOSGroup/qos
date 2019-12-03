@@ -12,19 +12,19 @@ func DepositInvariant(module string) qtypes.Invariant {
 	return func(ctx context.Context) (string, btypes.BaseCoins, bool) {
 		gm := GetMapper(ctx)
 
-		var depositTokens uint64
+		var depositTokens = btypes.ZeroInt()
 		for _, proposal := range gm.GetProposals() {
 			proposalID := proposal.ProposalID
 			depositsIterator := gm.GetDeposits(proposalID)
 			for ; depositsIterator.Valid(); depositsIterator.Next() {
 				var deposit types.Deposit
 				gm.GetCodec().MustUnmarshalBinaryBare(depositsIterator.Value(), &deposit)
-				depositTokens += deposit.Amount
+				depositTokens = depositTokens.Add(deposit.Amount)
 			}
 			depositsIterator.Close()
 		}
 
 		return qtypes.FormatInvariant(module, "deposit",
-			fmt.Sprintf("total deposit %d\n", depositTokens), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, btypes.NewInt(int64(depositTokens)))}, false)
+			fmt.Sprintf("total deposit %d\n", depositTokens), btypes.BaseCoins{btypes.NewBaseCoin(qtypes.QOSCoinName, depositTokens)}, false)
 	}
 }

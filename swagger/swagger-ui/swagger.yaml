@@ -1,0 +1,2125 @@
+---
+swagger: "2.0"
+info:
+  version: "3.0"
+  title: RPC Server For QOS
+  description: A REST interface for state queries, transaction generation and broadcasting.
+tags:
+  - name: Transactions
+    description: Search, encode, or broadcast transactions.
+  - name: Tendermint
+    description: Wapper tendermint rpc api
+  - name: Account
+    description: Authenticate accounts
+  - name: Approve
+    description: Approve module APIS
+  - name: Bank
+    description: Bank module APIS
+  - name: Gov
+    description: Gov module APIS
+  - name: QCP
+    description: QCP module APIS
+  - name: QSC
+    description: QSC module APIS
+  - name: GUARDIAN
+    description: GUARDIAN module APIS
+  - name: STAKE
+    description: STAKE module APIS
+  - name: MINT
+    description: MINT module APIS
+  - name: DISTRIBUTION
+    description: DISTRIBUTION module APIS
+
+schemes:
+  - http
+host: 127.0.0.1:9876
+securityDefinitions:
+  kms:
+    type: basic
+paths:
+  /txs:
+    post:
+      tags:
+        - Transactions
+      summary:   broadcast signed tx to QOS Chain
+      description: broadcast signed tx to QOS Chain
+      produces:
+        - application/json
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: body
+          description: ""
+          required: true
+          schema:
+            type: object
+            $ref: "#/definitions/BroadcastReq"
+      responses:
+        200:
+          description:  OK
+          schema:
+            type: object
+            properties:
+              code:
+                type: integer
+                example: 200
+              data:
+                type: string
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /node_status:
+    get:
+      tags:
+        - Tendermint
+      summary: get tendermint node status
+      produces:
+        - application/json
+      responses:
+        200:
+          description: node info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /blocks/latest:
+    get:
+      tags:
+        - Tendermint
+      summary: get latest block info
+      produces:
+        - application/json
+      responses:
+        200:
+          description: block info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /blocks/{height}:
+    get:
+      tags:
+        - Tendermint
+      summary: get height block info
+      parameters:
+        - in: path
+          name: height
+          required: true
+          type: number
+          description: block height
+      produces:
+        - application/json
+      responses:
+        200:
+          description: block info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /blocks/txs/{height}:
+    get:
+      tags:
+        - Tendermint
+      summary: get all txs hash in height block
+      parameters:
+        - in: path
+          name: height
+          required: true
+          type: number
+          description: block height
+      produces:
+        - application/json
+      responses:
+        200:
+          description: block info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /validators/latest:
+    get:
+      tags:
+        - Tendermint
+      summary: get latest block validators info
+      produces:
+        - application/json
+      responses:
+        200:
+          description: validators info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /validators/{height}:
+    get:
+      tags:
+        - Tendermint
+      summary: get height block validators info
+      parameters:
+        - in: path
+          name: height
+          required: true
+          type: number
+          description: block height
+      produces:
+        - application/json
+      responses:
+        200:
+          description: validators info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /validators/consensus/{address}:
+    get:
+      tags:
+        - Tendermint
+      summary: covert tendermint validator address to consensus address
+      parameters:
+        - in: path
+          name: address
+          required: true
+          type: string
+          description: tendermint validator address.
+      produces:
+        - application/json
+      responses:
+        200:
+          description: consensus address
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /txs/{hash}:
+    get:
+      tags:
+        - Tendermint
+      summary: get transcation detail by hash
+      parameters:
+        - in: path
+          name: hash
+          required: true
+          type: string
+          description: tx hash
+      produces:
+        - application/json
+      responses:
+        200:
+          description: tx info
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /accounts/{bech32Address}:
+    get:
+      tags:
+        - Account
+      summary: get account info from bech32 address
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: bech32Address
+          required: true
+          type: string
+          description: qos account address
+      responses:
+        200:
+          description: account info
+          schema:
+            $ref: "#/definitions/AccountResult"
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /accounts/pubkey/{bech32PubKey}:
+    get:
+      tags:
+        - Account
+      summary: parse bech32PubKey to ed25519 format
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: bech32PubKey
+          required: true
+          type: string
+          description: account bech32 public key
+      responses:
+        200:
+          description: public key
+          schema:
+            $ref: "#/definitions/PubKey"
+        400:
+          description: Invalid search events
+        500:
+          description: Internal Server Error
+  /approve/approves/{beneficiaryAddr}/create_approves:
+    post:
+      tags:
+        - Approve
+      summary:  "创建预授权"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: beneficiaryAddr
+          type: string
+          description: 授权使用者账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateApproveReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /approve/approves/{beneficiaryAddr}/increase_approves:
+    post:
+      tags:
+        - Approve
+      summary:  "增加预授权"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: toAddress
+          type: string
+          description: 授权使用者账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/IncreaseApproveReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /approve/approves/{beneficiaryAddr}/decrease_approves:
+    post:
+      tags:
+        - Approve
+      summary:  "减少预授权"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: toAddress
+          type: string
+          description: 授权使用者账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/DecreaseApproveReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /approve/approves/{approveAddr}/use_approves:
+    post:
+      tags:
+        - Approve
+      summary:  "使用预授权"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: approveAddr
+          type: string
+          description: 授权人账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UseApproveReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /approve/approves/{beneficiaryAddr}/cancel_approves:
+    post:
+      tags:
+        - Approve
+      summary:  "取消预授权"
+      description: ""
+      parameters:
+        - in: path
+          name: address
+          required: true
+          type: string
+          description: 授权使用者账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CancelApproveReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /approve/approves/{approveAddr}/approve/{beneficiaryAddr}:
+    get:
+      tags:
+        - Approve
+      summary: "查询预授权信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: approveAddr
+          required: true
+          type: string
+          description: 授权人账户地址
+        - in: path
+          name: beneficiaryAddr
+          required: true
+          type: string
+          description: 授权使用者账户地址
+      responses:
+        200:
+          description: account info
+          schema:
+            type: object
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+              qos:
+                type: integer
+              qscs:
+                $ref: "#/definitions/Qscs"
+            example:
+              from: qosacc1fyz0ezduz6td89a6xq3uul0akkmy992uhh770a
+              to: qosacc1cpa777le3hjr2qyet0pynhvcgwe5853vnsgrl7
+              qos: '10000'
+              qscs: null
+
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /approve/approves/{approveAddr}/approves:
+    get:
+      tags:
+        - Approve
+      summary: "查询授权人所有预授权信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: approveAddr
+          required: true
+          type: string
+          description: 授权人账户地址
+      responses:
+        200:
+          description: approves info
+          schema:
+            type: object
+            properties:
+              from:
+                type: string
+                description: 授权人账户地址
+              to:
+                type: string
+                description: 授权使用者账户地址
+              qos:
+                type: integer
+              qscs:
+                $ref: "#/definitions/Qscs"
+            example:
+              - from: qosacc1fyz0ezduz6td89a6xq3uul0akkmy992uhh770a
+                to: qosacc1cpa777le3hjr2qyet0pynhvcgwe5853vnsgrl7
+                qos: '10000'
+                qscs: null
+
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /bank/accounts/{toAddress}/transfers:
+    post:
+      tags:
+        - Bank
+      summary:  "向toAddress用户转账"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: toAddress
+          type: string
+          description: "收款人"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/TransferSendReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /invariant/checks:
+    post:
+      tags:
+        - Bank
+      summary:  "链上数据检查. 该功能将收取大额GAS费用"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/InvariantCheckReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/texts:
+    post:
+      tags:
+        - Gov
+      summary:  "提交文本提议"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateTextProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/taxes:
+    post:
+      tags:
+        - Gov
+      summary:  "提交社区Fee池提议"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateTaxUsageProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/params:
+    post:
+      tags:
+        - Gov
+      summary:  "提交修改参数提议"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateParamChangeProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/inflations:
+    post:
+      tags:
+        - Gov
+      summary:  "提交修改通胀规则提议"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateModifyInflationProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/upgrades:
+    post:
+      tags:
+        - Gov
+      summary:  "提交升级提议"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateSoftwareUpgradeProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/{proposalId}/deposits:
+    post:
+      tags:
+        - Gov
+      summary:  "对指定提议进行QOS抵押"
+      description: ""
+      parameters:
+        - in: path
+          name: proposalId
+          required: true
+          type: integer
+          description: 提议ID
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/DepositProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals/{proposalId}/votes:
+    post:
+      tags:
+        - Gov
+      summary:  "对指定提议进行投票"
+      description: ""
+      parameters:
+        - in: path
+          name: proposalId
+          required: true
+          type: integer
+          description: 提议ID
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/VoteProposalReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/proposals:
+    get:
+      tags:
+        - Gov
+      summary: "查询所有提议"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/proposal/{proposalId}:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定提议"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: proposalId
+          type: integer
+          required: true
+          description: 提议ID
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/proposal/{proposalId}/deposits:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定提议所有抵押"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: proposalId
+          type: integer
+          required: true
+          description: 提议ID
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/proposal/{proposalId}/deposits/{address}:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定提议中指定地址抵押信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: proposalId
+          type: integer
+          required: true
+          description: 提议ID
+        - in: path
+          name: address
+          type: string
+          required: true
+          description: 账户地址
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/proposal/{proposalId}/votes:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定提议投票"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: proposalId
+          type: integer
+          required: true
+          description: 提议ID
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/proposal/{proposalId}/votes/{address}:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定提议中指定地址投票信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: proposalId
+          type: integer
+          required: true
+          description: 提议ID
+        - in: path
+          name: address
+          type: string
+          required: true
+          description: 账户地址
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/proposal/{proposalId}/tallies:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定提议实时投票信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: proposalId
+          type: integer
+          required: true
+          description: 提议ID
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/params/modules/{module}/keys/{key}:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定模块下的指定参数值"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: module
+          type: string
+          required: true
+          description: 模块名
+        - in: path
+          name: key
+          type: string
+          required: true
+          description: 键名
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/params/modules/{module}/keys:
+    get:
+      tags:
+        - Gov
+      summary: "查询指定模块下所有参数"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: module
+          type: string
+          required: true
+          description: 模块名
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/params/modules:
+    get:
+      tags:
+        - Gov
+      summary: "查询链中包含的所有模块名"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /qcp/qcps:
+    post:
+      tags:
+        - QCP
+      summary:  "初始化联盟链"
+      description: ""
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - in: formData
+          name: from
+          type: string
+          required: true
+          description: "操作人地址. 该值不可为空"
+        - in: formData
+          name: nonce
+          type: integer
+          description: "操作人nonce值, 该值可忽略"
+        - in: formData
+          name: max_gas
+          type: integer
+          description: "交易最大GAS数, 默认值: 400000"
+        - in: formData
+          name: chain_id
+          type: string
+          description: "链名称, 该值可忽略"
+        - in: formData
+          name: mode
+          type: string
+          description: "broadcast mode. value: sync, async, block. default value is block"
+        - in: formData
+          name: ca_file
+          required: true
+          type: file
+          description: "ca文件. 该值不可为空"
+      responses:
+        200:
+          description: OK
+  /qsc/qscs:
+    get:
+      tags:
+        - QSC
+      summary: "查询所有代币"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+    post:
+      tags:
+        - QSC
+      summary:  " 创建代币"
+      description: ""
+      consumes:
+        - multipart/form-data
+      produces:
+        - application/json
+      parameters:
+        - in: formData
+          name: from
+          type: string
+          required: true
+          description: "操作人地址. 该值不可为空"
+        - in: formData
+          name: nonce
+          type: integer
+          description: "操作人nonce值, 该值可忽略"
+        - in: formData
+          name: max_gas
+          type: integer
+          description: "交易最大GAS数, 默认值: 400000"
+        - in: formData
+          name: chain_id
+          type: string
+          description: "链名称, 该值可忽略"
+        - in: formData
+          name: mode
+          type: string
+          description: "broadcast mode. value: sync, async, block. default value is block"
+        - in: formData
+          name: ca_file
+          required: true
+          type: file
+          description: "ca文件. 该值不可为空"
+        - in: formData
+          name: accounts
+          type: string
+          description: "初始账户.格式: address1,100;address2,100"
+        - in: formData
+          name: exchange_rate
+          type: string
+          description: "extrate: qos:qscxxx (default 1)"
+        - in: formData
+          name: description
+          type: string
+          description: "描述信息"
+      responses:
+        200:
+          description: OK
+  /qsc/qscs/{qsc}/issues:
+    post:
+      tags:
+        - QSC
+      summary:  "发放代币"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: qsc
+          type: string
+          description: 代币名称
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/IssueQscReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /qsc/qscs/{qsc}:
+    get:
+      tags:
+        - QSC
+      summary: "查询指定代币信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: qsc
+          type: string
+          required: true
+          description: 代币名称
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+
+  /gov/guardians/{address}/guardians:
+    post:
+      tags:
+        - GUARDIAN
+      summary:  "添加指定地址为系统账户"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: address
+          type: string
+          description: 账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateGuardiansReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/guardians/{address}/deletes:
+    post:
+      tags:
+        - GUARDIAN
+      summary:  "将指定地址从系统账户中删除"
+      description: ""
+      parameters:
+        - in: path
+          required: true
+          name: address
+          type: string
+          description: 账户地址
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/DeleteGuardiansReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/guardians/halt_network:
+    post:
+      tags:
+        - GUARDIAN
+      summary:  "停止网络"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/HaltNetworkReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /gov/guardians:
+    get:
+      tags:
+        - GUARDIAN
+      summary: "查询所有系统用户"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /gov/guardians/{address}:
+    get:
+      tags:
+        - GUARDIAN
+      summary: "查询系统用户信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: address
+          type: string
+          required: true
+          description: 账户地址
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /stake/validators:
+    get:
+      tags:
+        - STAKE
+      summary: "查询所有验证人信息"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+    post:
+      tags:
+        - STAKE
+      summary:  "创建验证人"
+      description: ""
+      parameters:
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateValidatorReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/validators/{validatorAddr}:
+    get:
+      tags:
+        - STAKE
+      summary: "查询验证人信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址. ex: qosval1ras2lkaa0una89r2st95z0upxm2t62tlrxhp7k"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+
+  /stake/delegators/{validatorAddr}:
+    get:
+      tags:
+        - STAKE
+      summary: "查询指定验证人下的所有委托人"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /stake/delegators/{delegatorAddr}/delegations:
+    get:
+      tags:
+        - STAKE
+      summary: "查询指定用户的所有委托信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: delegatorAddr
+          type: string
+          required: true
+          description: 账户地址
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /stake/delegators/{delegatorAddr}/validators/{validatorAddr}:
+    get:
+      tags:
+        - STAKE
+      summary: "查询指定委托人的委托信息"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: delegatorAddr
+          type: string
+          required: true
+          description: 委托人账户地址
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /stake/validators/{validatorAddr}/modify_validators:
+    post:
+      tags:
+        - STAKE
+      summary:  "修改验证人相关信息.该操作只能由验证人所有者有权限执行"
+      description: ""
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ModifyValidatorReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/validators/{validatorAddr}/revoke_validators:
+    post:
+      tags:
+        - STAKE
+      summary:  "撤销验证人. 该操作只能由验证人所有者有权限执行"
+      description: ""
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/RevokeValidatorReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/validators/{validatorAddr}/active_validators:
+    post:
+      tags:
+        - STAKE
+      summary:  "激活验证人. 该操作只能由验证人所有者有权限执行"
+      description: ""
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ActiveValidatorReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/delegators/{validatorAddr}/delegations:
+    post:
+      tags:
+        - STAKE
+      summary:  "对验证人进行委托"
+      description: ""
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/CreateDelegationReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/delegators/{validatorAddr}/modify_delegations:
+    post:
+      tags:
+        - STAKE
+      summary:  "委托人修改收益复投方式"
+      description: ""
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ModifyDelegationReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/delegators/{validatorAddr}/unbond_delegations:
+    post:
+      tags:
+        - STAKE
+      summary:  "委托人解除委托"
+      description: ""
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/UnbondDelegationReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /stake/delegators/{fromValidatorAddr}/redelegations/{toValidatorAddr}:
+    post:
+      tags:
+        - STAKE
+      summary:  "委托人变更委托验证人"
+      description: ""
+      parameters:
+        - in: path
+          name: fromValidatorAddr
+          type: string
+          required: true
+          description: "原始验证人地址"
+        - in: path
+          name: toValidatorAddr
+          type: string
+          required: true
+          description: "新委托的验证人地址"
+        - in: body
+          name: body
+          required: true
+          schema:
+            $ref: '#/definitions/ReDelegationReq'
+      responses:
+        200:
+          description: OK
+          schema:
+            $ref: '#/definitions/TxGenerateResponse'
+        400:
+          description: Invalid request
+        500:
+          description: Server internal error
+  /mint/inflationPhrases:
+    get:
+      tags:
+        - MINT
+      summary: "查询通胀阶段详情"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /mint/inflations:
+    get:
+      tags:
+        - MINT
+      summary: "查询QOS发行总量"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /mint/applies:
+    get:
+      tags:
+        - MINT
+      summary: "查询QOS流通总量"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /distribution/validators/{validatorAddr}/periods:
+    get:
+      tags:
+        - DISTRIBUTION
+      summary: "验证人收益周期查询"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /distribution/delegators/{delegatorAddr}/validators/{validatorAddr}/incomes:
+    get:
+      tags:
+        - DISTRIBUTION
+      summary: "委托人收益查询"
+      produces:
+        - application/json
+      parameters:
+        - in: path
+          name: delegatorAddr
+          type: string
+          required: true
+          description: "委托人地址"
+        - in: path
+          name: validatorAddr
+          type: string
+          required: true
+          description: "验证人地址"
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+  /distribution/communityFeePools:
+    get:
+      tags:
+        - DISTRIBUTION
+      summary: "社区Fee池查询"
+      produces:
+        - application/json
+      responses:
+        200:
+          description: ""
+        400:
+          description: Invalid search events
+        404:
+          description: not found
+        500:
+          description: Internal Server Error
+
+definitions:
+  BaseRequest:
+    type: object
+    properties:
+      from:
+        type: string
+        example: "qosacc1qgwgmpsrd6anj3qjvjsqztj3xt9v24c4lygasm"
+        description: "操作人地址.该字段不可为空."
+      chain_id:
+        type: string
+        example: qos-test
+        description:  "chain id"
+        default: ""
+      nonce:
+        type: integer
+        description: "operator user's nonce"
+        example: "1"
+        default: ""
+      max_gas:
+        type: integer
+        description: "tx max gas"
+        default: "400000"
+      height:
+        type: integer
+        description: "query height"
+        default: ""
+      indent:
+        type: boolean
+        description: "result is indent format if set true"
+        default: false
+      mode:
+        type: string
+        description: "broadcast mode. value: sync, async, block. default value is block"
+        default: "block"
+  AccAddress:
+    type: string
+  PubKey:
+    type: object
+    properties:
+      type:
+        type: string
+        example: tendermint/PubKeyEd25519
+      value:
+        type: string
+        example: "1vYCF7eM0FOy8HuY01EagAwITD7gf4mQ2Etx8RlpMpI="
+  BroadcastReq:
+    type: object
+    properties:
+      tx:
+        type: object
+        description: "Tx JSON Object"
+      mode:
+        type: string
+        description: "broadcast mode. value: sync, async, block. default value is block"
+  Qsc:
+    type: object
+    properties:
+      coin_name:
+        type: string
+        description: "币种名称"
+      amount:
+        type: integer
+        description: "币种金额"
+  Qscs:
+    type: array
+    items:
+      $ref: "#/definitions/Qsc"
+  TxGenerateResponse:
+    type: object
+    properties:
+      code:
+        type: integer
+      tx:
+        type: string
+      signer:
+        $ref: '#/definitions/AccAddress'
+      pubkey:
+        $ref: '#/definitions/PubKey'
+      nonce:
+        type: integer
+      sign_bytes:
+        type: string
+  AccountResult:
+    type: object
+    properties:
+      type:
+        type: string
+        example: qos/types/QOSAccount
+      value:
+        type: object
+        properties:
+          account_address:
+            type: string
+          public_key:
+            type: string
+          nonce:
+            type: integer
+          qos:
+            type: integer
+          qscs:
+            $ref: "#/definitions/Qscs"
+    example:
+      type: qos/types/QOSAccount
+      value:
+        account_address: qosacc1fyz0ezduz6td89a6xq3uul0akkmy992uhh770a
+        public_key: qosaccpub1zcjduepq6mmqy9ah3ng98vhs0wvdx5g6sqxqsnp7uplcnyxcfdclzxtfx2fqauh8mc
+        nonce: 1
+        qos: '39999990000000'
+        qscs: null
+  CreateApproveReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      qos:
+        type: integer
+        description: "预授权QOS数量"
+      qscs:
+        $ref: '#/definitions/Qscs'
+        description: "预授权QSCS数量"
+  IncreaseApproveReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      qos:
+        type: integer
+        description: "增加授权QOS数量"
+      qscs:
+        $ref: '#/definitions/Qscs'
+        description: "增加授权QSC数量"
+  DecreaseApproveReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      qos:
+        type: integer
+        description: "减少授权QOS数量"
+      qscs:
+        $ref: '#/definitions/Qscs'
+        description: "减少授权QSC数量"
+  UseApproveReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      qos:
+        type: integer
+        description: "使用授权QOS数量"
+      qscs:
+        $ref: '#/definitions/Qscs'
+        description: "使用授权QSC数量"
+  CancelApproveReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+  TransferSendReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      qos:
+        type: integer
+      qscs:
+        $ref: '#/definitions/Qscs'
+  InvariantCheckReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+  CreateTextProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      title:
+        type: string
+        description: "标题"
+        required:
+          - NotEmpty
+      description:
+        type: string
+        description: "描述信息"
+        required:
+          - NotEmpty
+      deposit:
+        type: integer
+        description: "提议押金"
+        required:
+          - NotEmpty
+  CreateTaxUsageProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      title:
+        type: string
+        description: "标题"
+        required:
+          - NotEmpty
+      description:
+        type: string
+        description: "描述信息"
+        required:
+          - NotEmpty
+      deposit:
+        type: integer
+        description: "提议押金"
+        required:
+          - NotEmpty
+      dest_address:
+        type: string
+        description: "目标地址，用于接收QOS"
+        required:
+          - NotEmpty
+      percent:
+        type: string
+        description: "社区费池提取比例，小数0~1"
+        example: "0.1"
+        required:
+          - NotEmpty
+  CreateParamChangeProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      title:
+        type: string
+        description: "标题"
+        required:
+          - NotEmpty
+      description:
+        type: string
+        description: "描述信息"
+        required:
+          - NotEmpty
+      deposit:
+        type: integer
+        description: "提议押金"
+        required:
+          - NotEmpty
+      params:
+        type: string
+        description: "参数列表，格式：module:key_name:value,module:key_name:value，如：gov:min_deposit:10000"
+        example:
+          "gov:min_deposit:10000"
+        required:
+          - NotEmpty
+  CreateModifyInflationProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      title:
+        type: string
+        description: "标题"
+        required:
+          - NotEmpty
+      description:
+        type: string
+        description: "描述信息"
+        required:
+          - NotEmpty
+      deposit:
+        type: integer
+        description: "提议押金"
+        required:
+          - NotEmpty
+      inflation_phrases:
+        type: string
+        description: "完整通胀规则"
+        example:
+          "
+[{\"end_time\":\"2023-10-20T00:00:00Z\",\"total_amount\":\"25500000000000\",\"applied_amount\":\"0\"},{\"end_time\":\"2027-10-20T00:00:00Z\",\"total_amount\":\"12750000000000\",\"applied_amount\":\"0\"},{\"end_time\":\"2031-10-20T00:00:00Z\",\"total_amount\":\"6375000000000\",\"applied_amount\":\"0\"},{\"end_time\":\"2035-10-20T00:00:00Z\",\"total_amount\":\"3187500000000\",\"applied_amount\":\"0\"},{\"end_time\":\"2039-10-20T00:00:00Z\",\"total_amount\":\"1593750000000\",\"applied_amount\":\"0\"},{\"end_time\":\"2043-10-20T00:00:00Z\",\"total_amount\":\"796875000000\",\"applied_amount\":\"0\"},{\"end_time\":\"2047-10-20T00:00:00Z\",\"total_amount\":\"796875000000\",\"applied_amount\":\"0\"}]
+
+          "
+        required:
+          - NotEmpty
+      total_amount:
+        type: integer
+        description: "QOS总发行量"
+        required:
+          - NotEmpty
+  CreateSoftwareUpgradeProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      title:
+        type: string
+        description: "标题"
+        required:
+          - NotEmpty
+      description:
+        type: string
+        description: "描述信息"
+        required:
+          - NotEmpty
+      deposit:
+        type: integer
+        description: "提议押金"
+        required:
+          - NotEmpty
+      version:
+        type: string
+        description: " QOS软件版本"
+        required:
+          - NotEmpty
+      data_height:
+        type: integer
+        description: " 数据版本"
+        required:
+          - NotEmpty
+      genesis_file:
+        type: string
+        description: "genesis.json文件url"
+        required:
+          - NotEmpty
+      genesis_md5:
+        type: string
+        description: "genesis.json文件md5"
+        required:
+          - NotEmpty
+      for_zero_height:
+        type: boolean
+        description: "是否清除本地数据，从第0高度重新开始"
+  DepositProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      amount:
+        type: integer
+        description: "抵押QOS数量"
+  VoteProposalReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      option:
+        type: string
+        description: "投票选项，可选值：Yes,Abstain,No,NoWithVeto"
+  IssueQscReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      amount:
+        type: integer
+  CreateGuardiansReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      description:
+        type: string
+  DeleteGuardiansReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+  HaltNetworkReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      reason:
+        type: string
+  CreateValidatorReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      cons_pub_key:
+        type: string
+        description: "共识地址公钥"
+        example: "qosconspub1zcjduepqymwqp32f42smrl4l72gw75xamqnap98nwmpazz22ll48zwmhmslq95e7eu"
+      bond_tokens:
+        type: integer
+        description: "绑定tokens，不能大于操作者持有QOS数量"
+      is_compound:
+        type: boolean
+        description: "是否收益复投"
+        default: false
+      moniker:
+        type: string
+        description: "验证节点名字，len(moniker) <= 300"
+      logo:
+        type: string
+        description: "logo, 可选参数，len(logo) <= 255"
+      website:
+        type: string
+        description: "网址, 可选参数，len(website) <= 255"
+      details:
+        type: string
+        description: "详细描述信息, 可选参数，len(details) <= 1000"
+      rate:
+        type: string
+        description: "收益比率"
+        example: "0.1"
+      max_rate:
+        type: string
+        description: "最大收益比率"
+        example: "0.2"
+      max_change_rate:
+        type: string
+        description: "每次变更,最大变更比率"
+        example: "0.01"
+  ModifyValidatorReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      moniker:
+        type: string
+        description: "验证节点名字，len(moniker) <= 300"
+      logo:
+        type: string
+        description: "logo, 可选参数，len(logo) <= 255"
+      website:
+        type: string
+        description: "网址, 可选参数，len(website) <= 255"
+      details:
+        type: string
+        description: "详细描述信息, 可选参数，len(details) <= 1000"
+      rate:
+        type: string
+        description: "收益比率"
+        example: "0.1"
+  RevokeValidatorReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+  ActiveValidatorReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      bond_tokens:
+        type: integer
+        description: "激活验证节点时,增加绑定的token数量"
+  CreateDelegationReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      amount:
+        type: integer
+        description: "绑定tokens，不能大于delegator持有QOS数量"
+      is_compound:
+        type: boolean
+        description: "收益是否复投，默认false"
+        default: false
+  ModifyDelegationReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      is_compound:
+        type: boolean
+        description: ""
+        default: false
+  UnbondDelegationReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      unbond_amount:
+        type: integer
+        description: " 解绑tokens"
+      unbond_all:
+        type: boolean
+        description: "是否取消全部QOS代理，默认false"
+        default: false
+  ReDelegationReq:
+    type: object
+    properties:
+      base:
+        $ref: '#/definitions/BaseRequest'
+      amount:
+        type: integer
+        description: "解绑并代理给新代理的tokens，不能大于目前代理的QOS数量"
+      redelegate_all:
+        type: boolean
+        description: "是否从`from-owner`完全解绑，全部代理给`to-owner`，默认false"
+        default: false
+      compound:
+        type: boolean
+        description: "新代理收益是否复投，默认`false`"
+        default: false
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

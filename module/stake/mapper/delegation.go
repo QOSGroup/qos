@@ -8,22 +8,26 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 )
 
+// 保存委托信息
 func (mapper *Mapper) SetDelegationInfo(info types.DelegationInfo) {
 	mapper.Set(types.BuildDelegationByDelValKey(info.DelegatorAddr, info.ValidatorAddr), info)
 	mapper.Set(types.BuildDelegationByValDelKey(info.ValidatorAddr, info.DelegatorAddr), true)
 }
 
-func (mapper *Mapper) GetDelegationInfo(delAddr btypes.Address, valAddr btypes.Address) (info types.DelegationInfo, exist bool) {
+// 获取委托信息
+func (mapper *Mapper) GetDelegationInfo(delAddr btypes.AccAddress, valAddr btypes.ValAddress) (info types.DelegationInfo, exist bool) {
 	exist = mapper.Get(types.BuildDelegationByDelValKey(delAddr, valAddr), &info)
 	return
 }
 
-func (mapper *Mapper) DelDelegationInfo(delAddr btypes.Address, valAddr btypes.Address) {
+// 删除委托信息
+func (mapper *Mapper) DelDelegationInfo(delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
 	mapper.Del(types.BuildDelegationByDelValKey(delAddr, valAddr))
 	mapper.Del(types.BuildDelegationByValDelKey(valAddr, delAddr))
 }
 
-func (mapper *Mapper) GetDelegationsByValidator(valAddr btypes.Address) (infos []types.DelegationInfo) {
+// 根据验证节点地址获取委托列表
+func (mapper *Mapper) GetDelegationsByValidator(valAddr btypes.ValAddress) (infos []types.DelegationInfo) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildDelegationByValidatorPrefix(valAddr))
 	defer iter.Close()
 	for ; iter.Valid(); iter.Next() {
@@ -36,7 +40,8 @@ func (mapper *Mapper) GetDelegationsByValidator(valAddr btypes.Address) (infos [
 	return
 }
 
-func (mapper *Mapper) IterateDelegationsValDeleAddr(valAddr btypes.Address, fn func(btypes.Address, btypes.Address)) {
+// 遍历委托，当valAddr为空时，遍历所有委托，否则遍历此valAddr下委托
+func (mapper *Mapper) IterateDelegationsValDeleAddr(valAddr btypes.ValAddress, fn func(btypes.ValAddress, btypes.AccAddress)) {
 
 	var prefixKey []byte
 
@@ -56,7 +61,8 @@ func (mapper *Mapper) IterateDelegationsValDeleAddr(valAddr btypes.Address, fn f
 	}
 }
 
-func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.Address, fn func(types.DelegationInfo)) {
+// 遍历委托，当deleAddr为空时，遍历所有委托，否则遍历此deleAddr的所有委托
+func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.AccAddress, fn func(types.DelegationInfo)) {
 
 	var prefixKey []byte
 
@@ -75,20 +81,23 @@ func (mapper *Mapper) IterateDelegationsInfo(deleAddr btypes.Address, fn func(ty
 	}
 }
 
+// 委托
 func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, reDelegate bool) {
 	if !reDelegate {
 		am := baseabci.GetAccountMapper(ctx)
 		delegator := am.GetAccount(info.DelegatorAddr).(*qtypes.QOSAccount)
-		delegator.MustMinusQOS(btypes.NewInt(int64(info.Amount)))
+		delegator.MustMinusQOS(info.Amount)
 		am.SetAccount(delegator)
 	}
 
 	delegation, exists := mapper.GetDelegationInfo(info.DelegatorAddr, info.ValidatorAddr)
 	if !exists {
+		// 委托存在，保存最新委托信息，然后执行AfterDelegationCreated hooks方法
 		mapper.SetDelegationInfo(info)
 		mapper.AfterDelegationCreated(ctx, info.ValidatorAddr, info.DelegatorAddr)
 	} else {
-		delegation.Amount += info.Amount
+		// 委托不存在，执行BeforeDelegationModified hooks方法，然后保存委托信息
+		delegation.Amount = delegation.Amount.Add(info.Amount)
 		delegation.IsCompound = info.IsCompound
 		mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, delegation.Amount)
 		mapper.SetDelegationInfo(delegation)
@@ -96,17 +105,19 @@ func (mapper *Mapper) Delegate(ctx context.Context, info types.DelegationInfo, r
 
 }
 
-func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens uint64) {
-	info.Amount = info.Amount - tokens
+// 解除委托， 执行BeforeDelegationModified hooks方法，保存最新delegation
+func (mapper *Mapper) UnbondTokens(ctx context.Context, info types.DelegationInfo, tokens btypes.BigInt) {
+	info.Amount = info.Amount.Sub(tokens)
 	mapper.BeforeDelegationModified(ctx, info.ValidatorAddr, info.DelegatorAddr, info.Amount)
-	unbondHeight := uint64(mapper.GetParams(ctx).DelegatorUnbondReturnHeight) + uint64(ctx.BlockHeight())
-	mapper.AddUnbondingDelegation(types.NewUnbondingDelegationInfo(info.DelegatorAddr, info.ValidatorAddr, uint64(ctx.BlockHeight()), unbondHeight, tokens))
+	unbondHeight := mapper.GetParams(ctx).DelegatorUnbondFrozenHeight + ctx.BlockHeight()
+	mapper.AddUnbondingDelegation(types.NewUnbondingDelegationInfo(info.DelegatorAddr, info.ValidatorAddr, ctx.BlockHeight(), unbondHeight, tokens))
 	mapper.SetDelegationInfo(info)
 }
 
+// 转委托，执行BeforeDelegationModified hooks方法，保存转委托信息
 func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.DelegationInfo, info types.RedelegationInfo) {
 	// update origin delegation
-	delegation.Amount -= info.Amount
+	delegation.Amount = delegation.Amount.Sub(info.Amount)
 	mapper.BeforeDelegationModified(ctx, delegation.ValidatorAddr, delegation.DelegatorAddr, delegation.Amount)
 	mapper.SetDelegationInfo(delegation)
 
@@ -114,6 +125,7 @@ func (mapper *Mapper) ReDelegate(ctx context.Context, delegation types.Delegatio
 	mapper.AddRedelegation(info)
 }
 
+// 遍历解除委托
 func (mapper *Mapper) IterateUnbondingDelegations(fn func([]types.UnbondingDelegationInfo)) {
 	unbondings := []types.UnbondingDelegationInfo{}
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.UnbondingHeightDelegatorValidatorKey)
@@ -126,7 +138,8 @@ func (mapper *Mapper) IterateUnbondingDelegations(fn func([]types.UnbondingDeleg
 	fn(unbondings)
 }
 
-func (mapper *Mapper) GetUnbondingDelegationsByDelegator(delegator btypes.Address) (unbondings []types.UnbondingDelegationInfo) {
+// 根据委托账户获取解除委托信息列表
+func (mapper *Mapper) GetUnbondingDelegationsByDelegator(delegator btypes.AccAddress) (unbondings []types.UnbondingDelegationInfo) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildUnbondingByDelegatorPrefix(delegator))
 	defer iter.Close()
 
@@ -142,7 +155,8 @@ func (mapper *Mapper) GetUnbondingDelegationsByDelegator(delegator btypes.Addres
 	return
 }
 
-func (mapper *Mapper) GetUnbondingDelegationsByValidator(validator btypes.Address) (unbondings []types.UnbondingDelegationInfo) {
+// 根据验证节点地址获取解除委托信息
+func (mapper *Mapper) GetUnbondingDelegationsByValidator(validator btypes.ValAddress) (unbondings []types.UnbondingDelegationInfo) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildUnbondingByValidatorPrefix(validator))
 	defer iter.Close()
 
@@ -158,38 +172,44 @@ func (mapper *Mapper) GetUnbondingDelegationsByValidator(validator btypes.Addres
 	return
 }
 
+// 保存解除委托信息
 func (mapper *Mapper) SetUnbondingDelegation(unbonding types.UnbondingDelegationInfo) {
 	mapper.Set(types.BuildUnbondingHeightDelegatorValidatorKey(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr), unbonding)
 	mapper.Set(types.BuildUnbondingDelegatorHeightValidatorKey(unbonding.DelegatorAddr, unbonding.CompleteHeight, unbonding.ValidatorAddr), true)
 	mapper.Set(types.BuildUnbondingValidatorHeightDelegatorKey(unbonding.ValidatorAddr, unbonding.CompleteHeight, unbonding.DelegatorAddr), true)
 }
 
-func (mapper *Mapper) GetUnbondingDelegation(height uint64, delAddr btypes.Address, valAddr btypes.Address) (unbonding types.UnbondingDelegationInfo, exist bool) {
+// 获取解除委托信息，完成时间+委托地址+验证节点地址
+func (mapper *Mapper) GetUnbondingDelegation(height int64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) (unbonding types.UnbondingDelegationInfo, exist bool) {
 	exist = mapper.Get(types.BuildUnbondingHeightDelegatorValidatorKey(height, delAddr, valAddr), &unbonding)
 	return
 }
 
+// 新增解除委托信息，若存在累加tokens数量
 func (mapper *Mapper) AddUnbondingDelegation(unbonding types.UnbondingDelegationInfo) {
 	origin, exist := mapper.GetUnbondingDelegation(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr)
 	if exist {
-		origin.Amount += unbonding.Amount
+		origin.Amount = origin.Amount.Add(unbonding.Amount)
 		unbonding = origin
 	}
 	mapper.SetUnbondingDelegation(unbonding)
 }
 
+// 添加解除委托信息
 func (mapper *Mapper) AddUnbondingDelegations(unbondingsAdd []types.UnbondingDelegationInfo) {
 	for _, unbonding := range unbondingsAdd {
 		mapper.AddUnbondingDelegation(unbonding)
 	}
 }
 
-func (mapper *Mapper) RemoveUnbondingDelegation(height uint64, delAddr btypes.Address, valAddr btypes.Address) {
+// 删除解除委托信息
+func (mapper *Mapper) RemoveUnbondingDelegation(height int64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
 	mapper.Del(types.BuildUnbondingHeightDelegatorValidatorKey(height, delAddr, valAddr))
 	mapper.Del(types.BuildUnbondingDelegatorHeightValidatorKey(delAddr, height, valAddr))
 	mapper.Del(types.BuildUnbondingValidatorHeightDelegatorKey(valAddr, height, delAddr))
 }
 
+// 遍历转委托信息
 func (mapper *Mapper) IterateRedelegationsInfo(fn func([]types.RedelegationInfo)) {
 	redelegations := []types.RedelegationInfo{}
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.RedelegationHeightDelegatorFromValidatorKey)
@@ -202,7 +222,8 @@ func (mapper *Mapper) IterateRedelegationsInfo(fn func([]types.RedelegationInfo)
 	fn(redelegations)
 }
 
-func (mapper *Mapper) GetRedelegationsByDelegator(delegator btypes.Address) (redelegations []types.RedelegationInfo) {
+// 根据委托地址获取转委托信息
+func (mapper *Mapper) GetRedelegationsByDelegator(delegator btypes.AccAddress) (redelegations []types.RedelegationInfo) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildRedelegationByDelegatorPrefix(delegator))
 	defer iter.Close()
 
@@ -218,7 +239,8 @@ func (mapper *Mapper) GetRedelegationsByDelegator(delegator btypes.Address) (red
 	return
 }
 
-func (mapper *Mapper) GetRedelegationsByFromValidator(validator btypes.Address) (redelegations []types.RedelegationInfo) {
+// 根据验证节点地址遍历转委托信息
+func (mapper *Mapper) GetRedelegationsByFromValidator(validator btypes.ValAddress) (redelegations []types.RedelegationInfo) {
 	iter := btypes.KVStorePrefixIterator(mapper.GetStore(), types.BuildRedelegationByFromValidatorPrefix(validator))
 	defer iter.Close()
 
@@ -234,79 +256,96 @@ func (mapper *Mapper) GetRedelegationsByFromValidator(validator btypes.Address) 
 	return
 }
 
+// 保存转委托信息
 func (mapper *Mapper) SetRedelegation(redelegation types.RedelegationInfo) {
 	mapper.Set(types.BuildRedelegationHeightDelegatorFromValidatorKey(redelegation.CompleteHeight, redelegation.DelegatorAddr, redelegation.FromValidator), redelegation)
 	mapper.Set(types.BuildRedelegationDelegatorHeightFromValidatorKey(redelegation.DelegatorAddr, redelegation.CompleteHeight, redelegation.FromValidator), true)
 	mapper.Set(types.BuildRedelegationFromValidatorHeightDelegatorKey(redelegation.FromValidator, redelegation.CompleteHeight, redelegation.DelegatorAddr), true)
 }
 
-func (mapper *Mapper) GetRedelegation(height uint64, delAdd btypes.Address, valAddr btypes.Address) (reDelegation types.RedelegationInfo, exist bool) {
+// 获取转委托信息，完成时间+委托地址+验证节点地址
+func (mapper *Mapper) GetRedelegation(height int64, delAdd btypes.AccAddress, valAddr btypes.ValAddress) (reDelegation types.RedelegationInfo, exist bool) {
 	exist = mapper.Get(types.BuildRedelegationHeightDelegatorFromValidatorKey(height, delAdd, valAddr), &reDelegation)
 	return
 }
 
+// 新增转委托，若存在则累加tokens数量
 func (mapper *Mapper) AddRedelegation(redelegation types.RedelegationInfo) {
 	origin, exist := mapper.GetRedelegation(redelegation.CompleteHeight, redelegation.DelegatorAddr, redelegation.FromValidator)
 	if exist {
-		redelegation.Amount += origin.Amount
+		redelegation.Amount = redelegation.Amount.Add(origin.Amount)
 	}
 	mapper.SetRedelegation(redelegation)
 }
 
+// 添加转委托信息
 func (mapper *Mapper) AddRedelegations(reDelegations []types.RedelegationInfo) {
 	for _, reDelegation := range reDelegations {
 		mapper.AddRedelegation(reDelegation)
 	}
 }
 
-func (mapper *Mapper) RemoveRedelegation(height uint64, delAddr btypes.Address, valAddr btypes.Address) {
+// 删除转委托信息
+func (mapper *Mapper) RemoveRedelegation(height int64, delAddr btypes.AccAddress, valAddr btypes.ValAddress) {
 	mapper.Del(types.BuildRedelegationHeightDelegatorFromValidatorKey(height, delAddr, valAddr))
 	mapper.Del(types.BuildRedelegationDelegatorHeightFromValidatorKey(delAddr, height, valAddr))
 	mapper.Del(types.BuildRedelegationFromValidatorHeightDelegatorKey(valAddr, height, delAddr))
 }
 
-func (mapper *Mapper) SlashUnbondings(valAddr btypes.Address, infractionHeight int64, fraction qtypes.Dec, maxSlash int64) int64 {
+// 从解除委托信息中扣除惩罚
+func (mapper *Mapper) SlashUnbondings(valAddr btypes.ValAddress, infractionHeight int64, fraction qtypes.Dec, maxSlash btypes.BigInt) btypes.BigInt {
+	if !maxSlash.GT(btypes.ZeroInt()) {
+		return btypes.ZeroInt()
+	}
 	unbondings := mapper.GetUnbondingDelegationsByValidator(valAddr)
 	for _, unbonding := range unbondings {
-		if unbonding.Height >= uint64(infractionHeight) {
-			if maxSlash <= 0 {
+		// 仅对完成高度大于infractionHeight的解除委托做处理
+		if unbonding.Height >= infractionHeight {
+			// 惩罚总量不能大于maxSlash
+			if !maxSlash.GT(btypes.ZeroInt()) {
 				break
 			}
-			amountSlash := fraction.MulInt(btypes.NewInt(int64(unbonding.Amount))).TruncateInt64()
-			if maxSlash-amountSlash <= 0 {
+			amountSlash := fraction.MulInt(unbonding.Amount).TruncateInt()
+			if !maxSlash.GT(amountSlash) {
 				amountSlash = maxSlash
 			}
-			if amountSlash == int64(unbonding.Amount) {
+			if amountSlash.Equal(unbonding.Amount) {
 				mapper.RemoveUnbondingDelegation(unbonding.CompleteHeight, unbonding.DelegatorAddr, unbonding.ValidatorAddr)
 			} else {
-				unbonding.Amount -= uint64(amountSlash)
+				unbonding.Amount = unbonding.Amount.Sub(amountSlash)
 				mapper.SetUnbondingDelegation(unbonding)
 			}
-			maxSlash -= amountSlash
+			maxSlash = maxSlash.Sub(amountSlash)
 		}
 	}
 
 	return maxSlash
 }
 
-func (mapper *Mapper) SlashRedelegations(valAddr btypes.Address, infractionHeight int64, fraction qtypes.Dec, maxSlash int64) int64 {
+// 从转委托中扣除惩罚
+func (mapper *Mapper) SlashRedelegations(valAddr btypes.ValAddress, infractionHeight int64, fraction qtypes.Dec, maxSlash btypes.BigInt) btypes.BigInt {
+	if !maxSlash.GT(btypes.ZeroInt()) {
+		return btypes.ZeroInt()
+	}
 	redelegations := mapper.GetRedelegationsByFromValidator(valAddr)
 	for _, redelegation := range redelegations {
-		if redelegation.Height >= uint64(infractionHeight) {
-			if maxSlash == 0 {
+		// 仅对完成高度大于infractionHeight的转委托做处理
+		if redelegation.Height >= infractionHeight {
+			// 惩罚总量不能大于maxSlash
+			if maxSlash.Equal(btypes.ZeroInt()) {
 				break
 			}
-			amountSlash := fraction.MulInt(btypes.NewInt(int64(redelegation.Amount))).TruncateInt64()
-			if maxSlash-amountSlash <= 0 {
+			amountSlash := fraction.MulInt(redelegation.Amount).TruncateInt()
+			if !maxSlash.GT(amountSlash) {
 				amountSlash = maxSlash
 			}
-			if amountSlash == int64(redelegation.Amount) {
+			if amountSlash.Equal(redelegation.Amount) {
 				mapper.RemoveRedelegation(redelegation.CompleteHeight, redelegation.DelegatorAddr, redelegation.FromValidator)
 			} else {
-				redelegation.Amount -= uint64(amountSlash)
+				redelegation.Amount = redelegation.Amount.Sub(amountSlash)
 				mapper.SetRedelegation(redelegation)
 			}
-			maxSlash -= amountSlash
+			maxSlash = maxSlash.Sub(amountSlash)
 		}
 	}
 

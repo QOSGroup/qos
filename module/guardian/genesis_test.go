@@ -13,8 +13,8 @@ import (
 	"github.com/stretchr/testify/require"
 	abci "github.com/tendermint/tendermint/abci/types"
 	"github.com/tendermint/tendermint/crypto/ed25519"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
 )
 
@@ -41,8 +41,8 @@ func defaultContext() context.Context {
 }
 
 func TestValidateGenesis(t *testing.T) {
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	addr2 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	addr2 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	cases := []struct {
 		input    GenesisState
@@ -61,8 +61,8 @@ func TestValidateGenesis(t *testing.T) {
 }
 
 func TestExportGenesis(t *testing.T) {
-	addr1 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
-	addr2 := btypes.Address(ed25519.GenPrivKey().PubKey().Address())
+	addr1 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
+	addr2 := btypes.AccAddress(ed25519.GenPrivKey().PubKey().Address())
 
 	cases := []struct {
 		input GenesisState

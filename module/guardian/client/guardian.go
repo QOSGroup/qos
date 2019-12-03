@@ -1,12 +1,12 @@
 package client
 
 import (
-	"errors"
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qcltx "github.com/QOSGroup/qbase/client/tx"
 	"github.com/QOSGroup/qbase/store"
 	"github.com/QOSGroup/qbase/txs"
+	types2 "github.com/QOSGroup/qbase/types"
 	"github.com/QOSGroup/qos/module/guardian/mapper"
 	gtxs "github.com/QOSGroup/qos/module/guardian/txs"
 	"github.com/QOSGroup/qos/module/guardian/types"
@@ -15,6 +15,7 @@ import (
 	"github.com/tendermint/go-amino"
 )
 
+// 添加系统账户
 func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "add-guardian",
@@ -33,18 +34,19 @@ func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				description := viper.GetString(flagDescription)
-				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
 
+				tx := gtxs.NewTxAddGuardian(description, address, creator)
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
 				}
-
-				return gtxs.NewTxAddGuardian(description, address, creator), nil
+				return tx, nil
 			})
 		},
 	}
 
-	cmd.Flags().String(flagAddress, "", "address of guardian")
-	cmd.Flags().String(flagCreator, "", "address of creator")
-	cmd.Flags().String(flagDescription, "", "description")
+	cmd.Flags().String(flagAddress, "", "Address of guardian")
+	cmd.Flags().String(flagCreator, "", "Address of creator")
+	cmd.Flags().String(flagDescription, "", "Description")
 	cmd.MarkFlagRequired(flagAddress)
 	cmd.MarkFlagRequired(flagCreator)
 	cmd.MarkFlagRequired(flagDescription)
@@ -52,6 +54,7 @@ func AddGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	return cmd
 }
 
+// 删除系统账户
 func DeleteGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "delete-guardian",
@@ -69,24 +72,24 @@ func DeleteGuardianCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				description := viper.GetString(flagDescription)
-				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
-
+				tx := gtxs.NewTxDeleteGuardian(address, deleteBy)
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
 				}
-
-				return gtxs.NewTxDeleteGuardian(address, deleteBy), nil
+				return tx, nil
 			})
 		},
 	}
 
-	cmd.Flags().String(flagAddress, "", "address of guardian")
-	cmd.Flags().String(flagDeletedBy, "", "address of deleteBy guardian")
+	cmd.Flags().String(flagAddress, "", "Address of guardian")
+	cmd.Flags().String(flagDeletedBy, "", "Address of deleteBy guardian")
 	cmd.MarkFlagRequired(flagAddress)
 	cmd.MarkFlagRequired(flagDeletedBy)
 
 	return cmd
 }
 
+// 查询系统账户
 func QueryGuardianCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "guardian [guardian]",
@@ -94,71 +97,86 @@ func QueryGuardianCmd(cdc *amino.Codec) *cobra.Command {
 		Args:  cobra.ExactArgs(1),
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			queryPath := "store/guardian/key"
-
 			address, err := qcliacc.GetAddrFromValue(cliCtx, args[0])
 			if err != nil {
 				return err
 			}
 
-			output, err := cliCtx.Query(queryPath, mapper.KeyGuardian(address))
+			result, err := getGuardian(cliCtx, address)
 			if err != nil {
 				return err
 			}
-
-			if output == nil {
-				return errors.New("guardian does not exist")
-			}
-
-			guardian := types.Guardian{}
-			cdc.MustUnmarshalBinaryBare(output, &guardian)
-
-			return cliCtx.PrintResult(guardian)
+			return cliCtx.PrintResult(result)
 		},
 	}
 
 	return cmd
 }
 
+func getGuardian(cliCtx context.CLIContext, guardian types2.AccAddress) (types.Guardian, error) {
+	queryPath := "store/guardian/key"
+	output, err := cliCtx.Query(queryPath, mapper.KeyGuardian(guardian))
+	if err != nil {
+		return types.Guardian{}, err
+	}
+
+	if output == nil {
+		return types.Guardian{}, context.RecordsNotFoundError
+	}
+
+	result := types.Guardian{}
+	cliCtx.Codec.MustUnmarshalBinaryBare(output, &result)
+	return result, err
+}
+
+// 系统账户列表
 func QueryGuardiansCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "guardians",
 		Short: "Query guardian list",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			node, err := cliCtx.GetNode()
+			result, err := queryAllGuardians(cliCtx)
 			if err != nil {
 				return err
 			}
 
-			result, err := node.ABCIQuery("store/guardian/subspace", mapper.KeyGuardiansSubspace())
-
-			if err != nil {
-				return err
-			}
-
-			if len(result.Response.Value) == 0 {
-				return errors.New("no guardian")
-			}
-
-			var guardians []types.Guardian
-			var vKVPair []store.KVPair
-			cdc.UnmarshalBinaryLengthPrefixed(result.Response.Value, &vKVPair)
-			for _, kv := range vKVPair {
-				var guardian types.Guardian
-				cdc.UnmarshalBinaryBare(kv.Value, &guardian)
-				guardians = append(guardians, guardian)
-			}
-
-			return cliCtx.PrintResult(guardians)
+			return cliCtx.PrintResult(result)
 		},
 	}
 
 	return cmd
 }
 
+func queryAllGuardians(cliCtx context.CLIContext) ([]types.Guardian, error) {
+	node, err := cliCtx.GetNode()
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := node.ABCIQuery("store/guardian/subspace", mapper.KeyGuardiansSubspace())
+
+	if err != nil {
+		return nil, err
+	}
+
+	if len(result.Response.Value) == 0 {
+		return nil, context.RecordsNotFoundError
+	}
+
+	var guardians []types.Guardian
+	var vKVPair []store.KVPair
+	err = cliCtx.Codec.UnmarshalBinaryLengthPrefixed(result.Response.Value, &vKVPair)
+	for _, kv := range vKVPair {
+		var guardian types.Guardian
+		err = cliCtx.Codec.UnmarshalBinaryBare(kv.Value, &guardian)
+		guardians = append(guardians, guardian)
+	}
+
+	return guardians, err
+}
+
+// 停网操作
 func HaltCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "halt-network",
@@ -171,17 +189,18 @@ func HaltCmd(cdc *amino.Codec) *cobra.Command {
 				}
 
 				description := viper.GetString(flagDescription)
-				if len(description) < 0 || len(description) > gtxs.MaxDescriptionLen {
 
+				tx := gtxs.NewTxHaltNetwork(address, description)
+				if err = tx.ValidateInputs(); err != nil {
+					return nil, err
 				}
-
-				return gtxs.NewTxHaltNetwork(address, description), nil
+				return tx, nil
 			})
 		},
 	}
 
-	cmd.Flags().String(flagAddress, "", "address of guardian")
-	cmd.Flags().String(flagDescription, "", "description for this operation")
+	cmd.Flags().String(flagAddress, "", "Address of guardian")
+	cmd.Flags().String(flagDescription, "", "Description for this operation")
 	cmd.MarkFlagRequired(flagAddress)
 	cmd.MarkFlagRequired(flagDescription)
 

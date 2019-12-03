@@ -11,8 +11,8 @@ import (
 	qtypes "github.com/QOSGroup/qos/types"
 	"github.com/stretchr/testify/assert"
 	abci "github.com/tendermint/tendermint/abci/types"
-	dbm "github.com/tendermint/tendermint/libs/db"
 	"github.com/tendermint/tendermint/libs/log"
+	dbm "github.com/tendermint/tm-db"
 	"testing"
 )
 
@@ -46,12 +46,12 @@ func TestFeepoolInvariant(t *testing.T) {
 
 	dm := GetMapper(ctx)
 	dm.SetCommunityFeePool(btypes.NewInt(100))
-	_, coins, broken := FeepoolInvariant("gov")(ctx)
+	_, coins, broken := FeePoolInvariant("distribution")(ctx)
 	assert.False(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(100))
 
 	dm.SetCommunityFeePool(btypes.NewInt(-100))
-	_, coins, broken = FeepoolInvariant("gov")(ctx)
+	_, coins, broken = FeePoolInvariant("distribution")(ctx)
 	assert.True(t, broken)
 	assert.Equal(t, coins.AmountOf(qtypes.QOSCoinName), btypes.NewInt(-100))
 }

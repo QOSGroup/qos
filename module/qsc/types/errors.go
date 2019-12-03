@@ -16,72 +16,66 @@ const (
 	CodeQSCExists           btypes.CodeType = 306 // QSC已存在
 	CodeQSCNotExists        btypes.CodeType = 307 // QSC不存在
 	CodeBankerNotExists     btypes.CodeType = 308 // Banker账户不存在
+	CodeAmountLTZero        btypes.CodeType = 309 // 币量小于等于0
+	CodeInvalidBanker       btypes.CodeType = 310 // banker有误
+	CodeEmptyCreator        btypes.CodeType = 311 // 创建地址为空
+	CodeDescriptionTooLong  btypes.CodeType = 312 // 描述信息太长
+	CodeInvalidExchangeRate btypes.CodeType = 313 // 汇率值有误
+	CodeRootCANotConfigure  btypes.CodeType = 314 // 没有配置qsc root ca public key
 )
 
-func msgOrDefaultMsg(msg string, code btypes.CodeType) string {
-	if msg != "" {
-		return msg
-	}
-	return codeToDefaultMsg(code)
+func ErrInvalidInput(msg string) btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInput, msg)
 }
 
-func newError(codeSpace btypes.CodespaceType, code btypes.CodeType, msg string) btypes.Error {
-	msg = msgOrDefaultMsg(msg, code)
-	return btypes.NewError(codeSpace, code, msg)
+func ErrInvalidQSCCA() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidQSCCA, "invalid qsc ca")
 }
 
-// NOTE: Don't stringer this, we'll put better messages in later.
-func codeToDefaultMsg(code btypes.CodeType) string {
-	switch code {
-	case CodeInvalidInput:
-		return "invalid tx msg"
-	case CodeInvalidQSCCA:
-		return "invalid qsc ca"
-	case CodeWrongQSCCA:
-		return "wrong qsc ca"
-	case CodeInvalidInitAccounts:
-		return "invalid init accounts"
-	case CodeCreatorNotExists:
-		return "creator not exists"
-	case CodeQSCExists:
-		return "qsc exists"
-	case CodeQSCNotExists:
-		return "qsc not exists"
-	case CodeBankerNotExists:
-		return "banker not exists"
-	default:
-		return btypes.CodeToDefaultMsg(code)
-	}
+func ErrWrongQSCCA() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeWrongQSCCA, "wrong qsc ca")
 }
 
-func ErrInvalidInput(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidInput, msg)
+func ErrInvalidInitAccounts() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidInitAccounts, "invalid init accounts")
 }
 
-func ErrInvalidQSCCA(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidQSCCA, msg)
+func ErrCreatorNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeCreatorNotExists, "creator not exists")
 }
 
-func ErrWrongQSCCA(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeWrongQSCCA, msg)
+func ErrQSCExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeQSCExists, "qsc exists")
 }
 
-func ErrInvalidInitAccounts(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeInvalidInitAccounts, msg)
+func ErrQSCNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeQSCNotExists, "qsc not exists")
 }
 
-func ErrCreatorNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeCreatorNotExists, msg)
+func ErrBankerNotExists() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeBankerNotExists, "banker not exists")
 }
 
-func ErrQSCExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeQSCExists, msg)
+func ErrAmountLTZero() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeAmountLTZero, "amount must be positive")
 }
 
-func ErrQSCNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeQSCNotExists, msg)
+func ErrInvalidBanker() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidBanker, "invalid banker")
 }
 
-func ErrBankerNotExists(codeSpace btypes.CodespaceType, msg string) btypes.Error {
-	return newError(codeSpace, CodeBankerNotExists, msg)
+func ErrEmptyCreator() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeEmptyCreator, "empty creator")
+}
+
+func ErrDescriptionTooLong() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeDescriptionTooLong, "description is too long")
+}
+
+func ErrInvalidExchangeRate() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeInvalidExchangeRate, "invalid exchange rate")
+}
+
+func ErrRootCANotConfigure() btypes.Error {
+	return btypes.NewError(DefaultCodeSpace, CodeRootCANotConfigure, "no qsc root ca public key initialized")
 }

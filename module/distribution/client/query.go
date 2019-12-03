@@ -12,38 +12,50 @@ import (
 )
 
 const (
-	flagOwner     = "owner"
 	flagDelegator = "delegator"
+	flagValidator = "validator"
 )
 
 func queryValidatorPeriodCommand(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
-		Use:   "validator-period",
+		Use:   "validator-period [validator-address]",
+		Args:  cobra.ExactArgs(1),
 		Short: "Query distribution validator period info",
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var owner btypes.Address
-			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner); err == nil {
-				owner = o
+			var validator btypes.ValAddress
+			if o, err := qcliacc.GetValidatorAddrFromValue(cliCtx, args[0]); err == nil {
+				validator = o
 			}
 
-			path := types.BuildQueryValidatorPeriodInfoCustomQueryPath(owner)
-			res, err := cliCtx.Query(path, []byte(""))
+			result, err := queryValidatorPeriods(cliCtx, validator)
 			if err != nil {
 				return err
 			}
 
-			var result mapper.ValidatorPeriodInfoQueryResult
-			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.MarkFlagRequired(flagOwner)
 	return cmd
+}
+
+func queryValidatorPeriods(cliCtx context.CLIContext, valAddr btypes.ValAddress) (mapper.ValidatorPeriodInfoQueryResult, error) {
+	path := types.BuildQueryValidatorPeriodInfoCustomQueryPath(valAddr)
+	res, err := cliCtx.Query(path, []byte(""))
+	if err != nil {
+		return mapper.ValidatorPeriodInfoQueryResult{}, err
+	}
+
+	var result mapper.ValidatorPeriodInfoQueryResult
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	if err != nil {
+		return mapper.ValidatorPeriodInfoQueryResult{}, err
+	}
+
+	return result, nil
 }
 
 func queryDelegatorIncomeInfoCommand(cdc *amino.Codec) *cobra.Command {
@@ -54,35 +66,48 @@ func queryDelegatorIncomeInfoCommand(cdc *amino.Codec) *cobra.Command {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
 
-			var owner btypes.Address
-			var delegator btypes.Address
+			var validator btypes.ValAddress
+			var delegator btypes.AccAddress
 
-			if o, err := qcliacc.GetAddrFromFlag(cliCtx, flagOwner); err == nil {
-				owner = o
+			if o, err := qcliacc.GetValidatorAddrFromFlag(cliCtx, flagValidator); err == nil {
+				validator = o
 			}
 
 			if d, err := qcliacc.GetAddrFromFlag(cliCtx, flagDelegator); err == nil {
 				delegator = d
 			}
 
-			path := types.BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, owner)
-			res, err := cliCtx.Query(path, []byte(""))
+			result, err := queryDelegatorIncomes(cliCtx, delegator, validator)
 			if err != nil {
 				return err
 			}
 
-			var result mapper.DelegatorIncomeInfoQueryResult
-			cliCtx.Codec.UnmarshalJSON(res, &result)
 			return cliCtx.PrintResult(result)
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "validator's owner address")
-	cmd.Flags().String(flagDelegator, "", "delegator address")
+	cmd.Flags().String(flagValidator, "", "validator's address")
+	cmd.Flags().String(flagDelegator, "", "delegator account address")
 
 	cmd.MarkFlagRequired(flagDelegator)
-	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagValidator)
 	return cmd
+}
+
+func queryDelegatorIncomes(cliCtx context.CLIContext, delegator btypes.AccAddress, validator btypes.ValAddress) (mapper.DelegatorIncomeInfoQueryResult, error) {
+	path := types.BuildQueryDelegatorIncomeInfoCustomQueryPath(delegator, validator)
+	res, err := cliCtx.Query(path, []byte(""))
+	if err != nil {
+		return mapper.DelegatorIncomeInfoQueryResult{}, err
+	}
+
+	var result mapper.DelegatorIncomeInfoQueryResult
+	err = cliCtx.Codec.UnmarshalJSON(res, &result)
+	if err != nil {
+		return mapper.DelegatorIncomeInfoQueryResult{}, err
+	}
+
+	return result, nil
 }
 
 func queryCommunityFeePoolCommand(cdc *amino.Codec) *cobra.Command {
@@ -92,17 +117,25 @@ func queryCommunityFeePoolCommand(cdc *amino.Codec) *cobra.Command {
 		RunE: func(cmd *cobra.Command, args []string) error {
 
 			cliCtx := context.NewCLIContext().WithCodec(cdc)
-
-			res, err := cliCtx.Query(fmt.Sprintf("/store/%s/key", types.MapperName), types.BuildCommunityFeePoolKey())
+			result, err := getCommunityFeePool(cliCtx)
 			if err != nil {
 				return err
 			}
-
-			var result btypes.BigInt
-			cdc.MustUnmarshalBinaryBare(res, &result)
 			return cliCtx.PrintResult(result)
 		},
 	}
 
 	return cmd
+}
+
+func getCommunityFeePool(cliCtx context.CLIContext) (btypes.BigInt, error) {
+	res, err := cliCtx.Query(fmt.Sprintf("/store/%s/key", types.MapperName), types.BuildCommunityFeePoolKey())
+	if err != nil {
+		return btypes.BigInt{}, err
+	}
+
+	var result btypes.BigInt
+	cliCtx.Codec.MustUnmarshalBinaryBare(res, &result)
+
+	return result, nil
 }

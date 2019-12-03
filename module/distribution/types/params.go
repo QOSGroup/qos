@@ -19,21 +19,46 @@ var (
 )
 
 type Params struct {
-	ProposerRewardRate           qtypes.Fraction `json:"proposer_reward_rate"`
-	CommunityRewardRate          qtypes.Fraction `json:"community_reward_rate"`
-	DelegatorsIncomePeriodHeight uint64          `json:"delegator_income_period_height"`
-	GasPerUnitCost               uint64          `json:"gas_per_unit_cost"` // how much gas = 1 QOS
+	ProposerRewardRate           qtypes.Dec `json:"proposer_reward_rate"`           // 块提议者奖励比例
+	CommunityRewardRate          qtypes.Dec `json:"community_reward_rate"`          // 社区奖励比例
+	DelegatorsIncomePeriodHeight int64      `json:"delegator_income_period_height"` // 奖励发放周期
+	GasPerUnitCost               int64      `json:"gas_per_unit_cost"`              // 1QOS折算Gas量
 }
+
+// 设置单个参数，不同数据类型对应不同处理
+func (p *Params) SetKeyValue(key string, value interface{}) btypes.Error {
+	switch key {
+	case string(KeyProposerRewardRate):
+		p.ProposerRewardRate = value.(qtypes.Dec)
+		break
+	case string(KeyCommunityRewardRate):
+		p.CommunityRewardRate = value.(qtypes.Dec)
+		break
+	case string(KeyDelegatorsIncomePeriodHeight):
+		p.DelegatorsIncomePeriodHeight = value.(int64)
+		break
+	case string(KeyGasPerUnitCost):
+		p.GasPerUnitCost = value.(int64)
+		break
+	default:
+		return params.ErrInvalidParam(fmt.Sprintf("%s not exists", key))
+	}
+
+	return nil
+}
+
+var _ qtypes.ParamSet = (*Params)(nil)
 
 func DefaultParams() Params {
 	return Params{
-		ProposerRewardRate:           qtypes.NewFraction(int64(1), int64(100)),      // 1%
-		CommunityRewardRate:          qtypes.NewFraction(int64(2), int64(100)),      // 2%
-		DelegatorsIncomePeriodHeight: uint64(60 * 60 / qtypes.DefaultBlockInterval), // 1 hour
-		GasPerUnitCost:               qtypes.GasPerUnitCost,
+		ProposerRewardRate:           qtypes.NewDecWithPrec(1, 2),           // 1%
+		CommunityRewardRate:          qtypes.NewDecWithPrec(2, 2),           // 2%
+		DelegatorsIncomePeriodHeight: 60 * 60 / qtypes.DefaultBlockInterval, // 1 hour
+		GasPerUnitCost:               qtypes.UnitQOSGas,                     // 1000
 	}
 }
 
+// 返回参数键值对
 func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	return qtypes.KeyValuePairs{
 		{KeyProposerRewardRate, &p.ProposerRewardRate},
@@ -43,7 +68,8 @@ func (p *Params) KeyValuePairs() qtypes.KeyValuePairs {
 	}
 }
 
-func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) {
+// 校验单个参数，返回参数值
+func (p *Params) ValidateKeyValue(key string, value string) (interface{}, btypes.Error) {
 	switch key {
 	case string(KeyProposerRewardRate), string(KeyCommunityRewardRate):
 		rate, err := qtypes.NewDecFromStr(value)
@@ -52,8 +78,8 @@ func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) 
 		}
 		return rate, nil
 	case string(KeyDelegatorsIncomePeriodHeight), string(KeyGasPerUnitCost):
-		height, err := strconv.ParseUint(value, 10, 64)
-		if err != nil {
+		height, err := strconv.ParseInt(value, 10, 64)
+		if err != nil || height <= 0 {
 			return nil, params.ErrInvalidParam(fmt.Sprintf("%s invalid", key))
 		}
 		return height, nil
@@ -62,6 +88,25 @@ func (p *Params) Validate(key string, value string) (interface{}, btypes.Error) 
 	}
 }
 
+// 参数所属模块名
 func (p *Params) GetParamSpace() string {
 	return ParamSpace
+}
+
+// 参数校验
+func (p *Params) Validate() btypes.Error {
+	if p.ProposerRewardRate.GT(qtypes.OneDec()) || p.ProposerRewardRate.IsNegative() {
+		params.ErrInvalidParam(fmt.Sprintf("%s must gte 0 and lte 1", KeyProposerRewardRate))
+	}
+	if p.CommunityRewardRate.GT(qtypes.OneDec()) || p.CommunityRewardRate.IsNegative() {
+		params.ErrInvalidParam(fmt.Sprintf("%s must gte 0 and lte 1", KeyCommunityRewardRate))
+	}
+	if p.DelegatorsIncomePeriodHeight <= 0 {
+		params.ErrInvalidParam(fmt.Sprintf("%s must gt 0", KeyDelegatorsIncomePeriodHeight))
+	}
+	if p.GasPerUnitCost <= 0 {
+		params.ErrInvalidParam(fmt.Sprintf("%s must gt 0", KeyGasPerUnitCost))
+	}
+
+	return nil
 }

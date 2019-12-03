@@ -5,18 +5,17 @@ import (
 	"github.com/QOSGroup/qbase/txs"
 
 	btypes "github.com/QOSGroup/qbase/types"
-	"github.com/tendermint/tendermint/crypto"
 )
 
 type GenesisState struct {
-	GenTxs                 []txs.TxStd                      `json:"gen_txs"`
-	Params                 Params                           `json:"params"`
-	Validators             []Validator                      `json:"validators"`            //validatorKey, validatorByOwnerKey,validatorByInactiveKey,validatorByVotePowerKey
-	ValidatorsVoteInfo     []ValidatorVoteInfoState         `json:"val_votes_info"`        //validatorVoteInfoKey
-	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"`   //validatorVoteInfoInWindowKey
-	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`       //DelegationByDelValKey, DelegationByValDelKey
-	DelegatorsUnbondInfo   []UnbondingDelegationInfo        `json:"delegator_unbond_info"` //UnbondingHeightDelegatorKey
-	ReDelegationsInfo      []RedelegationInfo               `json:"redelegations_info"`    //ReDelegationHeightDelegatorKey
+	GenTxs                 []txs.TxStd                      `json:"gen_txs"`               // signed TxCreateValidator in genesis.json
+	Params                 Params                           `json:"params"`                // stake module parameters
+	Validators             []Validator                      `json:"validators"`            // validatorKey, validatorByOwnerKey,validatorByInactiveKey,validatorByVotePowerKey
+	ValidatorsVoteInfo     []ValidatorVoteInfoState         `json:"val_votes_info"`        // validatorVoteInfoKey
+	ValidatorsVoteInWindow []ValidatorVoteInWindowInfoState `json:"val_votes_in_window"`   // validatorVoteInfoInWindowKey
+	DelegatorsInfo         []DelegationInfoState            `json:"delegators_info"`       // DelegationByDelValKey, DelegationByValDelKey
+	DelegatorsUnbondInfo   []UnbondingDelegationInfo        `json:"delegator_unbond_info"` // UnbondingHeightDelegatorKey
+	ReDelegationsInfo      []RedelegationInfo               `json:"redelegations_info"`    // ReDelegationHeightDelegatorKey
 	CurrentValidators      []Validator                      `json:"current_validators"`    // currentValidatorsAddressKey
 }
 
@@ -47,7 +46,14 @@ func DefaultGenesisState() GenesisState {
 }
 
 func ValidateGenesis(data GenesisState) error {
+	// 校验验证节点信息
 	err := validateValidators(data.Validators)
+	if err != nil {
+		return err
+	}
+
+	// 验证参数
+	err = data.Params.Validate()
 	if err != nil {
 		return err
 	}
@@ -60,36 +66,36 @@ func validateValidators(validators []Validator) (err error) {
 	ownerMap := make(map[string]bool, len(validators))
 	for i := 0; i < len(validators); i++ {
 		val := validators[i]
-		strKey := string(val.ValidatorPubKey.Bytes())
+		strKey := string(val.GetConsensusPubKey().Bytes())
 		if _, ok := addrMap[strKey]; ok {
-			return fmt.Errorf("duplicate validator in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
+			return fmt.Errorf("duplicate validator in genesis state: Name %v, operator %v", val.Description.Moniker, val.OperatorAddress.String())
 		}
-		if _, ok := ownerMap[val.Owner.String()]; ok {
-			return fmt.Errorf("duplicate owner in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
+		if _, ok := ownerMap[val.OperatorAddress.String()]; ok {
+			return fmt.Errorf("duplicate operator in genesis state: Name %v, operator %v", val.Description.Moniker, val.OperatorAddress.String())
 		}
 		if val.Status != Active {
-			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, Owner %v", val.Description.Moniker, val.Owner)
+			return fmt.Errorf("validator is bonded and jailed in genesis state: Name %v, operator %v", val.Description.Moniker, val.OperatorAddress.String())
 		}
 		addrMap[strKey] = true
-		ownerMap[val.Owner.String()] = true
+		ownerMap[val.OperatorAddress.String()] = true
 	}
 	return nil
 }
 
 type ValidatorVoteInfoState struct {
-	ValidatorPubKey crypto.PubKey     `json:"validator_pub_key"`
-	VoteInfo        ValidatorVoteInfo `json:"vote_info"`
+	ValidatorAddr btypes.ValAddress `json:"validator_addr"`
+	VoteInfo      ValidatorVoteInfo `json:"vote_info"`
 }
 
 type ValidatorVoteInWindowInfoState struct {
-	ValidatorPubKey crypto.PubKey `json:"validator_pub_key"`
-	Index           uint64        `json:"index"`
-	Vote            bool          `json:"vote"`
+	ValidatorAddr btypes.ValAddress `json:"validator_addr"`
+	Index         int64             `json:"index"`
+	Vote          bool              `json:"vote"`
 }
 
 type DelegationInfoState struct {
-	DelegatorAddr   btypes.Address `json:"delegator_addr"`
-	ValidatorPubKey crypto.PubKey  `json:"validator_pub_key"`
-	Amount          uint64         `json:"delegate_amount"`
-	IsCompound      bool           `json:"is_compound"`
+	DelegatorAddr btypes.AccAddress `json:"delegator_addr"`
+	ValidatorAddr btypes.ValAddress `json:"validator_addr"`
+	Amount        btypes.BigInt     `json:"delegate_amount"`
+	IsCompound    bool              `json:"is_compound"`
 }

@@ -3,9 +3,13 @@ package qsc
 import (
 	"encoding/json"
 	"github.com/QOSGroup/qbase/baseabci"
+	cliContext "github.com/QOSGroup/qbase/client/context"
 	"github.com/QOSGroup/qbase/context"
+	"github.com/QOSGroup/qos/module/qsc/client"
+
 	"github.com/QOSGroup/qos/module/qsc/mapper"
 	"github.com/QOSGroup/qos/types"
+	"github.com/gorilla/mux"
 	"github.com/spf13/cobra"
 	"github.com/tendermint/go-amino"
 	abci "github.com/tendermint/tendermint/abci/types"
@@ -40,6 +44,10 @@ func (amb AppModuleBasic) ValidateGenesis(bz json.RawMessage) error {
 	return ValidateGenesis(data)
 }
 
+func (amb AppModuleBasic) RegisterRestRoutes(ctx cliContext.CLIContext, routes *mux.Router) {
+	client.RegisterRoutes(ctx, routes)
+}
+
 func (amb AppModuleBasic) GetTxCmds(cdc *amino.Codec) []*cobra.Command {
 	return TxCommands(cdc)
 }
@@ -61,7 +69,9 @@ func (am AppModule) RegisterInvariants(ir types.InvariantRegistry) {
 	ir.RegisterInvarRoute(ModuleName, "amount", mapper.QSCsInvariant(ModuleName))
 }
 
-func (am AppModule) RegisterQuerier(types.QueryRegistry) {}
+func (am AppModule) RegisterQuerier(qr types.QueryRegistry) {
+	qr.RegisterQueryRoute(ModuleName, mapper.Query)
+}
 
 func (am AppModule) BeginBlock(context.Context, abci.RequestBeginBlock) {}
 

@@ -1,30 +1,29 @@
 package types
 
 import (
-	"fmt"
 	"time"
-
-	"github.com/QOSGroup/qos/types"
 )
 
 const (
 	// Default period for deposits & voting
-	DefaultPeriod = /*86400*/60 * 2 * time.Second // 2 days
+	DefaultDepositPeriod = 7 * 24 * time.Hour  // 7 days
+	DefaultVotingPeriod  = 14 * 24 * time.Hour // 14 days
 )
 
 type GenesisProposal struct {
-	Proposal Proposal  `json:"proposal"`
-	Deposits []Deposit `json:"deposits"`
-	Votes    []Vote    `json:"votes"`
+	Proposal Proposal  `json:"proposal"` // 提议
+	Deposits []Deposit `json:"deposits"` // 质押
+	Votes    []Vote    `json:"votes"`    // 投票
 }
 
+// 创世状态
 type GenesisState struct {
-	StartingProposalID uint64            `json:"starting_proposal_id"`
-	Params             Params            `json:"params"`
-	Proposals          []GenesisProposal `json:"proposals"`
+	StartingProposalID int64             `json:"starting_proposal_id"` // 下一个提议ID
+	Params             Params            `json:"params"`               // 提议相关参数
+	Proposals          []GenesisProposal `json:"proposals"`            // 提议
 }
 
-func NewGenesisState(startingProposalID uint64, params Params) GenesisState {
+func NewGenesisState(startingProposalID int64, params Params) GenesisState {
 	return GenesisState{
 		StartingProposalID: startingProposalID,
 		Params:             params,
@@ -41,26 +40,10 @@ func DefaultGenesisState() GenesisState {
 
 // ValidateGenesis
 func ValidateGenesis(data GenesisState) error {
-	threshold := data.Params.Threshold
-	if threshold.IsNegative() || threshold.GT(types.OneDec()) {
-		return fmt.Errorf("governance vote threshold should be positive and less or equal to one, is %s",
-			threshold.String())
-	}
-
-	veto := data.Params.Veto
-	if veto.IsNegative() || veto.GT(types.OneDec()) {
-		return fmt.Errorf("governance vote veto threshold should be positive and less or equal to one, is %s",
-			veto.String())
-	}
-
-	if data.Params.MaxDepositPeriod > data.Params.VotingPeriod {
-		return fmt.Errorf("governance deposit period should be less than or equal to the voting period (%ds), is %ds",
-			data.Params.VotingPeriod, data.Params.MaxDepositPeriod)
-	}
-
-	if data.Params.MinDeposit <= 0 {
-		return fmt.Errorf("governance deposit amount must be a valid sdk.Coins amount, is %v",
-			data.Params.MinDeposit)
+	// validate params
+	err := data.Params.Validate()
+	if err != nil {
+		return err
 	}
 
 	return nil

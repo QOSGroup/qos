@@ -2,6 +2,8 @@ package client
 
 import (
 	"fmt"
+	"path/filepath"
+
 	qcliacc "github.com/QOSGroup/qbase/client/account"
 	"github.com/QOSGroup/qbase/client/context"
 	qclitx "github.com/QOSGroup/qbase/client/tx"
@@ -15,7 +17,6 @@ import (
 	"github.com/tendermint/go-amino"
 	cfg "github.com/tendermint/tendermint/config"
 	"github.com/tendermint/tendermint/privval"
-	"path/filepath"
 )
 
 const (
@@ -45,7 +46,7 @@ func CreateValidatorCmd(cdc *amino.Codec) *cobra.Command {
 		Use:   "create-validator",
 		Short: "create new validator initialized with a self-delegation to it",
 		Long: `
-owner is a keystore name or account address.
+owner is a keybase name or account address.
 
 example:
 
@@ -57,8 +58,8 @@ example:
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "keystore name or account address")
-	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount")
+	cmd.Flags().String(flagOwner, "", "keybase name or account creator address")
+	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount")
 	cmd.Flags().Bool(flagCompound, false, "as a self-delegator, whether the income is calculated as compound interest")
 	cmd.Flags().String(flagNodeHome, qtypes.DefaultNodeHome, "path of node's config and data files, default: $HOME/.qosd")
 	cmd.Flags().String(flagMoniker, "", "The validator's name")
@@ -79,7 +80,7 @@ example:
 func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "modify-validator",
-		Short: "modify an existing validator account",
+		Short: "modify an existing validator",
 		RunE: func(cmd *cobra.Command, args []string) error {
 			return qclitx.BroadcastTxAndPrintResult(cdc, func(ctx context.CLIContext) (tx btxs.ITx, e error) {
 				name := viper.GetString(flagMoniker)
@@ -95,6 +96,11 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
+				validator, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
+				if err != nil {
+					return nil, err
+				}
+
 				var newRate *qtypes.Dec
 				commissionRate := viper.GetString(flagCommissionRate)
 				if commissionRate != "" {
@@ -106,19 +112,26 @@ func ModifyValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					newRate = &rate
 				}
 
-				return txs.NewModifyValidatorTx(owner, desc, newRate), nil
+				mvtx := txs.NewModifyValidatorTx(owner, validator, desc, newRate)
+				err = mvtx.ValidateInputs()
+				if err != nil {
+					return nil, err
+				}
+				return mvtx, nil
 			})
 		},
 	}
 
+	cmd.Flags().String(flagOwner, "", "keybase name or account of validator's owner address")
+	cmd.Flags().String(flagValidator, "", "validator address")
 	cmd.Flags().String(flagMoniker, "", "The validator's name")
-	cmd.Flags().String(flagOwner, "", "keystore name or account address")
 	cmd.Flags().String(flagLogo, "", "The optional logo link")
 	cmd.Flags().String(flagWebsite, "", "The validator's (optional) website")
 	cmd.Flags().String(flagDetails, "", "The validator's (optional) details")
 	cmd.Flags().String(flagCommissionRate, "", "The initial commission rate percentage")
 
 	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagValidator)
 
 	return cmd
 }
@@ -134,15 +147,22 @@ func RevokeValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				return txs.NewRevokeValidatorTx(owner), nil
+				validator, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
+				if err != nil {
+					return nil, err
+				}
+
+				return txs.NewRevokeValidatorTx(owner, validator), nil
 			})
 
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "owner keystore name or address")
+	cmd.Flags().String(flagOwner, "", "keybase name or account of validator's owner address")
+	cmd.Flags().String(flagValidator, "", "validator address")
 
 	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagValidator)
 
 	return cmd
 }
@@ -158,21 +178,28 @@ func ActiveValidatorCmd(cdc *amino.Codec) *cobra.Command {
 					return nil, err
 				}
 
-				tokens := uint64(viper.GetInt64(flagBondTokens))
-				if tokens <= 0 {
-					return nil, errors.New("tokens lte zero")
+				validator, err := qcliacc.GetValidatorAddrFromFlag(ctx, flagValidator)
+				if err != nil {
+					return nil, err
 				}
 
-				return txs.NewActiveValidatorTx(owner, tokens), nil
+				tokens, err := qtypes.GetIntFromFlag(flagBondTokens, true)
+				if err != nil {
+					return nil, err
+				}
+
+				return txs.NewActiveValidatorTx(owner, validator, tokens), nil
 			})
 
 		},
 	}
 
-	cmd.Flags().String(flagOwner, "", "owner keystore or address")
-	cmd.Flags().Int64(flagBondTokens, 0, "bond tokens amount to increase")
+	cmd.Flags().String(flagOwner, "", "keybase name or account of validator address")
+	cmd.Flags().String(flagValidator, "", "validator address")
+	cmd.Flags().String(flagBondTokens, "0", "bond tokens amount to increase")
 
 	cmd.MarkFlagRequired(flagOwner)
+	cmd.MarkFlagRequired(flagValidator)
 
 	return cmd
 }
@@ -182,8 +209,9 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	if len(name) == 0 {
 		return nil, errors.New("moniker is empty")
 	}
-	tokens := uint64(viper.GetInt64(flagBondTokens))
-	if tokens <= 0 {
+
+	tokens, err := qtypes.GetIntFromFlag(flagBondTokens, false)
+	if err != nil {
 		return nil, errors.New("tokens lte zero")
 	}
 	logo := viper.GetString(flagLogo)
@@ -207,7 +235,12 @@ func TxCreateValidatorBuilder(ctx context.CLIContext) (btxs.ITx, error) {
 	}
 
 	isCompound := viper.GetBool(flagCompound)
-	return txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission), nil
+	tx := txs.NewCreateValidatorTx(owner, privValidator.GetPubKey(), tokens, isCompound, desc, *commission, nil)
+	err = tx.ValidateInputs()
+	if err != nil {
+		return nil, err
+	}
+	return tx, nil
 }
 
 func BuildCommissionRates() (*types.CommissionRates, error) {
