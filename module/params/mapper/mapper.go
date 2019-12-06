@@ -24,7 +24,6 @@ type Mapper struct {
 	paramSets map[string]qtypes.ParamSet
 
 	Metrics *Metrics
-
 }
 
 func (mapper *Mapper) Copy() mapper.IMapper {

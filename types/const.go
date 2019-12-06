@@ -8,7 +8,7 @@ const (
 )
 
 var (
-	UnitQOS                     = math.Pow(10, Decimal)    // QOS unit
+	UnitQOS                     = math.Pow(10, Decimal)           // QOS unit
 	DefaultTotalUnitQOSQuantity = int64(TotalQOSAmount * UnitQOS) // total QOS amount
 
 	DefaultBlockInterval = int64(5)   // 5 seconds
