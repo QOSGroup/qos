@@ -100,7 +100,7 @@ func AddLockAccount(ctx *server.Context, cdc *amino.Codec) *cobra.Command {
 
 Example:
 
-	qosd add-lock-account --receiver qosacc1dnfqsflrl0m8csygtfg9nffh3yffg5z6mq2d0r --total-amount 10000000000000 --released-amount 1666666666664 --release-time '2019-11-27T18:00:00Z' --release-interval 1 --release-times 20"
+	qosd add-lock-account --receiver qosacc1dnfqsflrl0m8csygtfg9nffh3yffg5z6mq2d0r --total-amount 10000000000000 --released-amount 1666666666664 --release-time '2019-11-27T18:00:00Z' --release-interval 30 --release-times 20"
 	`,
 		RunE: func(_ *cobra.Command, args []string) error {
 			config := ctx.Config

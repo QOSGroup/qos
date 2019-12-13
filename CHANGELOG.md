@@ -1,5 +1,20 @@
 # Changelog
 
+## v0.0.9
+2019.12.03
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [module] 增加HTTP REST Server
+* [module] 完善主网上线参数
+* [module] 代码review和文档完善
+* [module] 若干bug
+
+
+
 ## v0.0.8
 2019.08.23
 
