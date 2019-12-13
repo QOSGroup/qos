@@ -1,5 +1,18 @@
 # Changelog
 
+## v0.1.0
+2019.12.13
+
+**DOWNLOAD**
+
+[下载链接](https://github.com/QOSGroup/qos/blob/master/DOWNLOAD.md)
+
+**IMPROVEMENTS**
+* [module] 增加txs,events查询API
+* [module] 修改TX默认GAS费用
+* [module] 修改GAS释放策略
+
+
 ## v0.0.9
 2019.12.03
 
