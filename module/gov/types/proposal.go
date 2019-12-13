@@ -33,6 +33,7 @@ type ProposalContent interface {
 	GetDeposit() btypes.BigInt
 	GetProposalType() ProposalType
 	GetProposalLevel() ProposalLevel
+	GetProposer() btypes.AccAddress
 }
 
 type ProposalResult string
@@ -282,6 +283,7 @@ func (tp TextProposal) GetDescription() string          { return tp.Description 
 func (tp TextProposal) GetDeposit() btypes.BigInt       { return tp.Deposit }
 func (tp TextProposal) GetProposalType() ProposalType   { return ProposalTypeText }
 func (tp TextProposal) GetProposalLevel() ProposalLevel { return tp.GetProposalType().Level() }
+func (tp TextProposal) GetProposer() btypes.AccAddress  { return tp.Proposer }
 
 // TaxUsage Proposal
 type TaxUsageProposal struct {
@@ -307,10 +309,11 @@ func NewTaxUsageProposal(proposer btypes.AccAddress, title, description string, 
 var _ ProposalContent = TaxUsageProposal{}
 
 // nolint
-func (tp TaxUsageProposal) GetTitle() string              { return tp.Title }
-func (tp TaxUsageProposal) GetDescription() string        { return tp.Description }
-func (tp TaxUsageProposal) GetDeposit() btypes.BigInt     { return tp.Deposit }
-func (tp TaxUsageProposal) GetProposalType() ProposalType { return ProposalTypeTaxUsage }
+func (tp TaxUsageProposal) GetTitle() string               { return tp.Title }
+func (tp TaxUsageProposal) GetDescription() string         { return tp.Description }
+func (tp TaxUsageProposal) GetDeposit() btypes.BigInt      { return tp.Deposit }
+func (tp TaxUsageProposal) GetProposalType() ProposalType  { return ProposalTypeTaxUsage }
+func (tp TaxUsageProposal) GetProposer() btypes.AccAddress { return tp.Proposer }
 
 // Parameters change Proposal
 type ParameterProposal struct {
@@ -334,10 +337,11 @@ func NewParameterProposal(proposer btypes.AccAddress, title, description string,
 var _ ProposalContent = ParameterProposal{}
 
 // nolint
-func (tp ParameterProposal) GetTitle() string              { return tp.Title }
-func (tp ParameterProposal) GetDescription() string        { return tp.Description }
-func (tp ParameterProposal) GetDeposit() btypes.BigInt     { return tp.Deposit }
-func (tp ParameterProposal) GetProposalType() ProposalType { return ProposalTypeParameterChange }
+func (tp ParameterProposal) GetTitle() string               { return tp.Title }
+func (tp ParameterProposal) GetDescription() string         { return tp.Description }
+func (tp ParameterProposal) GetDeposit() btypes.BigInt      { return tp.Deposit }
+func (tp ParameterProposal) GetProposalType() ProposalType  { return ProposalTypeParameterChange }
+func (tp ParameterProposal) GetProposer() btypes.AccAddress { return tp.Proposer }
 
 // Modify Inflation Phrases Proposal
 type ModifyInflationProposal struct {
@@ -363,10 +367,11 @@ func NewAddInflationPhrase(proposer btypes.AccAddress, title, description string
 var _ ProposalContent = ModifyInflationProposal{}
 
 // nolint
-func (tp ModifyInflationProposal) GetTitle() string              { return tp.Title }
-func (tp ModifyInflationProposal) GetDescription() string        { return tp.Description }
-func (tp ModifyInflationProposal) GetDeposit() btypes.BigInt     { return tp.Deposit }
-func (tp ModifyInflationProposal) GetProposalType() ProposalType { return ProposalTypeModifyInflation }
+func (tp ModifyInflationProposal) GetTitle() string               { return tp.Title }
+func (tp ModifyInflationProposal) GetDescription() string         { return tp.Description }
+func (tp ModifyInflationProposal) GetDeposit() btypes.BigInt      { return tp.Deposit }
+func (tp ModifyInflationProposal) GetProposalType() ProposalType  { return ProposalTypeModifyInflation }
+func (tp ModifyInflationProposal) GetProposer() btypes.AccAddress { return tp.Proposer }
 
 type Param struct {
 	Module string `json:"module"`
@@ -420,7 +425,8 @@ func NewSoftwareUpgradeProposal(proposer btypes.AccAddress, title, description s
 var _ ProposalContent = SoftwareUpgradeProposal{}
 
 // nolint
-func (tp SoftwareUpgradeProposal) GetTitle() string              { return tp.Title }
-func (tp SoftwareUpgradeProposal) GetDescription() string        { return tp.Description }
-func (tp SoftwareUpgradeProposal) GetDeposit() btypes.BigInt     { return tp.Deposit }
-func (tp SoftwareUpgradeProposal) GetProposalType() ProposalType { return ProposalTypeSoftwareUpgrade }
+func (tp SoftwareUpgradeProposal) GetTitle() string               { return tp.Title }
+func (tp SoftwareUpgradeProposal) GetDescription() string         { return tp.Description }
+func (tp SoftwareUpgradeProposal) GetDeposit() btypes.BigInt      { return tp.Deposit }
+func (tp SoftwareUpgradeProposal) GetProposalType() ProposalType  { return ProposalTypeSoftwareUpgrade }
+func (tp SoftwareUpgradeProposal) GetProposer() btypes.AccAddress { return tp.Proposer }

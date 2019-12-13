@@ -47,7 +47,7 @@ func getProposal(cliContext context.CLIContext, pid int64) (result types.Proposa
 	res, err := cliContext.Query(path, []byte{})
 
 	if err != nil {
-		return types.Proposal{}, nil
+		return types.Proposal{}, err
 	}
 
 	if len(res) == 0 {
